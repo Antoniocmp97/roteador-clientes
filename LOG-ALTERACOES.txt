@@ -201,6 +201,50 @@ com histórico e possibilidade de reverter.
      (o README local, completo, prevaleceu sobre o de uma linha).
    - Commit de merge: 5852c62.
 
+--------------------------------------------------------
+[22/08/2026] SANITIZAÇÃO DE SEGURANÇA antes do primeiro push
+--------------------------------------------------------
+A pedido do usuário, tudo que iria virar público foi revisado antes de
+enviar ao GitHub. Correções aplicadas:
+
+1. E-MAIL PESSOAL NOS COMMITS
+   - Problema: os commits locais estavam assinados com o e-mail pessoal
+     do usuário, que ficaria visível para sempre no histórico público.
+   - Correção: passou-se a usar o endereço "noreply" do GitHub
+     (formato ID+usuario@users.noreply.github.com), que identifica a
+     conta sem expor e-mail real.
+   - O histórico local foi refeito do zero num ramo órfão ("publicacao")
+     para que nenhum commit carregasse o e-mail antigo. Nada foi
+     apagado: o ramo "main" original continua existindo localmente.
+
+2. DADOS DA MÁQUINA E DA REDE NO LOG
+   - Removidos deste arquivo: o IP interno do PC e o nome da rede Wi-Fi.
+   - Mantida a descrição técnica do problema (classificação da rede como
+     pública e bloqueio do Firewall), que é o que tem valor documental.
+
+3. PONTOS REAIS NO ARQUIVO DE EXEMPLO
+   - O arquivo de teste continha nomes e coordenadas de pontos reais
+     ligados à operação.
+   - Correção: o arquivo real foi preservado apenas na máquina, renomeado
+     para "clientes-teste.geojson" na raiz (bloqueado pelo .gitignore).
+   - Criado "Exemplos/exemplo.geojson" no lugar, com 5 pontos fictícios
+     na região de Criciúma, servindo só para demonstrar o formato.
+   - Removidas também as citações aos nomes reais no corpo deste log.
+
+4. AUDITORIA FINAL
+   - Varredura em todos os arquivos versionados procurando IPs internos,
+     nome da rede, e-mails pessoais, caminhos da máquina e nomes reais
+     de pontos: nenhuma ocorrência encontrada.
+   - Confirmado que vão para o GitHub apenas 7 arquivos: index.html,
+     CLAUDE.md, LOG-ALTERACOES.txt, README.md, .gitignore,
+     Exemplos/exemplo.geojson e .claude/launch.json.
+
+OBSERVAÇÃO PENDENTE: os 2 commits que o usuário já havia enviado pela
+interface web do GitHub (61cd4db e f8e3541) usaram o e-mail da conta e
+ele já está público nesses commits. Para que isso não se repita, vale
+ativar em github.com/settings/emails a opção "Keep my email addresses
+private".
+
 - STATUS: falta apenas o "git push" para enviar tudo ao GitHub. O push
   depende da autenticação do usuário (abre janela do navegador na
   primeira vez), por isso é executado por ele.
