@@ -245,6 +245,30 @@ ele já está público nesses commits. Para que isso não se repita, vale
 ativar em github.com/settings/emails a opção "Keep my email addresses
 private".
 
-- STATUS: falta apenas o "git push" para enviar tudo ao GitHub. O push
-  depende da autenticação do usuário (abre janela do navegador na
-  primeira vez), por isso é executado por ele.
+--------------------------------------------------------
+[22/08/2026] PUSH CONCLUÍDO — projeto versionado no GitHub
+--------------------------------------------------------
+- Obstáculo encontrado: o comando "git" não era reconhecido no PowerShell
+  do usuário. Diagnóstico: o Git está instalado em
+  C:\Program Files\Git\cmd\git.exe, mas não constava no PATH (nem do
+  usuário nem do sistema) — típico de instalação feita com a opção
+  "Use Git from Git Bash only".
+- Soluções oferecidas: chamar o Git pelo caminho completo, adicionar o
+  Git ao PATH da conta do usuário, ou usar o Git Bash. O usuário
+  resolveu e o "git" passou a funcionar no PowerShell.
+- Push realizado com sucesso. Verificado depois:
+    * Local e remoto totalmente sincronizados (0 commits de diferença).
+    * 5 commits no GitHub; os 3 novos assinados com o e-mail "noreply",
+      sem expor endereço pessoal.
+    * Os 7 arquivos previstos estão no repositório; nenhum dado real de
+      cliente foi enviado.
+    * README renderizando corretamente na página do repositório.
+- Site republicado automaticamente pelo push e conferido: responde 200 e
+  todos os controles do app estão funcionais.
+  https://antoniocmp97.github.io/roteador-clientes/
+- Observação: logo após o push o site retorna 404 por alguns instantes
+  enquanto o GitHub Pages reconstrói. É comportamento normal.
+- O usuário também ativou a privacidade de e-mail na conta do GitHub.
+
+- STATUS: projeto totalmente versionado e publicado. Próxima etapa
+  combinada: arquitetura e engenharia de requisitos.
