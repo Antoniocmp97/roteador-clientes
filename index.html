@@ -97,6 +97,94 @@
     main{flex-direction:column;}
     .console{width:auto;max-height:56%;border-left:none;border-top:1px solid var(--line);}
   }
+
+  /* Campo "5 · Enviar para o campo": o input do link e a dica de uso */
+  #linkCampo{width:100%;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);}
+  .envio-dica{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:8px;}
+
+  /* ==========================================================
+     MODO CAMPO — tela cheia, separada do modo escritório.
+     Feita para uso com uma mão, em movimento, sob luz de sol:
+     alvos de toque grandes, alto contraste, sem mapa nem upload.
+     ========================================================== */
+  .campo{
+    display:flex; flex-direction:column; height:100%; min-height:100vh;
+    background:var(--ink); color:var(--text); font-family:'Inter',system-ui,sans-serif;
+  }
+
+  /* Cabeçalho fixo com o nome do app e a barra de progresso do dia */
+  .campo-head{
+    position:sticky; top:0; z-index:5;
+    background:var(--ink); border-bottom:1px solid var(--line);
+    padding:16px 18px 14px; display:flex; flex-direction:column; gap:10px;
+  }
+  .campo-marca{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;}
+  .campo-marca span{color:var(--amber);}
+  .campo-saindo{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  .campo-progresso{display:flex;align-items:center;gap:10px;}
+  .campo-barra{flex:1;height:8px;border-radius:5px;background:var(--panel-2);overflow:hidden;}
+  .campo-preenche{height:100%;background:var(--teal);border-radius:5px;transition:width .25s;width:0%;}
+  .campo-contagem{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);white-space:nowrap;}
+
+  /* Lista de paradas: cada card é um alvo de toque grande, com o essencial visível de cara */
+  .campo-lista{flex:1;padding:14px 14px 40px;display:flex;flex-direction:column;gap:12px;}
+
+  .parada{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:16px; display:flex; flex-direction:column; gap:12px;
+  }
+  .parada.feita{opacity:.55;}
+  .parada.proxima{border-color:var(--amber); border-width:2px; padding:15px;}
+
+  .parada-topo{display:flex; align-items:flex-start; gap:12px;}
+  .parada-n{
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px;
+    color:#1a0f00; background:var(--amber); border-radius:50%;
+    width:30px; height:30px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  }
+  .parada.feita .parada-n{background:var(--teal);}
+  .parada-info{flex:1; min-width:0;}
+  .parada-nome{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:17px; line-height:1.3;}
+  .parada.feita .parada-nome{text-decoration:line-through;}
+  .parada-tag{
+    display:inline-block; margin-top:5px; font-family:'JetBrains Mono',monospace;
+    font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--teal); background:#0e2422; border:1px solid var(--teal);
+    border-radius:4px; padding:2px 7px;
+  }
+  .parada-obs{font-size:13px; color:var(--muted); margin-top:7px; line-height:1.5;}
+
+  .parada-acoes{display:flex; gap:8px;}
+  .parada-acoes button{
+    flex:1; border-radius:9px; padding:13px 10px; font-weight:600; font-size:14.5px;
+    font-family:'Inter',sans-serif; cursor:pointer; border:none;
+  }
+  .btn-navegar{background:var(--amber); color:#241705;}
+  .btn-navegar:active{background:#FFC163;}
+  .btn-feito{background:var(--panel-2); color:var(--teal); border:1px solid var(--teal) !important;}
+  .btn-feito:active{background:#132229;}
+  .parada.feita .btn-feito{background:var(--teal); color:#062420;}
+
+  .campo-vazio{
+    text-align:center; color:var(--muted); font-size:14px; padding:60px 20px; line-height:1.6;
+  }
+  .campo-vazio b{display:block; color:var(--text); font-size:16px; margin-bottom:6px;}
+
+  /* Faixa de comemoração quando todas as paradas já foram marcadas */
+  .campo-banner{
+    background:#0e2422; border:1px solid var(--teal); color:var(--teal);
+    border-radius:10px; padding:14px 16px; font-size:14px; font-weight:600; text-align:center;
+  }
+
+  .campo-pe{
+    padding:12px 18px; text-align:center; font-size:10.5px; color:var(--muted);
+    font-family:'JetBrains Mono',monospace; border-top:1px solid var(--line);
+  }
+
+  /* Alvos de toque generosos em qualquer largura de tela no modo campo */
+  @media (max-width:480px){
+    .parada-acoes button{padding:15px 10px;font-size:15px;}
+  }
 </style>
 </head>
 <body>
@@ -150,6 +238,24 @@
       </div>
       <div class="status" id="status"></div>
 
+      <!-- Passo 5: gerar o link do roteiro para mandar a quem vai a campo.
+           Só aparece depois que uma rota foi traçada com sucesso. -->
+      <div id="envioSection" style="display:none;">
+        <div class="field-label">5 · Enviar para o campo</div>
+        <button class="go-btn" id="gerarLinkBtn">Gerar link do roteiro</button>
+        <div id="linkPronto" style="display:none;margin-top:10px;">
+          <input type="text" id="linkCampo" readonly>
+          <div class="btn-row" style="margin-top:8px;">
+            <button class="go-btn" id="compartilharBtn">Compartilhar</button>
+            <button class="go-btn secondary" id="copiarBtn">Copiar</button>
+          </div>
+          <div class="envio-dica" id="envioDica">
+            Mande este link para quem vai fazer as visitas. Ao abrir, a pessoa
+            vê o roteiro na ordem certa, com botão de navegação em cada parada.
+          </div>
+        </div>
+      </div>
+
       <!-- Resultado: distância/tempo totais + instruções passo a passo por parada -->
       <div class="readout" id="readout">
         <div class="row"><span id="distVal">--</span><span id="timeVal">--</span></div>
@@ -166,13 +272,46 @@
   </footer>
 </div>
 
+<!-- ==========================================================
+     MODO CAMPO
+     Tela alternativa, mostrada quando o app é aberto por um link
+     de roteiro (endereço contém "#r="). É a tela de quem está na
+     rua: sem mapa, sem upload, sem configuração — só a ordem das
+     paradas, navegação e marcação do que já foi feito.
+     ========================================================== -->
+<div class="campo" id="modoCampo" hidden>
+  <header class="campo-head">
+    <div class="campo-marca">hagamorfis<span>/</span>rotas</div>
+    <div class="campo-saindo" id="campoSaindo"></div>
+    <div class="campo-progresso">
+      <div class="campo-barra"><div class="campo-preenche" id="campoPreenche"></div></div>
+      <div class="campo-contagem" id="campoContagem"></div>
+    </div>
+  </header>
+
+  <div class="campo-lista" id="campoLista" role="main"></div>
+
+  <footer class="campo-pe">
+    Roteiro recebido por link · nada é enviado para servidor
+  </footer>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
+// Detecta se o app foi aberto por um link de roteiro (ex.: .../index.html#r=eyJ...).
+// Nesse caso entramos no MODO CAMPO (ver seção no fim do script) e nem inicializamos
+// o mapa do modo escritório — ele fica escondido e não é usado.
+const modoCampoAtivo = location.hash.startsWith('#r=');
+
 // Inicializa o mapa Leaflet centrado em Criciúma/SC e aplica o tile escuro (CARTO dark_all)
-const map = L.map('map', { zoomControl: true }).setView([-28.6775, -49.3697], 13);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap contributors &copy; CARTO', subdomains: 'abcd', maxZoom: 19
-}).addTo(map);
+// (só no modo escritório; no modo campo `map` fica null e nunca é usado)
+let map = null;
+if (!modoCampoAtivo) {
+  map = L.map('map', { zoomControl: true }).setView([-28.6775, -49.3697], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO', subdomains: 'abcd', maxZoom: 19
+  }).addTo(map);
+}
 
 // Ícone de bolinha simples (usado para clientes e para o marcador de origem, cor varia por chamada)
 function dot(color){
@@ -463,6 +602,7 @@ document.getElementById('routeBtn').onclick = async () => {
     const r = data.routes[0];
     drawResult(r.distance, r.duration, r.geometry, r.legs);
     setStatus('Rota traçada na ordem selecionada.', true);
+    prepararEnvio(r.distance, r.duration);
   }catch(e){ setStatus(e.message || 'Erro ao calcular rota.'); }
 };
 
@@ -491,6 +631,7 @@ document.getElementById('optimizeBtn').onclick = async () => {
     renderChecklist();
     drawResult(trip.distance, trip.duration, trip.geometry, trip.legs);
     setStatus('Ordem otimizada e rota traçada.', true);
+    prepararEnvio(trip.distance, trip.duration);
   }catch(e){ setStatus(e.message || 'Erro ao otimizar rota.'); }
 };
 
@@ -499,6 +640,232 @@ document.getElementById('optimizeBtn').onclick = async () => {
 document.getElementById('originInput').addEventListener('keydown', e => {
   if (e.key === 'Enter'){ originLatLng = null; document.getElementById('routeBtn').click(); }
 });
+
+/* ==========================================================
+   Envio para o campo (Fase 1)
+   Gera um link com o roteiro inteiro codificado no FRAGMENTO da
+   URL (a parte depois do #). O navegador nunca envia o fragmento
+   ao servidor, então nome/endereço/coordenada de cliente não
+   passam pelo GitHub Pages nem ficam em log nenhum — só trafegam
+   entre quem gera o link e quem abre (ex.: pelo WhatsApp).
+   ========================================================== */
+
+// Guarda o resumo (distância/tempo) da última rota traçada, para ir junto no link
+let ultimoResumo = null;
+
+// Chamada depois de uma rota traçada com sucesso (routeBtn ou optimizeBtn):
+// guarda o resumo e revela a seção "5 · Enviar para o campo"
+function prepararEnvio(distance, duration){
+  ultimoResumo = { d: Math.round(distance), t: Math.round(duration) };
+  document.getElementById('envioSection').style.display = 'block';
+  document.getElementById('linkPronto').style.display = 'none';
+  document.getElementById('linkCampo').value = '';
+}
+
+// Empacota a rota atual (paradas na ordem da tela + resumo) num objeto compacto.
+// Chaves curtas e coordenadas com 5 casas decimais (~1,1m de precisão) para manter
+// o link pequeno — cabem confortavelmente 15-20 paradas dentro do limite prático
+// de tamanho de uma URL.
+function montarRoteiro(){
+  return {
+    v: 1, // versão do formato, para o modo campo saber ler links antigos no futuro
+    s: stops.map(s => [s.name, Math.round(s.lat * 1e5) / 1e5, Math.round(s.lng * 1e5) / 1e5]),
+    d: ultimoResumo ? ultimoResumo.d : null,
+    t: ultimoResumo ? ultimoResumo.t : null,
+  };
+}
+
+// Codifica o objeto do roteiro em texto seguro para URL (base64 "url-safe",
+// sem os caracteres +, / e = que precisariam de escape numa URL)
+function codificarRoteiro(obj){
+  const json = JSON.stringify(obj);
+  const b64 = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, h) => String.fromCharCode('0x' + h)));
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Caminho inverso: recebe o texto do link e devolve o objeto do roteiro, ou null
+// se o link estiver corrompido/incompleto (ex.: copiado pela metade)
+function decodificarRoteiro(txt){
+  try{
+    const b64 = txt.replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(atob(b64).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join(''));
+    const obj = JSON.parse(json);
+    if (!obj || !Array.isArray(obj.s)) return null;
+    return obj;
+  }catch(e){ return null; }
+}
+
+// Botão "Gerar link do roteiro": monta o link completo (URL atual + #r=...) e mostra
+// no campo de texto, pronto para compartilhar ou copiar
+document.getElementById('gerarLinkBtn').onclick = () => {
+  if (!stops.length){ setStatus('Trace uma rota antes de gerar o link.'); return; }
+  const codigo = codificarRoteiro(montarRoteiro());
+  const url = location.origin + location.pathname + '#r=' + codigo;
+  document.getElementById('linkCampo').value = url;
+  document.getElementById('linkPronto').style.display = 'block';
+};
+
+// Botão "Compartilhar": usa o menu nativo de compartilhamento do celular (WhatsApp,
+// e-mail, etc.) quando disponível; em desktop, onde não existe, cai para copiar
+document.getElementById('compartilharBtn').onclick = async () => {
+  const url = document.getElementById('linkCampo').value;
+  if (!url) return;
+  if (navigator.share){
+    try{ await navigator.share({ title: 'Roteiro de visitas', url }); }
+    catch(e){ /* usuário cancelou o compartilhamento — não é erro */ }
+  }else{
+    await copiarLink(url);
+    setStatus('Este navegador não tem compartilhamento nativo — link copiado.', true);
+  }
+};
+
+// Botão "Copiar": copia o link para a área de transferência
+document.getElementById('copiarBtn').onclick = () => copiarLink(document.getElementById('linkCampo').value);
+
+async function copiarLink(url){
+  if (!url) return;
+  try{
+    await navigator.clipboard.writeText(url);
+    setStatus('Link copiado.', true);
+  }catch(e){
+    // Alguns navegadores bloqueiam a área de transferência fora de HTTPS —
+    // seleciona o texto do campo para o usuário copiar manualmente (Ctrl+C)
+    const el = document.getElementById('linkCampo');
+    el.select();
+    setStatus('Não deu para copiar automaticamente — texto selecionado, use Ctrl+C.');
+  }
+}
+
+/* ==========================================================
+   MODO CAMPO
+   Tela para quem está na rua. Ativada quando a página é aberta
+   com "#r=..." no final do endereço. Não usa mapa nem rede (além
+   do clique em "Navegar", que abre outro app) — só lê o roteiro
+   do próprio link e o progresso do armazenamento local do
+   navegador (localStorage), que é o que sobrevive a fechar a aba
+   ou o navegador (requisito C-04).
+   ========================================================== */
+
+// Devolve o conjunto de índices já marcados como concluídos para este roteiro
+// específico. A chave do localStorage inclui o próprio código do link, então
+// roteiros diferentes nunca se misturam.
+function progressoChave(codigo){ return 'hg_progresso_' + codigo; }
+
+function lerProgresso(codigo){
+  try{
+    const bruto = localStorage.getItem(progressoChave(codigo));
+    return bruto ? new Set(JSON.parse(bruto)) : new Set();
+  }catch(e){ return new Set(); }
+}
+
+function salvarProgresso(codigo, feitos){
+  try{ localStorage.setItem(progressoChave(codigo), JSON.stringify([...feitos])); }
+  catch(e){ /* armazenamento indisponível (ex.: modo privado) — segue sem persistir */ }
+}
+
+// Evita que nome de cliente com <, > ou & quebre o HTML da lista
+function escaparHtml(txt){
+  return String(txt).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function formatarDistancia(m){ return m == null ? null : (m/1000).toFixed(1) + ' km'; }
+function formatarTempo(s){ return s == null ? null : Math.round(s/60) + ' min'; }
+
+// Monta os links de navegação para os dois apps mais usados no Brasil.
+// Ambos são links universais: abrem o app se estiver instalado, ou a versão
+// web se não estiver — não é preciso detectar o que o usuário tem no celular.
+function linkWaze(lat, lng){ return `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`; }
+function linkMaps(lat, lng){ return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`; }
+
+// Ativa o modo campo: esconde a interface do escritório, decodifica o roteiro
+// do link e desenha a lista de paradas
+function ativarModoCampo(){
+  document.querySelector('.app').style.display = 'none';
+  document.getElementById('modoCampo').hidden = false;
+
+  const codigo = location.hash.slice(3); // remove o prefixo "#r="
+  const roteiro = decodificarRoteiro(codigo);
+  const lista = document.getElementById('campoLista');
+
+  if (!roteiro || !roteiro.s.length){
+    lista.innerHTML = `<div class="campo-vazio"><b>Link de roteiro inválido</b>Peça para gerarem o link de novo — este parece incompleto ou corrompido.</div>`;
+    document.getElementById('campoSaindo').textContent = '';
+    return;
+  }
+
+  const feitos = lerProgresso(codigo);
+  desenharCampo(roteiro, codigo, feitos);
+}
+
+// Redesenha a lista de paradas e a barra de progresso a partir do estado atual
+// (roteiro fixo, vindo do link; feitos muda conforme o usuário marca as paradas)
+function desenharCampo(roteiro, codigo, feitos){
+  const total = roteiro.s.length;
+  const feitas = feitos.size;
+
+  // Resumo no cabeçalho: nº de paradas + distância/tempo previstos, se vieram no link
+  const partes = [`${total} parada${total === 1 ? '' : 's'}`];
+  const dist = formatarDistancia(roteiro.d);
+  const tempo = formatarTempo(roteiro.t);
+  if (dist) partes.push(dist);
+  if (tempo) partes.push(tempo);
+  document.getElementById('campoSaindo').textContent = partes.join(' · ');
+
+  document.getElementById('campoPreenche').style.width = total ? `${(feitas/total)*100}%` : '0%';
+  document.getElementById('campoContagem').textContent = `${feitas}/${total}`;
+
+  // O "próximo" é a primeira parada ainda não concluída, na ordem do roteiro —
+  // é ela que ganha o destaque visual (borda âmbar)
+  const indiceProximo = roteiro.s.findIndex((_, i) => !feitos.has(i));
+
+  const lista = document.getElementById('campoLista');
+  const banner = feitas === total
+    ? `<div class="campo-banner">🎉 Roteiro concluído — todas as ${total} paradas foram marcadas.</div>`
+    : '';
+  lista.innerHTML = banner + listaHtmlParadas();
+
+  function listaHtmlParadas(){
+    return roteiro.s.map(([nome, lat, lng], i) => {
+      const done = feitos.has(i);
+      const proxima = i === indiceProximo;
+      return `
+        <div class="parada ${done ? 'feita' : ''} ${proxima ? 'proxima' : ''}">
+          <div class="parada-topo">
+            <div class="parada-n">${i+1}</div>
+            <div class="parada-info">
+              <div class="parada-nome">${escaparHtml(nome)}</div>
+            </div>
+          </div>
+          <div class="parada-acoes">
+            <button class="btn-navegar" data-lat="${lat}" data-lng="${lng}" data-app="waze">🧭 Waze</button>
+            <button class="btn-navegar" data-lat="${lat}" data-lng="${lng}" data-app="maps">📍 Maps</button>
+          </div>
+          <button class="btn-feito" data-i="${i}">${done ? '✓ Parada concluída' : 'Marcar como concluída'}</button>
+        </div>`;
+    }).join('');
+  }
+
+  // Delegação de eventos: um único listener no container cobre todos os botões,
+  // inclusive os recriados a cada redesenho (mais simples que religar um por um)
+  lista.onclick = (e) => {
+    const navBtn = e.target.closest('.btn-navegar');
+    if (navBtn){
+      const { lat, lng, app } = navBtn.dataset;
+      window.open(app === 'waze' ? linkWaze(lat, lng) : linkMaps(lat, lng), '_blank');
+      return;
+    }
+    const feitoBtn = e.target.closest('.btn-feito');
+    if (feitoBtn){
+      const i = Number(feitoBtn.dataset.i);
+      if (feitos.has(i)) feitos.delete(i); else feitos.add(i);
+      salvarProgresso(codigo, feitos);
+      desenharCampo(roteiro, codigo, feitos); // redesenha para atualizar progresso e destaque
+    }
+  };
+}
+
+// Só entra no modo campo se o link realmente trouxer um roteiro
+if (modoCampoAtivo) ativarModoCampo();
 </script>
 </body>
 </html>

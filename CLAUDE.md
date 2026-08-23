@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 22/08/2026 — Passo 3
+> **Última atualização:** 22/08/2026 — Passo 4 (Fase 1: modo campo)
 
 ---
 
@@ -39,6 +39,14 @@ sem dependências instaladas. Abre direto no navegador.
   lista automaticamente (`source=first`, `roundtrip=false`)
 - Marcadores numerados conforme a ordem final de visita
 - Distância total, tempo estimado e instruções passo a passo agrupadas por parada
+- **Modo campo (Fase 1):** depois de traçar a rota, um botão gera um link com o
+  roteiro inteiro. Quem abre esse link (ex.: recebido pelo WhatsApp) cai numa
+  tela separada, feita para celular: lista das paradas na ordem certa, botão
+  de navegação para Waze ou Google Maps em cada uma, e um botão para marcar a
+  parada como concluída. O progresso marcado fica salvo no aparelho de quem
+  abriu (sobrevive a fechar o navegador) e nenhum dado de cliente passa pelo
+  servidor — o roteiro trafega inteiro dentro do link, no trecho depois do
+  `#` (ver ADR-01 no documento de arquitetura).
 
 ---
 
@@ -137,21 +145,32 @@ repositório é público.
   fica impraticável.
 - **Otimização puramente geográfica.** Considera apenas distância/tempo de carro.
   Não trata prioridade de cliente, janelas de horário ou duração da visita.
-- **Sem navegação por voz** ou trânsito em tempo real.
+- **Sem navegação por voz dentro do app** — resolvido de propósito (ADR-02):
+  o app não compete com Waze/Google Maps, só abre um deles por parada.
 
 ---
 
 ## 8. Direções em aberto
 
-Levantadas mas ainda **não decididas** — pendente de alinhamento com o usuário:
+Decididas em 22/08/2026, registradas em detalhe no documento de arquitetura
+(`ARQUITETURA-E-REQUISITOS.html`, fora do repositório público por descrever a
+operação — ver `.gitignore`):
 
-- Quem usa o app (o próprio usuário, vendedores em campo, entregadores?) e em
-  qual dispositivo
-- Origem real da base de clientes (uMap, planilha, sistema interno?) e volume
-- Distribuição de visitas entre múltiplos vendedores
-- Botão "abrir no Google Maps / Waze" para navegação por voz
-- Hospedagem (GitHub Pages, Netlify) para acesso pela equipe sem passar arquivo
-- Busca/filtro no checklist quando a lista crescer
+- **Quem usa:** dois papéis — escritório planeja, campo (2-3 pessoas) executa
+  e marca progresso. Operação: entrega de toner + manutenção.
+- **Origem da base de clientes:** uMap exportado como `.geojson`, volume
+  pequeno (dezenas de pontos). Sem integração com ERP/planilha por ora.
+- **Navegação:** app + botão para Waze/Google Maps por parada (ADR-02) —
+  ✅ implementado na Fase 1.
+- **Hospedagem:** GitHub Pages — ✅ feito, ver seção 10.
+- **Como o roteiro chega ao campo:** link com o roteiro codificado no
+  fragmento da URL (ADR-01) — ✅ implementado na Fase 1.
+
+Ainda em aberto:
+- Busca/filtro no checklist quando a lista crescer (Fase 3)
+- Dividir clientes entre as 2-3 pessoas da equipe, um link por pessoa (Fase 2)
+- Tipo de serviço e observação por parada (Fase 2)
+- Troca do OSRM público antes do uso diário sério (Fase 4)
 
 ---
 
@@ -162,6 +181,7 @@ Levantadas mas ainda **não decididas** — pendente de alinhamento com o usuár
 | 1 | Protótipo inicial: destino único, filiais fixas no código (Rio Maina / Próspera) |
 | 2 | Reconstrução: upload de GeoJSON, múltiplas paradas, otimização de ordem, filiais de exemplo removidas |
 | 3 | Correção do "Failed to fetch" — `safeFetchJSON()` com mensagem explicativa |
+| 4 | **Fase 1 do roadmap:** modo campo — gerar link do roteiro, tela separada para celular, navegação via Waze/Maps, marcar parada concluída com progresso salvo no aparelho |
 
 ---
 

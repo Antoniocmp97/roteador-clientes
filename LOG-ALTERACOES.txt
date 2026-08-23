@@ -324,5 +324,88 @@ ENTREGÁVEL
     Fica apenas na máquina, seguindo a mesma regra de privacidade já
     adotada para os dados de clientes.
 
-- STATUS: requisitos e arquitetura definidos. Próxima etapa: construir
-  a Fase 1.
+- STATUS: requisitos e arquitetura definidos.
+
+--------------------------------------------------------
+[22/08/2026] FASE 1 IMPLEMENTADA — modo campo
+--------------------------------------------------------
+Construído o que o documento de arquitetura definiu como Fase 1: o roteiro
+passa a atravessar do modo escritório para um modo campo, feito para celular.
+Tudo dentro do mesmo index.html (sem novo arquivo), seguindo a ADR-05.
+
+1. GERAÇÃO DO LINK (modo escritório)
+   - Nova seção "5 · Enviar para o campo" na tela do escritório, que só
+     aparece depois de uma rota traçada com sucesso (routeBtn ou
+     optimizeBtn chamam prepararEnvio() no final).
+   - Botão "Gerar link do roteiro": monta um objeto compacto com as
+     paradas na ordem atual (nome, lat, lng arredondados a 5 casas
+     decimais) + distância/tempo totais, codifica em base64 "url-safe"
+     e cria o link como URL atual + "#r=<codigo>".
+   - Botão "Compartilhar": usa a API nativa de compartilhamento do
+     celular (navigator.share) quando disponível; sem isso, cai para
+     copiar o link.
+   - Botão "Copiar": copia para a área de transferência, com fallback
+     de selecionar o texto se a API de clipboard for bloqueada.
+
+2. MODO CAMPO (nova tela)
+   - Ativado automaticamente quando a página abre com "#r=" no final do
+     endereço — detectado logo no início do script, ANTES do mapa
+     Leaflet ser inicializado (o mapa nem é criado nesse modo, para não
+     gastar rede/memória à toa no celular).
+   - Tela própria (`#modoCampo`), separada da tela do escritório: sem
+     mapa, sem upload, sem formulário de origem. Só a lista de paradas
+     na ordem definida, um cabeçalho com resumo (nº de paradas,
+     distância, tempo) e uma barra de progresso.
+   - Cada parada mostra: número, nome, botão "🧭 Waze", botão "📍 Maps"
+     e botão "Marcar como concluída".
+   - Botões de navegação abrem links universais (funcionam com ou sem
+     o app instalado, sem precisar detectar o celular do usuário):
+       Waze:  https://waze.com/ul?ll=LAT,LNG&navigate=yes
+       Maps:  https://www.google.com/maps/dir/?api=1&destination=LAT,LNG
+   - A parada seguinte ainda não concluída ganha destaque visual (borda
+     âmbar) — é a resposta visual para "para onde agora" (requisito C-06,
+     adiantado da Fase 2 por ser barato de fazer junto).
+   - Link com dados corrompidos ou incompletos mostra mensagem de erro
+     clara em vez de tela em branco ou travamento.
+
+3. PROGRESSO PERSISTENTE (requisito C-04)
+   - Paradas marcadas como concluídas são salvas no localStorage do
+     navegador, numa chave que inclui o próprio código do link — assim
+     roteiros diferentes nunca se misturam.
+   - Testado: fechar e recarregar a página mantém o progresso marcado.
+   - Falha ao gravar (ex.: modo privado do navegador) não quebra o app,
+     só não persiste entre sessões.
+
+4. LAYOUT MOBILE
+   - CSS novo dedicado ao modo campo: alvos de toque grandes (botões
+     com padding generoso, maiores ainda em telas até 480px), alto
+     contraste sobre o tema escuro já usado no app, barra de progresso
+     visível no topo fixo da tela.
+
+5. CORREÇÃO DURANTE OS TESTES
+   - A lista de paradas do modo campo tinha sido marcada com a tag
+     <main>, mas a tela do escritório já usa <main> — duas tags <main>
+     na mesma página são HTML inválido e confundiram ferramentas de
+     leitura de conteúdo da página. Trocado para <div role="main">.
+
+TESTES REALIZADOS (servidor local, sem alterar arquivos de dados reais)
+   - Carregado Exemplos/exemplo.geojson, 5 clientes, rota traçada com
+     sucesso → seção "Enviar para o campo" apareceu corretamente.
+   - Link gerado: 274 caracteres para 5 paradas — folga grande até o
+     limite prático de URL (dá margem para 15-20 paradas, como previsto
+     na ADR-01).
+   - Link aberto em aba separada, em viewport de celular (375x812):
+     modo campo ativou, mapa do escritório NÃO foi inicializado, as 5
+     paradas apareceram na ordem certa com resumo "5 paradas · 19.7 km
+     · 28 min".
+   - Marcar parada como concluída: contagem foi para 1/5, barra de
+     progresso para 20%, parada seguinte ganhou o destaque de "próxima".
+   - Recarregada a página do zero: progresso 1/5 continuou marcado.
+   - Link corrompido de propósito ("#r=lixo123"): mostrou mensagem de
+     erro clara, sem travar a página.
+   - Console do navegador sem nenhum erro em nenhum dos testes.
+
+- STATUS: Fase 1 concluída e testada. Falta o usuário testar no celular
+  de verdade (a validação real de "uma mão só, sol, pressa") e enviar
+  (git push) quando decidir publicar. Próxima etapa combinada: Fase 2
+  (tipo de serviço, observação por parada, dividir a equipe).
