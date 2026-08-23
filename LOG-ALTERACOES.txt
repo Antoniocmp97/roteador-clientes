@@ -1,0 +1,206 @@
+LOG DE ALTERAÇÕES — Roteador de Clientes (Hagamorfis)
+========================================================
+Registro cronológico do que foi feito na pasta do projeto.
+Formato: [DATA] Ação — Detalhes / Motivo
+
+--------------------------------------------------------
+[22/08/2026] Análise inicial do projeto
+--------------------------------------------------------
+- Abertura e leitura do CLAUDE.md para entender o estado do projeto
+  (objetivo, stack técnica, decisões tomadas, limitações e pontos em aberto).
+- Conferidos também os arquivos hagamorfis-rotas-clientes.html (app) e
+  o arquivo de teste com 5 pontos em Criciúma.
+- Nenhuma alteração de conteúdo nesta etapa — apenas leitura/diagnóstico.
+
+--------------------------------------------------------
+[22/08/2026] Criado: .claude/launch.json
+--------------------------------------------------------
+- Arquivo novo, usado para abrir o app num servidor HTTP local
+  (python -m http.server, porta 8123) dentro do painel de preview do
+  Claude Code.
+- Motivo: a pré-visualização de arquivo local (file://) roda como
+  "snapshot estático" (sem executar JavaScript de verdade — sem console,
+  sem chamadas de rede). Servir por http://localhost permite testar o
+  app com o JavaScript rodando de verdade (upload, geocodificação,
+  roteamento via OSRM).
+
+--------------------------------------------------------
+[22/08/2026] Teste funcional do app (sem alteração de código)
+--------------------------------------------------------
+- Carregado teste.geojson → 5 clientes plotados corretamente no mapa.
+- Testado "marcar todos" no checklist.
+- Testada geocodificação de endereço ("Praça Nereu Ramos, Criciúma") via
+  Nominatim → resolveu corretamente.
+- Testado "Traçar nesta ordem" (OSRM Route API) → rota calculada e
+  desenhada no mapa com sucesso.
+- Resultado: app funcional, sem erros de console.
+
+--------------------------------------------------------
+[22/08/2026] Alterado: hagamorfis-rotas-clientes.html
+--------------------------------------------------------
+- Adicionados comentários explicativos ao longo de todo o arquivo
+  (CSS, HTML e JavaScript), descrevendo o que cada bloco/seção/função
+  faz. Nenhuma lógica, estilo ou comportamento foi modificado — só
+  documentação inserida no código.
+- Reconferido depois da alteração: app carrega sem erros de console e
+  continua funcionando normalmente (testado via servidor local).
+
+--------------------------------------------------------
+[22/08/2026] Diagnóstico: "não está abrindo no navegador"
+--------------------------------------------------------
+- Verificado o file da associação de arquivos .html no Windows do
+  usuário: está definido como MSEdgeHTM (Microsoft Edge é o app padrão).
+- Executado Start-Process apontando para o hagamorfis-rotas-clientes.html
+  diretamente, para abrir no Edge.
+- Nenhuma alteração de arquivo nesta etapa.
+
+--------------------------------------------------------
+[22/08/2026] Criado: LOG-ALTERACOES.txt (este arquivo)
+--------------------------------------------------------
+- Log de alterações do projeto, a ser atualizado a cada mudança
+  relevante feita nos arquivos.
+
+--------------------------------------------------------
+[22/08/2026] Teste de acesso pelo celular (sem alteração de código)
+--------------------------------------------------------
+- Verificado o IP do PC na rede local (endereço interno, não registrado
+  aqui por segurança).
+- Servidor local subido na porta 8123, respondendo OK pelo IP da rede.
+- Identificado que a rede em uso estava classificada como PÚBLICA no
+  Windows, perfil em que o Firewall bloqueia conexões de entrada — então
+  o celular provavelmente não conseguiria acessar sem liberar o python.exe
+  no Firewall ou trocar a classificação da rede para "Privada".
+- Alternativa mais simples registrada: enviar o próprio arquivo .html
+  (junto do .geojson) para o celular e abrir pelo navegador.
+- Ressalva: o botão "Usar minha localização" (geolocalização) normalmente
+  só funciona em HTTPS ou localhost — em http:// puro o celular tende a
+  recusar.
+- Decisão do usuário: deixar como está por enquanto (era curiosidade).
+
+--------------------------------------------------------
+[22/08/2026] PONTO DE RESTAURAÇÃO — backup v1-baseline
+--------------------------------------------------------
+- Criada a pasta backups/ com uma cópia completa do projeto no estado
+  funcional atual, antes de iniciar a fase de arquitetura e engenharia
+  de requisitos.
+- Local do backup:
+    backups/2026-08-22_2101_v1-baseline/          (pasta)
+    backups/2026-08-22_2101_v1-baseline.zip       (arquivo único)
+- Conteúdo salvo: CLAUDE.md, hagamorfis-rotas-clientes.html (já com os
+  comentários), teste.geojson, LOG-ALTERACOES.txt e .claude/launch.json.
+- Para restaurar: basta copiar o conteúdo do backup de volta para a pasta
+  files/ (e .claude/, no caso do launch.json), sobrescrevendo os atuais.
+
+--------------------------------------------------------
+[22/08/2026] Regra permanente definida pelo usuário
+--------------------------------------------------------
+- A partir de agora, toda alteração no projeto deve ser registrada
+  automaticamente neste log, e todo código escrito/alterado deve vir
+  comentado em português — sem precisar pedir a cada vez.
+- Regra salva também na memória do projeto, para valer em conversas
+  futuras.
+
+--------------------------------------------------------
+[22/08/2026] Visão de produto registrada na memória
+--------------------------------------------------------
+- O usuário ressaltou que o projeto hoje atende a "bolha" dele (rotas de
+  atendimento e entrega de uma empresa específica), mas tem potencial
+  para outros módulos/setores no futuro.
+- Diretriz adotada: não amarrar o vocabulário do negócio (ex.: "toner",
+  "manutenção") de forma rígida no código — devem ser tipos de parada
+  configuráveis. Ao mesmo tempo, não criar abstração especulativa agora:
+  resolver o caso concreto primeiro, deixando as costuras em lugares
+  óbvios para extrair módulos depois.
+- Registrado na memória do projeto junto da informação do ponto de
+  restauração.
+
+--------------------------------------------------------
+[22/08/2026] Hospedagem no GitHub Pages
+--------------------------------------------------------
+- Verificado o ambiente da máquina: git 2.55.0 instalado, GitHub CLI (gh)
+  NÃO instalado, git sem user.name/user.email configurados.
+- Definida a estratégia de publicação: repositório PÚBLICO contendo apenas
+  o código do app, mantendo os dados reais de clientes fora do Git (o app
+  carrega o .geojson por upload, então os dados não precisam ir para o
+  repositório). GitHub Pages só é gratuito em repositório público.
+- Repositório criado pelo usuário: github.com/antoniocmp97/roteador-clientes
+  (público, contendo index.html na raiz).
+- GitHub Pages configurado: Source = "Deploy from a branch", branch main,
+  pasta / (root). Enforce HTTPS ativo.
+- Dúvida do usuário: o botão "Save" da tela do Pages aparecia desativado.
+  Diagnóstico: a configuração JÁ estava salva (faixa "GitHub Pages source
+  saved." no topo da tela) — o botão só fica ativo quando há alteração
+  pendente. Não era um erro.
+- PROBLEMA IDENTIFICADO: o site retornava "Site not found" e a aba Actions
+  do repositório estava vazia (nenhuma execução do workflow
+  pages-build-deployment), ou seja, o build do Pages nunca foi acionado.
+  Causa provável: ativar o Pages num repositório que já tinha commits não
+  dispara o build sozinho — ele só entra na fila no commit seguinte.
+- SOLUÇÃO ORIENTADA: criar um commit novo (ex.: adicionar um README.md
+  pela interface web) para acionar o build. Alternativa: trocar o Source
+  para None, salvar, e voltar para main / (root).
+- Ganho esperado com a hospedagem: link fixo para a equipe (sem passar
+  arquivo) e HTTPS, que destrava o botão "Usar minha localização" no
+  celular.
+- RESOLVIDO: o usuário criou o README.md pela interface web, o commit
+  acionou o build e o site entrou no ar com sucesso.
+- SITE PUBLICADO: https://antoniocmp97.github.io/roteador-clientes/
+  (com HTTPS ativo, o que destrava a geolocalização no celular).
+
+--------------------------------------------------------
+[22/08/2026] Repositório Git local configurado por completo
+--------------------------------------------------------
+Objetivo: sair do estado em que só o index.html estava no GitHub (enviado
+por upload manual) e passar a versionar o projeto inteiro de verdade,
+com histórico e possibilidade de reverter.
+
+1. ESTRUTURA ACHATADA
+   - Arquivos movidos da subpasta files/ para a raiz do projeto:
+     index.html, CLAUDE.md, LOG-ALTERACOES.txt e a pasta Exemplos/.
+   - A pasta files/ ficou vazia e foi removida.
+   - Motivo: o GitHub Pages serve o index.html a partir da raiz do
+     repositório; manter tudo dentro de files/ deixaria a URL errada.
+
+2. REFERÊNCIAS CORRIGIDAS
+   - .claude/launch.json: removido o argumento "--directory files", que
+     apontava para a pasta que deixou de existir.
+   - CLAUDE.md: nome do arquivo principal atualizado de
+     "hagamorfis-rotas-clientes.html" para "index.html", e a seção 10 foi
+     reescrita para documentar a nova estrutura e a hospedagem.
+
+3. CRIADO .gitignore
+   - Bloqueia dados reais de clientes (clientes*.geojson, dados-reais/,
+     *.real.geojson), a pasta backups/, arquivos .zip e arquivos de
+     sistema (Thumbs.db, desktop.ini, .DS_Store).
+   - Motivo crítico: o repositório é PÚBLICO. Dados reais de clientes não
+     podem ser versionados. O app carrega o .geojson por upload, então os
+     dados ficam apenas na máquina de quem usa.
+
+4. CRIADO README.md completo
+   - Substitui o README de uma linha que estava no GitHub. Traz o link do
+     app, o que ele faz, como usar, o formato do .geojson, a nota sobre
+     privacidade dos dados e a ressalva do OSRM público.
+
+5. REPOSITÓRIO INICIADO
+   - git init na raiz do projeto, branch principal "main".
+   - Identidade configurada apenas neste repositório (git config local,
+     não global), usando o endereço "noreply" do GitHub para não expor
+     e-mail pessoal no histórico público de commits.
+   - Conferido antes de commitar: 7 arquivos entrando, backups/ e
+     files.zip corretamente ignorados.
+   - Commit criado: "Estrutura completa do projeto versionada" (245b20c).
+
+6. CONECTADO AO GITHUB
+   - Remote "origin" apontando para
+     github.com/antoniocmp97/roteador-clientes.git
+   - O repositório remoto já tinha 2 commits (61cd4db "Add files via
+     upload" e f8e3541 "Add initial README with project title").
+   - Verificado que o index.html local e o do GitHub eram IDÊNTICOS.
+   - Históricos unidos com merge --allow-unrelated-histories usando a
+     estratégia "-X ours", que mantém a versão local em caso de conflito
+     (o README local, completo, prevaleceu sobre o de uma linha).
+   - Commit de merge: 5852c62.
+
+- STATUS: falta apenas o "git push" para enviar tudo ao GitHub. O push
+  depende da autenticação do usuário (abre janela do navegador na
+  primeira vez), por isso é executado por ele.

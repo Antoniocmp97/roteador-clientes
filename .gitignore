@@ -1,0 +1,25 @@
+# ==========================================================
+# .gitignore — Roteador de Clientes (Hagamorfis)
+# Define o que NÃO deve ser enviado para o GitHub.
+# ATENÇÃO: o repositório é PÚBLICO. Tudo que não estiver
+# bloqueado aqui fica visível para qualquer pessoa.
+# ==========================================================
+
+# --- Dados reais de clientes: NUNCA versionar ---
+# O app carrega o .geojson por upload, então os dados reais
+# não precisam (e não devem) estar no repositório.
+clientes*.geojson
+dados-reais/
+*.real.geojson
+
+# --- Pontos de restauração (backups locais) ---
+# Ficam só na máquina; o Git já é o histórico oficial.
+backups/
+
+# --- Arquivos compactados ---
+*.zip
+
+# --- Arquivos gerados pelo sistema operacional ---
+Thumbs.db
+desktop.ini
+.DS_Store
