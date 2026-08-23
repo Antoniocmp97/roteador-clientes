@@ -405,7 +405,12 @@ TESTES REALIZADOS (servidor local, sem alterar arquivos de dados reais)
      erro clara, sem travar a página.
    - Console do navegador sem nenhum erro em nenhum dos testes.
 
-- STATUS: Fase 1 concluída e testada. Falta o usuário testar no celular
-  de verdade (a validação real de "uma mão só, sol, pressa") e enviar
-  (git push) quando decidir publicar. Próxima etapa combinada: Fase 2
+- Push enviado e confirmado no GitHub (commit 42bed29). Site republicado
+  automaticamente pelo GitHub Pages.
+- TESTADO PELO USUÁRIO NO CELULAR DE VERDADE: confirmou que funcionou.
+  É a validação que faltava (servidor local e viewport simulado não
+  substituem o aparelho real).
+
+- STATUS: Fase 1 concluída, publicada e validada em celular real.
+  Sessão encerrada em 22/08/2026. Próxima etapa combinada: Fase 2
   (tipo de serviço, observação por parada, dividir a equipe).
