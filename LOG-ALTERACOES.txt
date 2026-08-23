@@ -270,5 +270,59 @@ private".
   enquanto o GitHub Pages reconstrói. É comportamento normal.
 - O usuário também ativou a privacidade de e-mail na conta do GitHub.
 
-- STATUS: projeto totalmente versionado e publicado. Próxima etapa
-  combinada: arquitetura e engenharia de requisitos.
+- STATUS: projeto totalmente versionado e publicado.
+
+--------------------------------------------------------
+[22/08/2026] ARQUITETURA E ENGENHARIA DE REQUISITOS
+--------------------------------------------------------
+Levantamento feito com o usuário. Respostas que definiram o desenho:
+  - Conectividade em campo: quase sempre há sinal (não exige arquitetura
+    offline completa).
+  - Navegação: o app guarda o roteiro e delega a condução ao Waze /
+    Google Maps por parada.
+  - Equipe: duas a três pessoas saem em rota ao mesmo tempo.
+  - Em campo, é preciso marcar parada como concluída e ver o que há
+    para fazer em cada uma.
+
+DECISÃO CENTRAL DA ARQUITETURA
+  O roteiro atravessa do escritório para o campo dentro de um LINK, com
+  os dados codificados no FRAGMENTO da URL (o trecho após o "#").
+  Motivo: o fragmento nunca é enviado ao servidor pelo navegador, então
+  nome, endereço e coordenada de cliente não passam por servidor nenhum
+  nem ficam em log de acesso. Mantém a hospedagem estática e custo zero.
+  Alternativas avaliadas e descartadas por ora: servidor com banco de
+  dados (custo, login e dados de cliente em terceiro) e exportar/importar
+  arquivo (fricção manual justamente no celular).
+  Contrapartida assumida: o escritório não vê o progresso em tempo real.
+
+DECISÕES REGISTRADAS (ADRs)
+  01 - Roteiro trafega no fragmento da URL
+  02 - Navegação delegada ao Waze / Google Maps
+  03 - Progresso salvo no próprio aparelho (armazenamento local)
+  04 - Tipos de serviço configuráveis, não fixos no código
+  05 - Manter arquivo único nas fases 1 e 2 (revisar na fase 3)
+  06 - Sair do OSRM público antes do uso diário sério
+
+ROADMAP EM QUATRO FASES
+  Fase 1 - O roteiro chega ao celular (gerar link, modo campo, botão de
+           navegação, marcar concluído, layout mobile).
+  Fase 2 - Contexto da visita e divisão da equipe (tipo de serviço,
+           observação, dividir clientes entre 2-3 pessoas).
+  Fase 3 - Escala e conforto (busca na lista, base salva no navegador).
+  Fase 4 - Base para uso diário (trocar o OSRM público).
+
+ENTREGÁVEL
+  - Criado ARQUITETURA-E-REQUISITOS.html na raiz do projeto, com o
+    documento completo (problema, personas, decisão central, requisitos
+    funcionais e não funcionais, ADRs, roadmap e riscos).
+  - O documento usa o sistema de design que já estava definido no
+    CLAUDE.md (paleta âmbar/teal, Space Grotesk / Inter / JetBrains
+    Mono), para ficar coerente com o app.
+  - Publicado também como artifact para leitura e compartilhamento.
+  - ADICIONADO AO .gitignore: o documento descreve a operação (tipo de
+    serviço, tamanho da equipe, fluxo interno) e o repositório é público.
+    Fica apenas na máquina, seguindo a mesma regra de privacidade já
+    adotada para os dados de clientes.
+
+- STATUS: requisitos e arquitetura definidos. Próxima etapa: construir
+  a Fase 1.

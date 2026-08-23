@@ -12,6 +12,11 @@ clientes*.geojson
 dados-reais/
 *.real.geojson
 
+# --- Documentos internos com detalhe do negócio ---
+# Descrevem a operação (tipo de serviço, tamanho da equipe, fluxo de
+# trabalho). Ficam fora do repositório público por decisão de privacidade.
+ARQUITETURA-E-REQUISITOS.html
+
 # --- Pontos de restauração (backups locais) ---
 # Ficam só na máquina; o Git já é o histórico oficial.
 backups/
