@@ -1120,3 +1120,55 @@ TESTES REALIZADOS
 
 VERSÃO: alteração leve (correção visual, sem mudar comportamento).
   Contador de leves: 1/5 desde a v1.9.
+
+--------------------------------------------------------
+[29/08/2026] Confirmação: botão "Adicionar" alinhado nos navegadores reais
+--------------------------------------------------------
+Usuário testou em Edge e Brave, com capturas de tela (salvas em
+Exemplos/ANTES DE CARREGAR MAPA.png e APOS CARREGAR MAPA.png): o botão
+"Adicionar" aparece alinhado corretamente com o campo de texto ao lado
+nos dois navegadores. A correção da sessão anterior (appearance:none no
+reset global de <button>) resolveu.
+
+--------------------------------------------------------
+[29/08/2026] Ajuste leve — cor e fonte de "tipos de serviço" / "marcar todos"
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  Os links "tipos de serviço" e "marcar todos" (classe .link-btn) estavam
+  em teal, fonte Inter (herdada) — cor diferente dos títulos de seção
+  "2 · ORIGEM" e "3 · SELECIONAR PARADAS" (classe .field-label, âmbar,
+  JetBrains Mono). Pedido para usar a mesma fonte e cor dos títulos.
+
+O QUE MUDOU (index.html)
+  - .link-btn: color trocado de var(--teal) para var(--amber-dim), e
+    font-family acrescentado como 'JetBrains Mono', monospace (antes
+    herdava a fonte Inter do body). Tamanho e sublinhado mantidos, só o
+    que foi pedido (fonte e cor) foi alterado.
+  - Classe usada em só dois lugares no app inteiro (tiposBtn e
+    selectAllBtn) — conferido antes de mudar, para não afetar nada além
+    do pedido.
+
+TESTES REALIZADOS
+  - Computado por código: tiposBtn, selectAllBtn e o .field-label de
+    referência têm a mesma cor (rgb(184,127,38), que é --amber-dim) e a
+    mesma família de fonte (JetBrains Mono).
+  - Conferido visualmente: os dois textos agora leem como parte do mesmo
+    cabeçalho da seção, não mais como um link solto de cor diferente.
+  - Console sem erros.
+
+VERSÃO: alteração leve. Contador de leves: 2/5 desde a v1.9.
+
+--------------------------------------------------------
+[29/08/2026] Atualizado .gitignore — capturas de tela com dado real
+--------------------------------------------------------
+As duas capturas que o usuário deixou em Exemplos/ para demonstrar o
+alinhamento do botão (ANTES DE CARREGAR MAPA.png, APOS CARREGAR MAPA.png)
+mostravam a base de clientes real carregada (LABORATORIO BURIGO,
+PREFEITURA NOVA VENEZA, RIO DESERTO, HCON) — a mesma que apareceu mais
+cedo na sessão. O repositório é público, então essas duas imagens foram
+tiradas do commit antes de ir para o GitHub.
+
+Acrescentada regra ao .gitignore bloqueando Exemplos/*.png, *.jpg e
+*.jpeg — evita que uma futura captura de tela solta na pasta de exemplos
+suba por engano num "git add -A". As duas imagens continuam na máquina,
+só não são mais rastreadas pelo Git.

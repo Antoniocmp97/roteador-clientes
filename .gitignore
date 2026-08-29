@@ -17,6 +17,13 @@ dados-reais/
 *.umap
 !Exemplos/exemplo.umap
 
+# --- Capturas de tela para teste/depuração ---
+# Fáceis de esquecer com dado real na tela (nomes de clientes, roteiro
+# aberto, etc.). Ficam só na máquina; nenhuma precisa ir para o público.
+Exemplos/*.png
+Exemplos/*.jpg
+Exemplos/*.jpeg
+
 # --- Documentos internos com detalhe do negócio ---
 # Descrevem a operação (tipo de serviço, tamanho da equipe, fluxo de
 # trabalho). Ficam fora do repositório público por decisão de privacidade.
