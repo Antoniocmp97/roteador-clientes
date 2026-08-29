@@ -414,3 +414,83 @@ TESTES REALIZADOS (servidor local, sem alterar arquivos de dados reais)
 - STATUS: Fase 1 concluída, publicada e validada em celular real.
   Sessão encerrada em 22/08/2026. Próxima etapa combinada: Fase 2
   (tipo de serviço, observação por parada, dividir a equipe).
+
+--------------------------------------------------------
+[29/08/2026] Retomada do projeto em computador novo
+--------------------------------------------------------
+- Máquina trocada; pasta do projeto copiada inteira do computador antigo.
+- Conferido o estado: repositório Git em dia com o GitHub (commit 2c87046,
+  sem alterações pendentes), remoto acessível e credenciais funcionando.
+- Vieram junto os arquivos que o .gitignore bloqueia e que só existem
+  localmente: ARQUITETURA-E-REQUISITOS.html, clientes-teste.geojson e a
+  pasta backups/. Nada foi perdido na troca.
+- PROBLEMA ENCONTRADO: o servidor local de testes não subia — o
+  .claude/launch.json chama "python -m http.server" e o computador novo
+  não tinha Python instalado (o "python" que respondia era só o atalho
+  da Microsoft Store, não o interpretador).
+- Resolvido pelo usuário: Python 3.12.10 instalado.
+- Verificado depois da instalação: servidor sobe na porta 8123, modo
+  escritório carrega, modo campo ativa pelo link, marcar parada leva a
+  contagem para 1/3 com a barra em 33%, o destaque de "próxima" anda para
+  a parada seguinte, e o progresso sobrevive ao recarregamento da página.
+  Console sem erros. Progresso de teste limpo do localStorage ao final.
+
+--------------------------------------------------------
+[29/08/2026] Alterado: index.html — troca do provedor de tiles
+--------------------------------------------------------
+MOTIVO
+  Durante os testes acima o mapa apareceu com a marca d'água
+  "API KEY REQUIRED — carto.com/basemaps/apikey" atravessando os
+  ladrilhos. A CARTO passou a exigir chave de acesso para o estilo
+  dark_all que o app usava. O servidor não recusa o pedido: devolve a
+  imagem carimbada. Confirmado que afetava também o site já publicado no
+  GitHub Pages, ou seja, qualquer pessoa da equipe que abrisse o link.
+
+CANDIDATOS TESTADOS (a partir do site publicado, não só do localhost —
+alguns provedores liberam localhost e bloqueiam domínios reais)
+  - CARTO dark_all ....... 200, porém carimbado
+  - Esri Dark Gray ....... 200 limpo — escolhido
+  - OSM padrão ........... 200 limpo, mas claro e colorido, briga com o tema
+  - Stadia alidade dark .. 401 (bloqueado fora do localhost)
+
+DECISÃO DO USUÁRIO
+  Apresentadas duas opções com os trade-offs: Esri (sem cadastro, porém
+  cinza médio, mais claro que o tema) ou Stadia (visual mais próximo do
+  original, mas exige cadastro e chave exposta em repositório público).
+  Usuário escolheu Esri.
+
+O QUE MUDOU
+  - index.html, bloco de inicialização do mapa: uma camada de tile CARTO
+    substituída por duas camadas Esri empilhadas — World_Dark_Gray_Base
+    (ruas) e World_Dark_Gray_Reference (nomes de bairros e vias).
+  - A ordem dos números no endereço do Esri é {z}/{y}/{x}, invertida em
+    relação ao CARTO, e não há {s} porque é um servidor único.
+  - maxNativeZoom: 16 com maxZoom: 19. Testado zoom a zoom: o Esri tem
+    imagem real até o 16 nesta região; do 17 em diante devolve sempre o
+    mesmo ladrilho vazio (2521 bytes idênticos). Com maxNativeZoom o
+    Leaflet continua deixando aproximar até 19, ampliando a última imagem
+    disponível — fica borrado, mas o mapa não desaparece. A proposta
+    inicial era fixar maxZoom: 16, o que teria impedido o usuário de
+    aproximar mais; corrigido antes de aplicar.
+  - Atribuição atualizada no mapa e no rodapé: "Tiles © CARTO" passou a
+    "Tiles © Esri".
+
+TESTES REALIZADOS
+  - Marca d'água desapareceu; atribuição correta no mapa e no rodapé.
+  - Carregado Exemplos/exemplo.geojson (5 pontos), origem definida e
+    "Otimizar ordem" executado → "Ordem otimizada e rota traçada", com a
+    seção "Enviar para o campo" aparecendo normalmente.
+  - Rota âmbar e marcadores numerados continuam bem legíveis sobre o
+    fundo cinza — era a dúvida principal da troca.
+  - Zoom 19: mapa segue desenhado (borrado, como previsto) e a rota âmbar
+    continua nítida, por ser vetorial e não depender do tile.
+  - Console sem erros em nenhum momento.
+
+CUSTO ACEITO
+  O fundo do mapa ficou cinza médio, mais claro que o preto-azulado
+  anterior, portanto menos integrado ao painel escuro do app. Sem
+  impacto em funcionalidade: o tile é só o fundo visual e não participa
+  do cálculo de rotas (OSRM) nem da busca de endereços (Nominatim).
+
+- Atualizado CLAUDE.md: tabela de stack (linha dos tiles), data da última
+  atualização, seção 5 (problema e solução) e seção 9 (histórico, passo 5).

@@ -268,7 +268,7 @@
   </main>
 
   <footer>
-    Mapas © OpenStreetMap contributors · Tiles © CARTO · Rotas via OSRM (servidor de demonstração público — para uso em produção, hospede sua própria instância ou use uma API paga).
+    Mapas © OpenStreetMap contributors · Tiles © Esri · Rotas via OSRM (servidor de demonstração público — para uso em produção, hospede sua própria instância ou use uma API paga).
   </footer>
 </div>
 
@@ -303,13 +303,32 @@
 // o mapa do modo escritório — ele fica escondido e não é usado.
 const modoCampoAtivo = location.hash.startsWith('#r=');
 
-// Inicializa o mapa Leaflet centrado em Criciúma/SC e aplica o tile escuro (CARTO dark_all)
+// Inicializa o mapa Leaflet centrado em Criciúma/SC e aplica o tile escuro
 // (só no modo escritório; no modo campo `map` fica null e nunca é usado)
+//
+// Fundo do mapa: Esri "Dark Gray Canvas", servido sem necessidade de cadastro.
+// Substituiu o CARTO dark_all em 29/08/2026, quando a CARTO passou a exigir
+// chave de acesso e começou a devolver os ladrilhos carimbados com
+// "API KEY REQUIRED" por cima do mapa.
+//
+// Vem em duas camadas empilhadas: o desenho das ruas (Base) e, por cima,
+// os nomes de bairros e vias (Reference). A ordem dos números no endereço é
+// {z}/{y}/{x} — invertida em relação ao CARTO — e não há {s} porque é um
+// servidor único, sem subdomínios.
+//
+// maxNativeZoom 16: o Esri só tem imagem real até o zoom 16 nesta região
+// (do 17 em diante devolve sempre o mesmo ladrilho vazio). Com maxZoom 19,
+// o Leaflet continua deixando aproximar até 19, ampliando a última imagem
+// disponível — fica um pouco borrado, mas o mapa não some.
 let map = null;
 if (!modoCampoAtivo) {
   map = L.map('map', { zoomControl: true }).setView([-28.6775, -49.3697], 13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO', subdomains: 'abcd', maxZoom: 19
+  const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+  L.tileLayer(esri + 'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '&copy; Esri &copy; OpenStreetMap contributors', maxZoom: 19, maxNativeZoom: 16
+  }).addTo(map);
+  L.tileLayer(esri + 'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19, maxNativeZoom: 16
   }).addTo(map);
 }
 

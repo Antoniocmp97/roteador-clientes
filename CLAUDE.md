@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 22/08/2026 — Passo 4 (Fase 1: modo campo)
+> **Última atualização:** 29/08/2026 — Passo 5 (troca do provedor de tiles)
 
 ---
 
@@ -55,7 +55,7 @@ sem dependências instaladas. Abre direto no navegador.
 | Camada | Escolha | Observação |
 |---|---|---|
 | Mapa | Leaflet 1.9.4 (CDN cdnjs) | Mesma base que o uMap usa |
-| Tiles | CARTO dark_all | Combina com o tema escuro da UI |
+| Tiles | Esri Dark Gray Canvas (base + rótulos) | Sem cadastro. Substituiu o CARTO em 29/08/2026 |
 | Rotas | OSRM — `router.project-osrm.org` | **Servidor público de demonstração** |
 | Otimização | OSRM Trip API | Resolve TSP aproximado |
 | Geocodificação | Nominatim (OpenStreetMap) | Sujeito a política de uso justo |
@@ -101,6 +101,23 @@ diretamente no navegador.
 Solução aplicada: função `safeFetchJSON()` que envolve todas as chamadas de rede
 e retorna mensagem explicativa em português quando a conexão falha, orientando o
 usuário a baixar o arquivo.
+
+**Marca d'água "API KEY REQUIRED" sobre o mapa (29/08/2026).** A CARTO passou
+a exigir chave de acesso para os tiles `dark_all`. O servidor não recusava o
+pedido — devolvia a imagem carimbada, sujando o mapa inteiro, inclusive no site
+já publicado.
+
+Solução aplicada: troca para o **Esri Dark Gray Canvas**, que serve sem
+cadastro. Vem em duas camadas empilhadas (ruas + rótulos) e a ordem dos números
+no endereço é `{z}/{y}/{x}`, invertida em relação ao CARTO. O Esri só tem imagem
+real até o zoom 16 nesta região, então usamos `maxNativeZoom: 16` com
+`maxZoom: 19` — o Leaflet continua deixando aproximar, ampliando a última
+imagem disponível, em vez de deixar o mapa em branco.
+
+Custo da troca: o fundo ficou cinza médio, mais claro que o preto-azulado
+anterior, portanto menos integrado ao painel escuro. Alternativa avaliada e
+descartada: Stadia Maps combinaria melhor visualmente, mas responde 401 fora do
+`localhost` — exigiria cadastro e uma chave exposta no repositório público.
 
 ---
 
@@ -182,6 +199,7 @@ Ainda em aberto:
 | 2 | Reconstrução: upload de GeoJSON, múltiplas paradas, otimização de ordem, filiais de exemplo removidas |
 | 3 | Correção do "Failed to fetch" — `safeFetchJSON()` com mensagem explicativa |
 | 4 | **Fase 1 do roadmap:** modo campo — gerar link do roteiro, tela separada para celular, navegação via Waze/Maps, marcar parada concluída com progresso salvo no aparelho |
+| 5 | Troca do provedor de tiles: CARTO (passou a carimbar o mapa) → Esri Dark Gray Canvas, sem cadastro |
 
 ---
 
