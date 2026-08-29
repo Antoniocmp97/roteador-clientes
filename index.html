@@ -23,6 +23,13 @@
   header{padding:18px 22px 14px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
   header .mark{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;}
   header .mark span{color:var(--amber);}
+  /* Selo de versão — discreto, ao lado da marca. Aparece nas duas telas
+     (escritório e campo) para que a equipe na rua consiga informar qual
+     versão está usando ao relatar um problema. Ver seção 11 do CLAUDE.md. */
+  header .mark .versao, .campo-marca .versao{
+          font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;
+          color:var(--muted);border:1px solid var(--line);border-radius:4px;
+          padding:1px 5px;margin-left:8px;vertical-align:middle;letter-spacing:.02em;}
   header .sub{color:var(--muted);font-size:13px;font-family:'JetBrains Mono',monospace;}
 
   /* Área principal: mapa (flex:1, ocupa o espaço restante) + painel lateral */
@@ -190,7 +197,7 @@
 <body>
 <div class="app">
   <header>
-    <div class="mark">hagamorfis<span>/</span>rotas</div>
+    <div class="mark">hagamorfis<span>/</span>rotas<span class="versao" id="versaoEscritorio"></span></div>
     <div class="sub">roteador multi-parada · clientes</div>
   </header>
 
@@ -281,7 +288,7 @@
      ========================================================== -->
 <div class="campo" id="modoCampo" hidden>
   <header class="campo-head">
-    <div class="campo-marca">hagamorfis<span>/</span>rotas</div>
+    <div class="campo-marca">hagamorfis<span>/</span>rotas<span class="versao" id="versaoCampo"></span></div>
     <div class="campo-saindo" id="campoSaindo"></div>
     <div class="campo-progresso">
       <div class="campo-barra"><div class="campo-preenche" id="campoPreenche"></div></div>
@@ -301,6 +308,12 @@
 // Detecta se o app foi aberto por um link de roteiro (ex.: .../index.html#r=eyJ...).
 // Nesse caso entramos no MODO CAMPO (ver seção no fim do script) e nem inicializamos
 // o mapa do modo escritório — ele fica escondido e não é usado.
+// Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
+// sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
+// acumuladas. O número aparece nas duas telas, escritório e campo.
+const VERSAO = '1.1';
+document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
+
 const modoCampoAtivo = location.hash.startsWith('#r=');
 
 // Inicializa o mapa Leaflet centrado em Criciúma/SC e aplica o tile escuro

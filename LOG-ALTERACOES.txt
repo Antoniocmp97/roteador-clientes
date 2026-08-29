@@ -494,3 +494,63 @@ CUSTO ACEITO
 
 - Atualizado CLAUDE.md: tabela de stack (linha dos tiles), data da última
   atualização, seção 5 (problema e solução) e seção 9 (histórico, passo 5).
+
+--------------------------------------------------------
+[29/08/2026] Adotado versionamento numerado + backup por versão
+--------------------------------------------------------
+A pedido do usuário, o app passa a ter número de versão visível e cada
+versão fechada ganha uma cópia guardada.
+
+REGRA DE NUMERAÇÃO (definida com o usuário)
+  Formato MAIOR.MENOR, subindo de 0.1 em 0.1.
+  Fecha versão nova quando:
+    1. acontece uma alteração mediana ou grande (sobe na hora); ou
+    2. acumulam 5 alterações leves (sobem juntas).
+  O segundo gatilho evita gerar uma versão a cada ajuste de texto ou cor.
+
+  Leve = não muda comportamento (texto, cor, espaçamento, comentário,
+         documentação, renomear variável).
+  Mediana/grande = muda o que o app faz ou o que o usuário vê
+         (funcionalidade nova, troca de serviço externo, mudança de fluxo,
+         correção de bug que atrapalhava o uso).
+
+  O contador de alterações leves fica na seção 11 do CLAUDE.md.
+
+O QUE MUDOU NO CÓDIGO
+  - index.html: constante VERSAO no início do script, e um selo discreto
+    ao lado da marca "hagamorfis/rotas" nas DUAS telas (escritório e
+    campo) — decisão do usuário, para que a equipe na rua consiga dizer
+    qual versão está usando ao relatar um problema.
+  - CSS do selo: fonte monoespaçada, cinza (--muted), com borda fina.
+  - CORREÇÃO DURANTE A IMPLEMENTAÇÃO: o seletor inicial era ".versao",
+    de classe simples, e perdia em especificidade para as regras já
+    existentes "header .mark span" e ".campo-marca span", que pintam
+    qualquer <span> de âmbar. O selo sairia laranja e chamativo em vez de
+    discreto. Trocado para "header .mark .versao, .campo-marca .versao".
+    Verificado no navegador: cor final rgb(124,147,160), que é o --muted
+    (#7C93A0) esperado.
+
+BACKUPS CRIADOS (em backups/, fora do Git)
+  - v1.0_2026-08-22_fase-1-modo-campo/  — resgatada do commit 2c87046,
+    é a Fase 1 validada em celular real, ainda com os tiles da CARTO.
+  - v1.1_2026-08-29_tiles-esri/         — o estado atual.
+  Cada pasta tem o index.html daquela versão e um LEIA-ME.txt explicando
+  o que mudou e por quê.
+
+  ATENÇÃO REGISTRADA: a pasta backups/ é bloqueada pelo .gitignore, então
+  essas cópias só existem nesta máquina e se perdem numa troca de
+  computador se a pasta não for copiada junto — foi exatamente o risco
+  que apareceu nesta sessão. A rede de segurança real continua sendo o
+  Git. Os backups locais são conveniência, não garantia.
+
+TESTES REALIZADOS
+  - Tela do escritório: selo "v1.1" ao lado da marca, discreto, sem
+    atrapalhar o subtítulo.
+  - Tela do campo (viewport de celular 375x812): selo "v1.1" presente,
+    lista de paradas e botões intactos.
+  - Cor do selo conferida por código, não só a olho: bate com --muted.
+  - Console sem erros.
+
+- Atualizado CLAUDE.md: nova seção 11 (regra de numeração, contador de
+  alterações leves, onde o número aparece, política de backup e tabela
+  das versões existentes) e linha do passo 5 no histórico.

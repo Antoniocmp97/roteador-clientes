@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 29/08/2026 — Passo 5 (troca do provedor de tiles)
+> **Última atualização:** 29/08/2026 — v1.1 (troca do provedor de tiles)
 
 ---
 
@@ -199,7 +199,7 @@ Ainda em aberto:
 | 2 | Reconstrução: upload de GeoJSON, múltiplas paradas, otimização de ordem, filiais de exemplo removidas |
 | 3 | Correção do "Failed to fetch" — `safeFetchJSON()` com mensagem explicativa |
 | 4 | **Fase 1 do roadmap:** modo campo — gerar link do roteiro, tela separada para celular, navegação via Waze/Maps, marcar parada concluída com progresso salvo no aparelho |
-| 5 | Troca do provedor de tiles: CARTO (passou a carimbar o mapa) → Esri Dark Gray Canvas, sem cadastro |
+| 5 | **v1.1** — Troca do provedor de tiles: CARTO (passou a carimbar o mapa) → Esri Dark Gray Canvas, sem cadastro. Adotado o versionamento numerado (seção 11) |
 
 ---
 
@@ -234,3 +234,64 @@ e a pasta `dados-reais/` por precaução.
 **Para testar localmente:** abrir o `index.html` no navegador, ou usar o
 servidor local (`.claude/launch.json`). Não usar a pré-visualização embutida
 do chat — ela bloqueia as chamadas de rede ao OSRM e ao Nominatim.
+
+---
+
+## 11. Versionamento e backups
+
+Adotado em 29/08/2026, a pedido do usuário.
+
+### Como o número é contado
+
+Formato `MAIOR.MENOR`, subindo de 0.1 em 0.1 (1.0 → 1.1 → 1.2 … → 1.9 → 2.0).
+
+Uma versão nova é fechada quando acontece **um** destes dois gatilhos:
+
+1. **Uma alteração mediana ou grande** — sobe a versão na hora.
+2. **Cinco alterações leves acumuladas** — sobem a versão juntas.
+
+O objetivo do segundo gatilho é não gerar uma versão nova a cada ajuste de
+texto ou de cor, o que encheria a pasta de backups sem necessidade.
+
+**O que é alteração leve:** não muda o comportamento do app. Texto, cor,
+espaçamento, comentário no código, documentação, renomear variável.
+
+**O que é mediana ou grande:** muda o que o app faz ou o que o usuário vê.
+Funcionalidade nova, troca de serviço externo, mudança de fluxo, correção de
+bug que atrapalhava o uso.
+
+### Contador de alterações leves
+
+Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
+nova e zerar o contador.
+
+```
+Leves acumuladas desde a v1.1:  0 / 5
+```
+
+### Onde o número aparece
+
+Na constante `VERSAO` no início do script do `index.html`, e a partir dela num
+selo discreto ao lado da marca **nas duas telas** — escritório e campo. A ideia
+é que quem está na rua consiga informar a versão ao relatar um problema.
+
+Ao fechar versão nova, atualizar a constante `VERSAO` junto com o resto.
+
+### Backups
+
+Cada versão fechada ganha uma cópia em `backups/vX.Y_AAAA-MM-DD_apelido/`,
+com o `index.html` daquela versão e um `LEIA-ME.txt` explicando o que mudou e
+por quê.
+
+⚠️ **A pasta `backups/` não é versionada** (bloqueada no `.gitignore`), então
+essas cópias existem **apenas nesta máquina**. Numa próxima troca de computador
+elas se perdem se a pasta não for copiada junto. A rede de segurança real
+continua sendo o Git, que guarda todas as versões no GitHub de qualquer forma —
+os backups locais são conveniência, não garantia.
+
+### Versões existentes
+
+| Versão | Data | O que é |
+|---|---|---|
+| 1.0 | 22/08/2026 | Fase 1 — modo campo. Validada em celular real. Resgatada do commit `2c87046` |
+| 1.1 | 29/08/2026 | Troca CARTO → Esri e adoção do versionamento |
