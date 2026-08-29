@@ -669,3 +669,55 @@ EM ABERTO PARA O USUÁRIO DECIDIR
   A tela do campo ainda mostra só o nome da filial ("CENTRAL"), sem o
   cliente. Levar o nome do cliente junto no link custaria cerca de 15
   caracteres por parada — há folga de sobra no limite da URL.
+
+--------------------------------------------------------
+[29/08/2026] v1.3 — Correção: nome da camada no formato do hotosm
+--------------------------------------------------------
+MOTIVO
+  Testado o backup completo REAL enviado pelo usuário
+  (umap_backup_pilot.umap, 4 clientes / 5 pontos, exportado de
+  umap.hotosm.org). A v1.2 carregava o arquivo, mas os clientes
+  apareciam como "Camada 1", "Camada 2"...
+
+  Causa: essa instalação do uMap guarda o nome da camada em
+  "properties.name", e não em "_umap_options.name" (versões recentes) nem
+  em "_storage.name" (versões antigas) — as duas únicas formas que a
+  documentação descrevia e que a v1.2 implementou.
+
+  Foi exatamente o motivo de ter pedido o arquivo real antes de dar a
+  Fase 2 por encerrada: nenhum dos testes com o exemplo fictício pegaria
+  esse caso, porque o exemplo tinha sido escrito a partir da documentação.
+
+O QUE MUDOU
+  - lerUmap(): passa a ler o nome da camada de properties.name,
+    _umap_options.name ou _storage.name, nessa ordem.
+  - Exemplos/exemplo.umap: ganhou uma quarta camada (CLINICA EXEMPLO) no
+    formato "properties", para o arquivo de exemplo cobrir as TRÊS
+    variantes e a camada vazia. Agora são 4 clientes / 6 filiais.
+  - CLAUDE.md e README.md: tabela com as três formas e onde cada uma
+    aparece.
+
+TESTES COM A BASE REAL (arquivo copiado para a pasta apenas durante o
+teste e apagado em seguida; o .gitignore já o bloqueava)
+  - Carregamento: "5 pontos em 4 clientes".
+  - Nomes conferidos um a um:
+      LABORATORIO BURIGO      -> GIASSI, RIO MAINA
+      PREFEITURA NOVA VENEZA  -> PAÇO MUNICIPAL
+      RIO DESERTO             -> CENTRAL
+      HCON                    -> HOSPITAL
+    Confere com a organização do uMap mostrada pelo usuário.
+  - Abertas duas cascatas, marcada uma filial em cada, origem definida e
+    "Otimizar ordem" executado -> rota traçada, 2.2 km / 4 min, paradas
+    listadas como "CENTRAL / RIO DESERTO" e "GIASSI / LABORATORIO BURIGO".
+  - Contagens dos cabeçalhos ("1/2", "1/1") e bolinha âmbar corretas nos
+    dois clientes com seleção.
+  - Exemplo fictício recarregado depois: "6 pontos em 4 clientes",
+    cobrindo as três variantes de nome.
+  - Console sem erros.
+
+  FALSO ALARME DURANTE O TESTE: uma captura de tela mostrou o mapa
+  aparentemente vazio. Verificado por código — 50 ladrilhos carregados,
+  zoom 16, URLs corretas do Esri. Era a captura pegando o mapa antes dos
+  ladrilhos pintarem. Nova captura mostrou as ruas normalmente.
+
+- STATUS: leitura por camadas validada com a base real do usuário.

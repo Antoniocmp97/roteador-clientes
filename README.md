@@ -52,9 +52,10 @@ um cliente** e os pontos dentro dela são as **filiais**:
 }
 ```
 
-Coordenadas na ordem `[longitude, latitude]`. O nome do cliente vem de
-`_umap_options.name` (ou `_storage.name`, em versões antigas do uMap) e o da
-filial, de `properties.name`.
+Coordenadas na ordem `[longitude, latitude]`. O nome da filial vem de
+`properties.name`. O nome do cliente muda de lugar conforme a instalação do
+uMap — o app lê `properties.name`, `_umap_options.name` e `_storage.name`, então
+funciona tanto no `umap.hotosm.org` quanto nas demais.
 
 > **O download simples em `.geojson` não serve.** Ele junta todas as camadas
 > numa lista só e descarta os nomes, então a informação de cliente não chega ao
@@ -64,7 +65,7 @@ filial, de `properties.name`.
 > com o "olho" desligado fica de fora do arquivo.
 
 Há um arquivo de exemplo em [`Exemplos/exemplo.umap`](Exemplos/exemplo.umap),
-com 3 clientes fictícios na região de Criciúma apenas para demonstrar o formato.
+com 4 clientes fictícios na região de Criciúma apenas para demonstrar o formato.
 
 ## Privacidade dos dados
 

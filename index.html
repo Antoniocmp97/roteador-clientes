@@ -329,7 +329,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '1.2';
+const VERSAO = '1.3';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -444,16 +444,20 @@ function loadFile(file){
 // Extrai do .umap a lista de clientes, cada um com suas filiais:
 //   [{ cliente: 'LABORATORIO BURIGO', pontos: [{name, lat, lng, id}, ...] }, ...]
 //
-// O nome da camada fica em `_umap_options.name` nas versões atuais do uMap e em
-// `_storage.name` nas mais antigas — tratamos os dois. Camadas sem ponto nenhum
-// são ignoradas, e camada sem nome recebe um rótulo genérico em vez de sumir.
+// O nome da camada muda de lugar conforme a versão/instalação do uMap:
+//   properties.name    — umap.hotosm.org (é o que a base real usa, verificado
+//                        em 29/08/2026 com o backup do usuário)
+//   _umap_options.name — instalações mais recentes do uMap
+//   _storage.name      — instalações antigas
+// Lemos os três, nessa ordem. Camadas sem ponto nenhum são ignoradas, e camada
+// sem nome recebe um rótulo genérico em vez de sumir da lista.
 function lerUmap(data){
   if (data.type !== 'umap' || !Array.isArray(data.layers)){
     throw new Error('não parece um backup completo do uMap. Esperado um arquivo .umap com a lista de camadas.');
   }
   const grupos = [];
   data.layers.forEach((camada, ci) => {
-    const opts = camada._umap_options || camada._storage || {};
+    const opts = camada.properties || camada._umap_options || camada._storage || {};
     const cliente = (opts.name || '').trim() || `Camada ${ci+1}`;
     const feats = Array.isArray(camada.features) ? camada.features : [];
     const pontos = [];

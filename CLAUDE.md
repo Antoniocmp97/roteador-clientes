@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 29/08/2026 — v1.2 (clientes separados por camada)
+> **Última atualização:** 29/08/2026 — v1.3 (nome da camada no formato do hotosm)
 
 ---
 
@@ -147,9 +147,17 @@ completo.
 ```
 
 **Cada camada é um cliente; cada ponto dentro dela é uma filial.** O nome do
-cliente vem de `_umap_options.name` (versões atuais do uMap) ou de
-`_storage.name` (versões antigas) — o app lê os dois. O nome da filial vem de
-`properties.name`. Coordenadas em ordem GeoJSON: `[longitude, latitude]`.
+cliente muda de lugar conforme a instalação do uMap, e o app lê as três formas,
+nesta ordem:
+
+| Onde | Instalação |
+|---|---|
+| `properties.name` | `umap.hotosm.org` — **é o que a base real usa** |
+| `_umap_options.name` | instalações mais recentes do uMap |
+| `_storage.name` | instalações antigas |
+
+O nome da filial vem sempre de `properties.name` da feature. Coordenadas em
+ordem GeoJSON: `[longitude, latitude]`.
 
 ⚠️ **O download simples em `.geojson` não serve.** Ele achata todas as camadas
 numa lista única e descarta os nomes — a informação de cliente não chega ao app.
@@ -161,10 +169,10 @@ que ensina o caminho certo, em vez de carregar os pontos sem agrupamento.
 desligado fica de fora do arquivo. Se faltar cliente no app, é o primeiro lugar
 a conferir.
 
-Arquivo de exemplo versionado: `Exemplos/exemplo.umap` — 3 clientes fictícios
-com 5 filiais na região de Criciúma. Inclui de propósito uma camada no formato
-antigo (`_storage`) e uma camada vazia, para servir também de teste dos dois
-casos.
+Arquivo de exemplo versionado: `Exemplos/exemplo.umap` — 4 clientes fictícios
+com 6 filiais na região de Criciúma. Cobre de propósito as **três** variantes de
+nome de camada (`properties`, `_umap_options`, `_storage`) e inclui uma camada
+vazia, para servir de teste de todos os casos.
 
 O arquivo com os pontos reais fica **fora do repositório**, porque o
 repositório é público (ver `.gitignore`).
@@ -220,6 +228,7 @@ Ainda em aberto:
 | 4 | **Fase 1 do roadmap:** modo campo — gerar link do roteiro, tela separada para celular, navegação via Waze/Maps, marcar parada concluída com progresso salvo no aparelho |
 | 5 | **v1.1** — Troca do provedor de tiles: CARTO (passou a carimbar o mapa) → Esri Dark Gray Canvas, sem cadastro. Adotado o versionamento numerado (seção 11) |
 | 6 | **v1.2** — Clientes separados por camada: app passa a ler o backup completo do uMap (`.umap`) e o checklist vira uma lista agrupada por cliente, com cascata |
+| 7 | **v1.3** — Correção: a instalação usada (`umap.hotosm.org`) guarda o nome da camada em `properties.name`, forma que a v1.2 não lia |
 
 ---
 
@@ -316,3 +325,4 @@ os backups locais são conveniência, não garantia.
 | 1.0 | 22/08/2026 | Fase 1 — modo campo. Validada em celular real. Resgatada do commit `2c87046` |
 | 1.1 | 29/08/2026 | Troca CARTO → Esri e adoção do versionamento |
 | 1.2 | 29/08/2026 | Leitura do `.umap` e checklist agrupado por cliente |
+| 1.3 | 29/08/2026 | Correção do nome da camada no formato do `umap.hotosm.org`. **Validada com a base real** |

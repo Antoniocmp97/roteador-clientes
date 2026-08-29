@@ -89,6 +89,31 @@
     },
     {
       "type": "FeatureCollection",
+      "properties": {
+        "name": "CLINICA EXEMPLO",
+        "displayOnLoad": true,
+        "browsable": true
+      },
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -49.395,
+              -28.682
+            ]
+          },
+          "properties": {
+            "name": "MATRIZ"
+          },
+          "id": "ex6"
+        }
+      ],
+      "rank": 2
+    },
+    {
+      "type": "FeatureCollection",
       "_storage": {
         "name": "PREFEITURA EXEMPLO",
         "displayOnLoad": true
