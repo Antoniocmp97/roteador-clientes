@@ -181,6 +181,8 @@
   }
   .parada.feita .parada-n{background:var(--teal);}
   .parada-info{flex:1; min-width:0;}
+  .parada-cliente{font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500;
+                  color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px;}
   .parada-nome{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:17px; line-height:1.3;}
   .parada.feita .parada-nome{text-decoration:line-through;}
   .parada-tag{
@@ -341,7 +343,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '1.4';
+const VERSAO = '1.5';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -823,8 +825,8 @@ function prepararEnvio(distance, duration){
 // de tamanho de uma URL.
 function montarRoteiro(){
   return {
-    v: 1, // versão do formato, para o modo campo saber ler links antigos no futuro
-    s: stops.map(s => [s.name, Math.round(s.lat * 1e5) / 1e5, Math.round(s.lng * 1e5) / 1e5]),
+    v: 2, // v2 acrescenta o nome do cliente em cada parada (era só a filial na v1)
+    s: stops.map(s => [s.name, Math.round(s.lat * 1e5) / 1e5, Math.round(s.lng * 1e5) / 1e5, s.cliente || '']),
     d: ultimoResumo ? ultimoResumo.d : null,
     t: ultimoResumo ? ultimoResumo.t : null,
   };
@@ -980,14 +982,18 @@ function desenharCampo(roteiro, codigo, feitos){
   lista.innerHTML = banner + listaHtmlParadas();
 
   function listaHtmlParadas(){
-    return roteiro.s.map(([nome, lat, lng], i) => {
+    return roteiro.s.map(([nome, lat, lng, cliente], i) => {
       const done = feitos.has(i);
       const proxima = i === indiceProximo;
+      // cliente vem vazio em links antigos (v1, gerados antes desta versão) — nesse
+      // caso simplesmente não mostra a linha, em vez de aparecer "undefined"
+      const rotuloCliente = cliente ? `<div class="parada-cliente">${escaparHtml(cliente)}</div>` : '';
       return `
         <div class="parada ${done ? 'feita' : ''} ${proxima ? 'proxima' : ''}">
           <div class="parada-topo">
             <div class="parada-n">${i+1}</div>
             <div class="parada-info">
+              ${rotuloCliente}
               <div class="parada-nome">${escaparHtml(nome)}</div>
             </div>
           </div>

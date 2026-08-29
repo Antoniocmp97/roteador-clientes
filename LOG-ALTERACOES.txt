@@ -765,3 +765,41 @@ TESTES REALIZADOS
     rolável. Ambos utilizáveis.
   - Voltando para tela larga: 320px, rolável.
   - Console sem erros.
+
+--------------------------------------------------------
+[29/08/2026] v1.5 — Nome do cliente no modo campo
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  Antes do nome da filial, adicionar o nome do cliente (a camada de
+  origem). No modo campo cada parada mostrava só "PAÇO MUNICIPAL", sem
+  dizer de qual cliente. Era a pergunta que tinha ficado em aberto desde
+  a v1.2.
+
+O QUE MUDOU
+  - montarRoteiro(): cada parada no link passa a levar também o nome do
+    cliente. Formato do link subiu de v1 para v2 (campo "v" dentro do
+    próprio roteiro codificado, não confundir com a versão do app).
+  - listaHtmlParadas() (modo campo): lê o 4º item do array da parada e
+    mostra o cliente numa linha pequena, em caixa alta, acima do nome da
+    filial.
+  - RETROCOMPATIBILIDADE: links v1 já gerados e possivelmente já enviados
+    por WhatsApp antes desta versão não têm o 4º item. Nesse caso o
+    campo vem `undefined` — tratado para simplesmente não desenhar a
+    linha do cliente, em vez de mostrar "undefined" na tela. Testado com
+    um link v1 sintético: abriu normalmente, sem linha vazia acima do
+    nome, marcar como concluída funcionou.
+  - CSS: nova classe .parada-cliente (mono, cinza, caixa alta), acima de
+    .parada-nome.
+
+TESTES REALIZADOS
+  - Carregado Exemplos/exemplo.umap, todas as paradas selecionadas,
+    rota otimizada, link gerado. Conferido o link decodificado: v:2,
+    cada parada com 4 elementos, cliente correto em todas as 6 (ex.:
+    "CENTRAL" com "LABORATORIO EXEMPLO", "PACO MUNICIPAL" com
+    "PREFEITURA EXEMPLO").
+  - Link aberto em viewport de celular: as 6 paradas mostraram o cliente
+    acima da filial, na ordem certa.
+  - Link antigo (v1, sintético, sem o 4º item): abriu sem quebrar, sem
+    linha de cliente vazia, contagem e "marcar como concluída"
+    funcionando normalmente.
+  - Console sem erros em nenhum dos casos.
