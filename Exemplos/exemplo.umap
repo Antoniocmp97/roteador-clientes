@@ -1,0 +1,121 @@
+{
+  "type": "umap",
+  "properties": {
+    "name": "Exemplo — clientes ficticios (Criciuma/SC)"
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [
+      -49.3697,
+      -28.6775
+    ]
+  },
+  "layers": [
+    {
+      "type": "FeatureCollection",
+      "_umap_options": {
+        "name": "LABORATORIO EXEMPLO",
+        "displayOnLoad": true,
+        "browsable": true
+      },
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -49.3697,
+              -28.6775
+            ]
+          },
+          "properties": {
+            "name": "CENTRAL"
+          },
+          "id": "ex1"
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -49.385,
+              -28.665
+            ]
+          },
+          "properties": {
+            "name": "UNIDADE NORTE"
+          },
+          "id": "ex2"
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "_umap_options": {
+        "name": "POSTO DE COLETA EXEMPLO",
+        "displayOnLoad": true,
+        "browsable": true
+      },
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -49.36,
+              -28.69
+            ]
+          },
+          "properties": {
+            "name": "BAIRRO SAO JOSE"
+          },
+          "id": "ex3"
+        },
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -49.405,
+              -28.672
+            ]
+          },
+          "properties": {
+            "name": "BAIRRO MICHEL"
+          },
+          "id": "ex4"
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "_storage": {
+        "name": "PREFEITURA EXEMPLO",
+        "displayOnLoad": true
+      },
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -49.38,
+              -28.7
+            ]
+          },
+          "properties": {
+            "name": "PACO MUNICIPAL"
+          },
+          "id": "ex5"
+        }
+      ]
+    },
+    {
+      "type": "FeatureCollection",
+      "_umap_options": {
+        "name": "CAMADA VAZIA (deve ser ignorada)"
+      },
+      "features": []
+    }
+  ]
+}

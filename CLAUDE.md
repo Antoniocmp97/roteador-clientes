@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 29/08/2026 — v1.1 (troca do provedor de tiles)
+> **Última atualização:** 29/08/2026 — v1.2 (clientes separados por camada)
 
 ---
 
@@ -27,9 +27,11 @@ sem dependências instaladas. Abre direto no navegador.
 
 ### Funcionalidades implementadas
 
-- Upload de arquivo `.geojson` por clique ou arrastar-e-soltar
-- Parse de `FeatureCollection`, extraindo features do tipo `Point`
-- Plot dos pontos no mapa (Leaflet) com popup por cliente
+- Upload do **backup completo do uMap (`.umap`)** por clique ou arrastar-e-soltar
+- Parse das camadas: cada camada é um **cliente**, os pontos dentro dela são as
+  **filiais**. Camadas vazias são ignoradas
+- Checklist agrupado por cliente, com cascata que abre ao clicar no nome
+- Plot dos pontos no mapa (Leaflet) com popup mostrando filial e cliente
 - Definição de origem: geolocalização do navegador **ou** endereço digitado
   (geocodificação via Nominatim, com viés para Criciúma/SC)
 - Checklist de seleção de quais clientes visitar na viagem
@@ -82,7 +84,7 @@ selecionados e estados de sucesso.
    OSRM ao pedir direções. Por isso construímos app próprio sobre Leaflet + OSRM,
    usando o uMap apenas como ferramenta de criação/exportação dos pontos.
 2. **Dados carregados por upload**, não fixos no código nem buscados de URL.
-   Usuário carrega o `.geojson` quando quiser.
+   Usuário carrega o backup do uMap (`.umap`) quando quiser.
 3. **Múltiplas paradas** em vez de destino único — o caso de uso é visitar
    vários clientes na mesma viagem.
 4. **Filiais de exemplo removidas** (Rio Maina / Próspera do primeiro protótipo).
@@ -123,32 +125,49 @@ descartada: Stadia Maps combinaria melhor visualmente, mas responde 401 fora do
 
 ## 6. Formato de dados esperado
 
-GeoJSON `FeatureCollection` com features do tipo `Point`:
+**Backup completo do uMap (`.umap`)** — é o único formato que preserva a
+separação por camada. No uMap: painel **"Compartilhar e baixar"** → backup
+completo.
 
 ```json
 {
-  "type": "FeatureCollection",
-  "features": [
+  "type": "umap",
+  "layers": [
     {
-      "type": "Feature",
-      "geometry": { "type": "Point", "coordinates": [-49.3697, -28.6775] },
-      "properties": { "name": "Nome do Cliente" }
+      "type": "FeatureCollection",
+      "_umap_options": { "name": "LABORATORIO BURIGO" },
+      "features": [
+        { "type": "Feature",
+          "geometry": { "type": "Point", "coordinates": [-49.3697, -28.6775] },
+          "properties": { "name": "CENTRAL" } }
+      ]
     }
   ]
 }
 ```
 
-Coordenadas em ordem GeoJSON: `[longitude, latitude]`. O nome é lido de
-`properties.name`; sem ele, o ponto recebe rótulo genérico "Ponto N".
+**Cada camada é um cliente; cada ponto dentro dela é uma filial.** O nome do
+cliente vem de `_umap_options.name` (versões atuais do uMap) ou de
+`_storage.name` (versões antigas) — o app lê os dois. O nome da filial vem de
+`properties.name`. Coordenadas em ordem GeoJSON: `[longitude, latitude]`.
 
-Arquivo de exemplo versionado: `Exemplos/exemplo.geojson` — 5 pontos fictícios
-na região de Criciúma, apenas para demonstrar o formato.
+⚠️ **O download simples em `.geojson` não serve.** Ele achata todas as camadas
+numa lista única e descarta os nomes — a informação de cliente não chega ao app.
+Verificado em 29/08/2026 com um export real: as 11 features vinham com
+`properties` contendo apenas `name`. O app recusa esse arquivo com uma mensagem
+que ensina o caminho certo, em vez de carregar os pontos sem agrupamento.
 
-O arquivo com os pontos reais usados nos testes fica **fora do repositório**
-(`clientes-teste.geojson` na raiz, bloqueado pelo `.gitignore`), porque o
-repositório é público.
+⚠️ **Exportação do uMap só inclui camadas visíveis.** Camada com o "olho"
+desligado fica de fora do arquivo. Se faltar cliente no app, é o primeiro lugar
+a conferir.
 
----
+Arquivo de exemplo versionado: `Exemplos/exemplo.umap` — 3 clientes fictícios
+com 5 filiais na região de Criciúma. Inclui de propósito uma camada no formato
+antigo (`_storage`) e uma camada vazia, para servir também de teste dos dois
+casos.
+
+O arquivo com os pontos reais fica **fora do repositório**, porque o
+repositório é público (ver `.gitignore`).
 
 ## 7. Limitações conhecidas
 
@@ -175,7 +194,7 @@ operação — ver `.gitignore`):
 
 - **Quem usa:** dois papéis — escritório planeja, campo (2-3 pessoas) executa
   e marca progresso. Operação: entrega de toner + manutenção.
-- **Origem da base de clientes:** uMap exportado como `.geojson`, volume
+- **Origem da base de clientes:** uMap exportado como backup completo (`.umap`), volume
   pequeno (dezenas de pontos). Sem integração com ERP/planilha por ora.
 - **Navegação:** app + botão para Waze/Google Maps por parada (ADR-02) —
   ✅ implementado na Fase 1.
@@ -200,6 +219,7 @@ Ainda em aberto:
 | 3 | Correção do "Failed to fetch" — `safeFetchJSON()` com mensagem explicativa |
 | 4 | **Fase 1 do roadmap:** modo campo — gerar link do roteiro, tela separada para celular, navegação via Waze/Maps, marcar parada concluída com progresso salvo no aparelho |
 | 5 | **v1.1** — Troca do provedor de tiles: CARTO (passou a carimbar o mapa) → Esri Dark Gray Canvas, sem cadastro. Adotado o versionamento numerado (seção 11) |
+| 6 | **v1.2** — Clientes separados por camada: app passa a ler o backup completo do uMap (`.umap`) e o checklist vira uma lista agrupada por cliente, com cascata |
 
 ---
 
@@ -217,7 +237,7 @@ PROJETO APP LOGISTICA/        ← raiz do repositório Git
 ├── README.md
 ├── .gitignore
 ├── Exemplos/
-│   └── exemplo.geojson       ← pontos fictícios, só para demonstrar o formato
+│   └── exemplo.umap          ← 3 clientes fictícios, só para demonstrar o formato
 ├── .claude/launch.json       ← config do servidor local de testes
 └── backups/                  ← pontos de restauração (NÃO versionado)
 ```
@@ -227,7 +247,7 @@ PROJETO APP LOGISTICA/        ← raiz do repositório Git
 - Todo `git push` para o branch `main` republica o site automaticamente.
 
 **Regra de dados:** o repositório é público, então dados reais de clientes
-**nunca** são versionados. O app carrega o `.geojson` por upload — os dados
+**nunca** são versionados. O app carrega o `.umap` por upload — os dados
 ficam só na máquina de quem usa. O `.gitignore` bloqueia `clientes*.geojson`
 e a pasta `dados-reais/` por precaução.
 
@@ -295,3 +315,4 @@ os backups locais são conveniência, não garantia.
 |---|---|---|
 | 1.0 | 22/08/2026 | Fase 1 — modo campo. Validada em celular real. Resgatada do commit `2c87046` |
 | 1.1 | 29/08/2026 | Troca CARTO → Esri e adoção do versionamento |
+| 1.2 | 29/08/2026 | Leitura do `.umap` e checklist agrupado por cliente |

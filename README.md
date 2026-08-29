@@ -9,7 +9,9 @@ uma lista de clientes em GeoJSON. Feito para uso em Criciúma/SC.
 
 ## O que faz
 
-- Carrega os clientes de um arquivo `.geojson` (clique ou arraste o arquivo)
+- Carrega os clientes do backup completo do uMap (`.umap`) — clique ou arraste
+- Separa por cliente: cada camada do uMap é um cliente, e os pontos dentro dela
+  são as filiais. A lista abre em cascata ao clicar no nome do cliente
 - Mostra todos os pontos no mapa
 - Define o ponto de partida por endereço digitado ou pela sua localização
 - Permite escolher quais clientes visitar na viagem
@@ -20,32 +22,49 @@ uma lista de clientes em GeoJSON. Feito para uso em Criciúma/SC.
 ## Como usar
 
 1. Abra o link acima (funciona no computador e no celular)
-2. Carregue seu arquivo `.geojson` de clientes
+2. Carregue o backup completo do uMap (`.umap`) com seus clientes
 3. Digite o endereço de partida ou toque em 📍 para usar sua localização
 4. Marque os clientes que vai visitar
 5. Clique em **Otimizar ordem** (ou **Traçar nesta ordem**, se já sabe a sequência)
 
 ## Formato do arquivo de clientes
 
-GeoJSON do tipo `FeatureCollection`, com pontos. É o formato que o
-[uMap](https://umap.openstreetmap.fr/) exporta:
+O app lê o **backup completo do uMap** (`.umap`). No uMap, abra o painel
+**"Compartilhar e baixar"** e escolha o backup completo.
+
+É o único formato que preserva as camadas — e no uso deste app **cada camada é
+um cliente** e os pontos dentro dela são as **filiais**:
 
 ```json
 {
-  "type": "FeatureCollection",
-  "features": [
+  "type": "umap",
+  "layers": [
     {
-      "type": "Feature",
-      "geometry": { "type": "Point", "coordinates": [-49.3697, -28.6775] },
-      "properties": { "name": "Nome do Cliente" }
+      "type": "FeatureCollection",
+      "_umap_options": { "name": "LABORATORIO BURIGO" },
+      "features": [
+        { "type": "Feature",
+          "geometry": { "type": "Point", "coordinates": [-49.3697, -28.6775] },
+          "properties": { "name": "CENTRAL" } }
+      ]
     }
   ]
 }
 ```
 
-Coordenadas na ordem `[longitude, latitude]`. O nome vem de `properties.name`.
-Há um arquivo de exemplo em [`Exemplos/exemplo.geojson`](Exemplos/exemplo.geojson),
-com pontos fictícios na região de Criciúma apenas para demonstrar o formato.
+Coordenadas na ordem `[longitude, latitude]`. O nome do cliente vem de
+`_umap_options.name` (ou `_storage.name`, em versões antigas do uMap) e o da
+filial, de `properties.name`.
+
+> **O download simples em `.geojson` não serve.** Ele junta todas as camadas
+> numa lista só e descarta os nomes, então a informação de cliente não chega ao
+> app. Se você carregar um por engano, o app avisa e explica o caminho certo.
+>
+> Atenção também: a exportação do uMap **só inclui camadas visíveis**. Camada
+> com o "olho" desligado fica de fora do arquivo.
+
+Há um arquivo de exemplo em [`Exemplos/exemplo.umap`](Exemplos/exemplo.umap),
+com 3 clientes fictícios na região de Criciúma apenas para demonstrar o formato.
 
 ## Privacidade dos dados
 

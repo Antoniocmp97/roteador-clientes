@@ -554,3 +554,118 @@ TESTES REALIZADOS
 - Atualizado CLAUDE.md: nova seção 11 (regra de numeração, contador de
   alterações leves, onde o número aparece, política de backup e tabela
   das versões existentes) e linha do passo 5 no histórico.
+
+--------------------------------------------------------
+[29/08/2026] v1.2 — Clientes separados por camada (.umap)
+--------------------------------------------------------
+PROBLEMA RELATADO PELO USUÁRIO
+  No uMap os clientes são organizados em camadas, e as localizações ficam
+  dentro de cada camada. Ao carregar o arquivo no app, os pontos apareciam
+  todos juntos numa lista corrida, sem separação por cliente.
+
+DIAGNÓSTICO (a causa não estava no app)
+  Aberto o arquivo real exportado pelo usuário (11 pontos). Resultado:
+    chaves de topo:  ['type', 'features']  -> FeatureCollection achatada
+    properties de todas as 11 features:    ['name']
+  Ou seja, NENHUMA informação de camada chega ao arquivo. O download comum
+  do uMap em .geojson junta todas as camadas numa lista só e descarta os
+  nomes. Não havia o que ler — nenhum ajuste no código de leitura
+  resolveria.
+
+  Confirmado na documentação do uMap que o formato que preserva as camadas
+  é o BACKUP COMPLETO (.umap), disponível no painel "Compartilhar e
+  baixar". Ele guarda informações do mapa, das camadas e a geometria.
+
+  Estrutura do .umap:
+    { "type": "umap",
+      "layers": [ { "type": "FeatureCollection",
+                    "_umap_options": { "name": "NOME DO CLIENTE" },
+                    "features": [ ... ] } ] }
+  Versões antigas do uMap usam "_storage" no lugar de "_umap_options" —
+  o app trata as duas.
+
+DECISÕES DO USUÁRIO
+  - Formato: SOMENTE .umap daqui pra frente. Foi apresentada a opção de
+    aceitar os dois formatos (mantendo o .geojson funcionando sem
+    agrupamento, que serviria de plano B caso o backup completo falhe —
+    há um bug conhecido de 404 em algumas instalações do uMap, issue
+    #2511). O usuário optou por só o .umap mesmo assim. Registrado que
+    esse plano B deixa de existir; como compensação, a mensagem de erro
+    do .geojson ensina o caminho certo em vez de apenas recusar.
+  - Checklist: agrupado por cliente, e clicar no nome do cliente abre a
+    cascata com as filiais.
+  - SEM atalho de "marcar todas as filiais do cliente" — o usuário
+    informou que nunca precisou visitar todas as unidades de um cliente
+    no mesmo dia.
+
+O QUE MUDOU NO CÓDIGO (index.html)
+  - Nova função lerUmap(): extrai a lista de clientes com suas filiais,
+    lendo o nome da camada de _umap_options.name ou _storage.name.
+    Camadas sem ponto nenhum são ignoradas; camada sem nome recebe
+    rótulo genérico em vez de sumir. Os ids recebem prefixo da camada
+    (c0_, c1_...) porque ids do uMap se repetem entre camadas.
+  - loadFile(): passa a recusar FeatureCollection com mensagem explicativa
+    ("é o download simples... use Compartilhar e baixar -> backup
+    completo"), e recusa JSON que não seja .umap com mensagem própria.
+  - importClients(): recebe os grupos em vez de uma lista plana.
+    clientPoints continua sendo a lista plana de TODAS as filiais — é o
+    que roteamento, otimização e seleção usam. O agrupamento vive em
+    gruposClientes e serve apenas para desenhar o checklist. Popup do
+    marcador no mapa passa a mostrar filial + cliente.
+  - renderChecklist(): reescrito como lista de grupos. Cabeçalho com
+    seta, nome do cliente e contagem ("1/2" quando há seleção), corpo em
+    cascata que abre/fecha ao clicar. Bolinha ao lado do nome acende em
+    âmbar quando o cliente tem alguma filial selecionada — dá para ver o
+    que está escolhido sem abrir grupo por grupo. Grupos começam fechados.
+  - toggleStop(): ao marcar pelo popup do mapa, abre a cascata do cliente
+    correspondente, senão a marcação aconteceria dentro de um grupo
+    fechado e o usuário não veria o resultado do clique.
+  - renderStopsList(): cada parada passa a mostrar o nome do cliente em
+    letra menor abaixo da filial. Duas filiais de clientes diferentes
+    podem se chamar "CENTRAL" ou "MATRIZ", e a lista ficaria ambígua.
+  - Dropzone, seletor de arquivo e dica da lista vazia atualizados
+    para o .umap.
+  - CORREÇÃO DURANTE OS TESTES: arquivo corrompido mostrava o erro cru do
+    JavaScript em inglês ("Expected property name or '}' in JSON at
+    position 1"). O JSON.parse ganhou try/catch próprio, com mensagem em
+    português.
+
+OUTROS ARQUIVOS
+  - Exemplos/exemplo.umap: NOVO. 3 clientes fictícios com 5 filiais.
+    Inclui de propósito uma camada no formato antigo (_storage) e uma
+    camada vazia, para servir de teste dos dois casos.
+  - Exemplos/exemplo.geojson: REMOVIDO. O app passou a recusar esse
+    formato, e um arquivo de exemplo que o próprio app não abre viraria
+    armadilha. Continua recuperável pelo histórico do Git.
+  - .gitignore: passou a bloquear *.umap, com exceção explícita do
+    Exemplos/exemplo.umap. A base real de clientes agora é exportada
+    nesse formato e o repositório é público — sem isso, o arquivo real
+    poderia ser versionado por descuido. Verificado com "git add -n" que
+    o exemplo continua versionável e que um arquivo real seria ignorado.
+  - README.md e CLAUDE.md: seção de formato de dados reescrita.
+
+TESTES REALIZADOS (com Exemplos/exemplo.umap, sem dados reais)
+  - Carregamento: "5 pontos em 3 clientes" — a camada vazia foi ignorada
+    e a camada no formato antigo (_storage) foi lida corretamente.
+  - Grupos começam fechados; clicar no cabeçalho abre a cascata.
+  - Marcar filial: contagem do cabeçalho foi para "1/2", a bolinha acendeu
+    em âmbar e a parada apareceu na seção 4 com o cliente embaixo do nome.
+  - Rota completa: origem definida, "marcar todos" e "Otimizar ordem" →
+    "Ordem otimizada e rota traçada", com 5 paradas.
+  - Link do modo campo gerado normalmente (297 caracteres para 5 paradas).
+  - Mensagens de erro conferidas uma a uma:
+      .geojson achatado -> explica o caminho do backup completo
+      JSON que não é umap -> "não parece um backup completo do uMap"
+      arquivo corrompido -> mensagem em português
+      .umap sem pontos -> "nenhum ponto encontrado no arquivo"
+  - Console sem erros.
+
+PENDENTE DE VALIDAÇÃO
+  Todos os testes usaram o arquivo de exemplo. Falta confirmar com o
+  backup completo real do usuário (8 clientes / 11 pontos) que os nomes
+  das camadas chegam como esperado.
+
+EM ABERTO PARA O USUÁRIO DECIDIR
+  A tela do campo ainda mostra só o nome da filial ("CENTRAL"), sem o
+  cliente. Levar o nome do cliente junto no link custaria cerca de 15
+  caracteres por parada — há folga de sobra no limite da URL.

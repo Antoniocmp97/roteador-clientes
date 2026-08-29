@@ -12,6 +12,11 @@ clientes*.geojson
 dados-reais/
 *.real.geojson
 
+# A base real agora e exportada como backup do uMap (.umap). Bloqueamos todos,
+# com excecao explicita do arquivo de exemplo ficticio, que deve ser versionado.
+*.umap
+!Exemplos/exemplo.umap
+
 # --- Documentos internos com detalhe do negócio ---
 # Descrevem a operação (tipo de serviço, tamanho da equipe, fluxo de
 # trabalho). Ficam fora do repositório público por decisão de privacidade.

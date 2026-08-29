@@ -61,6 +61,24 @@
   .check-row{display:flex;align-items:flex-start;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:13px;}
   .check-row input{margin-top:2px;accent-color:var(--teal);}
   .check-row .coord{display:block;color:var(--muted);font-size:10.5px;font-family:'JetBrains Mono',monospace;}
+  /* Checklist agrupado por cliente (camada do uMap). O cabeçalho abre e fecha
+     a cascata de filiais; começa fechado para dar visão geral da carteira. */
+  .grupo{border:1px solid var(--line);border-radius:7px;background:var(--panel-2);overflow:hidden;}
+  .grupo-head{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer;
+              user-select:none;font-size:13px;font-weight:600;color:var(--text);}
+  .grupo-head:hover{background:#22343E;}
+  .grupo-seta{color:var(--muted);font-size:10px;transition:transform .15s;flex:none;}
+  .grupo.aberto .grupo-seta{transform:rotate(90deg);}
+  .grupo-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .grupo-cont{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);flex:none;}
+  /* Bolinha teal que acende em âmbar quando o cliente tem filial selecionada —
+     assim dá para ver o que está escolhido sem abrir grupo por grupo. */
+  .grupo-marca{width:7px;height:7px;border-radius:50%;background:var(--teal);opacity:.35;flex:none;}
+  .grupo.tem-selecao .grupo-marca{background:var(--amber);opacity:1;}
+  .grupo-corpo{display:none;padding:0 8px 8px 8px;flex-direction:column;gap:6px;}
+  .grupo.aberto .grupo-corpo{display:flex;}
+  .grupo-corpo .check-row{background:var(--panel);}
+  .stop-row .nm-cli{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
   .empty-hint{font-size:12px;color:var(--muted);font-style:italic;}
 
   /* Lista ordenável das paradas selecionadas (ordem da viagem) */
@@ -209,9 +227,9 @@
       <div>
         <div class="field-label">1 · Clientes <small id="countLabel"></small></div>
         <div class="dropzone" id="dropzone">
-          <strong>Clique para carregar</strong> ou arraste um arquivo<br>.geojson aqui
+          <strong>Clique para carregar</strong> ou arraste o backup<br>completo do uMap (.umap) aqui
         </div>
-        <input type="file" id="fileInput" accept=".geojson,.json,application/geo+json" style="display:none">
+        <input type="file" id="fileInput" accept=".umap,.json,application/json" style="display:none">
         <div class="file-status" id="fileStatus"></div>
       </div>
 
@@ -228,7 +246,7 @@
       <div>
         <div class="field-label">3 · Selecionar paradas <button class="link-btn" id="selectAllBtn">marcar todos</button></div>
         <div class="checklist" id="checklist">
-          <div class="empty-hint">Carregue um arquivo .geojson para ver os clientes aqui.</div>
+          <div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>
         </div>
       </div>
 
@@ -311,7 +329,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '1.1';
+const VERSAO = '1.2';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -357,6 +375,8 @@ function numIcon(n){
 // Estado global do app (em memória — nada é persistido, recarregar a página zera tudo)
 let clientPoints = [];   // { id, name, lat, lng, marker } — todos os clientes carregados do .geojson
 let stops = [];          // subconjunto/ordem de clientPoints selecionados para esta viagem
+let gruposClientes = [];  // [{cliente, pontos:[...]}] — agrupamento por camada do uMap, usado só no checklist
+let gruposAbertos = new Set(); // nomes dos clientes com a cascata aberta no momento
 let originLatLng = null; // [lat, lng] do ponto de partida, definido por geolocalização ou geocodificação
 let originMarker = null; // marcador do Leaflet para a origem no mapa
 let routeLine = null;    // polyline da rota traçada no mapa
@@ -391,16 +411,28 @@ fileInput.addEventListener('change', e=>{
   if (e.target.files[0]) loadFile(e.target.files[0]);
 });
 
-// Lê o arquivo escolhido/arrastado como texto, valida o JSON e envia os pontos para importClients()
+// Lê o arquivo escolhido/arrastado como texto, valida e envia os grupos para importClients().
+//
+// O app lê o BACKUP COMPLETO do uMap (.umap) — é o único formato que preserva a
+// separação por camada, e no nosso uso cada camada é um cliente e os pontos dentro
+// dela são as filiais. O download comum em .geojson achata tudo numa lista só e
+// descarta os nomes das camadas, por isso é recusado com uma mensagem que ensina
+// o caminho certo, em vez de simplesmente falhar.
 function loadFile(file){
   const reader = new FileReader();
   reader.onload = ev => {
     try{
-      const data = JSON.parse(ev.target.result);
-      if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) throw new Error('não é uma FeatureCollection válida');
-      const points = data.features.filter(f => f.geometry && f.geometry.type === 'Point');
-      if (!points.length) throw new Error('nenhum ponto encontrado no arquivo');
-      importClients(points, file.name);
+      let data;
+      try{ data = JSON.parse(ev.target.result); }
+      catch(e){ throw new Error('o arquivo não pôde ser lido — parece incompleto ou corrompido. Tente baixar o backup de novo.'); }
+
+      // Arquivo achatado: tecnicamente válido, mas sem a informação de cliente
+      if (data.type === 'FeatureCollection'){
+        throw new Error('este é o download simples, que junta todos os clientes numa lista só e perde os nomes das camadas. No uMap, use "Compartilhar e baixar" → backup completo, que gera um arquivo .umap.');
+      }
+      const grupos = lerUmap(data);
+      if (!grupos.length) throw new Error('nenhum ponto encontrado no arquivo');
+      importClients(grupos, file.name);
     }catch(err){
       document.getElementById('fileStatus').style.color = 'var(--danger)';
       document.getElementById('fileStatus').textContent = 'Erro: ' + err.message;
@@ -409,29 +441,66 @@ function loadFile(file){
   reader.readAsText(file);
 }
 
+// Extrai do .umap a lista de clientes, cada um com suas filiais:
+//   [{ cliente: 'LABORATORIO BURIGO', pontos: [{name, lat, lng, id}, ...] }, ...]
+//
+// O nome da camada fica em `_umap_options.name` nas versões atuais do uMap e em
+// `_storage.name` nas mais antigas — tratamos os dois. Camadas sem ponto nenhum
+// são ignoradas, e camada sem nome recebe um rótulo genérico em vez de sumir.
+function lerUmap(data){
+  if (data.type !== 'umap' || !Array.isArray(data.layers)){
+    throw new Error('não parece um backup completo do uMap. Esperado um arquivo .umap com a lista de camadas.');
+  }
+  const grupos = [];
+  data.layers.forEach((camada, ci) => {
+    const opts = camada._umap_options || camada._storage || {};
+    const cliente = (opts.name || '').trim() || `Camada ${ci+1}`;
+    const feats = Array.isArray(camada.features) ? camada.features : [];
+    const pontos = [];
+    feats.forEach((f, fi) => {
+      if (!f.geometry || f.geometry.type !== 'Point') return;
+      const [lng, lat] = f.geometry.coordinates;
+      // id prefixado com a camada: ids do uMap se repetem entre camadas diferentes
+      pontos.push({
+        id: `c${ci}_${f.id || 'p' + fi}`,
+        name: (f.properties && f.properties.name) || `Ponto ${fi+1}`,
+        cliente, lat, lng
+      });
+    });
+    if (pontos.length) grupos.push({ cliente, pontos });
+  });
+  return grupos;
+}
+
 // Substitui os clientes atuais pelos pontos recém-carregados: limpa o mapa/estado anterior,
 // cria um marcador teal por cliente (com popup de adicionar/remover parada) e enquadra o mapa neles
-function importClients(features, filename){
+function importClients(grupos, filename){
   // reset
   clientPoints.forEach(c => c.marker && map.removeLayer(c.marker));
   clientPoints = []; stops = [];
+  gruposClientes = grupos;
+  gruposAbertos = new Set();
   if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
   document.getElementById('readout').classList.remove('show');
 
-  features.forEach((f, i) => {
-    const [lng, lat] = f.geometry.coordinates;
-    const name = (f.properties && f.properties.name) || `Ponto ${i+1}`;
-    const id = f.id || `p${i}`;
-    const marker = L.marker([lat, lng], { icon: dot('#2FB6A6') }).addTo(map)
-      .bindPopup(`<b>${name}</b><br><button onclick="toggleStop('${id}')" style="margin-top:6px;cursor:pointer;">Adicionar/remover parada</button>`);
-    clientPoints.push({ id, name, lat, lng, marker });
+  // clientPoints continua sendo a lista plana de TODAS as filiais — é o que o
+  // roteamento, a otimização e a seleção usam. O agrupamento vive em
+  // gruposClientes e serve só para desenhar o checklist.
+  grupos.forEach(g => {
+    g.pontos.forEach(pt => {
+      const marker = L.marker([pt.lat, pt.lng], { icon: dot('#2FB6A6') }).addTo(map)
+        .bindPopup(`<b>${escaparHtml(pt.name)}</b><br><small>${escaparHtml(pt.cliente)}</small><br><button onclick="toggleStop('${pt.id}')" style="margin-top:6px;cursor:pointer;">Adicionar/remover parada</button>`);
+      clientPoints.push({ ...pt, marker });
+    });
   });
 
   const group = L.featureGroup(clientPoints.map(c => c.marker));
   map.fitBounds(group.getBounds(), { padding: [40,40] });
 
+  const nCli = grupos.length;
   document.getElementById('fileStatus').style.color = 'var(--teal)';
-  document.getElementById('fileStatus').textContent = `✓ ${clientPoints.length} pontos carregados de "${filename}"`;
+  document.getElementById('fileStatus').textContent =
+    `✓ ${clientPoints.length} ${clientPoints.length === 1 ? 'ponto' : 'pontos'} em ${nCli} ${nCli === 1 ? 'cliente' : 'clientes'}, de "${filename}"`;
   document.getElementById('countLabel').textContent = `(${clientPoints.length})`;
   renderChecklist();
 }
@@ -439,8 +508,13 @@ function importClients(features, filename){
 // Chamado pelo botão do popup do marcador no mapa: simula o clique no checkbox correspondente
 // do checklist, reaproveitando a lógica de seleção que já existe lá (evento 'change')
 function toggleStop(id){
+  // Abre a cascata do cliente correspondente, senão a marcação aconteceria
+  // dentro de um grupo fechado e o usuário não veria o resultado do clique
+  const ponto = clientPoints.find(c => c.id === id);
+  if (ponto && ponto.cliente) gruposAbertos.add(ponto.cliente);
   const cb = document.getElementById('chk-' + id);
   if (cb){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
+  else renderChecklist();
 }
 window.toggleStop = toggleStop; // precisa estar em escopo global: é chamado via onclick inline no HTML do popup
 
@@ -452,21 +526,51 @@ function renderChecklist(){
   const el = document.getElementById('checklist');
   el.innerHTML = '';
   if (!clientPoints.length){
-    el.innerHTML = '<div class="empty-hint">Carregue um arquivo .geojson para ver os clientes aqui.</div>';
+    el.innerHTML = '<div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>';
     return;
   }
-  clientPoints.forEach(c => {
-    const row = document.createElement('label');
-    row.className = 'check-row';
-    row.innerHTML = `<input type="checkbox" id="chk-${c.id}"><span>${c.name}<span class="coord">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span></span>`;
-    const cb = row.querySelector('input');
-    cb.checked = stops.some(s => s.id === c.id);
-    cb.addEventListener('change', () => {
-      if (cb.checked){ if (!stops.some(s=>s.id===c.id)) stops.push(c); }
-      else { stops = stops.filter(s => s.id !== c.id); }
-      renderStopsList();
+
+  gruposClientes.forEach(g => {
+    const aberto = gruposAbertos.has(g.cliente);
+    const selecionadas = g.pontos.filter(pt => stops.some(s => s.id === pt.id)).length;
+
+    const box = document.createElement('div');
+    box.className = 'grupo' + (aberto ? ' aberto' : '') + (selecionadas ? ' tem-selecao' : '');
+
+    // Cabeçalho: clicar abre/fecha a cascata de filiais deste cliente
+    const head = document.createElement('div');
+    head.className = 'grupo-head';
+    head.innerHTML = `<span class="grupo-seta">▶</span>
+      <span class="grupo-marca"></span>
+      <span class="grupo-nome">${escaparHtml(g.cliente)}</span>
+      <span class="grupo-cont">${selecionadas ? selecionadas + '/' : ''}${g.pontos.length}</span>`;
+    head.onclick = () => {
+      if (gruposAbertos.has(g.cliente)) gruposAbertos.delete(g.cliente);
+      else gruposAbertos.add(g.cliente);
+      renderChecklist();
+    };
+    box.appendChild(head);
+
+    // Corpo: uma linha por filial, com o mesmo comportamento de seleção de antes
+    const corpo = document.createElement('div');
+    corpo.className = 'grupo-corpo';
+    g.pontos.forEach(pt => {
+      const c = clientPoints.find(cp => cp.id === pt.id) || pt;
+      const row = document.createElement('label');
+      row.className = 'check-row';
+      row.innerHTML = `<input type="checkbox" id="chk-${c.id}"><span>${escaparHtml(c.name)}<span class="coord">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span></span>`;
+      const cb = row.querySelector('input');
+      cb.checked = stops.some(s => s.id === c.id);
+      cb.addEventListener('change', () => {
+        if (cb.checked){ if (!stops.some(s=>s.id===c.id)) stops.push(c); }
+        else { stops = stops.filter(s => s.id !== c.id); }
+        renderChecklist();   // atualiza a contagem e o destaque do cabeçalho
+        renderStopsList();
+      });
+      corpo.appendChild(row);
     });
-    el.appendChild(row);
+    box.appendChild(corpo);
+    el.appendChild(box);
   });
 }
 
@@ -488,7 +592,10 @@ function renderStopsList(){
   stops.forEach((s, i) => {
     const li = document.createElement('li');
     li.className = 'stop-row';
-    li.innerHTML = `<span class="n">${i+1}</span><span class="nm">${s.name}</span>
+    // Nome da filial + cliente em letra menor: duas filiais de clientes diferentes
+    // podem se chamar "CENTRAL" ou "MATRIZ", e a lista precisa ficar sem ambiguidade
+    const sub = s.cliente ? `<span class="nm-cli">${escaparHtml(s.cliente)}</span>` : '';
+    li.innerHTML = `<span class="n">${i+1}</span><span class="nm">${escaparHtml(s.name)}${sub}</span>
       <button data-act="up" title="Mover para cima">▲</button>
       <button data-act="down" title="Mover para baixo">▼</button>
       <button data-act="rm" title="Remover">✕</button>`;
