@@ -214,11 +214,14 @@
   .btn-feito:active{background:#132229;}
   .parada.feita .btn-feito{background:var(--teal); color:#062420;}
 
-  /* Confirmação em duas etapas: primeiro toque em "Marcar como concluída" troca o
-     botão único por este par, em vez de marcar na hora — evita registrar parada
-     concluída por toque errado. Confirmar de fato marca; Cancelar volta ao normal. */
-  .confirmar-linha{display:flex; gap:8px;}
-  .confirmar-linha button{
+  /* Confirmação em duas etapas, nos dois sentidos: primeiro toque no botão de
+     concluir (ou no botão já concluído, para reabrir) troca o botão único por
+     este bloco, em vez de mudar o estado na hora — evita marcar OU reabrir uma
+     parada por toque errado. Confirmar aplica a mudança; Cancelar volta ao normal. */
+  .confirmar-linha{display:flex; flex-direction:column; gap:8px;}
+  .confirmar-legenda{font-size:12.5px; color:var(--muted); line-height:1.4;}
+  .confirmar-botoes{display:flex; gap:8px;}
+  .confirmar-botoes button{
     flex:1; border-radius:9px; padding:16px 10px; font-weight:700; font-size:15px;
     font-family:'Inter',sans-serif; cursor:pointer; border:none;
   }
@@ -246,7 +249,7 @@
   /* Alvos de toque generosos em qualquer largura de tela no modo campo */
   @media (max-width:480px){
     .parada-acoes button{padding:15px 10px;font-size:15px;}
-    .btn-feito,.confirmar-linha button{padding:18px 10px;font-size:16px;}
+    .btn-feito,.confirmar-botoes button{padding:18px 10px;font-size:16px;}
   }
 </style>
 </head>
@@ -367,7 +370,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '1.7';
+const VERSAO = '1.8';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -1033,12 +1036,18 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
       const rotuloCliente = cliente ? `<div class="parada-cliente">${escaparHtml(cliente)}</div>` : '';
       // Botão de concluir: normalmente um único botão, mas troca para o par
       // Confirmar/Cancelar enquanto este índice está em `confirmando` — segundo
-      // toque intencional antes de marcar de verdade, ver .confirmar-linha no CSS.
-      // Desmarcar (desfazer um engano) continua em um toque só, sem essa etapa.
+      // toque intencional antes de mudar o estado de verdade, ver
+      // .confirmar-linha no CSS. Vale nos dois sentidos: marcar como
+      // concluída E reabrir uma parada já concluída (ex.: o técnico precisa
+      // voltar lá) passam pela mesma confirmação, para nenhum toque errado
+      // desfazer uma parada por engano nem reabrir uma à toa.
       const botaoConcluir = confirmando.has(i)
         ? `<div class="confirmar-linha">
-             <button class="btn-confirmar" data-i="${i}">✓ Confirmar</button>
-             <button class="btn-cancelar-conf" data-i="${i}">Cancelar</button>
+             ${done ? `<div class="confirmar-legenda">Reabrir esta parada? Os botões de navegação voltam a aparecer.</div>` : ''}
+             <div class="confirmar-botoes">
+               <button class="btn-confirmar" data-i="${i}">${done ? '↺ Reabrir' : '✓ Confirmar'}</button>
+               <button class="btn-cancelar-conf" data-i="${i}">Cancelar</button>
+             </div>
            </div>`
         : `<button class="btn-feito" data-i="${i}">${done ? '✓ Parada concluída' : 'Marcar como concluída'}</button>`;
 
@@ -1078,25 +1087,21 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
     }
     const feitoBtn = e.target.closest('.btn-feito');
     if (feitoBtn){
+      // Um toque aqui nunca muda o estado na hora — só pede confirmação.
+      // Vale tanto para marcar como concluída quanto para reabrir uma
+      // parada já concluída (ex.: o técnico precisa voltar lá): as duas
+      // mudanças de estado passam pelo mesmo Confirmar/Cancelar.
       const i = Number(feitoBtn.dataset.i);
-      if (feitos.has(i)){
-        // já concluída: desmarcar é a própria correção de um engano, sem
-        // precisar de confirmação — exigir confirmação aqui só atrapalharia
-        feitos.delete(i);
-        salvarProgresso(codigo, feitos);
-        desenharCampo(roteiro, codigo, feitos, confirmando);
-      }else{
-        // ainda não concluída: primeiro toque só pede confirmação, não marca
-        confirmando.add(i);
-        desenharCampo(roteiro, codigo, feitos, confirmando);
-      }
+      confirmando.add(i);
+      desenharCampo(roteiro, codigo, feitos, confirmando);
       return;
     }
     const confirmarBtn = e.target.closest('.btn-confirmar');
     if (confirmarBtn){
       const i = Number(confirmarBtn.dataset.i);
       confirmando.delete(i);
-      feitos.add(i);
+      // alterna o estado que o botão pedia: concluída -> reabre, pendente -> conclui
+      if (feitos.has(i)) feitos.delete(i); else feitos.add(i);
       salvarProgresso(codigo, feitos);
       desenharCampo(roteiro, codigo, feitos, confirmando);
       return;

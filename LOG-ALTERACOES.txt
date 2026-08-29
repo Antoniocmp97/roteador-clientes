@@ -950,3 +950,54 @@ VERSÃO
   Classificada como mediana/grande (muda comportamento visível — trava
   de navegação — e não é mais um ajuste puramente estético). Fecha v1.7.
   Contador de leves zerado, reinicia a contagem desde a v1.7.
+
+--------------------------------------------------------
+[29/08/2026] v1.8 — Confirmação também para reabrir uma parada
+--------------------------------------------------------
+FEEDBACK DO USUÁRIO (com vídeo)
+  Gravou um vídeo mostrando que, ao tocar no botão "✓ Parada concluída"
+  (uma parada já marcada), ela reabre na hora — sem confirmação, era o
+  comportamento intencional da v1.7 (desmarcar em um toque só, pensado
+  como "corrigir um engano rápido").
+
+  O usuário pediu primeiro para tirar essa possibilidade de reabrir.
+  Repensando, ponderou que o técnico pode legitimamente precisar voltar
+  a um lugar que já tinha marcado como concluído (ex.: esqueceu algo,
+  precisa retornar). Pediu então uma confirmação para reabrir, em vez de
+  remover a função.
+
+  OBS.: o vídeo foi salvo pelo usuário em Downloads (CARD REABRE.mp4),
+  não na pasta Exemplos do projeto como ele pretendia. Não foi movido
+  para o repositório — é uma gravação de tela, sem necessidade de ficar
+  versionada, e o pedido já estava claro pelo texto.
+
+O QUE MUDOU (index.html)
+  - O botão "Marcar como concluída" / "✓ Parada concluída" passa a levar
+    SEMPRE à tela de confirmação, não importa o sentido da mudança. Não
+    existe mais o "toque único desfaz" que a v1.7 tinha deixado de
+    propósito.
+  - Ao reabrir, a confirmação ganha uma legenda explicando a
+    consequência: "Reabrir esta parada? Os botões de navegação voltam a
+    aparecer." — e o botão de confirmar muda de "✓ Confirmar" para
+    "↺ Reabrir", para não ficar ambíguo qual ação está sendo confirmada.
+  - Um único par de botões (Confirmar/Cancelar) resolve os dois sentidos:
+    o clique em "Confirmar" simplesmente alterna o estado que o botão
+    pedia (concluída → reabre; pendente → conclui), então não precisou
+    duplicar a lógica.
+  - CSS: .confirmar-linha virou um bloco vertical (legenda + botões),
+    onde antes era só a linha de botões; a linha de botões propriamente
+    dita ganhou a classe .confirmar-botoes.
+
+TESTES REALIZADOS
+  - Marcar como concluída: fluxo igual ao da v1.6/v1.7, sem mudança.
+  - Tocar no botão já concluído: NÃO reabre na hora — mostra a legenda
+    "Reabrir esta parada?..." e o par Reabrir/Cancelar, com a contagem e
+    o estado "feita" intactos.
+  - Cancelar a reabertura: parada continua concluída, sem navegação.
+  - Confirmar a reabertura: parada volta a pendente, contagem ajustada,
+    botões Waze/Maps voltam a aparecer, texto do botão volta a "Marcar
+    como concluída".
+  - Progresso e o estado (inclusive travado) sobrevivem ao recarregar a
+    página.
+  - Console sem erros em nenhum passo. Progresso de teste limpo do
+    localStorage ao final.
