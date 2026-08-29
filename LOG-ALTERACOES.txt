@@ -1080,3 +1080,43 @@ DOCUMENTAÇÃO
     outros três itens da Fase 2 foram adiados a pedido do usuário, com a
     data — para quem reabrir o documento no futuro entender o estado sem
     precisar perguntar de novo.
+
+--------------------------------------------------------
+[29/08/2026] Ajuste leve — botão "Adicionar" desalinhado do campo ao lado
+--------------------------------------------------------
+FEEDBACK DO USUÁRIO (com print)
+  No painel de tipos de serviço, o botão "Adicionar" aparecia mais alto
+  que o campo de texto "Novo tipo de serviço..." ao lado dele, quebrando
+  o alinhamento da linha.
+
+DIAGNÓSTICO
+  Não reproduzido no navegador de teste (mede exatamente 36px para os
+  dois elementos, alinhados). Causa provável: o reset global de <button>
+  não incluía "appearance: none" — sem isso, alguns navegadores (Chrome
+  no Windows é um caso conhecido) preservam parte do estilo nativo do
+  controle, que reserva uma altura mínima própria por fora do padding
+  definido em CSS. Como o campo de texto do lado é um <input>, sem esse
+  comportamento, os dois saem de alturas diferentes mesmo com o mesmo
+  padding declarado.
+
+CORREÇÃO (index.html)
+  - Acrescentado "-webkit-appearance:none; -moz-appearance:none;
+    appearance:none;" e "line-height:1.15" ao reset global de <button>
+    (afeta todos os botões do app, não só o "Adicionar" — é a correção
+    correta para a causa, não um remendo local).
+  - Acrescentado "button::-moz-focus-inner{border:0;padding:0;}" — reset
+    específico do Firefox, que por padrão soma um contorno de foco interno
+    com o próprio padding por fora do que é declarado em CSS.
+
+TESTES REALIZADOS
+  - Medido por código: input e botão "Adicionar" com 36px de altura e
+    mesmo alinhamento vertical (top idêntico), antes e depois da correção
+    (já vinham iguais no navegador de teste — a correção ataca a causa
+    para o ambiente relatado, mesmo sem reproduzir o sintoma aqui).
+  - Conferido que nenhum outro botão do app mudou de aparência: modo
+    campo (Waze, Maps, Marcar como concluída, ícones) seguem idênticos,
+    com os ícones dos apps alinhados normalmente.
+  - Console sem erros.
+
+VERSÃO: alteração leve (correção visual, sem mudar comportamento).
+  Contador de leves: 1/5 desde a v1.9.

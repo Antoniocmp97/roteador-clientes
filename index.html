@@ -78,7 +78,15 @@
   .origin-row{display:flex;gap:8px;}
   input[type="text"]{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:9px 10px;font-family:'Inter',sans-serif;font-size:13.5px;}
   input[type="text"]:focus{outline:none;border-color:var(--amber-dim);}
-  button{font-family:'Inter',sans-serif;cursor:pointer;border:none;}
+  /* appearance:none tira o estilo nativo do sistema operacional do <button>.
+     Sem isso, alguns navegadores (sobretudo Chrome no Windows) reservam uma
+     altura mínima própria do controle nativo, ignorando o padding definido
+     aqui — foi o que deixou o botão "Adicionar" mais alto que o campo de
+     texto ao lado dele no painel de tipos de serviço. */
+  button{font-family:'Inter',sans-serif;cursor:pointer;border:none;-webkit-appearance:none;-moz-appearance:none;appearance:none;line-height:1.15;}
+  /* Firefox reserva um contorno de foco interno no botão, com seu próprio
+     padding — soma altura por fora do padding que a gente já define. */
+  button::-moz-focus-inner{border:0;padding:0;}
   .btn-icon{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:0 12px;font-size:15px;}
   .btn-icon:hover{border-color:var(--teal);}
   .link-btn{background:none;color:var(--teal);font-size:11.5px;text-decoration:underline;padding:0;}
