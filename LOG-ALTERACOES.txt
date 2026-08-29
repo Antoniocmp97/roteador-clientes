@@ -1172,3 +1172,27 @@ Acrescentada regra ao .gitignore bloqueando Exemplos/*.png, *.jpg e
 *.jpeg — evita que uma futura captura de tela solta na pasta de exemplos
 suba por engano num "git add -A". As duas imagens continuam na máquina,
 só não são mais rastreadas pelo Git.
+
+--------------------------------------------------------
+[29/08/2026] Ajuste leve — igualar por completo "tipos de serviço"/"marcar todos"
+--------------------------------------------------------
+O ajuste anterior (mesma fonte/cor) não bastou — o usuário pediu para
+igualar também o tamanho da fonte e tirar o sublinhado, ficando idêntico
+aos títulos de seção.
+
+O QUE MUDOU (index.html)
+  - .link-btn: font-size de 11.5px para 11px (igual ao .field-label),
+    acrescentado letter-spacing:1.5px e text-transform:uppercase, e
+    text-decoration trocado de underline para none.
+
+TESTES REALIZADOS
+  - Computado por código: tiposBtn, selectAllBtn e o .field-label
+    "2 · Origem" com fonte, tamanho (11px), cor, letter-spacing (1.5px),
+    caixa alta e ausência de sublinhado idênticos nos três.
+  - Conferido visualmente: os dois textos agora leem exatamente como
+    parte do cabeçalho da seção "3 · Selecionar paradas".
+  - Clique nos dois continua funcionando (abrir/fechar painel de tipos,
+    marcar/desmarcar todos).
+  - Console sem erros.
+
+VERSÃO: alteração leve. Contador de leves: 3/5 desde a v1.9.
