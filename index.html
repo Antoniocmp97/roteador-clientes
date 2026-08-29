@@ -197,12 +197,35 @@
   .parada-acoes button{
     flex:1; border-radius:9px; padding:13px 10px; font-weight:600; font-size:14.5px;
     font-family:'Inter',sans-serif; cursor:pointer; border:none;
+    display:flex; align-items:center; justify-content:center; gap:7px;
   }
   .btn-navegar{background:var(--amber); color:#241705;}
   .btn-navegar:active{background:#FFC163;}
-  .btn-feito{background:var(--panel-2); color:var(--teal); border:1px solid var(--teal) !important;}
+  .btn-navegar svg{flex-shrink:0;}
+
+  /* Botão principal da parada: "marcar como concluída". Maior que os de navegação —
+     é a ação mais importante do card — e some por trás da confirmação em duas etapas
+     (ver .confirmar-linha) para não registrar toque sem querer. */
+  .btn-feito{
+    width:100%; background:var(--panel-2); color:var(--teal); border:1px solid var(--teal) !important;
+    border-radius:9px; padding:16px 10px; font-weight:700; font-size:15.5px;
+    font-family:'Inter',sans-serif; cursor:pointer;
+  }
   .btn-feito:active{background:#132229;}
   .parada.feita .btn-feito{background:var(--teal); color:#062420;}
+
+  /* Confirmação em duas etapas: primeiro toque em "Marcar como concluída" troca o
+     botão único por este par, em vez de marcar na hora — evita registrar parada
+     concluída por toque errado. Confirmar de fato marca; Cancelar volta ao normal. */
+  .confirmar-linha{display:flex; gap:8px;}
+  .confirmar-linha button{
+    flex:1; border-radius:9px; padding:16px 10px; font-weight:700; font-size:15px;
+    font-family:'Inter',sans-serif; cursor:pointer; border:none;
+  }
+  .btn-confirmar{background:var(--teal); color:#062420;}
+  .btn-confirmar:active{background:#28a094;}
+  .btn-cancelar-conf{background:transparent; color:var(--muted); border:1px solid var(--line) !important;}
+  .btn-cancelar-conf:active{background:var(--panel-2);}
 
   .campo-vazio{
     text-align:center; color:var(--muted); font-size:14px; padding:60px 20px; line-height:1.6;
@@ -223,6 +246,7 @@
   /* Alvos de toque generosos em qualquer largura de tela no modo campo */
   @media (max-width:480px){
     .parada-acoes button{padding:15px 10px;font-size:15px;}
+    .btn-feito,.confirmar-linha button{padding:18px 10px;font-size:16px;}
   }
 </style>
 </head>
@@ -343,7 +367,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '1.5';
+const VERSAO = '1.6';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -934,6 +958,26 @@ function formatarTempo(s){ return s == null ? null : Math.round(s/60) + ' min'; 
 function linkWaze(lat, lng){ return `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`; }
 function linkMaps(lat, lng){ return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`; }
 
+// Ícones dos apps de navegação, como SVG embutido (sem depender de rede nem de
+// fonte de emoji, que varia de aparência entre Android/iPhone). Não são os
+// arquivos oficiais de marca de cada empresa — são um desenho simples e
+// próprio, só para dar reconhecimento visual imediato de qual app cada botão abre.
+function iconeWaze(){
+  return `<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="13" r="9" fill="#05C8F6"/>
+    <circle cx="12" cy="4.4" r="1.5" fill="#05C8F6"/>
+    <circle cx="8.6" cy="12.4" r="1.5" fill="#12232E"/>
+    <circle cx="15.4" cy="12.4" r="1.5" fill="#12232E"/>
+    <path d="M8.2 17c1 1.1 2.3 1.7 3.8 1.7s2.8-.6 3.8-1.7" stroke="#12232E" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+function iconeMaps(){
+  return `<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 2C7.6 2 4 5.6 4 10c0 5.6 6.6 11.2 7.3 11.8.4.3 1 .3 1.4 0C13.4 21.2 20 15.6 20 10c0-4.4-3.6-8-8-8z" fill="#EA4335"/>
+    <circle cx="12" cy="10" r="3" fill="#fff"/>
+  </svg>`;
+}
+
 // Ativa o modo campo: esconde a interface do escritório, decodifica o roteiro
 // do link e desenha a lista de paradas
 function ativarModoCampo(){
@@ -951,12 +995,15 @@ function ativarModoCampo(){
   }
 
   const feitos = lerProgresso(codigo);
-  desenharCampo(roteiro, codigo, feitos);
+  // Índices com o toque de "marcar como concluída" pendente de confirmação —
+  // só existe na tela (não é salvo), some se a página recarregar
+  const confirmando = new Set();
+  desenharCampo(roteiro, codigo, feitos, confirmando);
 }
 
 // Redesenha a lista de paradas e a barra de progresso a partir do estado atual
-// (roteiro fixo, vindo do link; feitos muda conforme o usuário marca as paradas)
-function desenharCampo(roteiro, codigo, feitos){
+// (roteiro fixo, vindo do link; feitos e confirmando mudam conforme o uso)
+function desenharCampo(roteiro, codigo, feitos, confirmando){
   const total = roteiro.s.length;
   const feitas = feitos.size;
 
@@ -988,6 +1035,17 @@ function desenharCampo(roteiro, codigo, feitos){
       // cliente vem vazio em links antigos (v1, gerados antes desta versão) — nesse
       // caso simplesmente não mostra a linha, em vez de aparecer "undefined"
       const rotuloCliente = cliente ? `<div class="parada-cliente">${escaparHtml(cliente)}</div>` : '';
+      // Botão de concluir: normalmente um único botão, mas troca para o par
+      // Confirmar/Cancelar enquanto este índice está em `confirmando` — segundo
+      // toque intencional antes de marcar de verdade, ver .confirmar-linha no CSS.
+      // Desmarcar (desfazer um engano) continua em um toque só, sem essa etapa.
+      const botaoConcluir = confirmando.has(i)
+        ? `<div class="confirmar-linha">
+             <button class="btn-confirmar" data-i="${i}">✓ Confirmar</button>
+             <button class="btn-cancelar-conf" data-i="${i}">Cancelar</button>
+           </div>`
+        : `<button class="btn-feito" data-i="${i}">${done ? '✓ Parada concluída' : 'Marcar como concluída'}</button>`;
+
       return `
         <div class="parada ${done ? 'feita' : ''} ${proxima ? 'proxima' : ''}">
           <div class="parada-topo">
@@ -998,10 +1056,10 @@ function desenharCampo(roteiro, codigo, feitos){
             </div>
           </div>
           <div class="parada-acoes">
-            <button class="btn-navegar" data-lat="${lat}" data-lng="${lng}" data-app="waze">🧭 Waze</button>
-            <button class="btn-navegar" data-lat="${lat}" data-lng="${lng}" data-app="maps">📍 Maps</button>
+            <button class="btn-navegar" data-lat="${lat}" data-lng="${lng}" data-app="waze">${iconeWaze()} Waze</button>
+            <button class="btn-navegar" data-lat="${lat}" data-lng="${lng}" data-app="maps">${iconeMaps()} Maps</button>
           </div>
-          <button class="btn-feito" data-i="${i}">${done ? '✓ Parada concluída' : 'Marcar como concluída'}</button>
+          ${botaoConcluir}
         </div>`;
     }).join('');
   }
@@ -1018,9 +1076,33 @@ function desenharCampo(roteiro, codigo, feitos){
     const feitoBtn = e.target.closest('.btn-feito');
     if (feitoBtn){
       const i = Number(feitoBtn.dataset.i);
-      if (feitos.has(i)) feitos.delete(i); else feitos.add(i);
+      if (feitos.has(i)){
+        // já concluída: desmarcar é a própria correção de um engano, sem
+        // precisar de confirmação — exigir confirmação aqui só atrapalharia
+        feitos.delete(i);
+        salvarProgresso(codigo, feitos);
+        desenharCampo(roteiro, codigo, feitos, confirmando);
+      }else{
+        // ainda não concluída: primeiro toque só pede confirmação, não marca
+        confirmando.add(i);
+        desenharCampo(roteiro, codigo, feitos, confirmando);
+      }
+      return;
+    }
+    const confirmarBtn = e.target.closest('.btn-confirmar');
+    if (confirmarBtn){
+      const i = Number(confirmarBtn.dataset.i);
+      confirmando.delete(i);
+      feitos.add(i);
       salvarProgresso(codigo, feitos);
-      desenharCampo(roteiro, codigo, feitos); // redesenha para atualizar progresso e destaque
+      desenharCampo(roteiro, codigo, feitos, confirmando);
+      return;
+    }
+    const cancelarBtn = e.target.closest('.btn-cancelar-conf');
+    if (cancelarBtn){
+      const i = Number(cancelarBtn.dataset.i);
+      confirmando.delete(i);
+      desenharCampo(roteiro, codigo, feitos, confirmando);
     }
   };
 }

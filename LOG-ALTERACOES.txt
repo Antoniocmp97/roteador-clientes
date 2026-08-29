@@ -803,3 +803,53 @@ TESTES REALIZADOS
     linha de cliente vazia, contagem e "marcar como concluída"
     funcionando normalmente.
   - Console sem erros em nenhum dos casos.
+
+--------------------------------------------------------
+[29/08/2026] v1.6 — Ícones dos apps e confirmação ao concluir
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  1. Nos botões "Waze" e "Maps" do modo campo, colocar o ícone
+     correspondente do respectivo aplicativo ao lado do texto.
+  2. O botão "Marcar como concluída" precisa ficar um pouco maior.
+  3. Esse mesmo botão precisa de confirmação antes de marcar, porque o
+     usuário pode apertar sem querer.
+
+O QUE MUDOU (index.html)
+  - Duas novas funções, iconeWaze() e iconeMaps(), que devolvem um SVG
+    pequeno embutido no próprio HTML (sem depender de rede nem da fonte
+    de emoji do aparelho, que varia de aparência entre Android e
+    iPhone). São desenhos simples e próprios — não os arquivos oficiais
+    de marca de cada empresa — só para dar reconhecimento visual
+    imediato de qual app cada botão abre: círculo azul com "rosto"
+    simples para o Waze, pino vermelho com centro branco para o Maps.
+    Substituem os emojis 🧭 e 📍 que estavam ali antes.
+  - Botão "Marcar como concluída": aumentado (padding 16px, fonte
+    15.5px, peso 700 — antes herdava só o essencial do <button>
+    genérico) e passou a ocupar 100% da largura do card, mais fácil de
+    acertar com o dedo.
+  - CONFIRMAÇÃO EM DUAS ETAPAS: o primeiro toque no botão NÃO marca a
+    parada — troca o botão único por um par "✓ Confirmar" / "Cancelar".
+    Só marcar de fato ao tocar em "Confirmar". "Cancelar" volta ao botão
+    normal, sem nada acontecer. Esse estado (`confirmando`, um Set de
+    índices) existe só na tela, não é salvo — some se a página recarregar.
+  - DESMARCAR continua em um toque só, de propósito: é a própria correção
+    de um engano, então pedir confirmação para desfazer atrapalharia mais
+    do que ajudaria.
+  - desenharCampo() passou a receber `confirmando` como parâmetro extra,
+    ao lado de `feitos`, para o estado de confirmação sobreviver aos
+    redesenhos da lista sem se perder a cada clique.
+
+TESTES REALIZADOS
+  - Ícones aparecem ao lado do texto nos dois botões, em todas as paradas.
+  - Primeiro toque em "Marcar como concluída": vira o par Confirmar/
+    Cancelar, SEM alterar a contagem (permaneceu "0/6") — confirmado que
+    o clique inicial não marca nada.
+  - Cancelar: volta ao botão normal, contagem intacta.
+  - Marcar de novo e tocar Confirmar: contagem foi para "1/6", parada
+    ganhou a classe "feita", botão virou "✓ Parada concluída".
+  - Desmarcar (clique único no botão já concluído): contagem voltou a
+    "0/6", sem pedir confirmação, como esperado.
+  - Progresso sobrevive ao recarregar a página (testado marcando,
+    recarregando e conferindo "1/6" e a classe "feita" ainda presentes).
+  - Console sem erros em nenhum passo. Progresso de teste limpo do
+    localStorage ao final.

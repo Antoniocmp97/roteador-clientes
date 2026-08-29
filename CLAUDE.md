@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 29/08/2026 — v1.5 (nome do cliente no modo campo)
+> **Última atualização:** 29/08/2026 — v1.6 (ícones dos apps e confirmação ao concluir)
 
 ---
 
@@ -231,6 +231,7 @@ Ainda em aberto:
 | 7 | **v1.3** — Correção: a instalação usada (`umap.hotosm.org`) guarda o nome da camada em `properties.name`, forma que a v1.2 não lia |
 | 8 | **v1.4** — Correção: o checklist agrupado não rolava (filhos de flex sendo espremidos em vez de gerar rolagem) |
 | 9 | **v1.5** — Nome do cliente passa a aparecer no modo campo, acima do nome da filial |
+| 10 | **v1.6** — Ícones do Waze/Maps nos botões de navegação; "Marcar como concluída" maior e com confirmação em duas etapas |
 
 ---
 
@@ -330,3 +331,4 @@ os backups locais são conveniência, não garantia.
 | 1.3 | 29/08/2026 | Correção do nome da camada no formato do `umap.hotosm.org`. **Validada com a base real** |
 | 1.4 | 29/08/2026 | Correção da rolagem do checklist agrupado |
 | 1.5 | 29/08/2026 | Nome do cliente no modo campo (formato do link v2, retrocompatível com v1) |
+| 1.6 | 29/08/2026 | Ícones dos apps de navegação e confirmação em duas etapas ao concluir |
