@@ -721,3 +721,47 @@ teste e apagado em seguida; o .gitignore já o bloqueava)
   ladrilhos pintarem. Nova captura mostrou as ruas normalmente.
 
 - STATUS: leitura por camadas validada com a base real do usuário.
+
+--------------------------------------------------------
+[29/08/2026] v1.4 — Correção: checklist não rolava
+--------------------------------------------------------
+PROBLEMA RELATADO PELO USUÁRIO
+  Depois do agrupamento por camada (v1.2/v1.3), a lista de clientes não
+  rolava. Com 8 clientes, os últimos apareciam espremidos e cortados na
+  base da lista, sem barra de rolagem.
+
+CAUSA
+  Clássico do flexbox. O .checklist é um container flex em coluna com
+  max-height e overflow-y:auto. Os filhos, por padrão, têm
+  flex-shrink:1 — então, em vez de estourar a altura e gerar rolagem, o
+  flexbox ESPREMIA os grupos para caberem nos 190px. Como o .grupo tem
+  overflow:hidden, o conteúdo comprimido ficava cortado.
+
+  Não era um problema visível antes do agrupamento porque as linhas
+  simples de cliente eram baixas e cabiam.
+
+CORREÇÃO
+  - flex:none nos filhos de .checklist, .grupo-corpo, .stops e .steps.
+    As quatro listas tinham o mesmo padrão de risco; .stops em especial,
+    porque as linhas passaram a ter duas alturas na v1.2 (filial +
+    cliente). Corrigidas todas de uma vez, não só a que apareceu.
+  - Altura útil do checklist de 190px para 320px: com 8 clientes fechados
+    (36px cada), 190px mostrava só quatro. Agora cabem os oito.
+  - Lista de paradas de 190px para 240px, pelo mesmo motivo das duas
+    alturas por linha.
+  - Em tela estreita (media query de 760px), checklist limitado a 200px e
+    paradas a 170px. O painel inteiro tem só 346px de altura nesse caso;
+    um checklist de 320px sobraria quase nada para os outros passos.
+
+TESTES REALIZADOS
+  - Base sintética com 8 clientes / 11 filiais, mesmo tamanho da base real.
+  - Antes: grupos comprimidos. Depois: os 8 grupos com 36px cada, altura
+    natural, conteúdo 330px contra 320px visíveis, rolagem funcionando.
+  - Rolagem exercitada por código até o fim da lista: último cliente
+    (LABORATORIO BURIGO) alcançável.
+  - Dois grupos abertos ao mesmo tempo: alturas 146px cada, filiais com
+    48px, conteúdo 550px, sem compressão e ainda rolável.
+  - Tela estreita (420px): checklist 200px, rolável; painel 346px,
+    rolável. Ambos utilizáveis.
+  - Voltando para tela larga: 320px, rolável.
+  - Console sem erros.

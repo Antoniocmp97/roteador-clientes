@@ -57,7 +57,12 @@
   .link-btn{background:none;color:var(--teal);font-size:11.5px;text-decoration:underline;padding:0;}
 
   /* Checklist com um item por cliente carregado do .geojson */
-  .checklist{display:flex;flex-direction:column;gap:6px;max-height:190px;overflow-y:auto;padding-right:2px;}
+  /* max-height define a altura da area rolavel. Os filhos precisam de flex:none,
+     senao o flexbox os ESPREME para caber no lugar de gerar barra de rolagem —
+     era o bug relatado em 29/08/2026: com os grupos, a lista comprimia os
+     ultimos clientes e nao rolava. Vale para .checklist, .stops e .steps. */
+  .checklist{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;padding-right:2px;}
+  .checklist > *{flex:none;}
   .check-row{display:flex;align-items:flex-start;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:13px;}
   .check-row input{margin-top:2px;accent-color:var(--teal);}
   .check-row .coord{display:block;color:var(--muted);font-size:10.5px;font-family:'JetBrains Mono',monospace;}
@@ -76,13 +81,15 @@
   .grupo-marca{width:7px;height:7px;border-radius:50%;background:var(--teal);opacity:.35;flex:none;}
   .grupo.tem-selecao .grupo-marca{background:var(--amber);opacity:1;}
   .grupo-corpo{display:none;padding:0 8px 8px 8px;flex-direction:column;gap:6px;}
+  .grupo-corpo > *{flex:none;}
   .grupo.aberto .grupo-corpo{display:flex;}
   .grupo-corpo .check-row{background:var(--panel);}
   .stop-row .nm-cli{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
   .empty-hint{font-size:12px;color:var(--muted);font-style:italic;}
 
   /* Lista ordenável das paradas selecionadas (ordem da viagem) */
-  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:190px;overflow-y:auto;}
+  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;}
+  .stops > *{flex:none;}
   .stop-row{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;}
   .stop-row .n{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;width:16px;flex-shrink:0;}
   .stop-row .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -107,6 +114,7 @@
   .readout .row + .row{margin-top:2px;font-size:13px;color:var(--muted);font-weight:400;}
   .readout hr{border:none;border-top:1px solid var(--line);margin:10px 0;}
   .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+  .steps > *{flex:none;}
   .steps li{font-size:12.5px;line-height:1.4;color:var(--text);padding-left:14px;border-left:2px solid var(--teal);}
   .steps li.leg-header{border-left-color:var(--amber);color:var(--amber);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;}
 
@@ -121,6 +129,10 @@
   @media (max-width:760px){
     main{flex-direction:column;}
     .console{width:auto;max-height:56%;border-left:none;border-top:1px solid var(--line);}
+    /* Em tela estreita o painel inteiro tem pouca altura: um checklist de 320px
+       sobraria quase nada para os outros passos. Todos continuam rolando. */
+    .checklist{max-height:200px;}
+    .stops{max-height:170px;}
   }
 
   /* Campo "5 · Enviar para o campo": o input do link e a dica de uso */
@@ -329,7 +341,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '1.3';
+const VERSAO = '1.4';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
