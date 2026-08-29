@@ -40,6 +40,33 @@
   .console{width:340px;background:var(--panel);border-left:1px solid var(--line);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
   .field-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;color:var(--amber-dim);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
   .field-label small{color:var(--muted);letter-spacing:0;text-transform:none;font-size:10.5px;}
+  .field-label-acoes{display:flex; gap:12px;}
+
+  /* Painel de configuração dos tipos de serviço (Fase 2) */
+  .tipos-painel{background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+                padding:10px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;}
+  .tipos-lista{display:flex; flex-wrap:wrap; gap:6px;}
+  .tipos-vazio{font-size:12px; color:var(--muted); font-style:italic;}
+  .tipo-chip{display:inline-flex; align-items:center; gap:3px; background:var(--panel);
+             border:1px solid var(--line); border-radius:14px; padding:3px 4px 3px 10px;
+             font-size:12px; color:var(--text);}
+  .tipo-chip button{background:none; border:none; color:var(--muted); cursor:pointer;
+                     font-size:15px; line-height:1; padding:0 5px;}
+  .tipo-chip button:hover{color:var(--danger);}
+  .tipos-add{display:flex; gap:6px;}
+  .tipos-add input{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:6px;
+                    padding:7px 9px; color:var(--text); font-size:12.5px; font-family:'Inter',sans-serif;}
+  .tipos-add input:focus{outline:1px solid var(--teal);}
+  .tipo-add-btn{background:var(--teal); color:#062420; border:none; border-radius:6px;
+                padding:0 14px; font-weight:700; font-size:12.5px; cursor:pointer;}
+
+  /* Seletor de tipo de serviço em cada linha marcada do checklist. Só aparece
+     quando o cliente está selecionado como parada — escolher o tipo antes
+     disso não faz sentido, o cliente nem entra na viagem. */
+  .check-row-label{display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0; cursor:pointer;}
+  .tipo-select{flex-shrink:0; align-self:center; background:var(--panel); color:var(--text);
+               border:1px solid var(--line); border-radius:6px; font-size:11px; padding:4px 6px;
+               font-family:'Inter',sans-serif; max-width:130px;}
 
   /* Área de arrastar-e-soltar (ou clicar) para carregar o .geojson */
   .dropzone{border:1.5px dashed var(--line);border-radius:8px;padding:16px;text-align:center;font-size:12.5px;color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s;}
@@ -85,6 +112,9 @@
   .grupo.aberto .grupo-corpo{display:flex;}
   .grupo-corpo .check-row{background:var(--panel);}
   .stop-row .nm-cli{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .stop-row .nm-tipo{display:inline-block; margin-top:3px; font-family:'JetBrains Mono',monospace;
+                      font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--teal);
+                      background:#0e2422; border:1px solid var(--teal); border-radius:4px; padding:1px 6px;}
   .empty-hint{font-size:12px;color:var(--muted);font-style:italic;}
 
   /* Lista ordenável das paradas selecionadas (ordem da viagem) */
@@ -285,7 +315,22 @@
 
       <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
       <div>
-        <div class="field-label">3 · Selecionar paradas <button class="link-btn" id="selectAllBtn">marcar todos</button></div>
+        <div class="field-label">3 · Selecionar paradas
+          <span class="field-label-acoes">
+            <button class="link-btn" id="tiposBtn">tipos de serviço</button>
+            <button class="link-btn" id="selectAllBtn">marcar todos</button>
+          </span>
+        </div>
+        <!-- Painel de configuração da LISTA de tipos de serviço (ex.: "Manutenção",
+             "Entrega de toner"). Fica escondido até o link "tipos de serviço" ser
+             clicado. A lista em si é salva no navegador (ver carregarTiposServico). -->
+        <div class="tipos-painel" id="tiposPainel" style="display:none;">
+          <div class="tipos-lista" id="tiposLista"></div>
+          <div class="tipos-add">
+            <input type="text" id="tipoNovoInput" placeholder="Novo tipo de serviço...">
+            <button class="tipo-add-btn" id="tipoAddBtn">Adicionar</button>
+          </div>
+        </div>
         <div class="checklist" id="checklist">
           <div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>
         </div>
@@ -370,7 +415,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '1.8';
+const VERSAO = '1.9';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -418,6 +463,23 @@ let clientPoints = [];   // { id, name, lat, lng, marker } — todos os clientes
 let stops = [];          // subconjunto/ordem de clientPoints selecionados para esta viagem
 let gruposClientes = [];  // [{cliente, pontos:[...]}] — agrupamento por camada do uMap, usado só no checklist
 let gruposAbertos = new Set(); // nomes dos clientes com a cascata aberta no momento
+
+// Fase 2 — tipo de serviço por parada. A LISTA de tipos é configuração do
+// escritório (fica guardada no navegador, sobrevive a recarregar a página);
+// já o tipo escolhido em CADA parada é dado da viagem do dia, como o resto da
+// seleção — não é salvo, some ao recarregar (mesma regra do resto do app).
+function carregarTiposServico(){
+  try{
+    const bruto = localStorage.getItem('hg_tipos_servico');
+    if (bruto) return JSON.parse(bruto);
+  }catch(e){ /* localStorage indisponível — segue com a lista padrão */ }
+  return ['Entrega de toner', 'Manutenção']; // reflete a operação descrita no CLAUDE.md; editável na hora
+}
+function salvarTiposServico(){
+  try{ localStorage.setItem('hg_tipos_servico', JSON.stringify(tiposServico)); }
+  catch(e){ /* segue sem persistir */ }
+}
+let tiposServico = carregarTiposServico();
 let originLatLng = null; // [lat, lng] do ponto de partida, definido por geolocalização ou geocodificação
 let originMarker = null; // marcador do Leaflet para a origem no mapa
 let routeLine = null;    // polyline da rota traçada no mapa
@@ -601,17 +663,48 @@ function renderChecklist(){
     corpo.className = 'grupo-corpo';
     g.pontos.forEach(pt => {
       const c = clientPoints.find(cp => cp.id === pt.id) || pt;
-      const row = document.createElement('label');
+      const marcado = stops.find(s => s.id === c.id);
+
+      // Seletor de tipo de serviço: só aparece na linha de um cliente já
+      // selecionado como parada. Se o tipo salvo nessa parada não existir
+      // mais na lista configurável (foi removido no painel), ele ainda
+      // aparece como opção — perder a escolha feita seria pior que mostrar
+      // um tipo "órfão".
+      let seletorTipo = '';
+      if (marcado){
+        const opcoes = tiposServico.map(t =>
+          `<option value="${escaparHtml(t)}"${marcado.tipo === t ? ' selected' : ''}>${escaparHtml(t)}</option>`
+        ).join('');
+        const opcaoOrfa = (marcado.tipo && !tiposServico.includes(marcado.tipo))
+          ? `<option value="${escaparHtml(marcado.tipo)}" selected>${escaparHtml(marcado.tipo)}</option>` : '';
+        seletorTipo = `<select class="tipo-select" data-id="${c.id}" title="Tipo de serviço">
+          <option value="">Tipo de serviço…</option>${opcoes}${opcaoOrfa}
+        </select>`;
+      }
+
+      const row = document.createElement('div');
       row.className = 'check-row';
-      row.innerHTML = `<input type="checkbox" id="chk-${c.id}"><span>${escaparHtml(c.name)}<span class="coord">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span></span>`;
+      row.innerHTML = `
+        <label class="check-row-label">
+          <input type="checkbox" id="chk-${c.id}">
+          <span>${escaparHtml(c.name)}<span class="coord">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span></span>
+        </label>
+        ${seletorTipo}`;
       const cb = row.querySelector('input');
-      cb.checked = stops.some(s => s.id === c.id);
+      cb.checked = !!marcado;
       cb.addEventListener('change', () => {
         if (cb.checked){ if (!stops.some(s=>s.id===c.id)) stops.push(c); }
         else { stops = stops.filter(s => s.id !== c.id); }
-        renderChecklist();   // atualiza a contagem e o destaque do cabeçalho
+        renderChecklist();   // atualiza a contagem, o destaque do cabeçalho e mostra/esconde o seletor
         renderStopsList();
       });
+      const sel = row.querySelector('.tipo-select');
+      if (sel){
+        sel.addEventListener('change', () => {
+          c.tipo = sel.value; // c é o mesmo objeto referenciado em stops — não precisa procurar de novo
+          renderStopsList();  // só a etiqueta na seção 4 precisa atualizar
+        });
+      }
       corpo.appendChild(row);
     });
     box.appendChild(corpo);
@@ -627,6 +720,54 @@ document.getElementById('selectAllBtn').onclick = () => {
   renderStopsList();
 };
 
+/* ---------------- Configuração dos tipos de serviço (Fase 2) ---------------- */
+// Botão "tipos de serviço": abre/fecha o painel de configuração da lista
+document.getElementById('tiposBtn').onclick = () => {
+  const painel = document.getElementById('tiposPainel');
+  const abrindo = painel.style.display === 'none';
+  painel.style.display = abrindo ? 'flex' : 'none';
+  if (abrindo) renderTiposPainel();
+};
+
+// Redesenha os "chips" da lista configurável, cada um com um × para remover
+function renderTiposPainel(){
+  const lista = document.getElementById('tiposLista');
+  if (!tiposServico.length){
+    lista.innerHTML = '<span class="tipos-vazio">Nenhum tipo cadastrado ainda.</span>';
+    return;
+  }
+  lista.innerHTML = tiposServico.map(t =>
+    `<span class="tipo-chip">${escaparHtml(t)}<button data-t="${escaparHtml(t)}" title="Remover">×</button></span>`
+  ).join('');
+  lista.querySelectorAll('button').forEach(btn => {
+    btn.onclick = () => {
+      // Remove só da lista configurável — paradas que já usavam esse tipo mantêm
+      // a escolha (ver "opcaoOrfa" em renderChecklist), só não aparece mais como
+      // opção nova para outras paradas.
+      tiposServico = tiposServico.filter(t => t !== btn.dataset.t);
+      salvarTiposServico();
+      renderTiposPainel();
+      renderChecklist();
+    };
+  });
+}
+
+// Botão/Enter para adicionar um novo tipo à lista configurável
+function adicionarTipoServico(){
+  const input = document.getElementById('tipoNovoInput');
+  const valor = input.value.trim();
+  if (!valor || tiposServico.includes(valor)){ input.value = ''; return; }
+  tiposServico.push(valor);
+  salvarTiposServico();
+  input.value = '';
+  renderTiposPainel();
+  renderChecklist();
+}
+document.getElementById('tipoAddBtn').onclick = adicionarTipoServico;
+document.getElementById('tipoNovoInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); adicionarTipoServico(); }
+});
+
 // Redesenha a lista numerada de paradas (seção 4) a partir de `stops`, na ordem atual do array.
 // Cada linha tem botões ▲/▼ (troca de posição com o vizinho) e ✕ (remove da viagem)
 function renderStopsList(){
@@ -640,7 +781,8 @@ function renderStopsList(){
     // Nome da filial + cliente em letra menor: duas filiais de clientes diferentes
     // podem se chamar "CENTRAL" ou "MATRIZ", e a lista precisa ficar sem ambiguidade
     const sub = s.cliente ? `<span class="nm-cli">${escaparHtml(s.cliente)}</span>` : '';
-    li.innerHTML = `<span class="n">${i+1}</span><span class="nm">${escaparHtml(s.name)}${sub}</span>
+    const tag = s.tipo ? `<span class="nm-tipo">${escaparHtml(s.tipo)}</span>` : '';
+    li.innerHTML = `<span class="n">${i+1}</span><span class="nm">${escaparHtml(s.name)}${sub}${tag}</span>
       <button data-act="up" title="Mover para cima">▲</button>
       <button data-act="down" title="Mover para baixo">▼</button>
       <button data-act="rm" title="Remover">✕</button>`;
@@ -852,8 +994,8 @@ function prepararEnvio(distance, duration){
 // de tamanho de uma URL.
 function montarRoteiro(){
   return {
-    v: 2, // v2 acrescenta o nome do cliente em cada parada (era só a filial na v1)
-    s: stops.map(s => [s.name, Math.round(s.lat * 1e5) / 1e5, Math.round(s.lng * 1e5) / 1e5, s.cliente || '']),
+    v: 3, // v3 acrescenta o tipo de serviço (v2 tinha o cliente; v1 só a filial)
+    s: stops.map(s => [s.name, Math.round(s.lat * 1e5) / 1e5, Math.round(s.lng * 1e5) / 1e5, s.cliente || '', s.tipo || '']),
     d: ultimoResumo ? ultimoResumo.d : null,
     t: ultimoResumo ? ultimoResumo.t : null,
   };
@@ -1028,12 +1170,14 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
   lista.innerHTML = banner + listaHtmlParadas();
 
   function listaHtmlParadas(){
-    return roteiro.s.map(([nome, lat, lng, cliente], i) => {
+    return roteiro.s.map(([nome, lat, lng, cliente, tipo], i) => {
       const done = feitos.has(i);
       const proxima = i === indiceProximo;
-      // cliente vem vazio em links antigos (v1, gerados antes desta versão) — nesse
-      // caso simplesmente não mostra a linha, em vez de aparecer "undefined"
+      // cliente e tipo vêm vazios em links antigos (v1/v2, gerados antes desta
+      // versão) — nesse caso simplesmente não mostra a linha correspondente,
+      // em vez de aparecer "undefined"
       const rotuloCliente = cliente ? `<div class="parada-cliente">${escaparHtml(cliente)}</div>` : '';
+      const rotuloTipo = tipo ? `<div class="parada-tag">${escaparHtml(tipo)}</div>` : '';
       // Botão de concluir: normalmente um único botão, mas troca para o par
       // Confirmar/Cancelar enquanto este índice está em `confirmando` — segundo
       // toque intencional antes de mudar o estado de verdade, ver
@@ -1068,6 +1212,7 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
             <div class="parada-info">
               ${rotuloCliente}
               <div class="parada-nome">${escaparHtml(nome)}</div>
+              ${rotuloTipo}
             </div>
           </div>
           ${acoes}

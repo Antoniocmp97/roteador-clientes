@@ -1001,3 +1001,82 @@ TESTES REALIZADOS
     página.
   - Console sem erros em nenhum passo. Progresso de teste limpo do
     localStorage ao final.
+
+--------------------------------------------------------
+[29/08/2026] v1.9 — Fase 2 (parcial): tipo de serviço por parada
+--------------------------------------------------------
+CONTEXTO
+  Usuário aprovou e testou a v1.8 ("ficou muito bom, testado e aprovado").
+  Antes de iniciar a Fase 2, retirou dois dos quatro itens do escopo
+  original (descrito em ARQUITETURA-E-REQUISITOS.html):
+    - Campo de observação livre por parada
+    - Dividir os clientes selecionados entre 2-3 pessoas da equipe
+      (e, por consequência, "um link por pessoa", que dependia disso)
+  Confirmado com o usuário que o único item restante da Fase 2 —
+  "tipo de serviço por parada, definido em lista configurável" — era
+  o que deveria ser construído agora. Confirmado.
+
+  Também confirmado antes de começar: a v1.8 está salva (commit 2352954,
+  branch local = origin/main, working tree limpo) e publicada no GitHub
+  Pages, com backup local em backups/v1.8_2026-08-29_confirmar-reabrir/.
+
+O QUE FOI CONSTRUÍDO (index.html)
+  - LISTA CONFIGURÁVEL: nova seção "tipos de serviço" (link ao lado de
+    "marcar todos", no passo 3). Abre um painel com os tipos cadastrados
+    como "chips" removíveis (×) e um campo para adicionar novos. A lista
+    é salva no localStorage (chave hg_tipos_servico) — configuração do
+    escritório, sobrevive a recarregar a página. Lista inicial padrão:
+    "Entrega de toner" e "Manutenção", refletindo a operação descrita no
+    CLAUDE.md (editável a qualquer momento, inclusive apagando os dois).
+  - SELETOR POR PARADA: cada linha do checklist que está marcada como
+    parada ganha um <select> com os tipos cadastrados. Só aparece quando
+    o cliente está selecionado — escolher tipo antes disso não faz
+    sentido, o cliente nem entra na viagem. O tipo escolhido fica no
+    próprio objeto da parada (stops), não é salvo entre sessões — mesma
+    regra do resto da seleção do dia (CLAUDE.md seção 7: "sem
+    persistência" continua valendo para a seleção do dia; só a LISTA de
+    tipos é configuração persistente).
+  - REMOÇÃO SEM PERDER ESCOLHA JÁ FEITA: se um tipo é removido da lista
+    configurável depois de já atribuído a alguma parada, a parada mantém
+    a escolha (aparece como opção "órfã" no seletor dela) — só deixa de
+    estar disponível para novas escolhas. Testado especificamente.
+  - SEÇÃO 4 (ordem da viagem): cada parada com tipo escolhido ganha uma
+    etiqueta pequena (mesmo estilo visual da etiqueta usada no modo
+    campo), abaixo do nome do cliente.
+  - MODO CAMPO: o tipo viaja dentro do link (formato do roteiro subiu de
+    v2 para v3 — variável interna do link, não confundir com a versão do
+    app) e aparece como etiqueta no card da parada, junto com nome e
+    cliente. RETROCOMPATÍVEL: links v1 (só filial) e v2 (com cliente, sem
+    tipo) continuam abrindo normalmente, sem etiqueta e sem "undefined".
+
+TESTES REALIZADOS
+  - Painel de tipos: abriu com a lista padrão (Entrega de toner,
+    Manutenção). Adicionado "Instalação" → apareceu na lista e persistiu
+    no localStorage. Removido "Manutenção" → sumiu da lista e do
+    localStorage.
+  - Seletor por parada: só aparece ao marcar o checkbox da filial.
+    Escolhido "Instalação" → apareceu na etiqueta da seção 4
+    imediatamente.
+  - Tipo órfão: removida "Instalação" da lista DEPOIS de já escolhida
+    numa parada → a parada manteve "Instalação" (confirmado no objeto
+    stops[0].tipo e na opção selecionada do <select>), só não apareceu
+    mais como opção nova para as demais paradas.
+  - Fluxo completo: origem definida, rota otimizada, link gerado →
+    decodificado o link e confirmado v:3 com o tipo correto na primeira
+    parada. Link aberto em viewport de celular: etiqueta "INSTALAÇÃO"
+    visível no card, mesmo estilo visual das etiquetas já usadas no app.
+  - Retrocompatibilidade: link v2 sintético (sem tipo) aberto sem
+    quebrar, sem etiqueta vazia, console sem erros.
+  - Progresso de teste e a lista de tipos de teste limpos do localStorage
+    ao final (a lista de tipos volta ao padrão no próximo carregamento).
+
+DOCUMENTAÇÃO
+  - CLAUDE.md: nova linha na seção 2 (funcionalidades), seção 8
+    atualizada (item marcado como feito; os dois adiados documentados
+    com a data e o motivo), seção 9 (histórico) e seção 11 (tabela de
+    versões, contador de leves zerado).
+  - ARQUITETURA-E-REQUISITOS.html (fora do repositório, só local):
+    marcado o item de tipo de serviço como implementado e anotado que os
+    outros três itens da Fase 2 foram adiados a pedido do usuário, com a
+    data — para quem reabrir o documento no futuro entender o estado sem
+    precisar perguntar de novo.

@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 29/08/2026 — v1.8 (confirmação também para reabrir uma parada)
+> **Última atualização:** 29/08/2026 — v1.9 (Fase 2: tipo de serviço por parada)
 
 ---
 
@@ -31,6 +31,11 @@ sem dependências instaladas. Abre direto no navegador.
 - Parse das camadas: cada camada é um **cliente**, os pontos dentro dela são as
   **filiais**. Camadas vazias são ignoradas
 - Checklist agrupado por cliente, com cascata que abre ao clicar no nome
+- **Tipo de serviço por parada** (Fase 2): lista configurável (editável pelo
+  próprio escritório, salva no navegador — ex.: "Entrega de toner",
+  "Manutenção"). Cada parada selecionada ganha um seletor para escolher o
+  tipo; aparece na lista de paradas do escritório e como etiqueta na tela
+  do campo
 - Plot dos pontos no mapa (Leaflet) com popup mostrando filial e cliente
 - Definição de origem: geolocalização do navegador **ou** endereço digitado
   (geocodificação via Nominatim, com viés para Criciúma/SC)
@@ -212,9 +217,13 @@ operação — ver `.gitignore`):
 
 Ainda em aberto:
 - Busca/filtro no checklist quando a lista crescer (Fase 3)
-- Dividir clientes entre as 2-3 pessoas da equipe, um link por pessoa (Fase 2)
-- Tipo de serviço e observação por parada (Fase 2)
+- Tipo de serviço por parada — ✅ implementado na v1.9
 - Troca do OSRM público antes do uso diário sério (Fase 4)
+
+Adiados a pedido do usuário em 29/08/2026 (continuam descritos no documento
+de arquitetura, para retomar quando fizer sentido):
+- Campo de observação livre por parada (Fase 2)
+- Dividir clientes entre as 2-3 pessoas da equipe, um link por pessoa (Fase 2)
 
 ---
 
@@ -234,6 +243,7 @@ Ainda em aberto:
 | 10 | **v1.6** — Ícones do Waze/Maps nos botões de navegação; "Marcar como concluída" maior e com confirmação em duas etapas |
 | 11 | **v1.7** — Ícones reais do Waze e do Google Maps (recortados pelo usuário); parada concluída esconde os botões de navegação |
 | 12 | **v1.8** — Reabrir uma parada concluída também passa a pedir confirmação em duas etapas |
+| 13 | **v1.9** — Fase 2 (parcial, a pedido do usuário): tipo de serviço por parada, com lista configurável |
 
 ---
 
@@ -300,7 +310,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v1.8:  0 / 5
+Leves acumuladas desde a v1.9:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -336,3 +346,4 @@ os backups locais são conveniência, não garantia.
 | 1.6 | 29/08/2026 | Ícones dos apps de navegação e confirmação em duas etapas ao concluir |
 | 1.7 | 29/08/2026 | Ícones reais (Waze/Maps) e trava de navegação na parada concluída |
 | 1.8 | 29/08/2026 | Confirmação em duas etapas também para reabrir uma parada concluída |
+| 1.9 | 29/08/2026 | Fase 2 (parcial): tipo de serviço por parada, lista configurável |
