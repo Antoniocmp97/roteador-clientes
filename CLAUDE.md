@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 29/08/2026 — v1.6 (ícones dos apps e confirmação ao concluir)
+> **Última atualização:** 29/08/2026 — v1.7 (ícones reais dos apps; parada concluída trava a navegação)
 
 ---
 
@@ -232,6 +232,7 @@ Ainda em aberto:
 | 8 | **v1.4** — Correção: o checklist agrupado não rolava (filhos de flex sendo espremidos em vez de gerar rolagem) |
 | 9 | **v1.5** — Nome do cliente passa a aparecer no modo campo, acima do nome da filial |
 | 10 | **v1.6** — Ícones do Waze/Maps nos botões de navegação; "Marcar como concluída" maior e com confirmação em duas etapas |
+| 11 | **v1.7** — Ícones reais do Waze e do Google Maps (recortados pelo usuário); parada concluída esconde os botões de navegação |
 
 ---
 
@@ -298,7 +299,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v1.6:  1 / 5
+Leves acumuladas desde a v1.7:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -332,3 +333,4 @@ os backups locais são conveniência, não garantia.
 | 1.4 | 29/08/2026 | Correção da rolagem do checklist agrupado |
 | 1.5 | 29/08/2026 | Nome do cliente no modo campo (formato do link v2, retrocompatível com v1) |
 | 1.6 | 29/08/2026 | Ícones dos apps de navegação e confirmação em duas etapas ao concluir |
+| 1.7 | 29/08/2026 | Ícones reais (Waze/Maps) e trava de navegação na parada concluída |

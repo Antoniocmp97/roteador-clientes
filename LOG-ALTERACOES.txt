@@ -882,3 +882,71 @@ TESTE REALIZADO
   com dois olhos escuros bem definidos e a saliência da antena visíveis.
   Conferido também dentro do botão de verdade, no card da parada.
   Console sem erros.
+
+--------------------------------------------------------
+[29/08/2026] v1.7 — Ícones reais + trava de navegação na parada concluída
+--------------------------------------------------------
+PEDIDO 1: ícone do Waze com a imagem de verdade
+  O ajuste leve anterior (recriar o mascote em SVG a partir de uma
+  descrição) não agradou. O usuário then mandou a imagem de referência
+  do ícone oficial do Waze diretamente no chat.
+
+  A imagem colada na conversa não fica salva em nenhum arquivo acessível
+  — existe só como conteúdo visual daquela mensagem. Foi pedido ao
+  usuário que salvasse o arquivo em disco para poder ser usado de
+  verdade. Ele salvou dois arquivos na raiz do projeto:
+    waze.png    — logotipo completo (palavra "waze" + mascote), 278x119
+    google.webp — logotipo completo (pino + "Google Maps"), 960x865, com
+                  transparência
+
+  PROCESSAMENTO (Python/Pillow, instalado nesta sessão):
+    - Waze: localizado por análise de pixel (comparação com a cor de
+      fundo) o retângulo exato do mascote, sem a palavra "waze" ao lado
+      (o botão já tem o texto "Waze" escrito, não precisa duplicar).
+      Recorte final: 76×76, fundo ciano original preservado.
+    - Google Maps: localizada a faixa vertical do pino (0–584px) separada
+      da faixa do texto "Google Maps" (688–864px) por uma lacuna
+      totalmente transparente — cortado só o pino, com o furo branco do
+      meio, mantendo a transparência. Redimensionado de 585px para 96px
+      de altura (arquivo final ~6 KB) — não faz sentido guardar em
+      tamanho de pôster uma imagem que aparece a ~20px no botão.
+    - As duas imagens foram conferidas visualmente (Read) antes e depois
+      do recorte, para garantir que pegou a região certa.
+    - Arquivos finais guardados em Exemplos/icones/waze.png e
+      Exemplos/icones/maps.png. Os logotipos completos originais
+      (com a palavra escrita) foram apagados da raiz depois de extraído
+      o necessário — não faz sentido versionar o arquivo de marca inteiro
+      quando só o ícone é usado.
+    - As duas imagens foram embutidas no index.html como base64
+      (data:image/png;base64,...), substituindo as funções iconeWaze()/
+      iconeMaps() que geravam SVG. Mantém a regra do projeto de arquivo
+      único, sem depender de carregar imagem externa.
+
+PEDIDO 2: parada concluída não deve permitir navegar de volta
+  O usuário testou o app e notou que, mesmo depois de marcar uma parada
+  como concluída, os botões Waze/Maps continuavam ativos — dava para
+  abrir a navegação de novo para um lugar onde já se esteve.
+
+  CORREÇÃO: em listaHtmlParadas() (index.html), os botões de navegação
+  (.parada-acoes) agora só aparecem quando a parada NÃO está concluída.
+  Ao marcar como concluída, o card "trava": mostra só o nome riscado e o
+  botão de desfazer, sem os botões de navegação. Desmarcar (corrigir um
+  engano) devolve os botões normalmente.
+
+TESTES REALIZADOS
+  - Ícones reais aparecem nos botões, nítidos, nas 6 paradas do exemplo.
+  - Card antes de marcar: 2 botões de navegação presentes.
+  - Fluxo confirmar → concluir: botões de navegação somem (0 encontrados),
+    card ganha a classe "feita", botão vira "✓ Parada concluída".
+  - Desmarcar (um toque): botões de navegação voltam (2 encontrados),
+    contagem volta a 0/6.
+  - Progresso e o estado travado sobrevivem ao recarregar a página
+    (testado: marcar, recarregar, conferir "1/6", classe "feita" e
+    ausência dos botões de navegação, tudo mantido).
+  - Console sem erros em nenhum passo. Progresso de teste limpo do
+    localStorage ao final.
+
+VERSÃO
+  Classificada como mediana/grande (muda comportamento visível — trava
+  de navegação — e não é mais um ajuste puramente estético). Fecha v1.7.
+  Contador de leves zerado, reinicia a contagem desde a v1.7.
