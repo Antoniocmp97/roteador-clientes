@@ -853,3 +853,32 @@ TESTES REALIZADOS
     recarregando e conferindo "1/6" e a classe "feita" ainda presentes).
   - Console sem erros em nenhum passo. Progresso de teste limpo do
     localStorage ao final.
+
+--------------------------------------------------------
+[29/08/2026] Ajuste leve — ícone do Waze mais fiel ao original
+--------------------------------------------------------
+FEEDBACK DO USUÁRIO
+  Aprovou o teste da v1.6, mas o ícone do Waze incomodou — parecia um
+  smiley genérico demais, não lembrava o app de verdade.
+
+O QUE MUDOU
+  - iconeWaze() (index.html): redesenhado. Antes era um círculo ciano com
+    dois pontos pretos e uma linha de sorriso. Agora é um quadrado de
+    cantos arredondados (o formato real do ícone do Waze na tela do
+    celular, não um círculo) com um blob branco fazendo as vezes do
+    mascote, dois olhos escuros e uma pequena saliência no topo lembrando
+    a antena. Continua sendo um desenho próprio — não o arquivo oficial
+    de marca — só mais próximo do que as pessoas reconhecem de cor.
+  - Ícone do Maps não foi alterado; só o Waze foi apontado como problema.
+
+SEM MUDANÇA DE VERSÃO DO APP
+  Alteração classificada como LEVE (visual, não muda comportamento — ver
+  seção 11 do CLAUDE.md). Contador de leves atualizado para 1/5 desde a
+  v1.6. Continua v1.6.
+
+TESTE REALIZADO
+  Ícone renderizado isolado, ampliado ~6x na tela, para inspeção visual
+  detalhada: fundo ciano em formato de quadrado arredondado, rosto branco
+  com dois olhos escuros bem definidos e a saliência da antena visíveis.
+  Conferido também dentro do botão de verdade, no card da parada.
+  Console sem erros.

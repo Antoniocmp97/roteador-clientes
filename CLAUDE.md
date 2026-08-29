@@ -298,7 +298,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v1.1:  0 / 5
+Leves acumuladas desde a v1.6:  1 / 5
 ```
 
 ### Onde o número aparece
