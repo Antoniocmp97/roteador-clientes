@@ -1442,3 +1442,36 @@ TESTES REALIZADOS
   - Console sem erros.
 
 VERSÃO: alteração leve. Contador de leves: 3/5 desde a v2.0.
+
+--------------------------------------------------------
+[29/08/2026] Encerrado o caso do botão "Adicionar" — não era bug de código
+--------------------------------------------------------
+CONCLUSÃO DA INVESTIGAÇÃO (4 tentativas de correção ao longo da sessão)
+  Depois de esgotar as hipóteses de CSS (appearance:none, altura fixa,
+  troca de <button> por <div>), pedido ao usuário o dado definitivo:
+  medir os dois elementos direto no DevTools do navegador real dele.
+
+  Resultado, medido no Edge do próprio usuário:
+    input#tipoNovoInput  → 201 × 36
+    div#tipoAddBtn       → 85.94 × 36
+  As duas ALTURAS são idênticas (36px = 36px). O código está correto e
+  o navegador do usuário confirma isso — não existe divergência real de
+  tamanho.
+
+CAUSA PROVÁVEL
+  O usuário revelou que está testando numa TV de 32" em 1366×768 (não um
+  monitor comum). Baixa densidade de pixels + processamento de imagem
+  próprio de TV (nitidez, escala) tornam plausível que uma borda fina de
+  1px (do input) e um bloco de cor sólida sem borda (do botão) pareçam
+  ter "pesos visuais" diferentes na tela, mesmo sendo matematicamente do
+  mesmo tamanho — uma ilusão de ótica/percepção, não um bug.
+
+DECISÃO
+  Considerada a opção de adicionar uma borda fina ao botão "Adicionar"
+  para aproximar visualmente do campo de texto, mas isso o deixaria
+  inconsistente com os outros botões sólidos do app (ex.: "✓ Confirmar"
+  do modo campo, também sem borda). Usuário optou por não mexer mais:
+  o código está provadamente correto, e a expectativa é de que o
+  alinhamento apareça correto num monitor Full HD normal.
+
+STATUS: encerrado sem alteração de código. Nenhuma mudança de versão.
