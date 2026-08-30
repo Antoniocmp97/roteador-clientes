@@ -327,7 +327,11 @@
 
       <!-- Passo 1: upload do .geojson (clique abre o seletor de arquivo; também aceita arrastar-e-soltar) -->
       <div>
-        <div class="field-label">1 · Clientes <small id="countLabel"></small></div>
+        <div class="field-label">
+          <span>1 · Clientes <small id="countLabel"></small></span>
+          <!-- Só aparece quando existe base guardada — ver atualizarBotaoEsquecer() -->
+          <button class="link-btn" id="esquecerBaseBtn" style="display:none;">esquecer base</button>
+        </div>
         <div class="dropzone" id="dropzone">
           <strong>Clique para carregar</strong> ou arraste o backup<br>completo do uMap (.umap) aqui
         </div>
@@ -460,7 +464,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '2.1';
+const VERSAO = '2.2';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -526,6 +530,60 @@ function salvarTiposServico(){
   catch(e){ /* segue sem persistir */ }
 }
 let tiposServico = carregarTiposServico();
+
+/* ---------------- Base de clientes guardada no navegador (Fase 3) ---------------- */
+// Depois de carregar um .umap uma vez, a base volta sozinha na próxima abertura —
+// não precisa arrastar o arquivo todo dia. Também é rede de segurança se o uMap
+// sair do ar: a última base carregada continua disponível para montar roteiro.
+// Fica no localStorage, então o dado continua só na máquina de quem usa — não
+// viola o requisito "nenhum dado de cliente em servidor".
+const CHAVE_BASE = 'hg_base_clientes';
+
+function salvarBaseClientes(grupos, filename){
+  try{
+    // Grava só os campos vindos do arquivo. NÃO serializa clientPoints, que carrega
+    // junto o marcador do Leaflet (objeto circular, não vira JSON).
+    localStorage.setItem(CHAVE_BASE, JSON.stringify({
+      v: 1,
+      arquivo: filename,
+      salvoEm: Date.now(),
+      grupos: grupos.map(g => ({
+        cliente: g.cliente,
+        pontos: g.pontos.map(p => ({ id:p.id, name:p.name, cliente:p.cliente, lat:p.lat, lng:p.lng }))
+      }))
+    }));
+  }catch(e){
+    // Sem espaço, ou modo privado: o app segue funcionando normalmente,
+    // só não vai lembrar a base na próxima abertura
+  }
+  atualizarBotaoEsquecer();
+}
+
+// Devolve a base guardada, ou null se não houver / estiver corrompida. A validação
+// é da forma do objeto, não da versão: se um dia o formato mudar, o guardado antigo
+// simplesmente é ignorado em vez de quebrar a abertura do app.
+function lerBaseClientes(){
+  try{
+    const bruto = localStorage.getItem(CHAVE_BASE);
+    if (!bruto) return null;
+    const obj = JSON.parse(bruto);
+    const ok = obj && Array.isArray(obj.grupos) && obj.grupos.length
+      && obj.grupos.every(g => g && typeof g.cliente === 'string' && Array.isArray(g.pontos)
+           && g.pontos.every(p => p && typeof p.lat === 'number' && typeof p.lng === 'number'));
+    return ok ? obj : null;
+  }catch(e){ return null; }
+}
+
+function esquecerBaseClientes(){
+  try{ localStorage.removeItem(CHAVE_BASE); }catch(e){}
+  atualizarBotaoEsquecer();
+}
+
+// O link "esquecer base" só faz sentido existir quando há uma base guardada
+function atualizarBotaoEsquecer(){
+  const btn = document.getElementById('esquecerBaseBtn');
+  if (btn) btn.style.display = lerBaseClientes() ? 'inline' : 'none';
+}
 let originLatLng = null; // [lat, lng] do ponto de partida, definido por geolocalização ou geocodificação
 let originMarker = null; // marcador do Leaflet para a origem no mapa
 let routeLine = null;    // polyline da rota traçada no mapa
@@ -582,6 +640,7 @@ function loadFile(file){
       const grupos = lerUmap(data);
       if (!grupos.length) throw new Error('nenhum ponto encontrado no arquivo');
       importClients(grupos, file.name);
+      salvarBaseClientes(grupos, file.name); // fica guardada para a próxima abertura
     }catch(err){
       document.getElementById('fileStatus').style.color = 'var(--danger)';
       document.getElementById('fileStatus').textContent = 'Erro: ' + err.message;
@@ -627,7 +686,9 @@ function lerUmap(data){
 
 // Substitui os clientes atuais pelos pontos recém-carregados: limpa o mapa/estado anterior,
 // cria um marcador teal por cliente (com popup de adicionar/remover parada) e enquadra o mapa neles
-function importClients(grupos, filename){
+// salvoEm (opcional) só é passado quando a base veio do armazenamento do navegador,
+// não de um arquivo recém-carregado — serve para mostrar de quando ela é.
+function importClients(grupos, filename, salvoEm){
   // reset
   clientPoints.forEach(c => c.marker && map.removeLayer(c.marker));
   clientPoints = []; stops = [];
@@ -654,9 +715,12 @@ function importClients(grupos, filename){
   map.fitBounds(group.getBounds(), { padding: [40,40] });
 
   const nCli = grupos.length;
+  // Data só aparece quando a base foi restaurada do navegador — assim dá para
+  // perceber que ela pode estar desatualizada em relação ao uMap.
+  const quando = salvoEm ? ` · salva em ${new Date(salvoEm).toLocaleDateString('pt-BR')}` : '';
   document.getElementById('fileStatus').style.color = 'var(--teal)';
   document.getElementById('fileStatus').textContent =
-    `✓ ${clientPoints.length} ${clientPoints.length === 1 ? 'ponto' : 'pontos'} em ${nCli} ${nCli === 1 ? 'cliente' : 'clientes'}, de "${filename}"`;
+    `✓ ${clientPoints.length} ${clientPoints.length === 1 ? 'ponto' : 'pontos'} em ${nCli} ${nCli === 1 ? 'cliente' : 'clientes'}, de "${filename}"${quando}`;
   document.getElementById('countLabel').textContent = `(${clientPoints.length})`;
   renderChecklist();
 }
@@ -1343,6 +1407,40 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
       desenharCampo(roteiro, codigo, feitos, confirmando);
     }
   };
+}
+
+// Link "esquecer base": apaga a base guardada e recarrega a página, deixando o app
+// limpo. Pede confirmação em dois toques (mesmo princípio do modo campo) porque
+// descarta também a seleção do dia em andamento. Recarregar em vez de resetar o
+// estado à mão garante que nada fique para trás.
+let esquecerConfirmando = false;
+const esquecerBtn = document.getElementById('esquecerBaseBtn');
+if (esquecerBtn){
+  esquecerBtn.onclick = () => {
+    if (!esquecerConfirmando){
+      esquecerConfirmando = true;
+      esquecerBtn.textContent = 'confirmar?';
+      // volta sozinho ao normal se o usuário não confirmar — evita deixar o
+      // link "armado" na tela indefinidamente depois de um clique sem querer
+      setTimeout(() => {
+        if (esquecerConfirmando){ esquecerConfirmando = false; esquecerBtn.textContent = 'esquecer base'; }
+      }, 4000);
+      return;
+    }
+    esquecerBaseClientes();
+    location.reload();
+  };
+}
+
+// Modo escritório: se houver base guardada de uma sessão anterior, ela volta sozinha.
+// No modo campo isso não roda — aquela tela não usa mapa nem lista de clientes.
+if (!modoCampoAtivo){
+  const base = lerBaseClientes();
+  if (base){
+    try{ importClients(base.grupos, base.arquivo, base.salvoEm); }
+    catch(e){ esquecerBaseClientes(); } // guardado inutilizável: descarta e abre limpo
+  }
+  atualizarBotaoEsquecer();
 }
 
 // Só entra no modo campo se o link realmente trouxer um roteiro

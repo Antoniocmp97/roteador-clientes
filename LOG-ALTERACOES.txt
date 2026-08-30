@@ -1547,3 +1547,82 @@ TESTES REALIZADOS
 VERSÃO
   Classificada como mediana/grande (funcionalidade nova). Fecha v2.1.
   Contador de leves zerado, reinicia desde a v2.1.
+
+--------------------------------------------------------
+[29/08/2026] v2.2 — Fase 3: base de clientes guardada no navegador
+--------------------------------------------------------
+MOTIVO (levantado pelo usuário)
+  Ao discutir a possibilidade de colocar os endereços num servidor, o
+  usuário identificou o risco real que o preocupava: se a plataforma onde
+  as camadas estão cadastradas (uMap) sair do ar, a operação inteira
+  trava — sem conseguir exportar o .umap, não há base para montar
+  roteiro. Guardar a base no navegador não resolve o problema todo (não
+  dá para EDITAR clientes sem o uMap), mas é uma rede de segurança real:
+  a última base carregada continua disponível para trabalhar.
+
+  Optado por implementar este item, que já estava previsto na Fase 3,
+  em vez de partir para servidor — mantém intactos os requisitos não
+  funcionais do documento de arquitetura ("nenhum dado de cliente em
+  servidor", "sem cadastro e sem login", "custo de operação zero").
+
+O QUE FOI CONSTRUÍDO (index.html)
+  - salvarBaseClientes() / lerBaseClientes() / esquecerBaseClientes():
+    a base vai para o localStorage na chave hg_base_clientes, junto com
+    o nome do arquivo e a data em que foi salva.
+  - Gravação: em loadFile(), depois de um carregamento bem-sucedido —
+    não dentro de importClients(), senão a restauração re-gravaria a
+    base e a data "salva em" avançaria sozinha a cada abertura.
+  - Serializa só os campos vindos do arquivo (id, name, cliente, lat,
+    lng). NÃO usa clientPoints, que carrega junto o marcador do Leaflet
+    — objeto circular, que não vira JSON.
+  - Restauração: ao abrir o app no modo escritório, se houver base
+    guardada ela volta sozinha. No MODO CAMPO isso não roda — aquela
+    tela não cria mapa nem usa lista de clientes, e carregar seria
+    gastar memória à toa no celular.
+  - Status mostra a data quando a base veio do navegador ("...· salva em
+    29/08/2026"), e não mostra nada quando o arquivo acabou de ser
+    carregado. A ideia é deixar perceptível que a base guardada pode
+    estar desatualizada em relação ao uMap.
+  - Link "esquecer base" no cabeçalho do passo 1, visível só quando há
+    base guardada. Pede confirmação em dois cliques (mesmo princípio do
+    modo campo), porque descarta também a seleção do dia em andamento;
+    o link se desarma sozinho depois de 4 segundos se não for
+    confirmado. Ao confirmar, apaga e recarrega a página — recarregar
+    garante estado limpo sem precisar replicar à mão todo o reset.
+  - Validação defensiva em lerBaseClientes(): confere a FORMA do objeto
+    (grupos com cliente string e pontos com lat/lng numéricos), não a
+    versão. Guardado corrompido ou de formato futuro é simplesmente
+    ignorado, e o app abre pedindo o arquivo, como antes.
+
+TESTES REALIZADOS (com a base real do usuário, 11 pontos / 8 clientes)
+  - App vazio: sem base guardada, link "esquecer base" escondido.
+  - Carregar arquivo: guardou no navegador, link apareceu.
+  - RECARREGAR A PÁGINA: os 8 clientes voltaram sozinhos, 11 marcadores
+    no mapa, status com a data ("salva em 29/08/2026").
+  - Enquadramento do mapa na restauração conferido por código (o Leaflet
+    reportou tamanho correto 925x811, zoom 10, todos os marcadores
+    dentro dos limites) — uma captura intermediária deu a impressão de
+    mapa mal enquadrado, mas era só ladrilho em carregamento.
+  - "esquecer base": 1º clique só troca o texto para "confirmar?" sem
+    apagar nada; espera de 4s desarma sozinho; 2º clique apaga e
+    recarrega, deixando app, busca e link no estado inicial limpo.
+  - MODO CAMPO com base guardada: mapa não criado, 0 clientes
+    carregados, base intacta no armazenamento — confirmado que a
+    restauração não roda ali.
+  - Dado corrompido no armazenamento ('{lixo corrompido'): app abriu
+    normal pedindo o arquivo, sem erro no console.
+  - Busca e rota completa (otimizar) sobre a base RESTAURADA: ambas
+    funcionando, paradas corretas.
+  - Console sem erros em nenhum teste. Dados de teste removidos do
+    localStorage ao final.
+
+DOCUMENTAÇÃO
+  - CLAUDE.md: seção 2 (funcionalidades), seção 7 — corrigida a
+    limitação "Sem persistência. Nada é salvo", que estava desatualizada
+    desde a v1.9 (tipos de serviço) e agora ficaria errada de vez.
+    Passou a listar o que É e o que NÃO É salvo, e por quê.
+  - ARQUITETURA-E-REQUISITOS.html: item da Fase 3 marcado como feito.
+
+FASE 3 — o que resta
+  - Endereço de origem memorizado (não iniciado)
+  - Revisar a decisão de manter arquivo único (ponto de decisão)

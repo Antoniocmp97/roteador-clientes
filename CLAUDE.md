@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 29/08/2026 — v2.1 (Fase 3: busca no checklist)
+> **Última atualização:** 29/08/2026 — v2.2 (Fase 3: base guardada no navegador)
 
 ---
 
@@ -33,6 +33,9 @@ sem dependências instaladas. Abre direto no navegador.
 - Checklist agrupado por cliente, com cascata que abre ao clicar no nome
 - **Busca no checklist** (Fase 3): filtra por nome do cliente ou da filial;
   grupos com resultado abrem sozinhos durante a busca
+- **Base guardada no navegador** (Fase 3): depois de carregar o `.umap` uma vez,
+  a base volta sozinha na próxima abertura. Também é a rede de segurança se o
+  uMap sair do ar. Link "esquecer base" apaga a base guardada (com confirmação)
 - **Tipo de serviço por parada** (Fase 2): lista configurável (editável pelo
   próprio escritório, salva no navegador — ex.: "Entrega de toner",
   "Manutenção"). Cada parada selecionada ganha um seletor para escolher o
@@ -191,7 +194,11 @@ repositório é público (ver `.gitignore`).
   (auto-hospedadas, gratuitas) ou API paga (Mapbox Directions, Google Directions).
 - **Nominatim** tem política de uso justo — limite aproximado de 1 requisição por
   segundo. Volume alto de geocodificação exige alternativa.
-- **Sem persistência.** Nada é salvo: recarregar a página zera tudo.
+- **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
+  lista de tipos de serviço e o progresso do modo campo. **Não** ficam salvos:
+  a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
+  recarregar a página zera essa parte, de propósito (é o roteiro do dia, não
+  configuração). Nada disso sai da máquina de quem usa.
 - **Sem busca no checklist.** Com dezenas ou centenas de clientes, rolar a lista
   fica impraticável.
 - **Otimização puramente geográfica.** Considera apenas distância/tempo de carro.
@@ -219,13 +226,13 @@ operação — ver `.gitignore`):
 
 Ainda em aberto:
 - Troca do OSRM público antes do uso diário sério (Fase 4)
-- Base de clientes guardada no navegador (Fase 3, não iniciado)
 - Endereço de origem memorizado (Fase 3, não iniciado)
 - Revisar a decisão de manter arquivo único (Fase 3, ponto de decisão, não iniciado)
 
 Concluído:
 - Tipo de serviço por parada — ✅ implementado na v1.9
 - Busca/filtro no checklist — ✅ implementado na v2.1
+- Base de clientes guardada no navegador — ✅ implementado na v2.2
 
 Adiados a pedido do usuário em 29/08/2026 (continuam descritos no documento
 de arquitetura, para retomar quando fizer sentido):
@@ -253,6 +260,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 13 | **v1.9** — Fase 2 (parcial, a pedido do usuário): tipo de serviço por parada, com lista configurável |
 | 14 | **v2.0** — 5 ajustes leves acumulados desde a v1.9 fecharam a versão; o último trocou o `<button>` "Adicionar" por um elemento genérico, eliminando de vez a divergência de altura entre navegadores |
 | 15 | **v2.1** — Fase 3 (parcial, a pedido do usuário): busca/filtro no checklist |
+| 16 | **v2.2** — Fase 3: base de clientes guardada no navegador, com link para esquecê-la |
 
 ---
 
@@ -319,7 +327,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v2.1:  0 / 5
+Leves acumuladas desde a v2.2:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -358,3 +366,4 @@ os backups locais são conveniência, não garantia.
 | 1.9 | 29/08/2026 | Fase 2 (parcial): tipo de serviço por parada, lista configurável |
 | 2.0 | 29/08/2026 | Fecha 5 ajustes leves; correção definitiva do alinhamento do botão "Adicionar" (deixou de ser um `<button>` nativo) |
 | 2.1 | 29/08/2026 | Fase 3 (parcial): busca/filtro no checklist por cliente ou filial |
+| 2.2 | 29/08/2026 | Fase 3: base de clientes guardada no navegador |
