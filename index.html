@@ -123,7 +123,6 @@
   .checklist > *{flex:none;}
   .check-row{display:flex;align-items:flex-start;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:13px;}
   .check-row input{margin-top:2px;accent-color:var(--teal);}
-  .check-row .coord{display:block;color:var(--muted);font-size:10.5px;font-family:'JetBrains Mono',monospace;}
   /* Checklist agrupado por cliente (camada do uMap). O cabeçalho abre e fecha
      a cascata de filiais; começa fechado para dar visão geral da carteira. */
   .grupo{border:1px solid var(--line);border-radius:7px;background:var(--panel-2);overflow:hidden;}
@@ -727,7 +726,7 @@ function renderChecklist(){
       row.innerHTML = `
         <label class="check-row-label">
           <input type="checkbox" id="chk-${c.id}">
-          <span>${escaparHtml(c.name)}<span class="coord">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span></span>
+          <span>${escaparHtml(c.name)}</span>
         </label>
         ${seletorTipo}`;
       const cb = row.querySelector('input');

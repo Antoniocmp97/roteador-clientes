@@ -1475,3 +1475,25 @@ DECISÃO
   alinhamento apareça correto num monitor Full HD normal.
 
 STATUS: encerrado sem alteração de código. Nenhuma mudança de versão.
+
+--------------------------------------------------------
+[29/08/2026] Ajuste leve — removidas as coordenadas do checklist
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  Tirar os números (latitude/longitude) que apareciam abaixo do nome de
+  cada filial no checklist (seção 3).
+
+O QUE MUDOU (index.html)
+  - renderChecklist(): removido o <span class="coord"> que mostrava
+    "${lat}, ${lng}" abaixo do nome.
+  - Removida a regra CSS .check-row .coord, que não tinha mais uso.
+
+TESTES REALIZADOS
+  - Conferido que o HTML da linha não tem mais o span de coordenadas.
+  - Rota completa testada (selecionar todos, definir origem, otimizar):
+    "Ordem otimizada e rota traçada" — as coordenadas continuam
+    funcionando internamente (o roteamento não depende do que aparece
+    na tela), só não são mais exibidas.
+  - Console sem erros.
+
+VERSÃO: alteração leve. Contador de leves: 4/5 desde a v2.0.
