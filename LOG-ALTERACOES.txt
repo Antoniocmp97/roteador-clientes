@@ -1406,3 +1406,39 @@ TESTES REALIZADOS
   - Console sem erros.
 
 VERSÃO: alteração leve. Contador de leves: 2/5 desde a v2.0.
+
+--------------------------------------------------------
+[29/08/2026] Ajuste leve — "PARADAS" alinhado embaixo de "SELECIONAR" de verdade
+--------------------------------------------------------
+FEEDBACK DO USUÁRIO (com print)
+  Mesmo depois da correção anterior (voltar ao layout lado a lado), o
+  título continuava "desalinhado". Pedido: "o paradas deve ficar logo
+  abaixo do selecionar".
+
+DIAGNÓSTICO
+  A causa era mais sutil do que uma sobreposição: o <br> simples dentro
+  do texto corrido "3 · Selecionar<br>paradas" quebra a linha, mas
+  "paradas" volta para a margem esquerda do bloco inteiro — ou seja,
+  ficava alinhado embaixo do "3" (primeiro caractere da linha 1), não
+  embaixo da palavra "SELECIONAR" (que começa alguns caracteres depois,
+  após "3 · "). Visualmente isso cria um degrau para a esquerda que lê
+  como desalinhado, mesmo com o texto tecnicamente correto.
+
+CORREÇÃO
+  Restruturado o título: "3 ·" passou a ser um item separado, ao lado
+  (não mais antes, na mesma linha corrida) de uma coluna própria
+  contendo "Selecionar" e "paradas" empilhados. Como os dois ficam
+  dentro do MESMO container de coluna (display:flex;
+  flex-direction:column), nascem exatamente na mesma posição horizontal
+  — não tem como ficar um mais à esquerda que o outro.
+
+TESTES REALIZADOS
+  - Conferido por código: "Selecionar" e "paradas" com a mesma coordenada
+    X exata (45px), um embaixo do outro, em 335px e 290px de largura.
+  - Sem sobreposição entre o título e os links "tipos de serviço"/"marcar
+    todos" nas duas larguras.
+  - "marcar todos" e "tipos de serviço" testados por clique, continuam
+    funcionando normalmente.
+  - Console sem erros.
+
+VERSÃO: alteração leve. Contador de leves: 3/5 desde a v2.0.

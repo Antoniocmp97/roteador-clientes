@@ -44,7 +44,11 @@
   /* "3 · Selecionar" precisa ficar junto numa linha só, mesmo com pouco espaço
      sobrando ao lado de "tipos de serviço"/"marcar todos" — só "paradas" (via
      <br> no HTML) desce para a linha de baixo, de propósito. */
-  .field-label-titulo{white-space:nowrap;}
+  /* "3 ·" fica ao lado, "Selecionar"/"paradas" numa coluna própria — assim
+     "paradas" cai exatamente embaixo de "Selecionar", não embaixo do "3"
+     (que teria acontecido com um <br> simples dentro do mesmo texto corrido). */
+  .field-label-titulo{white-space:nowrap; display:flex; gap:5px;}
+  .field-label-titulo .titulo-palavras{display:flex; flex-direction:column;}
 
   /* Painel de configuração dos tipos de serviço (Fase 2) */
   .tipos-painel{background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
@@ -343,7 +347,7 @@
       <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
       <div>
         <div class="field-label">
-          <span class="field-label-titulo">3 · Selecionar<br>paradas</span>
+          <span class="field-label-titulo">3 ·<span class="titulo-palavras"><span>Selecionar</span><span>paradas</span></span></span>
           <span class="field-label-acoes">
             <button class="link-btn" id="tiposBtn">tipos de serviço</button>
             <button class="link-btn" id="selectAllBtn">marcar todos</button>
