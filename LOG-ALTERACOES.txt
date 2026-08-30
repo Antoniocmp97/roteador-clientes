@@ -1329,3 +1329,47 @@ PENDENTE
 VERSÃO
   Esta é a 5ª alteração leve consecutiva desde a v1.9 (regra: 5 leves
   fecham versão nova). Fecha v2.0. Contador zerado, reinicia desde a v2.0.
+
+--------------------------------------------------------
+[29/08/2026] Ajuste leve — título e ações da seção 3 em linhas separadas
+--------------------------------------------------------
+FEEDBACK DO USUÁRIO (com print, retângulo vermelho)
+  "3 · SELECIONAR / PARADAS" ainda aparecia desalinhado, mesmo depois da
+  correção anterior que forçou "3 · Selecionar" a nunca quebrar linha
+  (white-space:nowrap). Usuário pediu para ir passo a passo, corrigindo
+  esse ponto primeiro.
+
+DIAGNÓSTICO
+  A correção anterior (nowrap em "3 · Selecionar") era frágil por
+  natureza: ela IMPEDE a quebra dessa parte do texto, mas não IMPEDE que
+  ela ultrapasse (transborde) a largura disponível quando a coluna do
+  título divide espaço com os links "tipos de serviço"/"marcar todos" na
+  MESMA linha. Em uma janela real mais estreita do que as testadas até
+  aqui, isso podia sobrepor visualmente o título aos links, em vez de
+  simplesmente quebrar — explicando o "desalinhamento" mesmo com o texto
+  correto por baixo.
+
+CORREÇÃO (mais robusta — remove a disputa de espaço, não tenta administrá-la)
+  Título e links deixam de dividir a mesma linha nessa seção específica.
+  Nova classe .field-label-empilhado (aplicada só na seção 3): o título
+  ("3 · Selecionar" / "paradas") fica em cima, os dois links de ação
+  ficam numa linha própria embaixo, ocupando a largura toda disponível.
+  Sem concorrência por espaço horizontal, elimina de vez o risco de
+  sobreposição — não importa quão estreita seja a janela.
+
+  Efeito colateral bom: como os dois links agora têm a linha inteira só
+  para eles (não mais dividida com o título), "tipos de serviço" e
+  "marcar todos" passam a caber numa linha só, em vez de quebrar em duas
+  cada um como vinha acontecendo.
+
+TESTES REALIZADOS
+  - Testado em 335px, 280px (mais estreito que qualquer coisa testada
+    até aqui) e 1280px (desktop, sidebar fixo de 340px): em todas, título
+    em duas linhas limpas, sem sobreposição, e os dois links numa linha
+    só, sem quebrar.
+  - Conferido o fluxo completo (carregar exemplo.umap, abrir painel de
+    tipos, medir input/botão) nas larguras estreitas e larga — segue
+    tudo funcionando, sem regressão.
+  - Console sem erros em nenhuma largura testada.
+
+VERSÃO: alteração leve. Contador de leves: 1/5 desde a v2.0.
