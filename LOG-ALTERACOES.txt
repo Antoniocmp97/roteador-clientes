@@ -1196,3 +1196,69 @@ TESTES REALIZADOS
   - Console sem erros.
 
 VERSÃO: alteração leve. Contador de leves: 3/5 desde a v1.9.
+
+--------------------------------------------------------
+[29/08/2026] Ajuste leve — altura fixa no input/botão de tipos + título em duas linhas
+--------------------------------------------------------
+FEEDBACK DO USUÁRIO (com nova captura)
+  Enviou uma terceira captura ("BOTAO ADICIONAR DESALINHADO APOS CARREGAR
+  .UMAP.png") mostrando que o botão "Adicionar" desalinha especificamente
+  DEPOIS de carregar o arquivo .umap — antes de carregar, fica certo.
+
+INVESTIGAÇÃO
+  Tentativa de reproduzir no navegador de teste, testando:
+    - largura real de desktop (1280px, sidebar fixo de 340px)
+    - larguras estreitas (380px, 340px — essa última reproduz exatamente
+      o mesmo quebra-linha visto nas capturas do usuário: "TIPOS DE /
+      SERVIÇO" e "MARCAR / TODOS" cada um em duas linhas)
+    - em todas, medindo com getBoundingClientRect ANTES e DEPOIS de
+      carregar o exemplo.umap
+  Resultado: input e botão sempre saíram com 36px idênticos, nas duas
+  situações, em toda largura testada. Não foi possível reproduzir a
+  diferença de altura relatada.
+
+  Diagnóstico: a causa está ligada a alguma particularidade do motor de
+  renderização do navegador do usuário (possivelmente relacionada a como
+  aquele navegador recalcula a altura de <input> vs <button> a partir de
+  padding+borda+linha de texto ao entrar em um reflow grande, como o que
+  acontece ao carregar e desenhar os 8 grupos de clientes) — não é algo
+  que dependa da largura da janela nem seja visível no navegador de teste.
+
+CORREÇÃO (mais robusta que as duas tentativas anteriores)
+  Em vez de confiar que o navegador calcule a MESMA altura para os dois
+  elementos a partir do padding declarado (abordagem que já tinha
+  recebido duas correções sem resolver de vez), a altura passou a ser
+  FIXA e IDÊNTICA nos dois: height:36px + box-sizing:border-box tanto em
+  ".tipos-add input" quanto em ".tipo-add-btn". Isso elimina de vez a
+  possibilidade de o navegador calcular números diferentes para os dois,
+  não importa a causa exata da divergência.
+
+OUTRO PEDIDO: "PARADAS" sempre abaixo de "SELECIONAR" (item 3)
+  Adicionado <br> entre "Selecionar" e "paradas" no título da seção 3.
+  Isso, sozinho, quebrava "3 ·" e "Selecionar" também em linhas
+  separadas quando a largura era pequena (o texto do título divide o
+  espaço da linha com os links "tipos de serviço"/"marcar todos", que já
+  ocupam boa parte da largura disponível). Corrigido envolvendo "3 ·
+  Selecionar<br>paradas" numa <span class="field-label-titulo"> com
+  white-space:nowrap — assim "3 · SELECIONAR" fica sempre junto numa
+  linha, e só "PARADAS" desce para a linha de baixo, como pedido.
+
+TESTES REALIZADOS
+  - Altura de input e botão: 36px idênticos, antes e depois de carregar
+    o exemplo.umap, tanto em 340px (largura estreita, mesmo quebra-linha
+    da captura do usuário) quanto em 1280px (sidebar fixo de desktop).
+  - Título da seção 3: conferido por código o texto renderizado —
+    "3 · SELECIONAR" numa linha, "PARADAS" na linha de baixo, nas duas
+    larguras testadas.
+  - Console sem erros nas duas larguras.
+  - Removidos arquivos de recorte temporários usados só para inspecionar
+    pixel a pixel as capturas do usuário durante o diagnóstico
+    (Exemplos/icones/_crop_antes*.png) — não fazem parte do app.
+
+PENDENTE
+  Como não foi possível reproduzir o sintoma original, a correção por
+  altura fixa é a melhor aposta disponível, mas depende de confirmação
+  do usuário no navegador real dele para fechar de vez.
+
+VERSÃO: alteração leve (visual, sem mudar comportamento). Contador de
+  leves: 4/5 desde a v1.9 — a próxima alteração leve fecha versão nova.

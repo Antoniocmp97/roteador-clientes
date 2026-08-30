@@ -41,6 +41,10 @@
   .field-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;color:var(--amber-dim);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
   .field-label small{color:var(--muted);letter-spacing:0;text-transform:none;font-size:10.5px;}
   .field-label-acoes{display:flex; gap:12px;}
+  /* "3 · Selecionar" precisa ficar junto numa linha só, mesmo com pouco espaço
+     sobrando ao lado de "tipos de serviço"/"marcar todos" — só "paradas" (via
+     <br> no HTML) desce para a linha de baixo, de propósito. */
+  .field-label-titulo{white-space:nowrap;}
 
   /* Painel de configuração dos tipos de serviço (Fase 2) */
   .tipos-painel{background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
@@ -53,12 +57,20 @@
   .tipo-chip button{background:none; border:none; color:var(--muted); cursor:pointer;
                      font-size:15px; line-height:1; padding:0 5px;}
   .tipo-chip button:hover{color:var(--danger);}
-  .tipos-add{display:flex; gap:6px;}
-  .tipos-add input{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:6px;
-                    padding:7px 9px; color:var(--text); font-size:12.5px; font-family:'Inter',sans-serif;}
+  /* Altura FIXA nos dois — não deixado para o navegador calcular pela soma de
+     padding+borda+linha de texto. Em alguns navegadores essa conta dá números
+     ligeiramente diferentes para <input> e <button> mesmo com o mesmo padding
+     declarado (reportado pelo usuário: desalinhava depois de carregar dados,
+     sem reproduzir aqui em nenhuma largura testada — reforçando que a causa é
+     do motor de renderização, não do layout). Altura fixa elimina a variável. */
+  .tipos-add{display:flex; align-items:center; gap:6px;}
+  .tipos-add input{flex:1; height:36px; box-sizing:border-box; background:var(--panel);
+                    border:1px solid var(--line); border-radius:6px; padding:0 9px;
+                    color:var(--text); font-size:12.5px; font-family:'Inter',sans-serif;}
   .tipos-add input:focus{outline:1px solid var(--teal);}
-  .tipo-add-btn{background:var(--teal); color:#062420; border:none; border-radius:6px;
-                padding:0 14px; font-weight:700; font-size:12.5px; cursor:pointer;}
+  .tipo-add-btn{height:36px; box-sizing:border-box; background:var(--teal); color:#062420;
+                border:none; border-radius:6px; padding:0 14px; font-weight:700;
+                font-size:12.5px; cursor:pointer;}
 
   /* Seletor de tipo de serviço em cada linha marcada do checklist. Só aparece
      quando o cliente está selecionado como parada — escolher o tipo antes
@@ -327,7 +339,8 @@
 
       <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
       <div>
-        <div class="field-label">3 · Selecionar paradas
+        <div class="field-label">
+          <span class="field-label-titulo">3 · Selecionar<br>paradas</span>
           <span class="field-label-acoes">
             <button class="link-btn" id="tiposBtn">tipos de serviço</button>
             <button class="link-btn" id="selectAllBtn">marcar todos</button>
