@@ -1373,3 +1373,36 @@ TESTES REALIZADOS
   - Console sem erros em nenhuma largura testada.
 
 VERSÃO: alteração leve. Contador de leves: 1/5 desde a v2.0.
+
+--------------------------------------------------------
+[29/08/2026] Ajuste leve — revertido o empilhamento da seção 3
+--------------------------------------------------------
+FEEDBACK DO USUÁRIO (com print, retângulo vermelho)
+  A correção anterior (título e links em linhas separadas,
+  .field-label-empilhado) foi longe demais: quebrou "tipos de serviço" e
+  "marcar todos" para fora do lugar deles, os dois deixaram de ficar
+  juntos. O pedido original era só quebrar "SELECIONAR"/"PARADAS" — o
+  resto (os dois links lado a lado, à direita) deveria continuar como
+  estava.
+
+CORREÇÃO
+  Revertido o empilhamento por completo:
+  - Removida a classe field-label-empilhado do <div> da seção 3 e as
+    duas regras de CSS associadas.
+  - Volta ao layout original lado a lado (título à esquerda, os dois
+    links juntos à direita, via .field-label comum), mantendo só a parte
+    que funcionava bem: o título com <br> + white-space:nowrap, então
+    "3 · SELECIONAR" continua junto e só "PARADAS" desce de linha.
+
+TESTES REALIZADOS
+  - Conferido por código que o título e o bloco de links NÃO se
+    sobrepõem, em 335px e também em 290px (mais estreito que qualquer
+    largura testada até aqui) — bounding boxes calculados, sem
+    interseção nas duas larguras.
+  - Visual conferido: "3 · SELECIONAR / PARADAS" à esquerda, "TIPOS DE
+    SERVIÇO" e "MARCAR TODOS" juntos à direita (cada um em duas linhas,
+    como no layout original), sem separação entre os dois links.
+  - "marcar todos" testado por clique, painel de tipos abre normalmente.
+  - Console sem erros.
+
+VERSÃO: alteração leve. Contador de leves: 2/5 desde a v2.0.

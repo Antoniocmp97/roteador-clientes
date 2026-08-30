@@ -45,12 +45,6 @@
      sobrando ao lado de "tipos de serviço"/"marcar todos" — só "paradas" (via
      <br> no HTML) desce para a linha de baixo, de propósito. */
   .field-label-titulo{white-space:nowrap;}
-  /* Título e links de ação em linhas separadas (usado só na seção 3) — evita
-     os dois competirem pela mesma largura, que é o que causava sobreposição
-     em janelas estreitas quando o título precisa de duas linhas ("PARADAS"
-     abaixo de "SELECIONAR"). */
-  .field-label-empilhado{flex-direction:column; align-items:flex-start; gap:6px;}
-  .field-label-empilhado .field-label-acoes{width:100%; justify-content:space-between;}
 
   /* Painel de configuração dos tipos de serviço (Fase 2) */
   .tipos-painel{background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
@@ -348,12 +342,7 @@
 
       <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
       <div>
-        <!-- field-label-empilhado: título numa linha, ações numa linha própria
-             abaixo — em vez de dividir a MESMA linha com os links (como as
-             outras seções fazem). Título e links têm textos parecidos em
-             tamanho aqui, e competir pela mesma linha nessa seção específica
-             é o que vinha causando a sobreposição/desalinhamento relatados. -->
-        <div class="field-label field-label-empilhado">
+        <div class="field-label">
           <span class="field-label-titulo">3 · Selecionar<br>paradas</span>
           <span class="field-label-acoes">
             <button class="link-btn" id="tiposBtn">tipos de serviço</button>
