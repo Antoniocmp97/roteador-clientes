@@ -70,7 +70,10 @@
   .tipos-add input:focus{outline:1px solid var(--teal);}
   .tipo-add-btn{height:36px; box-sizing:border-box; background:var(--teal); color:#062420;
                 border:none; border-radius:6px; padding:0 14px; font-weight:700;
-                font-size:12.5px; cursor:pointer;}
+                font-size:12.5px; font-family:'Inter',sans-serif; cursor:pointer;
+                display:flex; align-items:center; justify-content:center;
+                user-select:none; white-space:nowrap;}
+  .tipo-add-btn:active{background:#28a094;}
 
   /* Seletor de tipo de serviço em cada linha marcada do checklist. Só aparece
      quando o cliente está selecionado como parada — escolher o tipo antes
@@ -353,7 +356,15 @@
           <div class="tipos-lista" id="tiposLista"></div>
           <div class="tipos-add">
             <input type="text" id="tipoNovoInput" placeholder="Novo tipo de serviço...">
-            <button class="tipo-add-btn" id="tipoAddBtn">Adicionar</button>
+            <!-- DIV no lugar de <button>: um <button> nativo carrega estilo próprio de
+                 controle de formulário do sistema operacional, que appearance:none e
+                 altura fixa não bastaram para igualar ao <input> ao lado em alguns
+                 navegadores (relatado pelo usuário, não reproduzido em nenhum ambiente
+                 de teste — três tentativas de correção via CSS não resolveram). Um
+                 elemento genérico não carrega esse estilo nativo, então não pode ter
+                 esse tipo de divergência. role="button" e tabindex mantêm a acessibilidade
+                 por teclado; o clique (onclick) e o Enter/Espaço são tratados no JS. -->
+            <div class="tipo-add-btn" id="tipoAddBtn" role="button" tabindex="0">Adicionar</div>
           </div>
         </div>
         <div class="checklist" id="checklist">
@@ -440,7 +451,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '1.9';
+const VERSAO = '2.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -789,6 +800,11 @@ function adicionarTipoServico(){
   renderChecklist();
 }
 document.getElementById('tipoAddBtn').onclick = adicionarTipoServico;
+// tipoAddBtn é uma <div role="button">, não um <button> nativo — Enter/Espaço
+// não ativam sozinhos, precisa deste listener para manter a navegação por teclado
+document.getElementById('tipoAddBtn').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); adicionarTipoServico(); }
+});
 document.getElementById('tipoNovoInput').addEventListener('keydown', e => {
   if (e.key === 'Enter'){ e.preventDefault(); adicionarTipoServico(); }
 });

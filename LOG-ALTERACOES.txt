@@ -1262,3 +1262,70 @@ PENDENTE
 
 VERSÃO: alteração leve (visual, sem mudar comportamento). Contador de
   leves: 4/5 desde a v1.9 — a próxima alteração leve fecha versão nova.
+
+--------------------------------------------------------
+[29/08/2026] v2.0 — Correção definitiva: "Adicionar" deixa de ser <button>
+--------------------------------------------------------
+CONTEXTO
+  Terceira tentativa de corrigir o mesmo problema. As duas anteriores
+  (appearance:none + reset de foco do Firefox; depois altura fixa em
+  36px com box-sizing:border-box nos dois elementos) não resolveram — o
+  usuário testou com Ctrl+F5 (recarregamento ignorando cache) no Brave e
+  confirmou que continuava desalinhado.
+
+  Antes de tentar uma quarta correção de CSS, verificado que o problema
+  não era de deploy/cache: acessado o site publicado de verdade
+  (antoniocmp97.github.io) e medido por código — o HTML e CSS já
+  refletiam as duas correções anteriores corretamente (altura
+  computada 36px nos dois elementos), e mesmo assim o usuário via o
+  problema no navegador real dele. Ou seja: o CSS estava correto e
+  aplicado, mas o navegador do usuário renderizava diferente do que
+  qualquer navegador testado aqui.
+
+DECISÃO
+  Esse padrão — CSS correto e idêntico, mas resultado visual diferente
+  entre navegadores, resistente a "appearance:none" e a altura fixa — é
+  a assinatura de uma peculiaridade de renderização NATIVA do elemento
+  <button> (o navegador reserva estilo próprio de controle de formulário
+  do sistema operacional por baixo do CSS, em alguns casos difícil de
+  neutralizar por completo). Em vez de insistir numa quarta correção de
+  CSS sem conseguir reproduzir o problema para validar, a solução foi
+  eliminar a causa raiz: o botão "Adicionar" deixou de ser um <button>.
+
+O QUE MUDOU (index.html)
+  - Markup: `<button class="tipo-add-btn" id="tipoAddBtn">` virou
+    `<div class="tipo-add-btn" id="tipoAddBtn" role="button"
+    tabindex="0">`. Uma div genérica não carrega NENHUM estilo nativo de
+    controle de formulário — não pode ter esse tipo de divergência,
+    porque não há "widget nativo" por trás para divergir.
+  - CSS: .tipo-add-btn ganhou display:flex + align-items:center +
+    justify-content:center (pra centralizar o texto, que um <button>
+    fazia sozinho) e user-select:none (pra não virar seleção de texto
+    ao clicar, comportamento que só <button> tem de graça).
+  - JS: como uma <div> não ativa sozinha com Enter/Espaço (diferença de
+    acessibilidade em relação a um <button> real), foi adicionado um
+    listener de keydown na própria div chamando a mesma função
+    adicionarTipoServico(). O clique do mouse continua funcionando
+    normalmente (onclick funciona em qualquer elemento).
+
+TESTES REALIZADOS
+  - Altura de input e "botão": 36px idênticos em 340px (largura estreita,
+    mesmo cenário das capturas do usuário) e 1280px (desktop), antes e
+    depois de carregar o exemplo.umap.
+  - Clique do mouse: adicionou "Vistoria" à lista corretamente.
+  - Teclado (Enter com a div focada): adicionou "Teste Teclado"
+    corretamente — confirma que a acessibilidade por teclado não foi
+    perdida ao trocar de <button> para <div role="button">.
+  - Título "3 · SELECIONAR / PARADAS" conferido de novo, continua correto.
+  - Console sem erros. Tipos de teste removidos da lista ao final.
+
+PENDENTE
+  Como as duas tentativas anteriores pareciam corretas nos testes daqui e
+  não resolveram no navegador real do usuário, esta correção também
+  depende de confirmação dele. A diferença desta vez é que ela elimina a
+  causa (o widget nativo), não apenas tenta neutralizar o efeito — é a
+  correção mais robusta possível para esse tipo de problema.
+
+VERSÃO
+  Esta é a 5ª alteração leve consecutiva desde a v1.9 (regra: 5 leves
+  fecham versão nova). Fecha v2.0. Contador zerado, reinicia desde a v2.0.

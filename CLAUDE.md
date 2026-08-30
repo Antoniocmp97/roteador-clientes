@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 29/08/2026 — v1.9 (Fase 2: tipo de serviço por parada)
+> **Última atualização:** 29/08/2026 — v2.0 (correção definitiva do botão "Adicionar")
 
 ---
 
@@ -244,6 +244,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 11 | **v1.7** — Ícones reais do Waze e do Google Maps (recortados pelo usuário); parada concluída esconde os botões de navegação |
 | 12 | **v1.8** — Reabrir uma parada concluída também passa a pedir confirmação em duas etapas |
 | 13 | **v1.9** — Fase 2 (parcial, a pedido do usuário): tipo de serviço por parada, com lista configurável |
+| 14 | **v2.0** — 5 ajustes leves acumulados desde a v1.9 fecharam a versão; o último trocou o `<button>` "Adicionar" por um elemento genérico, eliminando de vez a divergência de altura entre navegadores |
 
 ---
 
@@ -310,7 +311,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v1.9:  4 / 5
+Leves acumuladas desde a v2.0:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -347,3 +348,4 @@ os backups locais são conveniência, não garantia.
 | 1.7 | 29/08/2026 | Ícones reais (Waze/Maps) e trava de navegação na parada concluída |
 | 1.8 | 29/08/2026 | Confirmação em duas etapas também para reabrir uma parada concluída |
 | 1.9 | 29/08/2026 | Fase 2 (parcial): tipo de serviço por parada, lista configurável |
+| 2.0 | 29/08/2026 | Fecha 5 ajustes leves; correção definitiva do alinhamento do botão "Adicionar" (deixou de ser um `<button>` nativo) |
