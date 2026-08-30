@@ -1497,3 +1497,53 @@ TESTES REALIZADOS
   - Console sem erros.
 
 VERSÃO: alteração leve. Contador de leves: 4/5 desde a v2.0.
+
+--------------------------------------------------------
+[29/08/2026] v2.1 — Fase 3 (parcial): busca no checklist
+--------------------------------------------------------
+CONTEXTO
+  Perguntado ao usuário quais dos quatro itens da Fase 3 (busca/filtro,
+  base salva no navegador, origem memorizada, revisar arquivo único)
+  entravam no escopo desta rodada. Escolhido apenas o primeiro: busca e
+  filtro na lista de clientes.
+
+O QUE FOI CONSTRUÍDO (index.html)
+  - Campo de busca novo, acima do checklist (passo 3), escondido até
+    haver clientes carregados.
+  - Filtra por nome do CLIENTE ou da FILIAL, em tempo real a cada tecla:
+      - se o nome do cliente bate com o termo, mostra todas as filiais
+        dele;
+      - se só alguma filial bate, mostra só essa(s) — sem esconder o
+        cliente nem poluir com filiais que não combinam com nada.
+  - Grupos com resultado abrem sozinhos durante a busca, sem precisar
+    clicar — mas isso não mexe no estado "de verdade" de aberto/fechado
+    (gruposAbertos): limpar a busca devolve exatamente o que estava
+    aberto manualmente antes, testado especificamente.
+  - Mensagem clara quando nada é encontrado ("Nenhum cliente ou filial
+    encontrado para '...'"), em vez de lista vazia sem explicação.
+  - Busca é limpa automaticamente ao carregar um novo arquivo .umap
+    (dado de uma base antiga não devia sobrar filtrando a base nova).
+
+FORA DO ESCOPO DESTA RODADA (de propósito)
+  - O botão "marcar todos" continua selecionando TODOS os clientes da
+    base, independente do filtro ativo no momento — não foi pedido para
+    respeitar a busca, e mudar isso seria além do que foi solicitado.
+
+TESTES REALIZADOS
+  - Busca por nome de cliente ("laborat") → mostra só aquele cliente,
+    aberto automaticamente.
+  - Busca por nome de filial ("matriz") → mostra só o cliente dono
+    daquela filial, com só ela na cascata.
+  - Busca sem resultado ("xyzxyz") → mensagem clara.
+  - Limpar a busca → volta a mostrar todos os 4 clientes do exemplo.
+  - Estado manual preservado: aberto um grupo à mão, buscado por outro
+    termo (que abre grupos diferentes automaticamente), busca limpa —
+    o grupo aberto manualmente continuou aberto.
+  - Repetido o teste de busca por filial ("giassi") com a base real do
+    usuário (11 pontos, 8 clientes) — resultado correto (LABORATORIO
+    BURIGO → GIASSI).
+  - Console sem erros em nenhum teste.
+
+VERSÃO
+  Classificada como mediana/grande (funcionalidade nova). Fecha v2.1.
+  Contador de leves zerado, reinicia desde a v2.1.

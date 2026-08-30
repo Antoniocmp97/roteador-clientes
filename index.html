@@ -119,6 +119,7 @@
      senao o flexbox os ESPREME para caber no lugar de gerar barra de rolagem —
      era o bug relatado em 29/08/2026: com os grupos, a lista comprimia os
      ultimos clientes e nao rolava. Vale para .checklist, .stops e .steps. */
+  .busca-clientes{width:100%; margin-bottom:8px;}
   .checklist{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;padding-right:2px;}
   .checklist > *{flex:none;}
   .check-row{display:flex;align-items:flex-start;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:13px;}
@@ -370,6 +371,11 @@
             <div class="tipo-add-btn" id="tipoAddBtn" role="button" tabindex="0">Adicionar</div>
           </div>
         </div>
+        <!-- Busca (Fase 3): filtra os grupos por nome do cliente ou da filial.
+             Escondida até haver clientes carregados — não faz sentido buscar
+             numa lista vazia. -->
+        <input type="text" id="buscaClientes" class="busca-clientes"
+               placeholder="Buscar cliente ou filial..." style="display:none;">
         <div class="checklist" id="checklist">
           <div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>
         </div>
@@ -454,7 +460,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '2.0';
+const VERSAO = '2.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -502,6 +508,7 @@ let clientPoints = [];   // { id, name, lat, lng, marker } — todos os clientes
 let stops = [];          // subconjunto/ordem de clientPoints selecionados para esta viagem
 let gruposClientes = [];  // [{cliente, pontos:[...]}] — agrupamento por camada do uMap, usado só no checklist
 let gruposAbertos = new Set(); // nomes dos clientes com a cascata aberta no momento
+let buscaAtual = ''; // texto digitado no campo de busca do checklist (Fase 3)
 
 // Fase 2 — tipo de serviço por parada. A LISTA de tipos é configuração do
 // escritório (fica guardada no navegador, sobrevive a recarregar a página);
@@ -626,6 +633,9 @@ function importClients(grupos, filename){
   clientPoints = []; stops = [];
   gruposClientes = grupos;
   gruposAbertos = new Set();
+  buscaAtual = '';
+  const buscaInput = document.getElementById('buscaClientes');
+  if (buscaInput) buscaInput.value = '';
   if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
   document.getElementById('readout').classList.remove('show');
 
@@ -670,14 +680,39 @@ window.toggleStop = toggleStop; // precisa estar em escopo global: é chamado vi
 // adiciona ou remove o cliente de `stops` e atualiza a lista de paradas
 function renderChecklist(){
   const el = document.getElementById('checklist');
+  const buscaInput = document.getElementById('buscaClientes');
   el.innerHTML = '';
   if (!clientPoints.length){
+    buscaInput.style.display = 'none';
     el.innerHTML = '<div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>';
     return;
   }
+  buscaInput.style.display = 'block';
 
-  gruposClientes.forEach(g => {
-    const aberto = gruposAbertos.has(g.cliente);
+  // Busca (Fase 3): filtra por nome do cliente OU da filial. Se o cliente
+  // bate, mostra todas as filiais dele; se só alguma filial bate, mostra só
+  // essas — evita esconder filiais "irmãs" quando a busca é só pelo nome
+  // de uma delas, mas também não polui o resultado com filiais que não
+  // combinam com nada quando a busca é por outro cliente.
+  const termo = buscaAtual.trim().toLowerCase();
+  const gruposVisiveis = !termo ? gruposClientes : gruposClientes
+    .map(g => {
+      const clienteBate = g.cliente.toLowerCase().includes(termo);
+      const pontos = clienteBate ? g.pontos : g.pontos.filter(pt => pt.name.toLowerCase().includes(termo));
+      return pontos.length ? { cliente: g.cliente, pontos } : null;
+    })
+    .filter(Boolean);
+
+  if (termo && !gruposVisiveis.length){
+    el.innerHTML = `<div class="empty-hint">Nenhum cliente ou filial encontrado para "${escaparHtml(buscaAtual.trim())}".</div>`;
+    return;
+  }
+
+  gruposVisiveis.forEach(g => {
+    // Durante uma busca, o grupo com resultado abre sozinho — não faz sentido
+    // pedir pra clicar de novo no que já foi filtrado. Isso não mexe no
+    // gruposAbertos "de verdade": limpar a busca volta ao que estava antes.
+    const aberto = termo ? true : gruposAbertos.has(g.cliente);
     const selecionadas = g.pontos.filter(pt => stops.some(s => s.id === pt.id)).length;
 
     const box = document.createElement('div');
@@ -750,6 +785,12 @@ function renderChecklist(){
     el.appendChild(box);
   });
 }
+
+// Busca (Fase 3): cada tecla digitada refiltra o checklist
+document.getElementById('buscaClientes').addEventListener('input', e => {
+  buscaAtual = e.target.value;
+  renderChecklist();
+});
 
 // Botão "marcar todos": alterna entre selecionar todos os clientes e limpar a seleção
 document.getElementById('selectAllBtn').onclick = () => {

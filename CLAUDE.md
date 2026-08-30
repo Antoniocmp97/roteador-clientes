@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 29/08/2026 — v2.0 (correção definitiva do botão "Adicionar")
+> **Última atualização:** 29/08/2026 — v2.1 (Fase 3: busca no checklist)
 
 ---
 
@@ -31,6 +31,8 @@ sem dependências instaladas. Abre direto no navegador.
 - Parse das camadas: cada camada é um **cliente**, os pontos dentro dela são as
   **filiais**. Camadas vazias são ignoradas
 - Checklist agrupado por cliente, com cascata que abre ao clicar no nome
+- **Busca no checklist** (Fase 3): filtra por nome do cliente ou da filial;
+  grupos com resultado abrem sozinhos durante a busca
 - **Tipo de serviço por parada** (Fase 2): lista configurável (editável pelo
   próprio escritório, salva no navegador — ex.: "Entrega de toner",
   "Manutenção"). Cada parada selecionada ganha um seletor para escolher o
@@ -216,9 +218,14 @@ operação — ver `.gitignore`):
   fragmento da URL (ADR-01) — ✅ implementado na Fase 1.
 
 Ainda em aberto:
-- Busca/filtro no checklist quando a lista crescer (Fase 3)
-- Tipo de serviço por parada — ✅ implementado na v1.9
 - Troca do OSRM público antes do uso diário sério (Fase 4)
+- Base de clientes guardada no navegador (Fase 3, não iniciado)
+- Endereço de origem memorizado (Fase 3, não iniciado)
+- Revisar a decisão de manter arquivo único (Fase 3, ponto de decisão, não iniciado)
+
+Concluído:
+- Tipo de serviço por parada — ✅ implementado na v1.9
+- Busca/filtro no checklist — ✅ implementado na v2.1
 
 Adiados a pedido do usuário em 29/08/2026 (continuam descritos no documento
 de arquitetura, para retomar quando fizer sentido):
@@ -245,6 +252,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 12 | **v1.8** — Reabrir uma parada concluída também passa a pedir confirmação em duas etapas |
 | 13 | **v1.9** — Fase 2 (parcial, a pedido do usuário): tipo de serviço por parada, com lista configurável |
 | 14 | **v2.0** — 5 ajustes leves acumulados desde a v1.9 fecharam a versão; o último trocou o `<button>` "Adicionar" por um elemento genérico, eliminando de vez a divergência de altura entre navegadores |
+| 15 | **v2.1** — Fase 3 (parcial, a pedido do usuário): busca/filtro no checklist |
 
 ---
 
@@ -311,7 +319,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v2.0:  4 / 5
+Leves acumuladas desde a v2.1:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -349,3 +357,4 @@ os backups locais são conveniência, não garantia.
 | 1.8 | 29/08/2026 | Confirmação em duas etapas também para reabrir uma parada concluída |
 | 1.9 | 29/08/2026 | Fase 2 (parcial): tipo de serviço por parada, lista configurável |
 | 2.0 | 29/08/2026 | Fecha 5 ajustes leves; correção definitiva do alinhamento do botão "Adicionar" (deixou de ser um `<button>` nativo) |
+| 2.1 | 29/08/2026 | Fase 3 (parcial): busca/filtro no checklist por cliente ou filial |
