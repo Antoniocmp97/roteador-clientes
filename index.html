@@ -68,12 +68,16 @@
      sem reproduzir aqui em nenhuma largura testada — reforçando que a causa é
      do motor de renderização, não do layout). Altura fixa elimina a variável. */
   .tipos-add{display:flex; align-items:center; gap:6px;}
-  .tipos-add input{flex:1; height:36px; box-sizing:border-box; background:var(--panel);
+  /* min-width:0 é o que impede o estouro: por padrão um item flex NÃO encolhe
+     abaixo da largura do próprio conteúdo (aqui, o texto do placeholder), então
+     a linha inteira transbordava e empurrava o botão para fora da margem. Ficava
+     pior ao carregar a base, quando a barra de rolagem do painel rouba ~15px. */
+  .tipos-add input{flex:1 1 0; min-width:0; height:36px; box-sizing:border-box; background:var(--panel);
                     border:1px solid var(--line); border-radius:6px; padding:0 9px;
                     color:var(--text); font-size:12.5px; font-family:'Inter',sans-serif;}
   .tipos-add input:focus{outline:1px solid var(--teal);}
-  .tipo-add-btn{height:36px; box-sizing:border-box; background:var(--teal); color:#062420;
-                border:none; border-radius:6px; padding:0 14px; font-weight:700;
+  .tipo-add-btn{height:36px; box-sizing:border-box; flex:0 0 auto; background:var(--teal); color:#062420;
+                border:none; border-radius:6px; padding:0 12px; font-weight:700;
                 font-size:12.5px; font-family:'Inter',sans-serif; cursor:pointer;
                 display:flex; align-items:center; justify-content:center;
                 user-select:none; white-space:nowrap;}
@@ -103,6 +107,10 @@
 
   /* Campo de endereço de origem + botão de geolocalização */
   .origin-row{display:flex;gap:8px;}
+  /* Mesmo motivo do .tipos-add: sem min-width:0 o campo não encolhe e empurra
+     os botões para fora. Aqui é ainda mais apertado, são dois botões. */
+  .origin-row input[type="text"]{min-width:0;}
+  .origin-row .btn-icon{flex:0 0 auto;}
   input[type="text"]{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:9px 10px;font-family:'Inter',sans-serif;font-size:13.5px;}
   input[type="text"]:focus{outline:none;border-color:var(--amber-dim);}
   /* appearance:none tira o estilo nativo do sistema operacional do <button>.

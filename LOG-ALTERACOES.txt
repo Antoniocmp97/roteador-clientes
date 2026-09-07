@@ -1851,3 +1851,62 @@ FASE 3 — encerrada, exceto o ponto de decisão
   Restava "endereço de origem memorizado" (feito agora) e "revisar a
   decisão de manter arquivo único", que é ponto de decisão, não
   implementação.
+
+--------------------------------------------------------
+[06/09/2026] Ajuste leve — botão "Adicionar" saía da margem (causa real achada)
+--------------------------------------------------------
+RELATO DO USUÁRIO (agora com a descrição precisa)
+  "Ao carregar o arquivo que carrega os pontos no mapa, dentro de tipos
+  de serviços o botão Adicionar acaba SAINDO DA MARGEM."
+
+  Essa é a mesma queixa que voltou várias vezes na sessão anterior, mas
+  descrita como "desalinhado" — o que me levou a caçar diferença de
+  ALTURA por quatro rodadas (appearance:none, altura fixa, troca de
+  <button> por <div>). O eixo estava errado o tempo todo: o problema é
+  LARGURA, não altura. As alturas sempre foram idênticas (36px = 36px,
+  inclusive medido no DevTools do usuário) — o que estava errado era o
+  botão transbordando horizontalmente para fora do painel.
+
+DIAGNÓSTICO (medido em 1366x768, a resolução que o usuário usa)
+  Os filhos da linha .tipos-add precisam de 293px (campo + botão + gap):
+    SEM arquivo carregado ... linha tem 285px -> estoura 8px
+    COM arquivo carregado ... linha tem 270px -> estoura 23px
+  A diferença é a barra de rolagem vertical do painel, que aparece quando
+  a lista de clientes é carregada e rouba ~15px de largura. Por isso o
+  usuário só notava o problema DEPOIS de carregar o arquivo — o estouro
+  já existia antes, mas de 8px, quase imperceptível.
+
+CAUSA RAIZ
+  Um item flex não encolhe abaixo da largura do próprio conteúdo, porque
+  min-width vale "auto" por padrão. O campo de texto tinha flex:1 mas se
+  recusava a encolher abaixo do tamanho do placeholder ("Novo tipo de
+  serviço..."), então a linha inteira transbordava e empurrava o botão
+  para fora da margem.
+
+CORREÇÃO
+  - .tipos-add input: min-width:0 (e flex:1 1 0 explícito). É o que
+    permite o campo encolher e a linha caber. Essa é a correção de raiz —
+    diminuir a largura do botão, como o usuário sugeriu como alternativa,
+    só empurraria o problema para uma tela um pouco mais estreita.
+  - .tipo-add-btn: flex:0 0 auto, para o botão nunca ser espremido nem
+    empurrado. Padding de 14px para 12px, um ajuste pequeno que dá mais
+    folga sem prejudicar o alvo de toque.
+  - .origin-row: MESMO defeito latente, e pior — desde a v2.5 essa linha
+    tem um campo e DOIS botões (🎯 e 📍). Corrigida junto, antes de virar
+    a próxima queixa: min-width:0 no campo e flex:0 0 auto nos botões.
+
+TESTES REALIZADOS
+  - 1366x768 (resolução do usuário), com e sem arquivo carregado: nenhuma
+    das duas linhas estoura, e o painel não tem rolagem horizontal.
+  - Repetido em 700px e 380px de largura: sem estouro em nenhuma.
+  - Botão "Adicionar" continua funcionando (adicionou um tipo de teste).
+  - Console sem erros. Dados de teste removidos do localStorage.
+
+LIÇÃO REGISTRADA
+  A descrição "está desalinhado" mandou a investigação para o eixo
+  errado durante quatro tentativas. "Sai da margem" resolveu em uma.
+  Vale pedir ao usuário a descrição do que ele VÊ (para onde o elemento
+  vai, o que ele ultrapassa) antes de partir para hipóteses de causa.
+
+VERSÃO: alteração leve (correção visual, sem mudar comportamento).
+  Contador de leves: 1/5 desde a v2.5.
