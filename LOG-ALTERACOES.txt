@@ -1763,3 +1763,91 @@ TESTES REALIZADOS (base real: 11 pontos / 8 clientes)
   - NENHUMA prioritária: comportamento e tela idênticos aos de antes
     (nenhum cabeçalho aparece).
   - Console sem erros. Base de teste removida do localStorage ao final.
+
+--------------------------------------------------------
+[06/09/2026] v2.5 — Origem: clique no mapa, aviso de número e origem padrão
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  Queria digitar "Rua Anita Garibaldi, 178" e cair no ponto exato, como
+  no Waze ou Google Maps.
+
+INVESTIGAÇÃO — o pedido, como formulado, NÃO É POSSÍVEL com a base atual
+  1) Hoje o número é ignorado em silêncio. Testado na mesma rua:
+       Rua Anita Garibaldi, 178   -> -28.678419, -49.373051
+       Rua Anita Garibaldi, 900   -> -28.674460, -49.377366
+       Rua Anita Garibaldi, 1500  -> -28.674460, -49.377366  (igual ao 900)
+     O tipo devolvido é "highway" (rua), nunca "casa", e o campo
+     house_number vem vazio.
+  2) Testada também a CONSULTA ESTRUTURADA do Nominatim (street=
+     "178 Rua Anita Garibaldi"&city=...), que é a forma oficial de pedir
+     número: mesmo resultado, mesma coordenada para 178 e 900.
+  3) Causa raiz, confirmada direto no OpenStreetMap via Overpass API:
+     em TODA a área central de Criciúma existem 122 objetos com
+     addr:housenumber. Numa cidade de ~220 mil habitantes, é praticamente
+     zero. O Waze e o Google acertam porque têm base de endereços
+     própria; o OSM depende de mapeamento voluntário, que não foi feito.
+
+     Ou seja: nenhuma mudança de código faz o número funcionar, porque a
+     informação não existe na base consultada.
+
+DECISÕES DO USUÁRIO (perguntado com as opções e o custo de cada uma)
+  - Preferiu buscar a rua e ajustar clicando no mapa, em vez de trocar
+    por um serviço pago com cadastro e chave exposta em repositório
+    público.
+  - Informou que em 99% dos dias a saída é do MESMO lugar, e que o caso
+    de sair de outro lugar pode ser tratado depois. Isso tornou a origem
+    padrão salva o item mais valioso desta rodada — era justamente o
+    item que faltava da Fase 3.
+
+O QUE FOI CONSTRUÍDO (index.html)
+  1. CLIQUE NO MAPA (botão 🎯 ao lado do 📍)
+     - Modo ARMADO por botão, não sempre ligado: um clique solto no mapa
+       trocaria a origem sem querer. Enquanto armado, o botão fica
+       destacado e o cursor vira mira sobre o mapa.
+     - O clique define a origem pelas coordenadas na hora (funciona mesmo
+       sem rede) e só depois busca o nome do lugar por geocodificação
+       reversa, para o ponto ficar identificável. Se a busca do nome
+       falhar, a origem continua valendo — o que importa são as
+       coordenadas.
+     - O modo se desarma sozinho após o clique.
+  2. AVISO QUANDO O NÚMERO É IGNORADO
+     - pediuNumero() detecta número no FIM do texto. Só o fim conta:
+       "Rua 13 de Maio" tem número no meio do nome e não deve disparar —
+       testado, não dispara.
+     - Se o usuário digitou número e o resultado não tem house_number, o
+       app avisa: "Origem na rua indicada — o número não existe no mapa
+       desta região. Use o 🎯 para marcar o ponto exato." Antes isso
+       acontecia em silêncio e a origem ficava num ponto qualquer da via.
+     - Vale nos dois caminhos: resultado único e escolha na lista.
+  3. ORIGEM PADRÃO SALVA (item que faltava da Fase 3)
+     - Link no cabeçalho do passo 2, com rótulo mudando conforme o
+       estado: "salvar como padrão" / "esquecer padrão". Escondido
+       enquanto não há origem definida.
+     - Na abertura do app a origem volta pronta, SEM abrir o popup
+       (cobriria o mapa toda vez). A restauração acontece depois da base
+       de clientes, para o enquadramento do mapa continuar sendo o dos
+       clientes.
+     - A comparação "é a origem padrão?" usa tolerância (~1 metro), não
+       igualdade exata — arredondamento faria a comparação falhar.
+
+TESTES REALIZADOS
+  - Aviso do número: disparou corretamente ao escolher o endereço da
+    lista para "Rua Anita Garibaldi, 178".
+  - Heurística do número: "Rua Anita Garibaldi, 178" e "...Garibaldi 178"
+    disparam; "Rua 13 de Maio" e "Avenida Centenário" não.
+  - Clique no mapa: modo arma (botão destacado, cursor mira, mensagem),
+    clique define -28.6811,-49.3701, modo desarma sozinho, e o nome
+    reverso preencheu "Bistek Supermercados, Rua Afonso Celso, Centro,
+    Criciúma".
+  - Clique no mapa SEM armar: origem intacta, como deve ser.
+  - Origem padrão: salva → botão vira "esquecer padrão"; recarregada a
+    página → origem volta com marcador, campo preenchido e popup fechado;
+    "esquecer padrão" limpa o armazenamento mas mantém a origem da sessão.
+  - Rota completa usando a origem restaurada, sem digitar nada:
+    "Ordem otimizada e rota traçada", 184 km / 190 min.
+  - Console sem erros. Dados de teste removidos do localStorage.
+
+FASE 3 — encerrada, exceto o ponto de decisão
+  Restava "endereço de origem memorizado" (feito agora) e "revisar a
+  decisão de manter arquivo único", que é ponto de decisão, não
+  implementação.

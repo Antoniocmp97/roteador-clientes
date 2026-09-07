@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 06/09/2026 — v2.4 (paradas prioritárias e escolha de endereço)
+> **Última atualização:** 06/09/2026 — v2.5 (origem: clique no mapa e origem padrão salva)
 
 ---
 
@@ -42,9 +42,12 @@ sem dependências instaladas. Abre direto no navegador.
   tipo; aparece na lista de paradas do escritório e como etiqueta na tela
   do campo
 - Plot dos pontos no mapa (Leaflet) com popup mostrando filial e cliente
-- Definição de origem: geolocalização do navegador **ou** endereço digitado
-  (geocodificação via Nominatim, com viés geográfico para o sul de SC). Quando a
-  busca devolve mais de um endereço possível, o app lista e o usuário escolhe
+- Definição de origem, por três caminhos: geolocalização do navegador, endereço
+  digitado (Nominatim, com viés geográfico para o sul de SC) ou **clique direto no
+  mapa** (🎯), que dá precisão exata. Quando a busca devolve mais de um endereço
+  possível, o app lista e o usuário escolhe
+- **Origem padrão salva** no navegador: definida uma vez, volta pronta a cada
+  abertura — a operação sai quase sempre do mesmo lugar
 - Checklist de seleção de quais clientes visitar na viagem
 - Lista de paradas reordenável manualmente (setas ▲▼ e remoção)
 - **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
@@ -198,8 +201,15 @@ repositório é público (ver `.gitignore`).
   (auto-hospedadas, gratuitas) ou API paga (Mapbox Directions, Google Directions).
 - **Nominatim** tem política de uso justo — limite aproximado de 1 requisição por
   segundo. Volume alto de geocodificação exige alternativa.
+- **Número de casa não funciona na busca de endereço.** Não é limitação do código:
+  o OpenStreetMap tem pouquíssimos endereços numerados na região (verificado em
+  06/09/2026 — apenas 122 em toda a área central de Criciúma). Digitar
+  "Rua X, 178" cai na rua, não na porta. O app avisa quando isso acontece e
+  oferece o clique no mapa (🎯) para marcar o ponto exato. Resolver de verdade
+  exigiria trocar o Nominatim por um serviço com base própria de endereços
+  brasileiros (Google, Mapbox), com cadastro e chave de acesso.
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
-  lista de tipos de serviço e o progresso do modo campo. **Não** ficam salvos:
+  origem padrão, a lista de tipos de serviço e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
   recarregar a página zera essa parte, de propósito (é o roteiro do dia, não
   configuração). Nada disso sai da máquina de quem usa.
@@ -231,13 +241,13 @@ operação — ver `.gitignore`):
 
 Ainda em aberto:
 - Troca do OSRM público antes do uso diário sério (Fase 4)
-- Endereço de origem memorizado (Fase 3, não iniciado)
 - Revisar a decisão de manter arquivo único (Fase 3, ponto de decisão, não iniciado)
 
 Concluído:
 - Tipo de serviço por parada — ✅ implementado na v1.9
 - Busca/filtro no checklist — ✅ implementado na v2.1
 - Base de clientes guardada no navegador — ✅ implementado na v2.2
+- Endereço de origem memorizado — ✅ implementado na v2.5
 
 Adiados a pedido do usuário em 29/08/2026 (continuam descritos no documento
 de arquitetura, para retomar quando fizer sentido):
@@ -268,6 +278,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 16 | **v2.2** — Fase 3: base de clientes guardada no navegador, com link para esquecê-la |
 | 17 | **v2.3** — Correção: busca de origem falhava fora de Criciúma (a cidade era grudada à força em tudo que se digitava) |
 | 18 | **v2.4** — Paradas prioritárias fixas antes da otimização; escolha entre endereços quando a busca de origem é ambígua |
+| 19 | **v2.5** — Origem por clique no mapa, aviso quando o número da casa não existe no mapa, e origem padrão salva no navegador |
 
 ---
 
@@ -334,7 +345,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v2.4:  0 / 5
+Leves acumuladas desde a v2.5:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -376,3 +387,4 @@ os backups locais são conveniência, não garantia.
 | 2.2 | 29/08/2026 | Fase 3: base de clientes guardada no navegador |
 | 2.3 | 06/09/2026 | Correção da geocodificação: endereços fora de Criciúma voltaram a funcionar |
 | 2.4 | 06/09/2026 | Paradas prioritárias (★) e escolha entre endereços ambíguos |
+| 2.5 | 06/09/2026 | Origem: clique no mapa, aviso de número inexistente e origem padrão salva |

@@ -116,6 +116,10 @@
   button::-moz-focus-inner{border:0;padding:0;}
   .btn-icon{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:0 12px;font-size:15px;}
   .btn-icon:hover{border-color:var(--teal);}
+  .btn-icon.armado{border-color:var(--amber);color:var(--amber);background:#2a1f0e;}
+  /* Enquanto o modo "escolher no mapa" está armado, o cursor vira mira sobre o mapa */
+  #map.escolhendo{cursor:crosshair;}
+  #map.escolhendo .leaflet-grab{cursor:crosshair;}
   /* Mesma tipografia dos títulos de seção (.field-label: "2 · Origem",
      "3 · Selecionar paradas") — fonte, tamanho, cor e caixa alta iguais,
      sem sublinhado — para "tipos de serviço" e "marcar todos" lerem como
@@ -357,9 +361,14 @@
 
       <!-- Passo 2: ponto de partida da viagem (endereço digitado ou geolocalização do navegador) -->
       <div>
-        <div class="field-label">2 · Origem</div>
+        <div class="field-label">
+          <span>2 · Origem</span>
+          <!-- Rótulo muda conforme o estado; escondido enquanto não há origem definida -->
+          <button class="link-btn" id="origemPadraoBtn" style="display:none;"></button>
+        </div>
         <div class="origin-row">
           <input type="text" id="originInput" placeholder="Endereço, cidade — ex.: Rua Anita Garibaldi, Içara">
+          <button class="btn-icon" id="mapPickBtn" title="Escolher o ponto exato no mapa">🎯</button>
           <button class="btn-icon" id="geoBtn" title="Usar minha localização">📍</button>
         </div>
         <!-- Aparece só quando a busca devolve mais de um endereço possível -->
@@ -482,7 +491,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '2.4';
+const VERSAO = '2.5';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -1003,12 +1012,106 @@ function renderStopsList(){
 /* ---------------- Origin ---------------- */
 // Define o ponto de partida: guarda as coordenadas, (re)posiciona o marcador âmbar no mapa
 // e preenche o campo de texto com o rótulo (endereço) ou as coordenadas cruas
-function setOrigin(lat, lng, label){
+function setOrigin(lat, lng, label, abrirPopup = true){
   originLatLng = [lat, lng];
   esconderOpcoesEndereco(); // origem definida: a lista de alternativas não faz mais sentido
   if (originMarker) map.removeLayer(originMarker);
-  originMarker = L.marker([lat, lng], { icon: dot('#F2A93C') }).addTo(map).bindPopup(label || 'Origem').openPopup();
+  originMarker = L.marker([lat, lng], { icon: dot('#F2A93C') }).addTo(map).bindPopup(label || 'Origem');
+  if (abrirPopup) originMarker.openPopup(); // na restauração da origem salva não abre, para não cobrir o mapa
   document.getElementById('originInput').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  atualizarBotaoOrigemPadrao();
+}
+
+/* ---------------- Origem padrão salva no navegador ---------------- */
+// O usuário informou que em 99% dos dias a saída é do mesmo lugar. Guardar a
+// origem evita redigitar (e re-errar) o endereço todo dia. Mesma regra dos
+// outros dados guardados: fica no navegador, não vai para servidor nenhum.
+const CHAVE_ORIGEM = 'hg_origem_padrao';
+
+function lerOrigemPadrao(){
+  try{
+    const o = JSON.parse(localStorage.getItem(CHAVE_ORIGEM));
+    return (o && typeof o.lat === 'number' && typeof o.lng === 'number') ? o : null;
+  }catch(e){ return null; }
+}
+
+// Uma origem "é a padrão" se estiver praticamente no mesmo ponto (~1 metro).
+// Comparar número a número falharia por diferença de arredondamento.
+function origemAtualEhPadrao(){
+  const o = lerOrigemPadrao();
+  if (!o || !originLatLng) return false;
+  return Math.abs(o.lat - originLatLng[0]) < 1e-5 && Math.abs(o.lng - originLatLng[1]) < 1e-5;
+}
+
+// Um botão só, com o rótulo mudando conforme o que dá para fazer agora
+function atualizarBotaoOrigemPadrao(){
+  const btn = document.getElementById('origemPadraoBtn');
+  if (!btn) return;
+  if (!originLatLng){ btn.style.display = 'none'; return; }
+  btn.style.display = 'inline';
+  btn.textContent = origemAtualEhPadrao() ? 'esquecer padrão' : 'salvar como padrão';
+}
+
+document.getElementById('origemPadraoBtn').onclick = () => {
+  try{
+    if (origemAtualEhPadrao()){
+      localStorage.removeItem(CHAVE_ORIGEM);
+      setStatus('Origem padrão removida.', true);
+    }else{
+      localStorage.setItem(CHAVE_ORIGEM, JSON.stringify({
+        lat: originLatLng[0], lng: originLatLng[1],
+        label: document.getElementById('originInput').value
+      }));
+      setStatus('Origem salva — vai voltar pronta na próxima abertura.', true);
+    }
+  }catch(e){ setStatus('Não foi possível salvar a origem neste navegador.'); }
+  atualizarBotaoOrigemPadrao();
+};
+
+/* ---------------- Escolher a origem clicando no mapa ---------------- */
+// O número da casa não existe na base do OpenStreetMap nesta região (verificado em
+// 06/09/2026: só 122 endereços com número em toda a área central de Criciúma), então
+// buscar "Rua X, 178" nunca vai cair na porta certa. O clique no mapa resolve isso
+// com precisão total e sem depender de serviço nenhum: busca-se a rua e ajusta-se o
+// ponto na mão.
+//
+// O modo é ARMADO por botão, não sempre ligado — clique solto no mapa mudaria a
+// origem sem querer.
+let escolhendoNoMapa = false;
+
+function armarEscolhaNoMapa(ligar){
+  escolhendoNoMapa = ligar;
+  document.getElementById('mapPickBtn').classList.toggle('armado', ligar);
+  document.getElementById('map').classList.toggle('escolhendo', ligar);
+  if (ligar) setStatus('Clique no mapa para marcar o ponto exato da origem.', true);
+}
+
+document.getElementById('mapPickBtn').onclick = () => armarEscolhaNoMapa(!escolhendoNoMapa);
+
+// Descobre o nome do lugar a partir das coordenadas, só para o ponto ficar
+// identificável na tela. Se falhar, a origem continua valendo — o que importa
+// são as coordenadas, não o rótulo.
+async function nomeDoPonto(lat, lng){
+  try{
+    const d = await safeFetchJSON(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    return d && d.display_name ? d.display_name : null;
+  }catch(e){ return null; }
+}
+
+if (map){
+  map.on('click', async e => {
+    if (!escolhendoNoMapa) return;
+    const { lat, lng } = e.latlng;
+    armarEscolhaNoMapa(false);
+    // Define já com as coordenadas: funciona mesmo sem rede
+    setOrigin(lat, lng, `Ponto no mapa (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
+    setStatus('Origem marcada no mapa.', true);
+    const nome = await nomeDoPonto(lat, lng);
+    if (nome && originLatLng && originLatLng[0] === lat){
+      document.getElementById('originInput').value = nome;
+      if (originMarker) originMarker.setPopupContent(nome);
+    }
+  });
 }
 
 // Botão 📍: pede a localização atual ao navegador (API de geolocalização) e usa como origem
@@ -1052,7 +1155,7 @@ const CAIXA_REGIAO = '-49.95,-28.30,-48.95,-29.35';
 // Agora o texto vai como foi digitado e a preferência pela região vem da caixa
 // geográfica, não de um nome de cidade forçado.
 async function geocode(query){
-  const base = 'https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=br';
+  const base = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=br';
   // 1ª tentativa, restrita à região: evita cair numa rua de mesmo nome em outro estado
   let data = await safeFetchJSON(`${base}&viewbox=${CAIXA_REGIAO}&bounded=1&q=${encodeURIComponent(query)}`);
   // 2ª tentativa, sem restrição: cobre o caso raro de uma origem fora da região
@@ -1063,7 +1166,25 @@ async function geocode(query){
   // Devolve TODOS os resultados: uma avenida de vários quilômetros tem mais de um
   // ponto possível, e adivinhar qual é o certo dá rota errada. Quem escolhe é o
   // escritório — ver mostrarOpcoesEndereco().
-  return data.map(d => ({ lat: parseFloat(d.lat), lng: parseFloat(d.lon), label: d.display_name }));
+  return data.map(d => ({
+    lat: parseFloat(d.lat), lng: parseFloat(d.lon), label: d.display_name,
+    // Usado para avisar quando o usuário digita número e o mapa não tem esse número
+    temNumero: !!(d.address && d.address.house_number)
+  }));
+}
+
+// O texto termina em número? ("Rua Anita Garibaldi, 178"). Só o final conta —
+// ruas como "Rua 13 de Maio" têm número no meio do nome e não são endereço numerado.
+function pediuNumero(texto){ return /[,\s]\s*\d{1,6}\s*$/.test(texto.trim()); }
+
+// Aviso honesto: o número foi digitado, mas o ponto encontrado é só a rua.
+// Antes isso acontecia em silêncio, e a origem ficava num lugar qualquer da via.
+function avisarNumeroIgnorado(resultado, textoDigitado){
+  if (pediuNumero(textoDigitado) && resultado && !resultado.temNumero){
+    setStatus('Origem na rua indicada — o número não existe no mapa desta região. Use o 🎯 para marcar o ponto exato.');
+    return true;
+  }
+  return false;
 }
 
 /* ---------------- Routing ---------------- */
@@ -1103,7 +1224,9 @@ function mostrarOpcoesEndereco(resultados){
     btn.onclick = () => {
       const r = resultados[Number(btn.dataset.i)];
       setOrigin(r.lat, r.lng, r.label); // já esconde a lista
-      setStatus('Origem definida.', true);
+      if (!avisarNumeroIgnorado(r, document.getElementById('originInput').dataset.busca || '')){
+        setStatus('Origem definida.', true);
+      }
     };
   });
 }
@@ -1128,9 +1251,11 @@ async function ensureOrigin(){
   if (!q){ setStatus('Informe um endereço de origem ou use sua localização.'); return false; }
   try{
     setStatus('Buscando endereço...', true);
+    document.getElementById('originInput').dataset.busca = q; // setOrigin sobrescreve o campo
     const rs = await geocode(q);
     if (rs.length === 1){
       setOrigin(rs[0].lat, rs[0].lng, rs[0].label);
+      avisarNumeroIgnorado(rs[0], q);
       return true;
     }
     // Ambíguo: mostra as opções e interrompe. O usuário escolhe e clica de novo
@@ -1591,6 +1716,13 @@ if (!modoCampoAtivo){
     catch(e){ esquecerBaseClientes(); } // guardado inutilizável: descarta e abre limpo
   }
   atualizarBotaoEsquecer();
+
+  // Origem padrão: volta pronta, sem abrir o popup (cobriria o mapa a cada abertura).
+  // Fica DEPOIS do importClients, que dá fitBounds nos clientes — assim o
+  // enquadramento continua sendo o da base, não o da origem.
+  const origem = lerOrigemPadrao();
+  if (origem) setOrigin(origem.lat, origem.lng, origem.label, false);
+  atualizarBotaoOrigemPadrao();
 }
 
 // Só entra no modo campo se o link realmente trouxer um roteiro
