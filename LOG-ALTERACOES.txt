@@ -1910,3 +1910,73 @@ LIÇÃO REGISTRADA
 
 VERSÃO: alteração leve (correção visual, sem mudar comportamento).
   Contador de leves: 1/5 desde a v2.5.
+
+--------------------------------------------------------
+[06/09/2026] v2.6 — Link do roteiro 37% menor
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  O link gerado para o campo estava muito extenso.
+
+MEDIÇÃO ANTES (base real, 11 paradas, com tipo de serviço em todas)
+  JSON do roteiro ....... 851 caracteres
+  Depois do base64 ..... 1152 caracteres
+  Link completo ........ 1204 caracteres
+  O desperdício estava visível no JSON: o nome do cliente era repetido em
+  cada filial ("LABORATORIO BURIGO" duas vezes, e assim por diante), o
+  tipo de serviço repetido nas 11 paradas, mais toda a pontuação do JSON
+  (aspas, colchetes, vírgulas).
+
+ALTERNATIVAS MEDIDAS (todas com a mesma base real)
+  atual .................................... 1152
+  tabelas de cliente/tipo, ainda em JSON .... 946  (-18%)
+  + formato compacto por separadores ........ 816  (-29%)
+  + coordenadas por diferença ............... 706  (-39%)
+  variante sem base64 (percent-encoding) .... 716  (-38%)  DESCARTADA
+
+  A variante sem base64 economizava quase o mesmo, mas deixaria os nomes
+  dos clientes LEGÍVEIS na própria URL — ruim para um link que trafega em
+  grupo de WhatsApp, onde a pré-visualização mostraria a carteira de
+  clientes. Mantido o base64, que deixa o conteúdo opaco.
+
+FORMATO v5 (implementado)
+  Estrutura:  5 ~ clientes ~ tipos ~ paradas ~ distância ~ tempo
+    - clientes e tipos viram TABELAS, citadas por índice nas paradas
+    - separadores (~ | *) no lugar da pontuação do JSON
+    - coordenadas como inteiros e por DIFERENÇA da parada anterior:
+      paradas vizinhas ficam a poucos milésimos de grau, então "1664" no
+      lugar de "-28.66636". A reconstrução é exata — os deltas são
+      calculados sobre valores já arredondados e somados de volta, sem
+      perda de precisão (verificado por comparação campo a campo).
+
+  ESCAPE DOS SEPARADORES: nomes contendo ~ | * ou % são escapados. Um
+  cliente chamado "A|B" quebraria o link em silêncio — o pior tipo de
+  falha aqui, porque só apareceria na mão de quem está na rua.
+
+  RETROCOMPATIBILIDADE: decodificarRoteiro() olha o primeiro caractere —
+  se for "{", é JSON (v1/v2/v3) e segue pelo caminho antigo; senão, é o
+  formato novo. Os dois caminhos devolvem a MESMA estrutura interna, então
+  a tela de campo não precisou de nenhuma alteração. Links v1/v2/v3 já
+  enviados por WhatsApp continuam abrindo.
+
+RESULTADO
+  Link completo: 1204 -> 758 caracteres (-37%).
+
+TESTES REALIZADOS
+  - Ida e volta com a base real (11 paradas): reconstrução IDÊNTICA,
+    conferida campo a campo (nome, lat, lng, cliente, tipo), mais
+    distância e tempo.
+  - Links antigos v1, v2 e v3 sintéticos: todos abrem corretamente.
+  - Nome com todos os separadores de uma vez ("FILIAL A|B*C~D", cliente
+    "CLIENTE 100% ~ ESPECIAL"): sobreviveu intacto à ida e volta.
+  - Link corrompido ("lixo!!!123"): devolve null, tratado como inválido.
+  - Fluxo completo pela interface: base real, origem definida, rota
+    otimizada, link gerado (709 caracteres) e ABERTO no modo campo em
+    viewport de celular — 11 paradas, 184 km / 190 min, com cliente,
+    filial e tipo de serviço corretos em cada card.
+  - Console sem erros. localStorage limpo ao final.
+
+LIMITE PRÁTICO
+  Encurtar além disso exigiria uma biblioteca de compressão embutida (mais
+  código e risco) ou um servidor guardando os roteiros — que o usuário já
+  decidiu evitar, e que quebraria a ADR-01 (roteiro viaja dentro do link,
+  funciona mesmo com os serviços externos fora do ar).

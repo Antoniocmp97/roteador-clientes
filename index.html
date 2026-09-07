@@ -499,7 +499,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '2.5';
+const VERSAO = '2.6';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -1424,33 +1424,84 @@ function prepararEnvio(distance, duration){
 // Chaves curtas e coordenadas com 5 casas decimais (~1,1m de precisão) para manter
 // o link pequeno — cabem confortavelmente 15-20 paradas dentro do limite prático
 // de tamanho de uma URL.
+// FORMATO v5 — compacto. O v3 (JSON) gerava links de ~1200 caracteres para 11
+// paradas, o que incomodava ao mandar por WhatsApp. Três mudanças cortaram 39%:
+//   1. Nomes de cliente e de tipo de serviço viram TABELAS, citadas por índice.
+//      Antes "LABORATORIO BURIGO" era repetido em cada filial daquele cliente.
+//   2. Separadores (~ | *) no lugar da pontuação do JSON (aspas, colchetes).
+//   3. Coordenadas como inteiros e por DIFERENÇA da parada anterior: paradas
+//      vizinhas ficam a poucos milésimos de grau, então "1664" no lugar de
+//      "-28.66636". A reconstrução é exata (soma dos inteiros), sem perda.
+// Mantida a codificação base64: o link continua opaco, sem expor os nomes dos
+// clientes na pré-visualização da mensagem.
+//
+// Estrutura:  5 ~ clientes ~ tipos ~ paradas ~ distância ~ tempo
+//   clientes/tipos: nomes separados por |
+//   paradas:  nome*Δlat*Δlng*índiceCliente*índiceTipo, separadas por |
+
+// Os três separadores (e o próprio %) são escapados nos nomes — um cliente
+// chamado "A|B" quebraria o link em silêncio, o pior tipo de falha aqui.
+const escSep   = t => String(t).replace(/%/g,'%25').replace(/~/g,'%7E').replace(/\|/g,'%7C').replace(/\*/g,'%2A');
+const unescSep = t => String(t).replace(/%2A/g,'*').replace(/%7C/g,'|').replace(/%7E/g,'~').replace(/%25/g,'%');
+
 function montarRoteiro(){
-  return {
-    v: 3, // v3 acrescenta o tipo de serviço (v2 tinha o cliente; v1 só a filial)
-    s: stops.map(s => [s.name, Math.round(s.lat * 1e5) / 1e5, Math.round(s.lng * 1e5) / 1e5, s.cliente || '', s.tipo || '']),
-    d: ultimoResumo ? ultimoResumo.d : null,
-    t: ultimoResumo ? ultimoResumo.t : null,
-  };
+  const clientes = [...new Set(stops.map(s => s.cliente).filter(Boolean))];
+  const tipos    = [...new Set(stops.map(s => s.tipo).filter(Boolean))];
+  let antLa = 0, antLn = 0;
+  const linhas = stops.map((s, i) => {
+    const la = Math.round(s.lat * 1e5), ln = Math.round(s.lng * 1e5);
+    const dLa = i === 0 ? la : la - antLa;
+    const dLn = i === 0 ? ln : ln - antLn;
+    antLa = la; antLn = ln;
+    return [escSep(s.name), dLa, dLn,
+            s.cliente ? clientes.indexOf(s.cliente) : '',
+            s.tipo ? tipos.indexOf(s.tipo) : ''].join('*');
+  });
+  return ['5', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
+          ultimoResumo ? ultimoResumo.d : '', ultimoResumo ? ultimoResumo.t : ''].join('~');
 }
 
-// Codifica o objeto do roteiro em texto seguro para URL (base64 "url-safe",
-// sem os caracteres +, / e = que precisariam de escape numa URL)
-function codificarRoteiro(obj){
-  const json = JSON.stringify(obj);
-  const b64 = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, h) => String.fromCharCode('0x' + h)));
+// Codifica o roteiro em texto seguro para URL (base64 "url-safe", sem os
+// caracteres +, / e = que precisariam de escape numa URL)
+function codificarRoteiro(texto){
+  const b64 = btoa(encodeURIComponent(texto).replace(/%([0-9A-F]{2})/g, (_, h) => String.fromCharCode('0x' + h)));
   return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-// Caminho inverso: recebe o texto do link e devolve o objeto do roteiro, ou null
-// se o link estiver corrompido/incompleto (ex.: copiado pela metade)
+// Caminho inverso. Devolve sempre o MESMO formato interno que a tela de campo
+// espera ({ s:[[nome,lat,lng,cliente,tipo]], d, t }), venha o link do formato
+// novo ou de qualquer um dos antigos — links v1/v2/v3 já enviados por WhatsApp
+// continuam abrindo normalmente.
 function decodificarRoteiro(txt){
   try{
     const b64 = txt.replace(/-/g, '+').replace(/_/g, '/');
-    const json = decodeURIComponent(atob(b64).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join(''));
-    const obj = JSON.parse(json);
-    if (!obj || !Array.isArray(obj.s)) return null;
-    return obj;
+    const bruto = decodeURIComponent(atob(b64).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join(''));
+    return bruto.trim().startsWith('{') ? lerRoteiroJson(bruto) : lerRoteiroCompacto(bruto);
   }catch(e){ return null; }
+}
+
+// Formatos v1, v2 e v3 (JSON) — já vêm na forma que a tela de campo usa
+function lerRoteiroJson(json){
+  const obj = JSON.parse(json);
+  return (obj && Array.isArray(obj.s) && obj.s.length) ? obj : null;
+}
+
+function lerRoteiroCompacto(texto){
+  const [ver, clientesRaw, tiposRaw, paradasRaw, d, t] = texto.split('~');
+  if (ver !== '5') return null; // formato desconhecido: trata como link inválido
+  const clientes = clientesRaw ? clientesRaw.split('|').map(unescSep) : [];
+  const tipos    = tiposRaw    ? tiposRaw.split('|').map(unescSep)    : [];
+  let la = 0, ln = 0;
+  const s = (paradasRaw ? paradasRaw.split('|') : []).map((linha, i) => {
+    const [nome, dLa, dLn, iCli, iTipo] = linha.split('*');
+    la = i === 0 ? Number(dLa) : la + Number(dLa); // deltas somados de volta
+    ln = i === 0 ? Number(dLn) : ln + Number(dLn);
+    return [unescSep(nome), la / 1e5, ln / 1e5,
+            iCli  === '' || iCli  === undefined ? '' : (clientes[Number(iCli)]  || ''),
+            iTipo === '' || iTipo === undefined ? '' : (tipos[Number(iTipo)] || '')];
+  });
+  if (!s.length || s.some(p => !isFinite(p[1]) || !isFinite(p[2]))) return null;
+  return { v: 5, s, d: d ? Number(d) : null, t: t ? Number(t) : null };
 }
 
 // Botão "Gerar link do roteiro": monta o link completo (URL atual + #r=...) e mostra
