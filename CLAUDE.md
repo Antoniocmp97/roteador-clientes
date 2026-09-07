@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 29/08/2026 — v2.2 (Fase 3: base guardada no navegador)
+> **Última atualização:** 06/09/2026 — v2.3 (correção da busca de endereço de origem)
 
 ---
 
@@ -70,7 +70,7 @@ sem dependências instaladas. Abre direto no navegador.
 | Tiles | Esri Dark Gray Canvas (base + rótulos) | Sem cadastro. Substituiu o CARTO em 29/08/2026 |
 | Rotas | OSRM — `router.project-osrm.org` | **Servidor público de demonstração** |
 | Otimização | OSRM Trip API | Resolve TSP aproximado |
-| Geocodificação | Nominatim (OpenStreetMap) | Sujeito a política de uso justo |
+| Geocodificação | Nominatim (OpenStreetMap) | Viés por caixa geográfica da região sul de SC. Sujeito a política de uso justo |
 | Fontes | Space Grotesk, JetBrains Mono, Inter | Google Fonts |
 
 ### Identidade visual
@@ -261,6 +261,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 14 | **v2.0** — 5 ajustes leves acumulados desde a v1.9 fecharam a versão; o último trocou o `<button>` "Adicionar" por um elemento genérico, eliminando de vez a divergência de altura entre navegadores |
 | 15 | **v2.1** — Fase 3 (parcial, a pedido do usuário): busca/filtro no checklist |
 | 16 | **v2.2** — Fase 3: base de clientes guardada no navegador, com link para esquecê-la |
+| 17 | **v2.3** — Correção: busca de origem falhava fora de Criciúma (a cidade era grudada à força em tudo que se digitava) |
 
 ---
 
@@ -327,7 +328,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v2.2:  0 / 5
+Leves acumuladas desde a v2.3:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -367,3 +368,4 @@ os backups locais são conveniência, não garantia.
 | 2.0 | 29/08/2026 | Fecha 5 ajustes leves; correção definitiva do alinhamento do botão "Adicionar" (deixou de ser um `<button>` nativo) |
 | 2.1 | 29/08/2026 | Fase 3 (parcial): busca/filtro no checklist por cliente ou filial |
 | 2.2 | 29/08/2026 | Fase 3: base de clientes guardada no navegador |
+| 2.3 | 06/09/2026 | Correção da geocodificação: endereços fora de Criciúma voltaram a funcionar |

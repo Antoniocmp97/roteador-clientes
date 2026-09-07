@@ -464,7 +464,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '2.2';
+const VERSAO = '2.3';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -977,12 +977,30 @@ async function safeFetchJSON(url){
   return res.json();
 }
 
-// Geocodificação: converte um endereço digitado em coordenadas via Nominatim (OpenStreetMap),
-// com viés de busca para Criciúma/SC e limitado ao Brasil
+// Caixa geográfica da região de atuação (oeste,norte,leste,sul). Cobre o sul de
+// Santa Catarina — de Criciúma até Araranguá e o litoral —, que é onde estão os
+// clientes (Içara, Nova Veneza, Balneário Rincão, Criciúma...).
+const CAIXA_REGIAO = '-49.95,-28.30,-48.95,-29.35';
+
+// Geocodificação: converte um endereço digitado em coordenadas via Nominatim.
+//
+// A versão anterior grudava ", Criciúma, SC" em TUDO que era digitado. Isso fazia
+// qualquer endereço de outra cidade falhar — inclusive das cidades onde a operação
+// tem cliente: "Rua Getúlio Vargas, Içara" virava "...Içara, Criciúma, SC", uma
+// contradição que o Nominatim não resolve, e voltava "endereço não encontrado".
+// Verificado em 06/09/2026: 2 de 7 endereços reais da região falhavam assim.
+//
+// Agora o texto vai como foi digitado e a preferência pela região vem da caixa
+// geográfica, não de um nome de cidade forçado.
 async function geocode(query){
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${encodeURIComponent(query + ', Criciúma, SC')}`;
-  const data = await safeFetchJSON(url);
-  if (!data.length) throw new Error('Endereço não encontrado.');
+  const base = 'https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=br';
+  // 1ª tentativa, restrita à região: evita cair numa rua de mesmo nome em outro estado
+  let data = await safeFetchJSON(`${base}&viewbox=${CAIXA_REGIAO}&bounded=1&q=${encodeURIComponent(query)}`);
+  // 2ª tentativa, sem restrição: cobre o caso raro de uma origem fora da região
+  if (!data.length) data = await safeFetchJSON(`${base}&q=${encodeURIComponent(query)}`);
+  if (!data.length){
+    throw new Error('Endereço não encontrado. Tente incluir a cidade — por exemplo: "Rua Anita Garibaldi, Içara".');
+  }
   return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), label: data[0].display_name };
 }
 

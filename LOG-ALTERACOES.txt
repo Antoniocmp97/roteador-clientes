@@ -1626,3 +1626,62 @@ DOCUMENTAÇÃO
 FASE 3 — o que resta
   - Endereço de origem memorizado (não iniciado)
   - Revisar a decisão de manter arquivo único (ponto de decisão)
+
+--------------------------------------------------------
+[06/09/2026] v2.3 — Correção: busca de endereço de origem
+--------------------------------------------------------
+RELATO DO USUÁRIO (depois de uma semana de uso real)
+  O campo "Origem" não funcionava bem digitando nome de rua — conseguiu
+  apenas um endereço, o restante não deu certo. Usando o botão de
+  localização do computador funcionava.
+
+DIAGNÓSTICO
+  A função geocode() grudava ", Criciúma, SC" em TUDO que era digitado,
+  antes de mandar para o Nominatim. Endereço de qualquer outra cidade
+  virava uma contradição ("Rua Getúlio Vargas, Içara, Criciúma, SC") e o
+  Nominatim devolvia lista vazia → "Endereço não encontrado".
+
+  Isso atinge em cheio a operação: os clientes NÃO estão só em Criciúma
+  — a base real tem Içara, Nova Veneza e Balneário Rincão. Sair de uma
+  dessas cidades era impossível pelo campo de texto.
+
+  Testado com 7 endereços reais da região, reproduzindo exatamente a URL
+  que o app montava:
+    Praça Nereu Ramos ................. OK
+    Avenida Centenário ................ OK
+    Avenida Centenário 1000 ........... OK
+    Rua Coronel Pedro Benedet ......... OK
+    Rua Anita Garibaldi 100 ........... OK
+    Rua Getúlio Vargas, Içara ......... NADA ENCONTRADO
+    Prefeitura de Nova Veneza ......... NADA ENCONTRADO
+  Ou seja: funcionava só dentro de Criciúma, o que explica o relato de
+  "consegui apenas uma".
+
+CORREÇÃO
+  - Removida a concatenação forçada do nome da cidade. O texto vai para o
+    Nominatim exatamente como foi digitado.
+  - A preferência pela região passou a vir de uma CAIXA GEOGRÁFICA
+    (viewbox), constante CAIXA_REGIAO, cobrindo o sul de Santa Catarina
+    (de Criciúma até Araranguá e o litoral). Com bounded=1 na primeira
+    tentativa, o que evita cair numa rua de mesmo nome em outro estado —
+    "Rua Getúlio Vargas" existe em praticamente toda cidade do Brasil.
+  - Segunda tentativa sem restrição geográfica, caso a origem esteja fora
+    da região. Só roda se a primeira não achar nada.
+  - limit subiu de 1 para 5 (o Nominatim ordena por relevância; ficamos
+    com o primeiro, mas com margem caso o formato mude).
+  - Mensagem de erro passou a orientar: 'Tente incluir a cidade — por
+    exemplo: "Rua Anita Garibaldi, Içara"'.
+
+TESTES REALIZADOS
+  - Os mesmos 7 endereços reais, agora pela função geocode() do próprio
+    app: 7 de 7 resolvidos, incluindo os dois que falhavam. Conferido que
+    "Prefeitura de Nova Veneza" caiu em -28.6375,-49.4987 — praticamente
+    em cima do ponto real desse cliente na base (-28.6373,-49.4987).
+  - Acrescentados ao teste "Balneário Rincão" e "Araranguá", que também
+    resolvem — cidades onde a operação tem ou pode ter cliente.
+  - Endereço inexistente ("xyzxyz rua inexistente 999") → mensagem de
+    erro clara, sem quebrar.
+  - Fluxo completo pela interface: base real carregada, origem digitada
+    como "Rua Getúlio Vargas, Içara", 11 paradas, "Otimizar ordem" →
+    "Ordem otimizada e rota traçada", 194 km / 197 min.
+  - Console sem erros.
