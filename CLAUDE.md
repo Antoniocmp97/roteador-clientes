@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 06/09/2026 — v2.3 (correção da busca de endereço de origem)
+> **Última atualização:** 06/09/2026 — v2.4 (paradas prioritárias e escolha de endereço)
 
 ---
 
@@ -43,9 +43,13 @@ sem dependências instaladas. Abre direto no navegador.
   do campo
 - Plot dos pontos no mapa (Leaflet) com popup mostrando filial e cliente
 - Definição de origem: geolocalização do navegador **ou** endereço digitado
-  (geocodificação via Nominatim, com viés para Criciúma/SC)
+  (geocodificação via Nominatim, com viés geográfico para o sul de SC). Quando a
+  busca devolve mais de um endereço possível, o app lista e o usuário escolhe
 - Checklist de seleção de quais clientes visitar na viagem
 - Lista de paradas reordenável manualmente (setas ▲▼ e remoção)
+- **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
+  escolhida, e "Otimizar ordem" reordena só as demais — para quando é preciso
+  passar num lugar antes do resto do roteiro
 - **Traçar nesta ordem** — rota respeitando a ordem escolhida (OSRM Route API)
 - **Otimizar ordem** — OSRM Trip API recalcula a melhor sequência e reordena a
   lista automaticamente (`source=first`, `roundtrip=false`)
@@ -202,7 +206,8 @@ repositório é público (ver `.gitignore`).
 - **Sem busca no checklist.** Com dezenas ou centenas de clientes, rolar a lista
   fica impraticável.
 - **Otimização puramente geográfica.** Considera apenas distância/tempo de carro.
-  Não trata prioridade de cliente, janelas de horário ou duração da visita.
+  Não trata janelas de horário nem duração da visita. Prioridade de parada é
+  resolvida manualmente (★), fixando as primeiras — o otimizador não decide isso.
 - **Sem navegação por voz dentro do app** — resolvido de propósito (ADR-02):
   o app não compete com Waze/Google Maps, só abre um deles por parada.
 
@@ -262,6 +267,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 15 | **v2.1** — Fase 3 (parcial, a pedido do usuário): busca/filtro no checklist |
 | 16 | **v2.2** — Fase 3: base de clientes guardada no navegador, com link para esquecê-la |
 | 17 | **v2.3** — Correção: busca de origem falhava fora de Criciúma (a cidade era grudada à força em tudo que se digitava) |
+| 18 | **v2.4** — Paradas prioritárias fixas antes da otimização; escolha entre endereços quando a busca de origem é ambígua |
 
 ---
 
@@ -328,7 +334,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v2.3:  0 / 5
+Leves acumuladas desde a v2.4:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -369,3 +375,4 @@ os backups locais são conveniência, não garantia.
 | 2.1 | 29/08/2026 | Fase 3 (parcial): busca/filtro no checklist por cliente ou filial |
 | 2.2 | 29/08/2026 | Fase 3: base de clientes guardada no navegador |
 | 2.3 | 06/09/2026 | Correção da geocodificação: endereços fora de Criciúma voltaram a funcionar |
+| 2.4 | 06/09/2026 | Paradas prioritárias (★) e escolha entre endereços ambíguos |

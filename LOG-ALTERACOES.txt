@@ -1685,3 +1685,81 @@ TESTES REALIZADOS
     como "Rua Getúlio Vargas, Içara", 11 paradas, "Otimizar ordem" →
     "Ordem otimizada e rota traçada", 194 km / 197 min.
   - Console sem erros.
+
+--------------------------------------------------------
+[06/09/2026] v2.4 — Paradas prioritárias + escolha de endereço
+--------------------------------------------------------
+PEDIDO 1: paradas prioritárias
+  Depois de uma semana de uso real, o usuário pediu poder marcar a
+  primeira (ou mais) paradas como prioritárias: "preciso passar no lugar
+  x e y e após essas duas paradas o roteiro se otimiza da melhor forma".
+
+  DECISÃO DO USUÁRIO (perguntado antes de construir): as prioritárias
+  mantêm EXATAMENTE a ordem marcada — o otimizador não reordena entre
+  elas. Serve para o caso em que a sequência importa (ex.: pegar material
+  num lugar antes de entregar no outro).
+
+  COMO FUNCIONA
+  - Botão ★/☆ em cada linha da seção 4. Marcar move a parada para o bloco
+    prioritário, no fim dele (ordem de marcação = ordem de visita).
+  - Dois cabeçalhos separam os blocos: "Prioritárias · nesta ordem" e
+    "Demais · o app otimiza". Só aparecem quando existe prioritária —
+    quem não usa o recurso vê a lista exatamente como antes.
+  - As setas ▲▼ passaram a trocar só com o vizinho do MESMO bloco:
+    mover uma prioritária para baixo do separador quebraria o invariante
+    (prioritárias sempre à frente) e seria desfeito na hora.
+  - Desmarcar, remover pelo ✕ ou limpar a seleção zeram a marcação, para
+    a parada não voltar priorizada sem o usuário pedir.
+
+  COMO A OTIMIZAÇÃO PRESERVA O TRECHO FIXO
+  O trecho enviado ao OSRM Trip passa a começar na ÚLTIMA parada fixa (ou
+  na origem, se não houver nenhuma) e inclui só as paradas livres. Assim
+  o otimizador nunca "vê" as prioritárias e não tem como reordená-las.
+  Depois disso a viagem inteira é recalculada pela Route API, porque o
+  trip cobriu só o trecho otimizado — faltava o caminho da origem até a
+  primeira parada fixa.
+
+  REFATORAÇÃO: extraída tracarNaOrdemAtual(), usada tanto pelo "Traçar
+  nesta ordem" quanto pelo "Otimizar ordem". As duas rotas passam a sair
+  pelo mesmo caminho, com as mesmas instruções passo a passo. Custo: o
+  otimizar faz 2 chamadas ao OSRM em vez de 1 (trip + route) — aceitável
+  para um clique manual, e em troca o comportamento fica uniforme.
+
+PEDIDO 2: escolha entre endereços (decidido pelo usuário)
+  Na correção da v2.3 ficou evidente que uma busca pode devolver vários
+  pontos ("Avenida Centenário" devolve 5 trechos diferentes, e a avenida
+  tem vários quilômetros). Perguntado se preferia usar sempre o primeiro
+  ou escolher; escolheu escolher.
+
+  - geocode() passou a devolver a lista completa em vez de um resultado.
+  - Um resultado só: origem definida direto, sem clique extra.
+  - Mais de um: o app lista os endereços abaixo do campo e interrompe o
+    traçado com "N endereços encontrados — escolha qual é o certo".
+    Clicar numa opção define a origem.
+  - Editar o texto do campo invalida a origem já resolvida e esconde a
+    lista — senão o app usaria coordenadas de um endereço que não é mais
+    o que está escrito.
+  - Placeholder do campo trocado de "Endereço em Criciúma..." para
+    "Endereço, cidade — ex.: Rua Anita Garibaldi, Içara", ensinando o
+    formato que funciona melhor depois da correção da v2.3.
+
+TESTES REALIZADOS (base real: 11 pontos / 8 clientes)
+  Endereço:
+  - "Avenida Centenário" → 5 opções listadas, origem NÃO definida,
+    mensagem clara. Clicar na 2ª definiu a origem e escondeu a lista.
+  - "Prefeitura de Nova Veneza" → resultado único, origem definida direto.
+  Prioritárias:
+  - Marcadas 2 paradas em ordem específica → subiram para o topo na ordem
+    de marcação, com os dois cabeçalhos aparecendo.
+  - "Otimizar ordem": as 2 fixas ficaram intactas nas posições 1 e 2, e as
+    9 restantes foram reordenadas. Mensagem: "Ordem otimizada depois das
+    2 paradas prioritárias." Rota 202,1 km — contra 194,0 km sem fixar
+    nenhuma, o que confere: forçar paradas custa alguma distância.
+  - Seta ▼ na última prioritária: não atravessa o separador (bloqueada).
+  - Seta ▲ dentro do bloco prioritário: troca normalmente.
+  - Desmarcar: parada volta para o bloco de baixo.
+  - TODAS prioritárias: não tenta otimizar, traça na ordem definida com
+    mensagem própria.
+  - NENHUMA prioritária: comportamento e tela idênticos aos de antes
+    (nenhum cabeçalho aparece).
+  - Console sem erros. Base de teste removida do localStorage ao final.

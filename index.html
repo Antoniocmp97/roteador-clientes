@@ -92,6 +92,14 @@
   .dropzone:hover,.dropzone.drag{border-color:var(--teal);background:#132229;color:var(--text);}
   .dropzone strong{color:var(--text);}
   .file-status{font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--teal);margin-top:6px;min-height:14px;}
+  /* Lista de endereços possíveis, quando a busca de origem é ambígua */
+  .origem-opcoes{display:flex; flex-direction:column; gap:4px; margin-top:6px;}
+  .origem-opcao{
+    text-align:left; background:var(--panel-2); border:1px solid var(--line) !important;
+    border-radius:6px; padding:7px 9px; font-size:11.5px; color:var(--text);
+    line-height:1.35; cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  .origem-opcao:hover{border-color:var(--teal) !important; background:#17282f;}
 
   /* Campo de endereço de origem + botão de geolocalização */
   .origin-row{display:flex;gap:8px;}
@@ -156,6 +164,14 @@
   .stop-row .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .stop-row button{background:none;color:var(--muted);font-size:13px;padding:2px 4px;}
   .stop-row button:hover{color:var(--text);}
+  /* Paradas prioritárias (★): ficam fixas na ordem escolhida, à frente das demais */
+  .stop-row.prioritaria{border-color:var(--amber-dim);}
+  .stop-row .btn-fixar{color:var(--muted);}
+  .stop-row.prioritaria .btn-fixar{color:var(--amber);}
+  .stop-grupo{
+    font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); padding:4px 2px 0; list-style:none;
+  }
 
   /* Botões principais: "Traçar nesta ordem" (âmbar) e "Otimizar ordem" (secundário) */
   .go-btn{background:var(--amber);color:#241705;font-weight:600;font-size:13.5px;border-radius:7px;padding:11px;text-align:center;}
@@ -343,9 +359,11 @@
       <div>
         <div class="field-label">2 · Origem</div>
         <div class="origin-row">
-          <input type="text" id="originInput" placeholder="Endereço em Criciúma...">
+          <input type="text" id="originInput" placeholder="Endereço, cidade — ex.: Rua Anita Garibaldi, Içara">
           <button class="btn-icon" id="geoBtn" title="Usar minha localização">📍</button>
         </div>
+        <!-- Aparece só quando a busca devolve mais de um endereço possível -->
+        <div class="origem-opcoes" id="origemOpcoes" style="display:none;"></div>
       </div>
 
       <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
@@ -464,7 +482,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '2.3';
+const VERSAO = '2.4';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 const modoCampoAtivo = location.hash.startsWith('#r=');
@@ -832,7 +850,7 @@ function renderChecklist(){
       cb.checked = !!marcado;
       cb.addEventListener('change', () => {
         if (cb.checked){ if (!stops.some(s=>s.id===c.id)) stops.push(c); }
-        else { stops = stops.filter(s => s.id !== c.id); }
+        else { c.prioritaria = false; stops = stops.filter(s => s.id !== c.id); }
         renderChecklist();   // atualiza a contagem, o destaque do cabeçalho e mostra/esconde o seletor
         renderStopsList();
       });
@@ -859,6 +877,7 @@ document.getElementById('buscaClientes').addEventListener('input', e => {
 // Botão "marcar todos": alterna entre selecionar todos os clientes e limpar a seleção
 document.getElementById('selectAllBtn').onclick = () => {
   const allSelected = stops.length === clientPoints.length && clientPoints.length > 0;
+  if (allSelected) clientPoints.forEach(c => c.prioritaria = false); // limpar seleção limpa a prioridade também
   stops = allSelected ? [] : [...clientPoints];
   renderChecklist();
   renderStopsList();
@@ -919,25 +938,64 @@ document.getElementById('tipoNovoInput').addEventListener('keydown', e => {
 
 // Redesenha a lista numerada de paradas (seção 4) a partir de `stops`, na ordem atual do array.
 // Cada linha tem botões ▲/▼ (troca de posição com o vizinho) e ✕ (remove da viagem)
+// Mantém o invariante da lista: as paradas prioritárias sempre ficam à frente das
+// demais, preservando a ordem relativa dentro de cada bloco (filter é estável).
+function reordenarPorPrioridade(){
+  stops = [...stops.filter(s => s.prioritaria), ...stops.filter(s => !s.prioritaria)];
+}
+
 function renderStopsList(){
   const section = document.getElementById('stopsSection');
   const list = document.getElementById('stopsList');
   section.style.display = stops.length ? 'block' : 'none';
   list.innerHTML = '';
-  stops.forEach((s, i) => {
+
+  const temPrioritaria = stops.some(s => s.prioritaria);
+  const cabecalho = txt => {
     const li = document.createElement('li');
-    li.className = 'stop-row';
+    li.className = 'stop-grupo';
+    li.textContent = txt;
+    return li;
+  };
+
+  stops.forEach((s, i) => {
+    // Os dois cabeçalhos só aparecem quando existe alguma prioritária — sem isso
+    // a lista fica igual ao que sempre foi, sem poluir a tela de quem não usa
+    if (temPrioritaria && i === 0) list.appendChild(cabecalho('Prioritárias · nesta ordem'));
+    if (temPrioritaria && !s.prioritaria && stops[i-1] && stops[i-1].prioritaria){
+      list.appendChild(cabecalho('Demais · o app otimiza'));
+    }
+
+    const li = document.createElement('li');
+    li.className = 'stop-row' + (s.prioritaria ? ' prioritaria' : '');
     // Nome da filial + cliente em letra menor: duas filiais de clientes diferentes
     // podem se chamar "CENTRAL" ou "MATRIZ", e a lista precisa ficar sem ambiguidade
     const sub = s.cliente ? `<span class="nm-cli">${escaparHtml(s.cliente)}</span>` : '';
     const tag = s.tipo ? `<span class="nm-tipo">${escaparHtml(s.tipo)}</span>` : '';
     li.innerHTML = `<span class="n">${i+1}</span><span class="nm">${escaparHtml(s.name)}${sub}${tag}</span>
+      <button data-act="fixar" class="btn-fixar" title="${s.prioritaria ? 'Tirar da prioridade' : 'Marcar como prioritária'}">${s.prioritaria ? '★' : '☆'}</button>
       <button data-act="up" title="Mover para cima">▲</button>
       <button data-act="down" title="Mover para baixo">▼</button>
       <button data-act="rm" title="Remover">✕</button>`;
-    li.querySelector('[data-act=up]').onclick = () => { if (i>0){ [stops[i-1],stops[i]]=[stops[i],stops[i-1]]; renderStopsList(); } };
-    li.querySelector('[data-act=down]').onclick = () => { if (i<stops.length-1){ [stops[i+1],stops[i]]=[stops[i],stops[i+1]]; renderStopsList(); } };
-    li.querySelector('[data-act=rm]').onclick = () => { stops.splice(i,1); renderStopsList(); renderChecklist(); };
+
+    li.querySelector('[data-act=fixar]').onclick = () => {
+      s.prioritaria = !s.prioritaria;
+      reordenarPorPrioridade();
+      renderStopsList();
+    };
+    // ▲▼ só trocam com o vizinho do MESMO bloco — mover uma prioritária para
+    // baixo do separador quebraria o invariante e seria desfeito na hora
+    li.querySelector('[data-act=up]').onclick = () => {
+      if (i>0 && !!stops[i-1].prioritaria === !!s.prioritaria){ [stops[i-1],stops[i]]=[stops[i],stops[i-1]]; renderStopsList(); }
+    };
+    li.querySelector('[data-act=down]').onclick = () => {
+      if (i<stops.length-1 && !!stops[i+1].prioritaria === !!s.prioritaria){ [stops[i+1],stops[i]]=[stops[i],stops[i+1]]; renderStopsList(); }
+    };
+    li.querySelector('[data-act=rm]').onclick = () => {
+      s.prioritaria = false; // sai limpa, para não voltar priorizada se for remarcada
+      stops.splice(i,1);
+      renderStopsList(); renderChecklist();
+    };
     list.appendChild(li);
   });
 }
@@ -947,6 +1005,7 @@ function renderStopsList(){
 // e preenche o campo de texto com o rótulo (endereço) ou as coordenadas cruas
 function setOrigin(lat, lng, label){
   originLatLng = [lat, lng];
+  esconderOpcoesEndereco(); // origem definida: a lista de alternativas não faz mais sentido
   if (originMarker) map.removeLayer(originMarker);
   originMarker = L.marker([lat, lng], { icon: dot('#F2A93C') }).addTo(map).bindPopup(label || 'Origem').openPopup();
   document.getElementById('originInput').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -1001,7 +1060,10 @@ async function geocode(query){
   if (!data.length){
     throw new Error('Endereço não encontrado. Tente incluir a cidade — por exemplo: "Rua Anita Garibaldi, Içara".');
   }
-  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), label: data[0].display_name };
+  // Devolve TODOS os resultados: uma avenida de vários quilômetros tem mais de um
+  // ponto possível, e adivinhar qual é o certo dá rota errada. Quem escolhe é o
+  // escritório — ver mostrarOpcoesEndereco().
+  return data.map(d => ({ lat: parseFloat(d.lat), lng: parseFloat(d.lon), label: d.display_name }));
 }
 
 /* ---------------- Routing ---------------- */
@@ -1029,15 +1091,53 @@ function maneuverText(step){
 // Garante que existe uma origem definida antes de traçar/otimizar a rota. Se já houver
 // coordenadas (geolocalização ou geocodificação anterior), não faz nada; senão, geocodifica
 // o texto digitado no campo de origem. Retorna false (e mostra o erro) se não for possível
+// Mostra os endereços possíveis para o usuário escolher. Só é chamada quando a
+// busca devolve mais de um — com um só, a origem é definida direto, sem clique extra.
+function mostrarOpcoesEndereco(resultados){
+  const box = document.getElementById('origemOpcoes');
+  box.innerHTML = resultados
+    .map((r, i) => `<button class="origem-opcao" data-i="${i}">${escaparHtml(r.label)}</button>`)
+    .join('');
+  box.style.display = 'flex';
+  box.querySelectorAll('.origem-opcao').forEach(btn => {
+    btn.onclick = () => {
+      const r = resultados[Number(btn.dataset.i)];
+      setOrigin(r.lat, r.lng, r.label); // já esconde a lista
+      setStatus('Origem definida.', true);
+    };
+  });
+}
+
+function esconderOpcoesEndereco(){
+  const box = document.getElementById('origemOpcoes');
+  if (!box) return;
+  box.style.display = 'none';
+  box.innerHTML = '';
+}
+
+// Editar o texto invalida a origem já resolvida — senão o app usaria as coordenadas
+// de um endereço que não é mais o que está escrito no campo
+document.getElementById('originInput').addEventListener('input', () => {
+  originLatLng = null;
+  esconderOpcoesEndereco();
+});
+
 async function ensureOrigin(){
   if (originLatLng) return true;
   const q = document.getElementById('originInput').value.trim();
   if (!q){ setStatus('Informe um endereço de origem ou use sua localização.'); return false; }
   try{
     setStatus('Buscando endereço...', true);
-    const g = await geocode(q);
-    setOrigin(g.lat, g.lng, g.label);
-    return true;
+    const rs = await geocode(q);
+    if (rs.length === 1){
+      setOrigin(rs[0].lat, rs[0].lng, rs[0].label);
+      return true;
+    }
+    // Ambíguo: mostra as opções e interrompe. O usuário escolhe e clica de novo
+    // em traçar/otimizar — melhor que chutar uma ponta de avenida e sair rota errada.
+    mostrarOpcoesEndereco(rs);
+    setStatus(`${rs.length} endereços encontrados — escolha qual é o certo.`);
+    return false;
   }catch(e){ setStatus(e.message); return false; }
 }
 
@@ -1083,19 +1183,27 @@ function drawResult(distance, duration, geometry, legs){
 // Botão "Traçar nesta ordem": chama a OSRM Route API respeitando a ordem atual de `stops`.
 // Monta a string de coordenadas "lng,lat;lng,lat;..." (origem primeiro, depois cada parada,
 // nessa ordem) e pede a rota com geometria completa + instruções passo a passo
+// Traça a viagem inteira na ordem em que `stops` está agora. Usada tanto pelo
+// "Traçar nesta ordem" quanto pelo "Otimizar ordem" (que primeiro reordena e
+// depois chama isto) — assim as duas rotas saem do mesmo jeito, com as mesmas
+// instruções passo a passo.
+async function tracarNaOrdemAtual(mensagemOk){
+  const coordsStr = [[originLatLng[1], originLatLng[0]], ...stops.map(s=>[s.lng,s.lat])].map(c=>c.join(',')).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson&steps=true`;
+  const data = await safeFetchJSON(url);
+  if (data.code !== 'Ok') throw new Error('Não foi possível calcular a rota.');
+  const r = data.routes[0];
+  drawResult(r.distance, r.duration, r.geometry, r.legs);
+  setStatus(mensagemOk, true);
+  prepararEnvio(r.distance, r.duration);
+}
+
 document.getElementById('routeBtn').onclick = async () => {
   if (!(await ensureOrigin())) return;
   if (!stops.length){ setStatus('Selecione ao menos um cliente para visitar.'); return; }
   setStatus('Calculando rota...', true);
-  const coordsStr = [[originLatLng[1], originLatLng[0]], ...stops.map(s=>[s.lng,s.lat])].map(c=>c.join(',')).join(';');
-  const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson&steps=true`;
   try{
-    const data = await safeFetchJSON(url);
-    if (data.code !== 'Ok') throw new Error('Não foi possível calcular a rota.');
-    const r = data.routes[0];
-    drawResult(r.distance, r.duration, r.geometry, r.legs);
-    setStatus('Rota traçada na ordem selecionada.', true);
-    prepararEnvio(r.distance, r.duration);
+    await tracarNaOrdemAtual('Rota traçada na ordem selecionada.');
   }catch(e){ setStatus(e.message || 'Erro ao calcular rota.'); }
 };
 
@@ -1107,31 +1215,55 @@ document.getElementById('routeBtn').onclick = async () => {
 document.getElementById('optimizeBtn').onclick = async () => {
   if (!(await ensureOrigin())) return;
   if (!stops.length){ setStatus('Selecione ao menos um cliente para visitar.'); return; }
+
+  // Paradas marcadas como prioritárias (★) ficam FIXAS, na ordem escolhida pelo
+  // escritório. Só o restante vai para o otimizador.
+  const fixas = stops.filter(s => s.prioritaria);
+  const resto = stops.filter(s => !s.prioritaria);
+
+  // Com 0 ou 1 parada livre não há o que otimizar — a ordem já está decidida
+  if (resto.length < 2){
+    setStatus('Calculando rota...', true);
+    try{
+      await tracarNaOrdemAtual(fixas.length
+        ? 'Rota traçada — a ordem já estava definida pelas paradas prioritárias.'
+        : 'Rota traçada na ordem selecionada.');
+    }catch(e){ setStatus(e.message || 'Erro ao calcular rota.'); }
+    return;
+  }
+
   setStatus('Otimizando ordem de visita...', true);
-  const coordsStr = [[originLatLng[1], originLatLng[0]], ...stops.map(s=>[s.lng,s.lat])].map(c=>c.join(',')).join(';');
+  // O trecho a otimizar parte da ÚLTIMA parada fixa (ou da origem, se não houver
+  // nenhuma). É isso que garante que as prioritárias fiquem intocadas na frente
+  // e que o resto seja otimizado a partir de onde a parte fixa termina.
+  const partida = fixas.length
+    ? [fixas[fixas.length - 1].lng, fixas[fixas.length - 1].lat]
+    : [originLatLng[1], originLatLng[0]];
+  const coordsStr = [partida, ...resto.map(s=>[s.lng,s.lat])].map(c=>c.join(',')).join(';');
   const url = `https://router.project-osrm.org/trip/v1/driving/${coordsStr}?source=first&roundtrip=false&geometries=geojson&steps=true`;
   try{
     const data = await safeFetchJSON(url);
     if (data.code !== 'Ok') throw new Error('Não foi possível otimizar a rota.');
-    const trip = data.trips[0];
-    const order = data.waypoints
+    const ordenado = data.waypoints
       .map((wp, idx) => ({ idx, wo: wp.waypoint_index }))
-      .filter(w => w.idx !== 0)
+      .filter(w => w.idx !== 0)   // índice 0 é o ponto de partida do trecho, não é parada
       .sort((a,b) => a.wo - b.wo)
-      .map(w => stops[w.idx - 1]);
-    stops = order;
+      .map(w => resto[w.idx - 1]);
+    stops = [...fixas, ...ordenado];
     renderStopsList();
     renderChecklist();
-    drawResult(trip.distance, trip.duration, trip.geometry, trip.legs);
-    setStatus('Ordem otimizada e rota traçada.', true);
-    prepararEnvio(trip.distance, trip.duration);
+    // A viagem inteira precisa ser recalculada: o trip cobriu só o trecho
+    // otimizado, sem o caminho da origem até a primeira parada fixa.
+    await tracarNaOrdemAtual(fixas.length
+      ? `Ordem otimizada depois d${fixas.length === 1 ? 'a parada prioritária' : 'as ' + fixas.length + ' paradas prioritárias'}.`
+      : 'Ordem otimizada e rota traçada.');
   }catch(e){ setStatus(e.message || 'Erro ao otimizar rota.'); }
 };
 
 // Atalho de teclado: pressionar Enter no campo de origem força uma nova geocodificação
 // (zera originLatLng) e já dispara o traçado da rota, sem precisar clicar no botão
 document.getElementById('originInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter'){ originLatLng = null; document.getElementById('routeBtn').click(); }
+  if (e.key === 'Enter'){ document.getElementById('routeBtn').click(); }
 });
 
 /* ==========================================================
