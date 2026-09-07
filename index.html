@@ -448,6 +448,12 @@
             Mande este link para quem vai fazer as visitas. Ao abrir, a pessoa
             vê o roteiro na ordem certa, com botão de navegação em cada parada.
           </div>
+          <!-- Saída para celular antigo: o link comprimido depende de um recurso
+               que só existe em navegadores de 2023 para cá -->
+          <div class="envio-dica" id="linkCompativel" style="display:none;">
+            Não abriu no celular de alguém?
+            <button class="link-btn" id="linkCompativelBtn">gerar link compatível</button>
+          </div>
         </div>
       </div>
 
@@ -499,10 +505,12 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '2.6';
+const VERSAO = '2.7';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
-const modoCampoAtivo = location.hash.startsWith('#r=');
+// "#r=" é o link legível (abre em qualquer navegador); "#z=" é o comprimido.
+// Os dois prefixos têm 3 caracteres, então location.hash.slice(3) serve para ambos.
+const modoCampoAtivo = location.hash.startsWith('#r=') || location.hash.startsWith('#z=');
 
 // Inicializa o mapa Leaflet centrado em Criciúma/SC e aplica o tile escuro
 // (só no modo escritório; no modo campo `map` fica null e nunca é usado)
@@ -1461,6 +1469,41 @@ function montarRoteiro(){
           ultimoResumo ? ultimoResumo.d : '', ultimoResumo ? ultimoResumo.t : ''].join('~');
 }
 
+/* ---------------- Compressão do link (v2.7) ---------------- */
+// Os navegadores atuais trazem gzip embutido (CompressionStream), o que encurta
+// o link em cerca de 30% sem biblioteca nenhuma e sem servidor. Medido com a base
+// real: 758 -> 547 caracteres.
+//
+// RESSALVA IMPORTANTE: quem ABRE o link é o celular de quem está na rua, e essa
+// API só existe em navegadores de 2023 para cá (iPhone precisa de iOS 16.4+).
+// Por isso o formato legível continua existindo: o link comprimido usa o prefixo
+// "#z=", o legível usa "#r=", e o escritório pode regerar no formato compatível
+// com um clique caso algum aparelho da equipe não abra.
+const temCompressao = typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
+
+async function comprimirParaLink(texto){
+  const cs = new CompressionStream('gzip');
+  const w = cs.writable.getWriter();
+  w.write(new TextEncoder().encode(texto));
+  w.close();
+  const bytes = new Uint8Array(await new Response(cs.readable).arrayBuffer());
+  let bin = '';
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function descomprimirDoLink(codigo){
+  const b64 = codigo.replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const ds = new DecompressionStream('gzip');
+  const w = ds.writable.getWriter();
+  w.write(bytes);
+  w.close();
+  return new TextDecoder().decode(await new Response(ds.readable).arrayBuffer());
+}
+
 // Codifica o roteiro em texto seguro para URL (base64 "url-safe", sem os
 // caracteres +, / e = que precisariam de escape numa URL)
 function codificarRoteiro(texto){
@@ -1506,12 +1549,39 @@ function lerRoteiroCompacto(texto){
 
 // Botão "Gerar link do roteiro": monta o link completo (URL atual + #r=...) e mostra
 // no campo de texto, pronto para compartilhar ou copiar
-document.getElementById('gerarLinkBtn').onclick = () => {
-  if (!stops.length){ setStatus('Trace uma rota antes de gerar o link.'); return; }
-  const codigo = codificarRoteiro(montarRoteiro());
-  const url = location.origin + location.pathname + '#r=' + codigo;
+// Monta o link. `forcarCompativel` gera no formato legível mesmo havendo
+// compressão disponível — é a saída para o caso de algum celular da equipe
+// ser antigo demais para abrir o comprimido.
+async function gerarLinkDoRoteiro(forcarCompativel){
+  const texto = montarRoteiro();
+  const legivel = codificarRoteiro(texto);
+  let codigo = legivel, prefixo = '#r=';
+
+  if (!forcarCompativel && temCompressao){
+    try{
+      const z = await comprimirParaLink(texto);
+      // Só troca se realmente ficar menor: em roteiros muito curtos o cabeçalho
+      // do gzip pode custar mais do que economiza
+      if (z.length < legivel.length){ codigo = z; prefixo = '#z='; }
+    }catch(e){ /* qualquer falha: segue com o formato legível */ }
+  }
+
+  const url = location.origin + location.pathname + prefixo + codigo;
   document.getElementById('linkCampo').value = url;
   document.getElementById('linkPronto').style.display = 'block';
+  // O aviso de compatibilidade só faz sentido enquanto o link for o comprimido
+  document.getElementById('linkCompativel').style.display = (prefixo === '#z=') ? 'block' : 'none';
+  return url;
+}
+
+document.getElementById('gerarLinkBtn').onclick = () => {
+  if (!stops.length){ setStatus('Trace uma rota antes de gerar o link.'); return; }
+  gerarLinkDoRoteiro(false);
+};
+
+document.getElementById('linkCompativelBtn').onclick = async () => {
+  await gerarLinkDoRoteiro(true);
+  setStatus('Link gerado no formato compatível — mais longo, abre em qualquer celular.', true);
 };
 
 // Botão "Compartilhar": usa o menu nativo de compartilhamento do celular (WhatsApp,
@@ -1604,13 +1674,29 @@ function iconeMaps(){
 
 // Ativa o modo campo: esconde a interface do escritório, decodifica o roteiro
 // do link e desenha a lista de paradas
-function ativarModoCampo(){
+async function ativarModoCampo(){
   document.querySelector('.app').style.display = 'none';
   document.getElementById('modoCampo').hidden = false;
 
-  const codigo = location.hash.slice(3); // remove o prefixo "#r="
-  const roteiro = decodificarRoteiro(codigo);
+  const comprimido = location.hash.startsWith('#z=');
+  const codigo = location.hash.slice(3); // remove o prefixo "#r=" ou "#z="
   const lista = document.getElementById('campoLista');
+
+  // Celular antigo demais para o formato comprimido: mensagem clara e acionável,
+  // em vez de "link inválido", que mandaria a pessoa procurar o problema no lugar errado
+  if (comprimido && !temCompressao){
+    lista.innerHTML = `<div class="campo-vazio"><b>Este celular não abre o link compacto</b>O recurso usado só existe em navegadores mais novos. Atualize o navegador, ou peça ao escritório o <b>link compatível</b> — tem um botão para isso na tela de quem gerou o roteiro.</div>`;
+    document.getElementById('campoSaindo').textContent = '';
+    return;
+  }
+
+  let roteiro = null;
+  if (comprimido){
+    try{ roteiro = lerRoteiroCompacto(await descomprimirDoLink(codigo)); }
+    catch(e){ roteiro = null; } // link cortado no meio, por exemplo
+  }else{
+    roteiro = decodificarRoteiro(codigo);
+  }
 
   if (!roteiro || !roteiro.s.length){
     lista.innerHTML = `<div class="campo-vazio"><b>Link de roteiro inválido</b>Peça para gerarem o link de novo — este parece incompleto ou corrompido.</div>`;

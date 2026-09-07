@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 06/09/2026 — v2.6 (link do roteiro 37% menor)
+> **Última atualização:** 06/09/2026 — v2.7 (link comprimido: 1204 → 530 caracteres)
 
 ---
 
@@ -280,6 +280,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 18 | **v2.4** — Paradas prioritárias fixas antes da otimização; escolha entre endereços quando a busca de origem é ambígua |
 | 19 | **v2.5** — Origem por clique no mapa, aviso quando o número da casa não existe no mapa, e origem padrão salva no navegador |
 | 20 | **v2.6** — Formato compacto do link do roteiro (37% menor), retrocompatível com os links já enviados |
+| 21 | **v2.7** — Compressão gzip nativa do navegador no link (530 caracteres), com formato compatível para celular antigo |
 
 ---
 
@@ -346,7 +347,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v2.6:  0 / 5
+Leves acumuladas desde a v2.7:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -390,3 +391,4 @@ os backups locais são conveniência, não garantia.
 | 2.4 | 06/09/2026 | Paradas prioritárias (★) e escolha entre endereços ambíguos |
 | 2.5 | 06/09/2026 | Origem: clique no mapa, aviso de número inexistente e origem padrão salva |
 | 2.6 | 06/09/2026 | Link do roteiro 37% menor (tabelas, formato compacto e coordenadas por diferença) |
+| 2.7 | 06/09/2026 | Compressão nativa no link: 1204 → 530 caracteres no total |

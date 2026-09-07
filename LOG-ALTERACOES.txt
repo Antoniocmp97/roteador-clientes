@@ -1980,3 +1980,69 @@ LIMITE PRÁTICO
   código e risco) ou um servidor guardando os roteiros — que o usuário já
   decidiu evitar, e que quebraria a ADR-01 (roteiro viaja dentro do link,
   funciona mesmo com os serviços externos fora do ar).
+
+--------------------------------------------------------
+[06/09/2026] v2.7 — Compressão nativa no link do roteiro
+--------------------------------------------------------
+CONTEXTO
+  O usuário considerou guardar os roteiros num servidor (com exclusão
+  após uma semana) para encurtar o link, já que o roteiro é descartável.
+  Apresentados os números e os riscos; ele optou pela compressão, que não
+  exige servidor, conta nem reverter nenhuma decisão de arquitetura.
+
+  Riscos que pesaram contra o servidor, registrados aqui para não se
+  perderem: o link deixaria de bastar a si mesmo (ADR-01), serviços
+  gratuitos costumam PAUSAR projetos inativos (o padrão de uso de vocês é
+  exatamente esse), a expiração deixaria o progresso salvo órfão, e a
+  chave de acesso ficaria exposta no repositório público.
+
+O QUE FOI FEITO
+  Usada a compressão gzip NATIVA do navegador (CompressionStream), que
+  não exige biblioteca nenhuma — cerca de 20 linhas de código.
+
+  Resultado acumulado das duas últimas versões, com a base real:
+    formato v3 (JSON) ................ 1204 caracteres
+    formato v5 compacto (v2.6) ........ 758
+    v5 + gzip (v2.7) .................. 530   (-56% no total)
+
+  DOIS PREFIXOS DE LINK:
+    #r=  formato legível — abre em qualquer navegador
+    #z=  formato comprimido — precisa de navegador de 2023 em diante
+  Os dois têm 3 caracteres, então o slice(3) que já existia serve para
+  ambos sem mudança.
+
+RESSALVA TRATADA: CELULAR ANTIGO
+  Quem ABRE o link é o celular de quem está na rua, e CompressionStream
+  só existe a partir do Chrome 80, Firefox 113 e Safari 16.4 (iOS 16.4+).
+  Um aparelho mais antigo não conseguiria abrir um link comprimido — e
+  falharia no pior momento, no meio do dia de trabalho. Tratado em três
+  camadas:
+   1. Se o navegador do ESCRITÓRIO não tem o recurso, o link já sai no
+      formato legível, automaticamente.
+   2. Botão "gerar link compatível" ao lado do link gerado, para regerar
+      no formato longo quando algum aparelho da equipe não abrir. Só
+      aparece quando o link atual é o comprimido.
+   3. No modo campo, se o celular não suporta, a mensagem diz exatamente
+      isso e o que fazer ("peça ao escritório o link compatível") em vez
+      do genérico "link inválido", que mandaria a pessoa procurar o
+      problema no lugar errado.
+  A compressão também só é usada se o resultado ficar REALMENTE menor —
+  em roteiros muito curtos o cabeçalho do gzip pode custar mais do que
+  economiza.
+
+TESTES REALIZADOS (base real, 11 paradas)
+  - Link comprimido: 530 caracteres; compatível: 741. Prefixos corretos
+    (#z= e #r=).
+  - Ida e volta pelo caminho comprimido: reconstrução IDÊNTICA campo a
+    campo, mais distância e tempo.
+  - Link comprimido aberto no modo campo em viewport de celular: 11
+    paradas, 184 km / 190 min, cliente, filial e tipo corretos.
+  - CELULAR ANTIGO SIMULADO DE VERDADE: forçado temCompressao=false no
+    arquivo (não só apagando a variável depois do carregamento, que não
+    exercitaria o mesmo caminho), recarregado e verificado:
+      * modo campo mostra a mensagem específica, não "link inválido";
+      * o escritório passa a gerar o formato legível sozinho, e o aviso
+        de compatibilidade nem aparece.
+    Alteração revertida em seguida e conferida.
+  - Formatos antigos v1, v3 e v5 continuam abrindo.
+  - Console sem erros. localStorage limpo ao final.
