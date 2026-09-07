@@ -2091,3 +2091,44 @@ TESTES REALIZADOS
   - Console sem erros. localStorage limpo ao final.
 
 VERSÃO: alteração leve. Contador: 1/5 desde a v2.7.
+
+--------------------------------------------------------
+[06/09/2026] v2.8 — Estrela de prioridade também na tela do campo
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  A estrela que marca parada prioritária existia só na tela do escritório.
+  Quem está na rua também precisa reconhecer quais paradas são
+  prioritárias.
+
+O QUE MUDOU
+  A marcação precisava ATRAVESSAR o link, já que a tela do campo só
+  conhece o que vem nele. Formato do roteiro subiu para v6:
+    - As paradas ganharam um 6º campo, presente APENAS nas prioritárias
+      ("*1"). As demais não gastam caractere nenhum — o campo é opcional.
+    - lerRoteiroCompacto() aceita v5 e v6 com a mesma leitura: em links
+      v5 o campo simplesmente não vem e a prioridade fica false.
+  Custo no tamanho do link: 2 caracteres por parada prioritária, antes da
+  compressão. Desprezível.
+
+  Na tela do campo, a parada prioritária ganhou a linha "★ PRIORITÁRIA"
+  em âmbar, acima do nome do cliente. Escolhido texto junto da estrela, e
+  não a estrela sozinha: quem está na rua não necessariamente sabe o que
+  um símbolo isolado significa. Só aparece nas prioritárias, então não
+  gasta altura de tela nas demais.
+
+  Ao concluir a parada, a linha continua visível mas em cinza, seguindo o
+  resto do card, que já fica apagado.
+
+TESTES REALIZADOS (base real, 11 paradas, 2 prioritárias)
+  - A prioridade viaja no link: marcadas CENTRAL e FILIAL CRICIUMA no
+    escritório, as mesmas duas voltaram marcadas na decodificação.
+  - Formato gerado confirmado como v6, com o campo extra só nas
+    prioritárias ("CENTRAL*-2867394*-4937307*0*0*1").
+  - Link comprimido aberto no modo campo em viewport de celular: as duas
+    primeiras paradas com "★ PRIORITÁRIA" em âmbar, as demais sem — e a
+    ordem correta, já que a otimização respeita as fixas.
+  - RETROCOMPATIBILIDADE: link v5 antigo (sem o campo) abre normalmente,
+    com prioridade false, nome e coordenadas intactos.
+  - Link v6 sem nenhuma prioritária: abre sem mostrar a marcação.
+  - Parada prioritária concluída: linha continua visível, em cinza.
+  - Console sem erros. localStorage limpo ao final.

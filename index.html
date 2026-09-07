@@ -270,6 +270,9 @@
   }
   .parada.feita .parada-n{background:var(--teal);}
   .parada-info{flex:1; min-width:0;}
+  .parada-prioritaria{font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
+                      color:var(--amber); letter-spacing:.06em; text-transform:uppercase; margin-bottom:3px;}
+  .parada.feita .parada-prioritaria{color:var(--muted);}
   .parada-cliente{font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500;
                   color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px;}
   .parada-nome{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:17px; line-height:1.3;}
@@ -511,7 +514,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '2.7';
+const VERSAO = '2.8';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 // "#r=" é o link legível (abre em qualquer navegador); "#z=" é o comprimido.
@@ -1467,11 +1470,14 @@ function montarRoteiro(){
     const dLa = i === 0 ? la : la - antLa;
     const dLn = i === 0 ? ln : ln - antLn;
     antLa = la; antLn = ln;
-    return [escSep(s.name), dLa, dLn,
-            s.cliente ? clientes.indexOf(s.cliente) : '',
-            s.tipo ? tipos.indexOf(s.tipo) : ''].join('*');
+    const campos = [escSep(s.name), dLa, dLn,
+                    s.cliente ? clientes.indexOf(s.cliente) : '',
+                    s.tipo ? tipos.indexOf(s.tipo) : ''];
+    // 6º campo só existe nas prioritárias — as demais não gastam caractere nenhum
+    if (s.prioritaria) campos.push('1');
+    return campos.join('*');
   });
-  return ['5', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
+  return ['6', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
           ultimoResumo ? ultimoResumo.d : '', ultimoResumo ? ultimoResumo.t : ''].join('~');
 }
 
@@ -1537,17 +1543,20 @@ function lerRoteiroJson(json){
 
 function lerRoteiroCompacto(texto){
   const [ver, clientesRaw, tiposRaw, paradasRaw, d, t] = texto.split('~');
-  if (ver !== '5') return null; // formato desconhecido: trata como link inválido
+  // v6 acrescentou a marcação de prioridade como 6º campo opcional da parada.
+  // A leitura é a mesma para os dois: em links v5 o campo simplesmente não vem.
+  if (ver !== '5' && ver !== '6') return null; // formato desconhecido: link inválido
   const clientes = clientesRaw ? clientesRaw.split('|').map(unescSep) : [];
   const tipos    = tiposRaw    ? tiposRaw.split('|').map(unescSep)    : [];
   let la = 0, ln = 0;
   const s = (paradasRaw ? paradasRaw.split('|') : []).map((linha, i) => {
-    const [nome, dLa, dLn, iCli, iTipo] = linha.split('*');
+    const [nome, dLa, dLn, iCli, iTipo, prio] = linha.split('*');
     la = i === 0 ? Number(dLa) : la + Number(dLa); // deltas somados de volta
     ln = i === 0 ? Number(dLn) : ln + Number(dLn);
     return [unescSep(nome), la / 1e5, ln / 1e5,
             iCli  === '' || iCli  === undefined ? '' : (clientes[Number(iCli)]  || ''),
-            iTipo === '' || iTipo === undefined ? '' : (tipos[Number(iTipo)] || '')];
+            iTipo === '' || iTipo === undefined ? '' : (tipos[Number(iTipo)] || ''),
+            prio === '1']; // ausente em links v5: vira false, sem quebrar nada
   });
   if (!s.length || s.some(p => !isFinite(p[1]) || !isFinite(p[2]))) return null;
   return { v: 5, s, d: d ? Number(d) : null, t: t ? Number(t) : null };
@@ -1768,14 +1777,17 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
   lista.innerHTML = banner + listaHtmlParadas();
 
   function listaHtmlParadas(){
-    return roteiro.s.map(([nome, lat, lng, cliente, tipo], i) => {
+    return roteiro.s.map(([nome, lat, lng, cliente, tipo, prioritaria], i) => {
       const done = feitos.has(i);
       const proxima = i === indiceProximo;
-      // cliente e tipo vêm vazios em links antigos (v1/v2, gerados antes desta
-      // versão) — nesse caso simplesmente não mostra a linha correspondente,
-      // em vez de aparecer "undefined"
+      // cliente, tipo e prioridade vêm vazios em links antigos (v1/v2/v5, gerados
+      // antes de existirem) — nesse caso simplesmente não mostra a linha
+      // correspondente, em vez de aparecer "undefined"
       const rotuloCliente = cliente ? `<div class="parada-cliente">${escaparHtml(cliente)}</div>` : '';
       const rotuloTipo = tipo ? `<div class="parada-tag">${escaparHtml(tipo)}</div>` : '';
+      // Mesma estrela da tela do escritório, para quem está na rua reconhecer
+      // de imediato que aquela parada foi marcada como prioritária
+      const rotuloPrioridade = prioritaria ? `<div class="parada-prioritaria">★ Prioritária</div>` : '';
       // Botão de concluir: normalmente um único botão, mas troca para o par
       // Confirmar/Cancelar enquanto este índice está em `confirmando` — segundo
       // toque intencional antes de mudar o estado de verdade, ver
@@ -1808,6 +1820,7 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
           <div class="parada-topo">
             <div class="parada-n">${i+1}</div>
             <div class="parada-info">
+              ${rotuloPrioridade}
               ${rotuloCliente}
               <div class="parada-nome">${escaparHtml(nome)}</div>
               ${rotuloTipo}
