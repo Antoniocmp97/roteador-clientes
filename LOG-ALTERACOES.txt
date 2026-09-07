@@ -2046,3 +2046,48 @@ TESTES REALIZADOS (base real, 11 paradas)
     Alteração revertida em seguida e conferida.
   - Formatos antigos v1, v3 e v5 continuam abrindo.
   - Console sem erros. localStorage limpo ao final.
+
+--------------------------------------------------------
+[06/09/2026] Ajuste leve — preferência fixa de formato do link
+--------------------------------------------------------
+CONTEXTO
+  O usuário informou que parte da equipe usa Android, aparelhos Xiaomi.
+  Isso muda a análise de risco da compressão da v2.7.
+
+O QUE VALE SABER SOBRE ANDROID (registrado para não se perder)
+  No Android, um link do WhatsApp normalmente NÃO abre no navegador
+  escolhido pela pessoa: abre no navegador interno do WhatsApp, que usa o
+  Android System WebView — componente do sistema atualizado pela Play
+  Store, independente da versão do Android. Como CompressionStream existe
+  desde o Chrome 80 (2020), um WebView minimamente atualizado abre o link
+  comprimido sem problema.
+
+  O risco residual em Xiaomi seria um aparelho com WebView muito antigo ou
+  sem serviços Google. Improvável, mas não verificável remotamente — por
+  isso a saída de compatibilidade continua sendo necessária.
+
+O QUE FOI ACRESCENTADO
+  Caixa "Sempre gerar link compatível", ao lado do link gerado, com a
+  preferência guardada no navegador (hg_link_compativel).
+
+  MOTIVO: a v2.7 já tinha o botão "gerar link compatível", mas ele resolve
+  só o roteiro daquele momento. Se um aparelho da equipe não abre o
+  formato compacto, isso vale para TODO roteiro daí em diante — obrigar a
+  lembrar do botão a cada envio seria transformar um problema de uma vez
+  num incômodo diário.
+
+  Detalhe de comportamento: marcar ou desmarcar REGERA o link que já está
+  na tela. Sem isso, o usuário marcaria a opção e copiaria o link antigo,
+  achando que já valia.
+
+TESTES REALIZADOS
+  - Padrão (opção desmarcada): link comprimido, prefixo #z=, 465 caracteres.
+  - Marcando a opção: regerou sozinho para #r=, 687 caracteres, e o aviso
+    "não abriu no celular de alguém?" sumiu (não faz sentido com o formato
+    já compatível).
+  - Preferência sobreviveu ao recarregamento da página, e o link seguinte
+    já saiu no formato compatível sem precisar tocar em nada.
+  - Desmarcando: voltou ao comprimido e limpou o armazenamento.
+  - Console sem erros. localStorage limpo ao final.
+
+VERSÃO: alteração leve. Contador: 1/5 desde a v2.7.

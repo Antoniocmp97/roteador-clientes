@@ -209,7 +209,8 @@ repositório é público (ver `.gitignore`).
   exigiria trocar o Nominatim por um serviço com base própria de endereços
   brasileiros (Google, Mapbox), com cadastro e chave de acesso.
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
-  origem padrão, a lista de tipos de serviço e o progresso do modo campo. **Não** ficam salvos:
+  origem padrão, a lista de tipos de serviço, a preferência de formato do link
+  e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
   recarregar a página zera essa parte, de propósito (é o roteiro do dia, não
   configuração). Nada disso sai da máquina de quem usa.
@@ -347,7 +348,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v2.7:  0 / 5
+Leves acumuladas desde a v2.7:  1 / 5
 ```
 
 ### Onde o número aparece

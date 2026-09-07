@@ -454,6 +454,12 @@
             Não abriu no celular de alguém?
             <button class="link-btn" id="linkCompativelBtn">gerar link compatível</button>
           </div>
+          <!-- Se algum aparelho da equipe não abre o formato compacto, marcar aqui
+               evita ter que lembrar do botão acima a cada roteiro -->
+          <label class="envio-dica" id="sempreCompatLinha" style="display:flex;gap:6px;align-items:center;cursor:pointer;">
+            <input type="checkbox" id="sempreCompativel">
+            <span>Sempre gerar link compatível (mais longo, abre em qualquer celular)</span>
+          </label>
         </div>
       </div>
 
@@ -1557,7 +1563,7 @@ async function gerarLinkDoRoteiro(forcarCompativel){
   const legivel = codificarRoteiro(texto);
   let codigo = legivel, prefixo = '#r=';
 
-  if (!forcarCompativel && temCompressao){
+  if (!forcarCompativel && !sempreCompativel() && temCompressao){
     try{
       const z = await comprimirParaLink(texto);
       // Só troca se realmente ficar menor: em roteiros muito curtos o cabeçalho
@@ -1582,6 +1588,29 @@ document.getElementById('gerarLinkBtn').onclick = () => {
 document.getElementById('linkCompativelBtn').onclick = async () => {
   await gerarLinkDoRoteiro(true);
   setStatus('Link gerado no formato compatível — mais longo, abre em qualquer celular.', true);
+};
+
+// Preferência de formato do link. Fica guardada porque, se um aparelho da equipe
+// não abre o formato compacto, isso vale para TODO roteiro daqui pra frente —
+// não faz sentido lembrar de clicar no botão toda vez.
+const CHAVE_LINK_COMPAT = 'hg_link_compativel';
+
+function sempreCompativel(){
+  try{ return localStorage.getItem(CHAVE_LINK_COMPAT) === '1'; }catch(e){ return false; }
+}
+
+const chkCompat = document.getElementById('sempreCompativel');
+chkCompat.checked = sempreCompativel();
+chkCompat.onchange = async () => {
+  try{
+    if (chkCompat.checked) localStorage.setItem(CHAVE_LINK_COMPAT, '1');
+    else localStorage.removeItem(CHAVE_LINK_COMPAT);
+  }catch(e){ /* modo privado: vale só nesta sessão */ }
+  // Se já havia um link na tela, regera no formato novo — senão o usuário
+  // copiaria o link antigo achando que a opção já valeu
+  if (document.getElementById('linkPronto').style.display === 'block' && stops.length){
+    await gerarLinkDoRoteiro(sempreCompativel());
+  }
 };
 
 // Botão "Compartilhar": usa o menu nativo de compartilhamento do celular (WhatsApp,
