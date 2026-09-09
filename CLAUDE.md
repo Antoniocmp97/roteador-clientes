@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 08/09/2026 — v2.9 (grupos do uMap: cascata de três níveis)
+> **Última atualização:** 08/09/2026 — v3.0 (base ordenada alfabeticamente)
 
 ---
 
@@ -33,6 +33,9 @@ sem dependências instaladas. Abre direto no navegador.
 - Checklist com **cascata de três níveis** quando o uMap tem grupos:
   **Grupo → Camada → Unidades**. Camadas sem grupo continuam no primeiro nível,
   lado a lado com os grupos
+- **Base ordenada alfabeticamente** ao carregar, nos três níveis, com
+  `Intl.Collator('pt-BR')` — acentos e cedilha entram no lugar certo. A ordem da
+  rota não é afetada: quem decide a sequência da viagem é a otimização
 - **Busca no checklist** (Fase 3): filtra por nome do cliente ou da filial;
   grupos com resultado abrem sozinhos durante a busca
 - **Base guardada no navegador** (Fase 3): depois de carregar o `.umap` uma vez,
@@ -311,6 +314,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 21 | **v2.7** — Compressão gzip nativa do navegador no link (530 caracteres), com formato compatível para celular antigo |
 | 22 | **v2.8** — Marcação de prioridade passa a aparecer também na tela do campo |
 | 23 | **v2.9** — Grupos do uMap: leitura das camadas aninhadas (que sumiam em silêncio) e cascata de três níveis no checklist |
+| 24 | **v3.0** — Base ordenada alfabeticamente ao carregar, nos três níveis, com ordenação ciente de acentos |
 
 ---
 
@@ -377,7 +381,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v2.9:  0 / 5
+Leves acumuladas desde a v3.0:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -424,3 +428,4 @@ os backups locais são conveniência, não garantia.
 | 2.7 | 06/09/2026 | Compressão nativa no link: 1204 → 530 caracteres no total |
 | 2.8 | 06/09/2026 | Estrela de prioridade também no modo campo (formato do link v6) |
 | 2.9 | 08/09/2026 | Grupos do uMap: Grupo → Camada → Unidades no checklist |
+| 3.0 | 08/09/2026 | Ordenação alfabética da base nos três níveis |
