@@ -2132,3 +2132,79 @@ TESTES REALIZADOS (base real, 11 paradas, 2 prioritárias)
   - Link v6 sem nenhuma prioritária: abre sem mostrar a marcação.
   - Parada prioritária concluída: linha continua visível, em cinza.
   - Console sem erros. localStorage limpo ao final.
+
+--------------------------------------------------------
+[08/09/2026] v2.9 — Grupos do uMap: cascata de três níveis
+--------------------------------------------------------
+RELATO DO USUÁRIO
+  Criou um "GRUPO" no uMap para vincular mais de uma camada a um único
+  grupo, e ao carregar o arquivo o app não reconheceu. Arquivo de teste
+  entregue: BASETESTEGRUPO.umap (base real, fica fora do repositório).
+
+DIAGNÓSTICO — era pior que "não reconheceu": PERDA SILENCIOSA DE DADOS
+  O uMap representa grupo como uma CAMADA ESPECIAL: tem
+  "properties.group": true, nenhum ponto próprio, e carrega as camadas de
+  verdade num array "layers" ANINHADO dentro dela.
+
+  O lerUmap() percorria só o primeiro nível e ignorava camadas sem pontos.
+  Resultado com o arquivo do usuário:
+     o arquivo tem .... 23 camadas / 39 pontos
+     o app lia ........ 20 camadas / 36 pontos
+  Sumiam, sem erro e sem aviso:
+     PREFEITURA MUNICIPAL NOVA VENEZA (com o PAÇO MUNICIPAL)
+     PREFEITURA MUNICIPAL NOVA VENEZA - EDUCAÇÃO
+     PREFEITURA MUNICIPAL NOVA VENEZA - ASSISTENCIA SOCIAL
+
+DEFINIÇÃO DE ESCOPO (com o usuário)
+  A primeira pergunta ofereceu opções erradas — assumi que o grupo deveria
+  virar o cliente. O usuário corrigiu: a ideia é uma cascata MAIOR,
+  Grupo → Camada → Unidades, só na tela interna de quem monta o roteiro.
+  Para o técnico, manter como está. Perguntado de novo antes de
+  implementar, escolheu "como está hoje — só a camada" na tela do campo.
+
+O QUE FOI CONSTRUÍDO (index.html)
+  1. LEITURA (lerUmap): passou a percorrer recursivamente as camadas
+     aninhadas, levando o nome do grupo. Uma camada de grupo que tenha
+     pontos próprios (fora do padrão) também é aproveitada, não se perde.
+     Grupo dentro de grupo fica com o nome do mais interno.
+  2. MODELO DE DADOS: a lista interna continua PLANA (uma entrada por
+     camada com pontos), com o grupo como campo a mais. A árvore de três
+     níveis é montada só na hora de desenhar o checklist. Foi o que fez
+     seleção, rota, link, base guardada e tela do campo NÃO precisarem de
+     alteração nenhuma.
+  3. CHECKLIST: nível novo acima da camada. Cabeçalho de grupo com seta,
+     bolinha ÂMBAR (a da camada é teal, para não confundir os níveis) e
+     contagem somando as camadas de dentro. Camadas sem grupo continuam
+     no primeiro nível, lado a lado com os grupos — sem inventar um
+     "Sem grupo" artificial para as 20 camadas soltas.
+     Visual: barra de cabeçalho + filete à esquerda, em vez de caixa
+     dentro de caixa, que ficaria apertado num painel de 340px.
+  4. BUSCA: passou a encontrar também pelo nome do grupo, trazendo todas
+     as camadas dele inteiras.
+  5. BASE GUARDADA: o campo do grupo passou a ser gravado junto. Bases
+     salvas antes desta versão não têm o campo e são lidas como camadas
+     soltas, sem quebrar.
+
+  CORREÇÃO DURANTE OS TESTES: com a indentação do novo nível, as três
+  camadas do grupo apareciam como "PREFEITURA MUNICIPAL N..." —
+  indistinguíveis, porque o que as diferencia (EDUCAÇÃO, ASSISTENCIA
+  SOCIAL) fica no FIM do nome, justo o pedaço que o corte com reticências
+  esconde. Corrigido deixando o nome quebrar em duas linhas dentro de
+  grupo, e reduzindo a indentação.
+
+TESTES REALIZADOS (arquivo real do usuário)
+  - Leitura: 23 camadas / 39 pontos, contra 20 / 36 antes. As três de
+    Nova Veneza voltaram, vinculadas ao grupo PMNV.
+  - Três níveis conferidos: PMNV → 3 camadas → unidades.
+  - Seleção dentro do grupo: parada entra normalmente, contador do grupo
+    foi para "1/3" e a bolinha do grupo acendeu.
+  - Busca por "pmnv" → traz o grupo com as 3 camadas; busca por
+    "caravaggio" → traz só as 2 unidades que batem, dentro do grupo.
+  - Rota completa com as 3 paradas do grupo: otimizada e link gerado.
+  - Tela do campo: parada do grupo mostra a CAMADA como cliente e a
+    unidade como nome — igual ao que já era, como o usuário pediu.
+  - Base guardada: recarregada a página, os grupos voltaram do navegador.
+  - RETROCOMPATIBILIDADE: base antiga sem o campo de grupo continua
+    sendo lida; arquivo .umap sem grupo nenhum (Exemplos/exemplo.umap)
+    carrega igual a antes, 4 camadas, todas soltas.
+  - Console sem erros. localStorage limpo ao final.

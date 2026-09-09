@@ -153,6 +153,12 @@
   .grupo-seta{color:var(--muted);font-size:10px;transition:transform .15s;flex:none;}
   .grupo.aberto .grupo-seta{transform:rotate(90deg);}
   .grupo-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* Dentro de um grupo o nome pode ocupar duas linhas em vez de ser cortado:
+     camadas irmãs costumam ter prefixo igual e só o final as distingue. */
+  .grupo-umap-corpo .grupo-nome{white-space:normal; overflow:visible; line-height:1.3;}
+  .grupo-umap-corpo .grupo-head{align-items:flex-start;}
+  .grupo-umap-corpo .grupo-seta,
+  .grupo-umap-corpo .grupo-marca{margin-top:3px;}
   .grupo-cont{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);flex:none;}
   /* Bolinha teal que acende em âmbar quando o cliente tem filial selecionada —
      assim dá para ver o que está escolhido sem abrir grupo por grupo. */
@@ -162,6 +168,23 @@
   .grupo-corpo > *{flex:none;}
   .grupo.aberto .grupo-corpo{display:flex;}
   .grupo-corpo .check-row{background:var(--panel);}
+
+  /* Nível do GRUPO do uMap (acima da camada). Sem caixa dentro de caixa: barra
+     de cabeçalho + um filete à esquerda marcando o que pertence ao grupo, que
+     lê melhor do que bordas aninhadas num painel de 340px. */
+  .grupo-umap{display:flex; flex-direction:column;}
+  .grupo-umap-head{display:flex; align-items:center; gap:8px; padding:9px 10px; cursor:pointer;
+                   user-select:none; font-size:13px; font-weight:700; color:var(--text);
+                   background:var(--panel-2); border:1px solid var(--line); border-radius:7px;}
+  .grupo-umap-head:hover{background:#22343E;}
+  .grupo-umap.aberto .grupo-seta{transform:rotate(90deg);}
+  /* Bolinha âmbar distingue o grupo da bolinha teal das camadas */
+  .grupo-umap-marca{width:7px;height:7px;border-radius:50%;background:var(--amber);opacity:.35;flex:none;}
+  .grupo-umap.tem-selecao .grupo-umap-marca{opacity:1;}
+  .grupo-umap-corpo{display:none; flex-direction:column; gap:6px;
+                    margin:6px 0 0 5px; padding-left:7px; border-left:2px solid var(--line);}
+  .grupo-umap.aberto .grupo-umap-corpo{display:flex;}
+  .grupo-umap-corpo > *{flex:none;}
   .stop-row .nm-cli{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
   .stop-row .nm-tipo{display:inline-block; margin-top:3px; font-family:'JetBrains Mono',monospace;
                       font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--teal);
@@ -514,7 +537,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '2.8';
+const VERSAO = '2.9';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 // "#r=" é o link legível (abre em qualquer navegador); "#z=" é o comprimido.
@@ -563,7 +586,8 @@ function numIcon(n){
 let clientPoints = [];   // { id, name, lat, lng, marker } — todos os clientes carregados do .geojson
 let stops = [];          // subconjunto/ordem de clientPoints selecionados para esta viagem
 let gruposClientes = [];  // [{cliente, pontos:[...]}] — agrupamento por camada do uMap, usado só no checklist
-let gruposAbertos = new Set(); // nomes dos clientes com a cascata aberta no momento
+let gruposAbertos = new Set(); // nomes das CAMADAS (clientes) com a cascata aberta
+let gruposUmapAbertos = new Set(); // nomes dos GRUPOS do uMap com a cascata aberta
 let buscaAtual = ''; // texto digitado no campo de busca do checklist (Fase 3)
 
 // Fase 2 — tipo de serviço por parada. A LISTA de tipos é configuração do
@@ -601,6 +625,7 @@ function salvarBaseClientes(grupos, filename){
       salvoEm: Date.now(),
       grupos: grupos.map(g => ({
         cliente: g.cliente,
+        grupo: g.grupo || null, // bases salvas antes disso não têm o campo: viram camada solta
         pontos: g.pontos.map(p => ({ id:p.id, name:p.name, cliente:p.cliente, lat:p.lat, lng:p.lng }))
       }))
     }));
@@ -715,24 +740,51 @@ function lerUmap(data){
   if (data.type !== 'umap' || !Array.isArray(data.layers)){
     throw new Error('não parece um backup completo do uMap. Esperado um arquivo .umap com a lista de camadas.');
   }
+  // O uMap representa GRUPO como uma camada especial: ela tem "group": true nas
+  // propriedades, nenhum ponto próprio, e carrega as camadas de verdade dentro de
+  // um array "layers" aninhado. Ler só o primeiro nível fazia essas camadas — e
+  // todos os pontos delas — sumirem em silêncio (verificado em 08/09/2026 com o
+  // arquivo do usuário: 3 camadas e 3 pontos perdidos, sem nenhum aviso).
+  //
+  // A lista devolvida continua PLANA (uma entrada por camada com pontos). O grupo
+  // vai como um campo a mais em cada entrada, e a árvore de três níveis é montada
+  // só na hora de desenhar o checklist — assim o resto do app (seleção, rota, link,
+  // tela do campo) não precisou mudar nada.
   const grupos = [];
-  data.layers.forEach((camada, ci) => {
-    const opts = camada.properties || camada._umap_options || camada._storage || {};
-    const cliente = (opts.name || '').trim() || `Camada ${ci+1}`;
-    const feats = Array.isArray(camada.features) ? camada.features : [];
-    const pontos = [];
-    feats.forEach((f, fi) => {
-      if (!f.geometry || f.geometry.type !== 'Point') return;
-      const [lng, lat] = f.geometry.coordinates;
-      // id prefixado com a camada: ids do uMap se repetem entre camadas diferentes
-      pontos.push({
-        id: `c${ci}_${f.id || 'p' + fi}`,
-        name: (f.properties && f.properties.name) || `Ponto ${fi+1}`,
-        cliente, lat, lng
+  let ci = 0;
+
+  const percorrer = (camadas, nomeGrupo) => {
+    camadas.forEach(camada => {
+      const opts = camada.properties || camada._umap_options || camada._storage || {};
+      const nome = (opts.name || '').trim();
+
+      // Camada de grupo: desce para as camadas de dentro, levando o nome do grupo.
+      // Grupo dentro de grupo (se o uMap permitir) fica com o nome do mais interno.
+      if (Array.isArray(camada.layers) && camada.layers.length){
+        percorrer(camada.layers, nome || nomeGrupo);
+      }
+
+      const cliente = nome || `Camada ${ci+1}`;
+      const feats = Array.isArray(camada.features) ? camada.features : [];
+      const pontos = [];
+      feats.forEach((f, fi) => {
+        if (!f.geometry || f.geometry.type !== 'Point') return;
+        const [lng, lat] = f.geometry.coordinates;
+        // id prefixado com a camada: ids do uMap se repetem entre camadas diferentes
+        pontos.push({
+          id: `c${ci}_${f.id || 'p' + fi}`,
+          name: (f.properties && f.properties.name) || `Ponto ${fi+1}`,
+          cliente, lat, lng
+        });
       });
+      // Uma camada de grupo normalmente não tem pontos próprios; se tiver, entra
+      // como camada comum também, sem se perder
+      if (pontos.length) grupos.push({ cliente, grupo: nomeGrupo || null, pontos });
+      ci++;
     });
-    if (pontos.length) grupos.push({ cliente, pontos });
-  });
+  };
+
+  percorrer(data.layers, null);
   return grupos;
 }
 
@@ -746,6 +798,7 @@ function importClients(grupos, filename, salvoEm){
   clientPoints = []; stops = [];
   gruposClientes = grupos;
   gruposAbertos = new Set();
+  gruposUmapAbertos = new Set();
   buscaAtual = '';
   const buscaInput = document.getElementById('buscaClientes');
   if (buscaInput) buscaInput.value = '';
@@ -813,9 +866,11 @@ function renderChecklist(){
   const termo = buscaAtual.trim().toLowerCase();
   const gruposVisiveis = !termo ? gruposClientes : gruposClientes
     .map(g => {
+      // Buscar pelo nome do GRUPO traz todas as camadas dele inteiras
+      const grupoBate = !!g.grupo && g.grupo.toLowerCase().includes(termo);
       const clienteBate = g.cliente.toLowerCase().includes(termo);
-      const pontos = clienteBate ? g.pontos : g.pontos.filter(pt => pt.name.toLowerCase().includes(termo));
-      return pontos.length ? { cliente: g.cliente, pontos } : null;
+      const pontos = (grupoBate || clienteBate) ? g.pontos : g.pontos.filter(pt => pt.name.toLowerCase().includes(termo));
+      return pontos.length ? { cliente: g.cliente, grupo: g.grupo, pontos } : null;
     })
     .filter(Boolean);
 
@@ -824,7 +879,22 @@ function renderChecklist(){
     return;
   }
 
+  // Monta a árvore de exibição a partir da lista plana, preservando a ordem do
+  // arquivo: cada grupo do uMap aparece na posição da sua primeira camada.
+  const arvore = [];
+  const porGrupo = new Map();
   gruposVisiveis.forEach(g => {
+    if (!g.grupo){ arvore.push({ tipo: 'camada', camada: g }); return; }
+    if (!porGrupo.has(g.grupo)){
+      const no = { tipo: 'grupo', nome: g.grupo, camadas: [] };
+      porGrupo.set(g.grupo, no);
+      arvore.push(no);
+    }
+    porGrupo.get(g.grupo).camadas.push(g);
+  });
+
+  // Desenha uma CAMADA (nível do cliente) com a cascata de unidades dentro
+  const criarCaixaCamada = (g) => {
     // Durante uma busca, o grupo com resultado abre sozinho — não faz sentido
     // pedir pra clicar de novo no que já foi filtrado. Isso não mexe no
     // gruposAbertos "de verdade": limpar a busca volta ao que estava antes.
@@ -898,7 +968,40 @@ function renderChecklist(){
       corpo.appendChild(row);
     });
     box.appendChild(corpo);
-    el.appendChild(box);
+    return box;
+  };
+
+  arvore.forEach(no => {
+    // Camada solta (sem grupo no uMap): continua no primeiro nível, como sempre foi
+    if (no.tipo === 'camada'){ el.appendChild(criarCaixaCamada(no.camada)); return; }
+
+    // Grupo do uMap: nível a mais, com as camadas dentro
+    const totalPontos = no.camadas.reduce((a, c) => a + c.pontos.length, 0);
+    const selecionados = no.camadas.reduce(
+      (a, c) => a + c.pontos.filter(pt => stops.some(s => s.id === pt.id)).length, 0);
+    const abertoGrupo = termo ? true : gruposUmapAbertos.has(no.nome);
+
+    const caixa = document.createElement('div');
+    caixa.className = 'grupo-umap' + (abertoGrupo ? ' aberto' : '') + (selecionados ? ' tem-selecao' : '');
+
+    const cab = document.createElement('div');
+    cab.className = 'grupo-umap-head';
+    cab.innerHTML = `<span class="grupo-seta">▶</span>
+      <span class="grupo-umap-marca"></span>
+      <span class="grupo-nome">${escaparHtml(no.nome)}</span>
+      <span class="grupo-cont">${selecionados ? selecionados + '/' : ''}${totalPontos}</span>`;
+    cab.onclick = () => {
+      if (gruposUmapAbertos.has(no.nome)) gruposUmapAbertos.delete(no.nome);
+      else gruposUmapAbertos.add(no.nome);
+      renderChecklist();
+    };
+    caixa.appendChild(cab);
+
+    const corpoGrupo = document.createElement('div');
+    corpoGrupo.className = 'grupo-umap-corpo';
+    no.camadas.forEach(c => corpoGrupo.appendChild(criarCaixaCamada(c)));
+    caixa.appendChild(corpoGrupo);
+    el.appendChild(caixa);
   });
 }
 

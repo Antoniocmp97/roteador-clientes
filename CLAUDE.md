@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 06/09/2026 — v2.8 (estrela de prioridade também no modo campo)
+> **Última atualização:** 08/09/2026 — v2.9 (grupos do uMap: cascata de três níveis)
 
 ---
 
@@ -30,7 +30,9 @@ sem dependências instaladas. Abre direto no navegador.
 - Upload do **backup completo do uMap (`.umap`)** por clique ou arrastar-e-soltar
 - Parse das camadas: cada camada é um **cliente**, os pontos dentro dela são as
   **filiais**. Camadas vazias são ignoradas
-- Checklist agrupado por cliente, com cascata que abre ao clicar no nome
+- Checklist com **cascata de três níveis** quando o uMap tem grupos:
+  **Grupo → Camada → Unidades**. Camadas sem grupo continuam no primeiro nível,
+  lado a lado com os grupos
 - **Busca no checklist** (Fase 3): filtra por nome do cliente ou da filial;
   grupos com resultado abrem sozinhos durante a busca
 - **Base guardada no navegador** (Fase 3): depois de carregar o `.umap` uma vez,
@@ -176,6 +178,31 @@ nesta ordem:
 O nome da filial vem sempre de `properties.name` da feature. Coordenadas em
 ordem GeoJSON: `[longitude, latitude]`.
 
+### Grupos de camadas
+
+O uMap permite agrupar camadas. No arquivo, o grupo é **uma camada especial**:
+tem `properties.group: true`, **nenhum ponto próprio**, e carrega as camadas de
+verdade num array `layers` aninhado dentro dela.
+
+```json
+{ "type": "FeatureCollection", "features": [],
+  "properties": { "name": "PMNV", "group": true },
+  "layers": [ { "type": "FeatureCollection", "features": [...],
+                "properties": { "name": "PREFEITURA MUNICIPAL NOVA VENEZA - EDUCAÇÃO" } } ] }
+```
+
+⚠️ Ler só o primeiro nível fazia essas camadas **e todos os pontos delas
+sumirem em silêncio** — sem erro, sem aviso. Verificado em 08/09/2026 com um
+arquivo real: 23 camadas / 39 pontos no arquivo, 20 / 36 lidos pelo app.
+
+O app agora percorre as camadas aninhadas. A lista interna continua **plana**
+(uma entrada por camada com pontos), com o nome do grupo como campo a mais —
+a árvore de três níveis é montada só na hora de desenhar o checklist. Por isso
+seleção, rota, link e tela do campo não precisaram mudar.
+
+Na tela do campo **nada muda**: a parada continua mostrando a camada como
+cliente e a unidade como nome. O grupo é organização do escritório.
+
 ⚠️ **O download simples em `.geojson` não serve.** Ele achata todas as camadas
 numa lista única e descarta os nomes — a informação de cliente não chega ao app.
 Verificado em 29/08/2026 com um export real: as 11 features vinham com
@@ -283,6 +310,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 20 | **v2.6** — Formato compacto do link do roteiro (37% menor), retrocompatível com os links já enviados |
 | 21 | **v2.7** — Compressão gzip nativa do navegador no link (530 caracteres), com formato compatível para celular antigo |
 | 22 | **v2.8** — Marcação de prioridade passa a aparecer também na tela do campo |
+| 23 | **v2.9** — Grupos do uMap: leitura das camadas aninhadas (que sumiam em silêncio) e cascata de três níveis no checklist |
 
 ---
 
@@ -349,7 +377,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v2.8:  0 / 5
+Leves acumuladas desde a v2.9:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -395,3 +423,4 @@ os backups locais são conveniência, não garantia.
 | 2.6 | 06/09/2026 | Link do roteiro 37% menor (tabelas, formato compacto e coordenadas por diferença) |
 | 2.7 | 06/09/2026 | Compressão nativa no link: 1204 → 530 caracteres no total |
 | 2.8 | 06/09/2026 | Estrela de prioridade também no modo campo (formato do link v6) |
+| 2.9 | 08/09/2026 | Grupos do uMap: Grupo → Camada → Unidades no checklist |
