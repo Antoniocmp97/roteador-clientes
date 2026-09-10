@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 09/09/2026 — v3.2 (mapa escurecido)
+> **Última atualização:** 09/09/2026 — v3.3 (modo noturno no app inteiro)
 
 ---
 
@@ -53,9 +53,14 @@ sem dependências instaladas. Abre direto no navegador.
   "Manutenção"). Cada parada selecionada ganha um seletor para escolher o
   tipo; aparece na lista de paradas do escritório e como etiqueta na tela
   do campo
-- **Mapa escurecido** (v3.2): filtro de cor sobre os ladrilhos do Esri, para o
-  mapa parar de destoar do painel escuro. As ruas escurecem e os rótulos são
-  clareados, em filtros separados. Rota, marcadores e popups não são afetados
+- **Modo noturno** (v3.3): interruptor no cabeçalho das **duas telas**
+  (escritório e campo) troca o app inteiro entre tema escuro e claro. A escolha
+  fica guardada no navegador e é aplicada antes da primeira pintura, para a tela
+  não piscar no tema errado ao abrir. Padrão: escuro
+- **O mapa acompanha o tema**: no escuro usa o Esri Dark Gray com um véu por
+  cima; no claro **troca de ladrilhos** para o Esri Light Gray, que é onde ruas
+  e rótulos foram desenhados para luz do dia. Rota, marcadores e popups não são
+  afetados em nenhum dos dois
 - Plot dos pontos no mapa (Leaflet) com popup mostrando filial e cliente
 - Definição de origem, por três caminhos: geolocalização do navegador, endereço
   digitado (Nominatim, com viés geográfico para o sul de SC) ou **clique direto no
@@ -89,7 +94,7 @@ sem dependências instaladas. Abre direto no navegador.
 | Camada | Escolha | Observação |
 |---|---|---|
 | Mapa | Leaflet 1.9.4 (CDN cdnjs) | Mesma base que o uMap usa |
-| Tiles | Esri Dark Gray Canvas (base + rótulos) | Sem cadastro. Substituiu o CARTO em 29/08/2026. Escurecido por filtro CSS desde a v3.2 |
+| Tiles | Esri Dark/Light Gray Canvas (base + rótulos) | Sem cadastro. Substituiu o CARTO em 29/08/2026. O conjunto muda com o tema (v3.3) |
 | Rotas | OSRM — `router.project-osrm.org` | **Servidor público de demonstração** |
 | Otimização | OSRM Trip API | Resolve TSP aproximado |
 | Geocodificação | Nominatim (OpenStreetMap) | Viés por caixa geográfica da região sul de SC. Sujeito a política de uso justo |
@@ -97,13 +102,27 @@ sem dependências instaladas. Abre direto no navegador.
 
 ### Identidade visual
 
-Tema escuro. Variáveis CSS definidas em `:root`:
+Dois temas, escolhidos no interruptor do cabeçalho. **Toda** cor é variável
+CSS — inclusive fundos de hover, chips e botões armados, que antes estavam
+fixos no meio do CSS e não teriam como acompanhar a troca. O tema escuro
+continua sendo o padrão e a identidade do app.
+
+Variáveis em `:root` (tema escuro):
 
 ```
 --ink:#0C1418  --panel:#16232B  --panel-2:#1D2E37  --line:#2A3D47
 --text:#E7EEF2 --muted:#7C93A0  --amber:#F2A93C   --amber-dim:#B87F26
 --teal:#2FB6A6 --danger:#E2604F
+--hover:#22343E       --teal-fraco:#0e2422   --teal-hover:#132229
+--amber-fraco:#2a1f0e --amber-claro:#FFC163  --teal-escuro:#28a094
+--map-bg:#0C1418      --sombra:rgba(0,0,0,.4)
 ```
+
+Tema claro em `:root[data-tema="claro"]`. **Não é o escuro invertido**: o âmbar
+e o teal precisaram escurecer (`#C9821A`, `#12796E`) para continuarem legíveis
+sobre branco — os tons do tema escuro sobre fundo claro ficam lavados. Já os
+textos que ficam *sobre* preenchimento âmbar/teal (`#241705`, `#062420`) valem
+nos dois temas, porque o preenchimento continua sendo a cor forte.
 
 Âmbar = origem, rota traçada e paradas numeradas. Teal = clientes não
 selecionados e estados de sucesso.
@@ -171,6 +190,23 @@ escuro. O usuário escolheu o **cinza escuro** — escurecer sem introduzir cor.
 mesmo tom. Não dá para tratar parque, água e via principal com cores
 diferentes, como faz o Waze. Isso exigiria um provedor **vetorial**
 (OpenFreeMap, Protomaps), que é troca de stack, não ajuste de CSS.
+
+**Manchas de parque saltando no mapa escuro (09/09/2026).** Relatado pelo
+usuário logo depois da v3.2. Causa medida nos ladrilhos reais: o
+`contrast(1.2)` da v3.2 comprimia tudo em direção ao preto e, nessa
+compressão, a diferença **relativa** entre fundo e mancha aumentava.
+
+| Tratamento | Fundo | Parque | Salto |
+|---|---|---|---|
+| Mapa claro original | 71 | 100 | 1,41× |
+| v3.2 (filtro com contraste) | 13 | 28 | 2,21× |
+| v3.3 (véu) | 28 | 37 | 1,28× |
+
+Solução na v3.3: **véu** no lugar do contraste — uma camada escura
+semitransparente sobre os ladrilhos, entre eles e os rótulos. Como tudo
+converge para a mesma cor, as diferenças encolhem, e a mancha passa a saltar
+menos do que saltava no mapa claro original. Os rótulos ficam num painel
+próprio do Leaflet (z-index 300), acima do véu, então continuam nítidos.
 
 ---
 
@@ -269,7 +305,7 @@ repositório é público (ver `.gitignore`).
   brasileiros (Google, Mapbox), com cadastro e chave de acesso.
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
   origem padrão, a lista de tipos de serviço, a preferência de formato do link,
-  a largura do painel e o progresso do modo campo. **Não** ficam salvos:
+  a largura do painel, o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
   recarregar a página zera essa parte, de propósito (é o roteiro do dia, não
   configuração). Nada disso sai da máquina de quem usa.
@@ -346,6 +382,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 24 | **v3.0** — Base ordenada alfabeticamente ao carregar, nos três níveis, com ordenação ciente de acentos |
 | 25 | **v3.1** — Divisória arrastável entre mapa e painel, com a largura guardada; nomes longos passam a quebrar linha em vez de serem cortados |
 | 26 | **v3.2** — Mapa escurecido por filtro CSS sobre os ladrilhos do Esri, com os rótulos clareados à parte |
+| 27 | **v3.3** — Modo noturno para o app inteiro (interruptor nas duas telas), tema claro completo e véu no lugar do contraste que manchava o mapa |
 
 ---
 
@@ -412,7 +449,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.2:  0 / 5
+Leves acumuladas desde a v3.3:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -462,3 +499,4 @@ os backups locais são conveniência, não garantia.
 | 3.0 | 08/09/2026 | Ordenação alfabética da base nos três níveis |
 | 3.1 | 09/09/2026 | Painel de largura ajustável (medido: nome de 438px numa caixa de 207px) |
 | 3.2 | 09/09/2026 | Mapa escurecido (opção "cinza escuro", escolhida entre três em comparação lado a lado) |
+| 3.3 | 09/09/2026 | Modo noturno no app inteiro + véu no mapa (mancha de parque: 2,21x → 1,28x) |

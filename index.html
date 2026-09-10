@@ -8,11 +8,48 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  /* Paleta de cores do tema escuro (âmbar = origem/rota, teal = clientes/sucesso) */
+  /* ==========================================================
+     PALETAS — âmbar = origem/rota, teal = clientes/sucesso.
+
+     O app nasceu só com o tema escuro. O modo noturno (v3.3) exigiu que
+     TODA cor virasse variável: as que estavam fixas no meio do CSS
+     (fundos de hover, chips, botão armado) não teriam como acompanhar a
+     troca. Por isso a lista abaixo é maior que a original.
+
+     O tema vale para as duas telas — escritório e campo — e é escolhido
+     no interruptor do cabeçalho. Padrão: escuro, como sempre foi.
+     ========================================================== */
   :root{
     --ink:#0C1418; --panel:#16232B; --panel-2:#1D2E37; --line:#2A3D47;
     --text:#E7EEF2; --muted:#7C93A0; --amber:#F2A93C; --amber-dim:#B87F26;
     --teal:#2FB6A6; --danger:#E2604F;
+    /* papéis derivados */
+    --hover:#22343E;        /* linha do checklist sob o mouse */
+    --teal-fraco:#0e2422;   /* fundo das etiquetas de tipo de serviço */
+    --teal-hover:#132229;   /* fundo de botão/dropzone teal sob o mouse */
+    --amber-fraco:#2a1f0e;  /* fundo do botão "escolher no mapa" armado */
+    --amber-claro:#FFC163;  /* âmbar de hover/active dos botões */
+    --teal-escuro:#28a094;  /* teal de :active */
+    --map-bg:#0C1418;       /* fundo do mapa enquanto os ladrilhos não chegam */
+    --sombra:rgba(0,0,0,.4);
+  }
+  /* Tema claro. Não é o escuro "invertido": o âmbar e o teal precisaram
+     escurecer para continuarem legíveis sobre branco — os tons do tema
+     escuro sobre fundo claro ficam lavados. Os textos que ficam SOBRE
+     preenchimento âmbar/teal (#241705, #062420) valem nos dois temas,
+     porque o preenchimento continua sendo a cor forte. */
+  :root[data-tema="claro"]{
+    --ink:#EDF1F4; --panel:#FFFFFF; --panel-2:#F3F7F9; --line:#D2DCE3;
+    --text:#152229; --muted:#5B6F7D; --amber:#C9821A; --amber-dim:#8A5A0F;
+    --teal:#12796E; --danger:#B93B2B;
+    --hover:#E8EEF2;
+    --teal-fraco:#E4F2EF;
+    --teal-hover:#E9F4F2;
+    --amber-fraco:#FBF0DA;
+    --amber-claro:#E4A234;
+    --teal-escuro:#0E5F57;
+    --map-bg:#E9EDF0;
+    --sombra:rgba(21,34,41,.22);
   }
   /* Reset básico + ocupa a tela inteira (necessário para o mapa em tela cheia) */
   *{box-sizing:border-box;}
@@ -32,9 +69,50 @@
           padding:1px 5px;margin-left:8px;vertical-align:middle;letter-spacing:.02em;}
   header .sub{color:var(--muted);font-size:13px;font-family:'JetBrains Mono',monospace;}
 
+  /* Interruptor de modo noturno (v3.3), no padrão dos aparelhos: trilho +
+     bolinha que desliza. É um <button role="switch"> de verdade, e não uma
+     caixa de seleção maquiada, para funcionar por teclado e ser anunciado
+     corretamente por leitor de tela. */
+  .interruptor{
+    display:inline-flex; align-items:center; gap:9px; margin-left:auto;
+    background:none; border:none; padding:4px; cursor:pointer;
+    color:var(--muted); font-family:'JetBrains Mono',monospace;
+    font-size:11px; letter-spacing:1.4px; text-transform:uppercase;
+  }
+  .interruptor:hover{color:var(--text);}
+  .interruptor-trilho{
+    position:relative; width:42px; height:24px; border-radius:12px; flex:none;
+    background:var(--line); transition:background .2s;
+  }
+  .interruptor-bolinha{
+    position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%;
+    background:var(--panel); box-shadow:0 1px 3px var(--sombra); transition:transform .2s;
+  }
+  /* Ligado = modo noturno. Trilho âmbar, bolinha à direita. */
+  .interruptor[aria-checked="true"] .interruptor-trilho{background:var(--amber-dim);}
+  .interruptor[aria-checked="true"] .interruptor-bolinha{transform:translateX(18px);}
+  .interruptor:focus-visible{outline:2px solid var(--teal); outline-offset:3px; border-radius:6px;}
+  /* Em tela estreita fica só o interruptor, sem a palavra */
+  @media (max-width:520px){ .interruptor-texto{display:none;} }
+
+  /* Véu do mapa: camada escura por cima dos ladrilhos no tema escuro.
+     Fica ENTRE os ladrilhos (painel 200) e os rótulos (painel 300), então
+     escurece o desenho das ruas sem apagar os nomes; rota (400) e
+     marcadores (600) também ficam por cima e não são afetados.
+
+     Por que véu e não só filtro: medido em 09/09/2026 nos ladrilhos reais,
+     o contraste que a v3.2 usava fazia as manchas de parque saltarem 2,21x
+     acima do fundo, contra 1,41x do mapa claro original — foi o que o
+     usuário relatou como "distorcido". O véu leva tudo para a mesma cor,
+     então a mancha cai para 1,28x: menos evidente do que no mapa original. */
+  .veu-mapa{position:absolute; inset:0; z-index:250; pointer-events:none;
+            background:transparent; transition:background .2s;}
+  :root[data-tema="escuro"] .veu-mapa{background:rgba(10,17,21,.62);}
+  :root[data-tema="escuro"] .camada-base{filter:grayscale(1) brightness(.72);}
+
   /* Área principal: mapa (flex:1, ocupa o espaço restante) + painel lateral */
   main{position:relative;flex:1;display:flex;min-height:0;}
-  #map{flex:1;min-height:0;background:#0C1418;}
+  #map{flex:1;min-height:0;background:var(--map-bg);}
 
   /* Painel lateral ("console") com os controles: upload, origem, checklist, paradas, botões */
   /* A largura vem de uma variável para a divisória poder alterá-la sem estilo
@@ -97,7 +175,7 @@
                 font-size:12.5px; font-family:'Inter',sans-serif; cursor:pointer;
                 display:flex; align-items:center; justify-content:center;
                 user-select:none; white-space:nowrap;}
-  .tipo-add-btn:active{background:#28a094;}
+  .tipo-add-btn:active{background:var(--teal-escuro);}
 
   /* Seletor de tipo de serviço em cada linha marcada do checklist. Só aparece
      quando o cliente está selecionado como parada — escolher o tipo antes
@@ -109,7 +187,7 @@
 
   /* Área de arrastar-e-soltar (ou clicar) para carregar o .geojson */
   .dropzone{border:1.5px dashed var(--line);border-radius:8px;padding:16px;text-align:center;font-size:12.5px;color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s;}
-  .dropzone:hover,.dropzone.drag{border-color:var(--teal);background:#132229;color:var(--text);}
+  .dropzone:hover,.dropzone.drag{border-color:var(--teal);background:var(--teal-hover);color:var(--text);}
   .dropzone strong{color:var(--text);}
   .file-status{font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--teal);margin-top:6px;min-height:14px;}
   /* Lista de endereços possíveis, quando a busca de origem é ambígua */
@@ -119,7 +197,7 @@
     border-radius:6px; padding:7px 9px; font-size:11.5px; color:var(--text);
     line-height:1.35; cursor:pointer; font-family:'Inter',sans-serif;
   }
-  .origem-opcao:hover{border-color:var(--teal) !important; background:#17282f;}
+  .origem-opcao:hover{border-color:var(--teal) !important; background:var(--hover);}
 
   /* Campo de endereço de origem + botão de geolocalização */
   .origin-row{display:flex;gap:8px;}
@@ -140,7 +218,7 @@
   button::-moz-focus-inner{border:0;padding:0;}
   .btn-icon{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:0 12px;font-size:15px;}
   .btn-icon:hover{border-color:var(--teal);}
-  .btn-icon.armado{border-color:var(--amber);color:var(--amber);background:#2a1f0e;}
+  .btn-icon.armado{border-color:var(--amber);color:var(--amber);background:var(--amber-fraco);}
   /* Enquanto o modo "escolher no mapa" está armado, o cursor vira mira sobre o mapa */
   #map.escolhendo{cursor:crosshair;}
   #map.escolhendo .leaflet-grab{cursor:crosshair;}
@@ -165,7 +243,7 @@
   .grupo{border:1px solid var(--line);border-radius:7px;background:var(--panel-2);overflow:hidden;}
   .grupo-head{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer;
               user-select:none;font-size:13px;font-weight:600;color:var(--text);}
-  .grupo-head:hover{background:#22343E;}
+  .grupo-head:hover{background:var(--hover);}
   .grupo-seta{color:var(--muted);font-size:10px;transition:transform .15s;flex:none;}
   .grupo.aberto .grupo-seta{transform:rotate(90deg);}
   /* O nome quebra linha em vez de ser cortado com "…". Medido em 08/09/2026 na
@@ -194,7 +272,7 @@
   .grupo-umap-head{display:flex; align-items:flex-start; gap:8px; padding:9px 10px; cursor:pointer;
                    user-select:none; font-size:13px; font-weight:700; color:var(--text);
                    background:var(--panel-2); border:1px solid var(--line); border-radius:7px;}
-  .grupo-umap-head:hover{background:#22343E;}
+  .grupo-umap-head:hover{background:var(--hover);}
   .grupo-umap.aberto .grupo-seta{transform:rotate(90deg);}
   /* Bolinha âmbar distingue o grupo da bolinha teal das camadas */
   .grupo-umap-marca{width:7px;height:7px;border-radius:50%;background:var(--amber);opacity:.35;flex:none;}
@@ -206,7 +284,7 @@
   .stop-row .nm-cli{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
   .stop-row .nm-tipo{display:inline-block; margin-top:3px; font-family:'JetBrains Mono',monospace;
                       font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--teal);
-                      background:#0e2422; border:1px solid var(--teal); border-radius:4px; padding:1px 6px;}
+                      background:var(--teal-fraco); border:1px solid var(--teal); border-radius:4px; padding:1px 6px;}
   .empty-hint{font-size:12px;color:var(--muted);font-style:italic;}
 
   /* Lista ordenável das paradas selecionadas (ordem da viagem) */
@@ -228,9 +306,9 @@
 
   /* Botões principais: "Traçar nesta ordem" (âmbar) e "Otimizar ordem" (secundário) */
   .go-btn{background:var(--amber);color:#241705;font-weight:600;font-size:13.5px;border-radius:7px;padding:11px;text-align:center;}
-  .go-btn:hover{background:#FFC163;}
+  .go-btn:hover{background:var(--amber-claro);}
   .go-btn.secondary{background:var(--panel-2);color:var(--teal);border:1px solid var(--teal);}
-  .go-btn.secondary:hover{background:#132229;}
+  .go-btn.secondary:hover{background:var(--teal-hover);}
   .btn-row{display:flex;gap:8px;}
   .btn-row .go-btn{flex:1;}
 
@@ -250,7 +328,7 @@
 
   /* Rodapé com créditos dos mapas/rotas */
   footer{padding:8px 22px;border-top:1px solid var(--line);font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
-  .leaflet-container{background:#0C1418;font-family:'Inter',sans-serif;}
+  .leaflet-container{background:var(--map-bg);font-family:'Inter',sans-serif;}
   /* Tema escuro do mapa (v3.2). Os ladrilhos continuam sendo os do Esri; o que
      muda é um filtro de cor aplicado no navegador, sobre a camada inteira.
      Motivo: o Esri Dark Gray Canvas é cinza MÉDIO e destoava do painel escuro
@@ -264,8 +342,8 @@
 
      Rota, marcadores e popups não são afetados: ficam em outros painéis do
      Leaflet, fora destes contêineres. */
-  .camada-base{filter:grayscale(1) brightness(.45) contrast(1.2);}
-  .camada-rotulos{filter:brightness(1.25);}
+  /* Regras do tema escuro para os ladrilhos: ver .veu-mapa acima. No tema
+     claro não há filtro nenhum — o mapa troca para a versão clara do Esri. */
   /* Ícones customizados dos marcadores: bolinha simples (cliente/origem) e bolinha numerada (parada na rota) */
   .brand-icon{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);}
   .brand-icon.num{width:20px;height:20px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-family:'JetBrains Mono',monospace;}
@@ -303,6 +381,7 @@
     background:var(--ink); border-bottom:1px solid var(--line);
     padding:16px 18px 14px; display:flex; flex-direction:column; gap:10px;
   }
+  .campo-topo{display:flex; align-items:center; gap:12px;}
   .campo-marca{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;}
   .campo-marca span{color:var(--amber);}
   .campo-saindo{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
@@ -339,7 +418,7 @@
   .parada-tag{
     display:inline-block; margin-top:5px; font-family:'JetBrains Mono',monospace;
     font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
-    color:var(--teal); background:#0e2422; border:1px solid var(--teal);
+    color:var(--teal); background:var(--teal-fraco); border:1px solid var(--teal);
     border-radius:4px; padding:2px 7px;
   }
   .parada-obs{font-size:13px; color:var(--muted); margin-top:7px; line-height:1.5;}
@@ -351,7 +430,7 @@
     display:flex; align-items:center; justify-content:center; gap:7px;
   }
   .btn-navegar{background:var(--amber); color:#241705;}
-  .btn-navegar:active{background:#FFC163;}
+  .btn-navegar:active{background:var(--amber-claro);}
   .btn-navegar svg{flex-shrink:0;}
 
   /* Botão principal da parada: "marcar como concluída". Maior que os de navegação —
@@ -362,7 +441,7 @@
     border-radius:9px; padding:16px 10px; font-weight:700; font-size:15.5px;
     font-family:'Inter',sans-serif; cursor:pointer;
   }
-  .btn-feito:active{background:#132229;}
+  .btn-feito:active{background:var(--teal-hover);}
   .parada.feita .btn-feito{background:var(--teal); color:#062420;}
 
   /* Confirmação em duas etapas, nos dois sentidos: primeiro toque no botão de
@@ -377,7 +456,7 @@
     font-family:'Inter',sans-serif; cursor:pointer; border:none;
   }
   .btn-confirmar{background:var(--teal); color:#062420;}
-  .btn-confirmar:active{background:#28a094;}
+  .btn-confirmar:active{background:var(--teal-escuro);}
   .btn-cancelar-conf{background:transparent; color:var(--muted); border:1px solid var(--line) !important;}
   .btn-cancelar-conf:active{background:var(--panel-2);}
 
@@ -388,7 +467,7 @@
 
   /* Faixa de comemoração quando todas as paradas já foram marcadas */
   .campo-banner{
-    background:#0e2422; border:1px solid var(--teal); color:var(--teal);
+    background:var(--teal-fraco); border:1px solid var(--teal); color:var(--teal);
     border-radius:10px; padding:14px 16px; font-size:14px; font-weight:600; text-align:center;
   }
 
@@ -403,12 +482,26 @@
     .btn-feito,.confirmar-botoes button{padding:18px 10px;font-size:16px;}
   }
 </style>
+<script>
+  /* Único script fora do bloco principal, e de propósito: o tema precisa
+     estar aplicado ANTES da primeira pintura. Se esperasse o script do fim
+     da página, quem usa o tema claro veria a tela piscar escura ao abrir. */
+  (function(){
+    var t = null;
+    try{ t = localStorage.getItem('hg_tema'); }catch(e){ /* localStorage bloqueado */ }
+    document.documentElement.setAttribute('data-tema', t === 'claro' ? 'claro' : 'escuro');
+  })();
+</script>
 </head>
 <body>
 <div class="app">
   <header>
     <div class="mark">hagamorfis<span>/</span>rotas<span class="versao" id="versaoEscritorio"></span></div>
     <div class="sub">roteador multi-parada · clientes</div>
+    <button class="interruptor" type="button" role="switch" aria-checked="true" data-tema-btn>
+      <span class="interruptor-texto">Modo noturno</span>
+      <span class="interruptor-trilho"><span class="interruptor-bolinha"></span></span>
+    </button>
   </header>
 
   <main>
@@ -556,7 +649,13 @@
      ========================================================== -->
 <div class="campo" id="modoCampo" hidden>
   <header class="campo-head">
-    <div class="campo-marca">hagamorfis<span>/</span>rotas<span class="versao" id="versaoCampo"></span></div>
+    <div class="campo-topo">
+      <div class="campo-marca">hagamorfis<span>/</span>rotas<span class="versao" id="versaoCampo"></span></div>
+      <button class="interruptor" type="button" role="switch" aria-checked="true" data-tema-btn>
+        <span class="interruptor-texto">Modo noturno</span>
+        <span class="interruptor-trilho"><span class="interruptor-bolinha"></span></span>
+      </button>
+    </div>
     <div class="campo-saindo" id="campoSaindo"></div>
     <div class="campo-progresso">
       <div class="campo-barra"><div class="campo-preenche" id="campoPreenche"></div></div>
@@ -579,8 +678,33 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '3.2';
+const VERSAO = '3.3';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
+
+
+/* ---------------- Modo noturno (v3.3) ----------------
+   Vale para o app inteiro e para as duas telas. O atributo data-tema no
+   <html> é quem manda: o CSS troca a paleta inteira a partir dele.
+
+   O tema já é aplicado por um script curto no <head>, antes da primeira
+   pintura — senão quem escolheu o tema claro veria a tela piscar escura ao
+   abrir. Aqui só ficam a troca pelo interruptor e o efeito no mapa. */
+const CHAVE_TEMA = 'hg_tema';
+function temaAtual(){
+  return document.documentElement.getAttribute('data-tema') === 'claro' ? 'claro' : 'escuro';
+}
+function aplicarTema(tema, salvar){
+  document.documentElement.setAttribute('data-tema', tema);
+  // aria-checked é o estado real do interruptor: o CSS desenha a bolinha a
+  // partir dele, e o leitor de tela anuncia a partir dele. Um só lugar.
+  document.querySelectorAll('[data-tema-btn]').forEach(b => b.setAttribute('aria-checked', String(tema === 'escuro')));
+  // O mapa não é só escurecido: ele TROCA para o conjunto de ladrilhos do
+  // tema. setUrl refaz o pedido dos ladrilhos visíveis, sem recriar a camada,
+  // então a posição, o zoom e a rota traçada continuam onde estavam.
+  if (camadaBase)    camadaBase.setUrl(urlTile(TILES[tema].base));
+  if (camadaRotulos) camadaRotulos.setUrl(urlTile(TILES[tema].rot));
+  if (salvar){ try{ localStorage.setItem(CHAVE_TEMA, tema); }catch(e){ /* segue sem persistir */ } }
+}
 
 // "#r=" é o link legível (abre em qualquer navegador); "#z=" é o comprimido.
 // Os dois prefixos têm 3 caracteres, então location.hash.slice(3) serve para ambos.
@@ -603,20 +727,46 @@ const modoCampoAtivo = location.hash.startsWith('#r=') || location.hash.startsWi
 // (do 17 em diante devolve sempre o mesmo ladrilho vazio). Com maxZoom 19,
 // o Leaflet continua deixando aproximar até 19, ampliando a última imagem
 // disponível — fica um pouco borrado, mas o mapa não some.
+// Os dois conjuntos de ladrilhos do Esri, sem cadastro em nenhum dos dois.
+// No tema claro não adianta escurecer menos: o mapa muda de verdade, para a
+// versão clara, que é onde as ruas e os rótulos foram desenhados para ser
+// lidos sob luz do dia.
+const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+const TILES = {
+  escuro: { base:'World_Dark_Gray_Base',  rot:'World_Dark_Gray_Reference' },
+  claro:  { base:'World_Light_Gray_Base', rot:'World_Light_Gray_Reference' }
+};
+const urlTile = servico => ESRI + servico + '/MapServer/tile/{z}/{y}/{x}';
 let map = null;
+let camadaBase = null, camadaRotulos = null;
 if (!modoCampoAtivo) {
   map = L.map('map', { zoomControl: true }).setView([-28.6775, -49.3697], 13);
-  const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+  // Painel próprio para os rótulos, ACIMA do véu. A ordem de empilhamento
+  // do Leaflet fica: ladrilhos 200 < véu 250 < rótulos 300 < rota 400 <
+  // marcadores 600. É isso que deixa escurecer o desenho das ruas sem
+  // apagar os nomes de rua e bairro junto.
+  map.createPane('rotulos');
+  map.getPane('rotulos').style.zIndex = 300;
+  map.getPane('rotulos').style.pointerEvents = 'none';
+
   // className põe a classe no contêiner da camada, então o filtro do CSS vale
   // para todos os ladrilhos — inclusive os que só chegam depois, ao arrastar
-  // ou dar zoom (foi o erro da primeira tentativa, aplicando estilo direto).
-  L.tileLayer(esri + 'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+  // ou dar zoom (aplicar estilo direto no ladrilho não funciona: os que
+  // chegam depois nascem sem ele).
+  camadaBase = L.tileLayer(urlTile(TILES[temaAtual()].base), {
     attribution: '&copy; Esri &copy; OpenStreetMap contributors', maxZoom: 19, maxNativeZoom: 16,
     className: 'camada-base'
   }).addTo(map);
-  L.tileLayer(esri + 'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19, maxNativeZoom: 16, className: 'camada-rotulos'
+  camadaRotulos = L.tileLayer(urlTile(TILES[temaAtual()].rot), {
+    maxZoom: 19, maxNativeZoom: 16, className: 'camada-rotulos', pane: 'rotulos'
   }).addTo(map);
+
+  // O véu é um elemento comum dentro do contêiner do mapa — não uma camada
+  // do Leaflet — porque precisa cobrir a tela inteira, e não uma área
+  // geográfica que se move junto com o mapa.
+  const veu = document.createElement('div');
+  veu.className = 'veu-mapa';
+  map.getContainer().appendChild(veu);
 }
 
 /* ---------------- Largura do painel ajustável (divisória arrastável) ----------------
@@ -703,6 +853,13 @@ if (!modoCampoAtivo){
     if (map) map.invalidateSize({ animate:false });
   });
 }
+
+// O interruptor só é ligado depois que o mapa existe: aplicarTema mexe nas
+// camadas de ladrilho. Roda nos dois modos — a tela do campo também tem um.
+document.querySelectorAll('[data-tema-btn]').forEach(b => {
+  b.addEventListener('click', () => aplicarTema(temaAtual() === 'escuro' ? 'claro' : 'escuro', true));
+});
+aplicarTema(temaAtual(), false); // acerta o desenho do interruptor no estado salvo
 
 // Ícone de bolinha simples (usado para clientes e para o marcador de origem, cor varia por chamada)
 function dot(color){

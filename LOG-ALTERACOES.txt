@@ -2435,3 +2435,120 @@ TESTES REALIZADOS
   - Console sem erros. localStorage limpo ao final.
 
 VERSÃO: fecha a v3.2 (muda o que o usuário vê).
+
+--------------------------------------------------------
+[09/09/2026] v3.3 — Modo noturno no app inteiro + véu no mapa
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Duas coisas, na mesma mensagem:
+  1) Um interruptor "estilo iPhone" para modo noturno: ON escurece,
+     OFF clareia.
+  2) O mapa escuro da v3.2 incomodou — "parque e outros ficam
+     distorcidos". Perguntou se havia outra maneira de neutralizar.
+
+PARTE 2 PRIMEIRO: A CAUSA ERA MINHA
+  Medido nos ladrilhos reais do Esri: o mapa é praticamente SEM cor
+  (fundo 71,71,73 — diferença de 2 pontos entre canais; menos de 0,3%
+  dos pixels têm cor). Ou seja, não era distorção de cor.
+
+  O problema era o contrast(1.2) que EU tinha colocado na v3.2 para
+  destacar as ruas. Contraste comprime tudo em direção ao preto e, nessa
+  compressão, a diferença RELATIVA entre fundo e mancha aumenta:
+
+    Tratamento              Fundo  Parque  Salto
+    Mapa claro original       71     100   1,41x
+    v3.2 (com contraste)      13      28   2,21x   <- o que incomodou
+    1 - só brilho             32      45   1,41x
+    2 - véu escuro            28      37   1,28x   <- escolhido
+    3 - véu forte             24      30   1,24x
+
+  Foi feita uma segunda página de comparação (COMPARACAO-MANCHAS-MAPA
+  .html), centrada numa área com parque, alternando os cinco estados com
+  a tabela de medição ao lado. O usuário escolheu o VÉU ESCURO.
+
+  O véu é outra técnica: em vez de mexer no brilho da imagem, joga uma
+  camada escura semitransparente por cima. Como tudo converge para a
+  mesma cor, as diferenças encolhem — a mancha passa a saltar MENOS do
+  que saltava no mapa claro original.
+
+  Para os rótulos não escurecerem junto, eles foram para um painel
+  próprio do Leaflet. A ordem de empilhamento ficou:
+    ladrilhos 200 < véu 250 < rótulos 300 < rota 400 < marcadores 600
+
+PARTE 1: O MODO NOTURNO
+  ALCANCE, decidido pelo usuário entre três opções: o APP INTEIRO, não
+  só o mapa. Foi apresentado que essa é a opção várias vezes maior, e
+  ainda assim foi a escolhida.
+
+  O que isso exigiu:
+
+  a) TODA cor virou variável CSS. As que estavam fixas no meio do código
+     (fundos de hover #22343E, chips #0e2422, botão armado #2a1f0e,
+     hovers #132229/#17282f, âmbar de hover #FFC163, teal de :active
+     #28a094, fundo do mapa #0C1418) não teriam como acompanhar a troca.
+     Viraram --hover, --teal-fraco, --teal-hover, --amber-fraco,
+     --amber-claro, --teal-escuro, --map-bg e --sombra.
+
+     Continuam fixos, de propósito, os textos que ficam SOBRE
+     preenchimento âmbar/teal (#241705, #062420, #1a0f00): o
+     preenchimento continua sendo a cor forte nos dois temas.
+
+  b) O tema claro NÃO é o escuro invertido. O âmbar e o teal tiveram que
+     escurecer (#F2A93C -> #C9821A, #2FB6A6 -> #12796E) para continuarem
+     legíveis sobre branco; os tons do tema escuro sobre fundo claro
+     ficam lavados.
+
+  c) O mapa TROCA de ladrilhos, não só de brilho: Esri Dark Gray no tema
+     escuro, Esri Light Gray no claro. Não adianta clarear o mapa escuro
+     — o mapa claro é onde ruas e rótulos foram desenhados para luz do
+     dia. A troca usa setUrl na camada existente, então posição, zoom e
+     rota traçada continuam onde estavam.
+
+  d) O interruptor é um <button role="switch"> de verdade, com
+     aria-checked, e não uma caixa de seleção maquiada: funciona por
+     teclado e é anunciado corretamente por leitor de tela. O CSS desenha
+     a bolinha a partir do próprio aria-checked, então estado e desenho
+     nunca divergem.
+
+  e) Está nas DUAS telas — escritório e campo. O técnico na rua também
+     escolhe (e no sol, o tema claro é o que se lê).
+
+  f) O tema é aplicado por um script curto no <head>, ANTES da primeira
+     pintura. É o único script fora do bloco principal, e é de propósito:
+     esperando o script do fim da página, quem usa o tema claro veria a
+     tela piscar escura ao abrir.
+
+DEFEITO ENCONTRADO NO PRÓPRIO TESTE
+  A primeira versão colocou o controlador de tema no topo do script, e
+  ele chamava aplicarTema(), que mexe em camadaBase — declarada com let
+  MAIS ABAIXO. Deu ReferenceError (zona morta temporal) e derrubou o
+  script inteiro; o sintoma foi "Cannot access 'clientPoints' before
+  initialization" ao carregar a base, bem longe da causa. As FUNÇÕES
+  ficaram onde estavam (declarações de função são içadas); só as duas
+  linhas que EXECUTAM foram para depois da criação do mapa.
+
+FALSO ALARME INVESTIGADO
+  Apareceram rótulos gigantes borrados no mapa. Suspeita: o painel novo
+  dos rótulos não estaria descartando os ladrilhos de zoom antigo. Medido
+  por zoom: a camada BASE tinha exatamente o mesmo resto, o que descarta
+  a hipótese. Carregando a página do zero e sem forçar vista, só existe
+  um nível de zoom nas duas camadas. Era resíduo dos saltos de setView
+  que eu fazia no teste com a aba oculta (mapa com tamanho 0).
+
+TESTES REALIZADOS
+  - Escritório, tema escuro: mapa com véu, rótulos legíveis, rota âmbar
+    e marcadores intactos, sem manchas saltando.
+  - Escritório, tema claro: painel branco, texto escuro, mapa TROCADO
+    para o Esri Light Gray, botões âmbar/teal legíveis, estrela de
+    prioridade e lista da viagem conferidas.
+  - Campo (375x812) nos dois temas, incluindo a confirmação em duas
+    etapas e a estrela de prioridade.
+  - Interruptor: aria-checked alterna, trilho vai para âmbar (#B87F26) e
+    a bolinha desloca 18px. Medido com as transições desligadas, porque
+    a aba oculta congela transição no meio.
+  - Escolha do tema sobrevive a recarregar a página, nas duas telas.
+  - Console sem erros. localStorage limpo ao final.
+
+VERSÃO: fecha a v3.3 (funcionalidade nova + correção do que a v3.2
+causou).
