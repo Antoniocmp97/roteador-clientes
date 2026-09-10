@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 09/09/2026 — v3.3 (modo noturno no app inteiro)
+> **Última atualização:** 09/09/2026 — v3.4 (definição do mapa escuro)
 
 ---
 
@@ -57,10 +57,10 @@ sem dependências instaladas. Abre direto no navegador.
   (escritório e campo) troca o app inteiro entre tema escuro e claro. A escolha
   fica guardada no navegador e é aplicada antes da primeira pintura, para a tela
   não piscar no tema errado ao abrir. Padrão: escuro
-- **O mapa acompanha o tema**: no escuro usa o Esri Dark Gray com um véu por
-  cima; no claro **troca de ladrilhos** para o Esri Light Gray, que é onde ruas
-  e rótulos foram desenhados para luz do dia. Rota, marcadores e popups não são
-  afetados em nenhum dos dois
+- **O mapa acompanha o tema**: no escuro usa o Esri Dark Gray com um tratamento
+  de cor que reproduz a referência do usuário (ver seção 5); no claro **troca de
+  ladrilhos** para o Esri Light Gray, que é onde ruas e rótulos foram desenhados
+  para luz do dia. Rota, marcadores e popups não são afetados em nenhum dos dois
 - Plot dos pontos no mapa (Leaflet) com popup mostrando filial e cliente
 - Definição de origem, por três caminhos: geolocalização do navegador, endereço
   digitado (Nominatim, com viés geográfico para o sul de SC) ou **clique direto no
@@ -191,22 +191,51 @@ mesmo tom. Não dá para tratar parque, água e via principal com cores
 diferentes, como faz o Waze. Isso exigiria um provedor **vetorial**
 (OpenFreeMap, Protomaps), que é troca de stack, não ajuste de CSS.
 
-**Manchas de parque saltando no mapa escuro (09/09/2026).** Relatado pelo
-usuário logo depois da v3.2. Causa medida nos ladrilhos reais: o
-`contrast(1.2)` da v3.2 comprimia tudo em direção ao preto e, nessa
-compressão, a diferença **relativa** entre fundo e mancha aumentava.
+**Parque "borrado" no mapa escuro (09/09/2026).** O usuário reclamou duas
+vezes do mapa escuro: primeiro que os parques ficavam "distorcidos" (v3.2) e
+depois, com um print, que um parque ficava "borrado" (v3.3).
 
-| Tratamento | Fundo | Parque | Salto |
-|---|---|---|---|
-| Mapa claro original | 71 | 100 | 1,41× |
-| v3.2 (filtro com contraste) | 13 | 28 | 2,21× |
-| v3.3 (véu) | 28 | 37 | 1,28× |
+⚠️ **A primeira medição que fiz estava errada** e levou a v3.3 para o lado
+errado. Eu marcava como "parque" todo pixel esverdeado do ladrilho, o que
+incluía as ruas que cortam o parque, e concluí que o parque saltava do fundo.
+Medindo o parque isolado — máscara feita no ladrilho **claro**, onde o parque
+é verde de verdade, e lida no ladrilho **escuro** — o parque está a **3 tons**
+do fundo já no mapa original. Nunca foi uma mancha clara.
 
-Solução na v3.3: **véu** no lugar do contraste — uma camada escura
-semitransparente sobre os ladrilhos, entre eles e os rótulos. Como tudo
-converge para a mesma cor, as diferenças encolhem, e a mancha passa a saltar
-menos do que saltava no mapa claro original. Os rótulos ficam num painel
-próprio do Leaflet (z-index 300), acima do véu, então continuam nítidos.
+O que existia de verdade era **perda de definição**: a distância entre rua e
+fundo, que é o que dá desenho ao mapa. Sem rua desenhada em volta, a área do
+parque vira uma mancha sem forma — o "borrado" do print.
+
+Luminância medida (0–255) no ladrilho do Parque Municipal Morro do Céu:
+
+| Tratamento | Fundo | Rua | Parque | Definição (rua−fundo) |
+|---|---|---|---|---|
+| Referência do usuário (Waze) | 37 | 82 | 45 | **45** |
+| Esri Dark Gray sem tratamento | 71 | 102 | 75 | 31 |
+| v3.2 (contraste no escuro) | 13 | 30 | 15 | 17 |
+| v3.3 (véu) | 26 | 34 | 27 | **8** |
+| v3.4 (atual) | 37 | 82 | 42 | **45** |
+
+Solução na v3.4: **a ordem das operações**, não a força delas.
+
+```
+brightness(1.425)  sobe o mapa até o fundo chegar perto do meio da escala
+contrast(2.035)    abre a distância entre rua e fundo
+brightness(.5)     desce de volta para o tom escuro
+```
+
+O `contrast()` do CSS gira em torno do **meio** da escala. Aplicado direto num
+mapa escuro — que é o que a v3.2 fazia — ele não abre nada: empurra tudo para o
+preto. Clareando antes, o contraste passa a trabalhar na faixa em que ele de
+fato separa os tons.
+
+Os três números foram **resolvidos** para bater com a referência, não
+tentados: dá um sistema de duas equações (fundo final = 37, definição = 45).
+Nenhum pixel satura — o ladrilho mais claro da região tem 163, e o primeiro
+brilho só saturaria acima de 179.
+
+O véu e o painel exclusivo dos rótulos, criados na v3.3, foram removidos: com
+o tratamento novo eles não faziam mais nada.
 
 ---
 
@@ -383,6 +412,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 25 | **v3.1** — Divisória arrastável entre mapa e painel, com a largura guardada; nomes longos passam a quebrar linha em vez de serem cortados |
 | 26 | **v3.2** — Mapa escurecido por filtro CSS sobre os ladrilhos do Esri, com os rótulos clareados à parte |
 | 27 | **v3.3** — Modo noturno para o app inteiro (interruptor nas duas telas), tema claro completo e véu no lugar do contraste que manchava o mapa |
+| 28 | **v3.4** — Definição do mapa escuro: clarear → contrastar → escurecer, batendo com a referência do usuário. Corrige a medição errada que guiou a v3.3 |
 
 ---
 
@@ -449,7 +479,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.3:  0 / 5
+Leves acumuladas desde a v3.4:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -499,4 +529,5 @@ os backups locais são conveniência, não garantia.
 | 3.0 | 08/09/2026 | Ordenação alfabética da base nos três níveis |
 | 3.1 | 09/09/2026 | Painel de largura ajustável (medido: nome de 438px numa caixa de 207px) |
 | 3.2 | 09/09/2026 | Mapa escurecido (opção "cinza escuro", escolhida entre três em comparação lado a lado) |
-| 3.3 | 09/09/2026 | Modo noturno no app inteiro + véu no mapa (mancha de parque: 2,21x → 1,28x) |
+| 3.3 | 09/09/2026 | Modo noturno no app inteiro + véu no mapa (definição caiu para 8 — corrigido na v3.4) |
+| 3.4 | 09/09/2026 | Definição do mapa escuro igual à da referência (8 → 45) |

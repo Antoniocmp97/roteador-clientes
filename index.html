@@ -95,20 +95,33 @@
   /* Em tela estreita fica só o interruptor, sem a palavra */
   @media (max-width:520px){ .interruptor-texto{display:none;} }
 
-  /* Véu do mapa: camada escura por cima dos ladrilhos no tema escuro.
-     Fica ENTRE os ladrilhos (painel 200) e os rótulos (painel 300), então
-     escurece o desenho das ruas sem apagar os nomes; rota (400) e
-     marcadores (600) também ficam por cima e não são afetados.
+  /* Tema escuro do mapa (v3.4) — três operações em sequência, e a ORDEM é
+     o ponto:
 
-     Por que véu e não só filtro: medido em 09/09/2026 nos ladrilhos reais,
-     o contraste que a v3.2 usava fazia as manchas de parque saltarem 2,21x
-     acima do fundo, contra 1,41x do mapa claro original — foi o que o
-     usuário relatou como "distorcido". O véu leva tudo para a mesma cor,
-     então a mancha cai para 1,28x: menos evidente do que no mapa original. */
-  .veu-mapa{position:absolute; inset:0; z-index:250; pointer-events:none;
-            background:transparent; transition:background .2s;}
-  :root[data-tema="escuro"] .veu-mapa{background:rgba(10,17,21,.62);}
-  :root[data-tema="escuro"] .camada-base{filter:grayscale(1) brightness(.72);}
+       brightness(1.425)  sobe o mapa até o fundo cair perto do meio da escala
+       contrast(2.035)    abre a distância entre rua e fundo (o contraste do
+                          CSS gira em torno do meio da escala, por isso o
+                          passo anterior é necessário; aplicado direto no
+                          mapa escuro, ele só empurraria tudo para o preto)
+       brightness(.5)     desce de volta para o tom escuro
+
+     Os números não são chutados: foram resolvidos para bater com a foto de
+     referência que o usuário enviou (modo escuro do Waze). Medido nos
+     ladrilhos reais em 09/09/2026 — luminância de 0 a 255:
+
+                         fundo   rua   parque   rua-fundo
+       Referência Waze      37    82       45          45
+       resultado daqui      37    82       42          45
+
+     Nenhum pixel estoura: o ladrilho mais claro desta região tem 163, e o
+     primeiro brilho só saturaria acima de 179.
+
+     As v3.2 (contraste no escuro) e v3.3 (véu) erravam pelo mesmo motivo,
+     em direções opostas: escureciam o mapa INTEIRO junto, e a distância
+     entre rua e fundo — que é o que dá desenho ao mapa — caía para 17 e 8
+     respectivamente. Era o que o usuário via como parque "borrado": sem
+     rua desenhada em volta, a área vira uma mancha sem forma. */
+  :root[data-tema="escuro"] .camada-base{filter:grayscale(1) brightness(1.425) contrast(2.035) brightness(.5);}
 
   /* Área principal: mapa (flex:1, ocupa o espaço restante) + painel lateral */
   main{position:relative;flex:1;display:flex;min-height:0;}
@@ -342,7 +355,7 @@
 
      Rota, marcadores e popups não são afetados: ficam em outros painéis do
      Leaflet, fora destes contêineres. */
-  /* Regras do tema escuro para os ladrilhos: ver .veu-mapa acima. No tema
+  /* O tratamento do tema escuro está junto da paleta, mais acima. No tema
      claro não há filtro nenhum — o mapa troca para a versão clara do Esri. */
   /* Ícones customizados dos marcadores: bolinha simples (cliente/origem) e bolinha numerada (parada na rota) */
   .brand-icon{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);}
@@ -678,7 +691,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '3.3';
+const VERSAO = '3.4';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -741,14 +754,6 @@ let map = null;
 let camadaBase = null, camadaRotulos = null;
 if (!modoCampoAtivo) {
   map = L.map('map', { zoomControl: true }).setView([-28.6775, -49.3697], 13);
-  // Painel próprio para os rótulos, ACIMA do véu. A ordem de empilhamento
-  // do Leaflet fica: ladrilhos 200 < véu 250 < rótulos 300 < rota 400 <
-  // marcadores 600. É isso que deixa escurecer o desenho das ruas sem
-  // apagar os nomes de rua e bairro junto.
-  map.createPane('rotulos');
-  map.getPane('rotulos').style.zIndex = 300;
-  map.getPane('rotulos').style.pointerEvents = 'none';
-
   // className põe a classe no contêiner da camada, então o filtro do CSS vale
   // para todos os ladrilhos — inclusive os que só chegam depois, ao arrastar
   // ou dar zoom (aplicar estilo direto no ladrilho não funciona: os que
@@ -758,15 +763,11 @@ if (!modoCampoAtivo) {
     className: 'camada-base'
   }).addTo(map);
   camadaRotulos = L.tileLayer(urlTile(TILES[temaAtual()].rot), {
-    maxZoom: 19, maxNativeZoom: 16, className: 'camada-rotulos', pane: 'rotulos'
+    maxZoom: 19, maxNativeZoom: 16, className: 'camada-rotulos'
   }).addTo(map);
-
-  // O véu é um elemento comum dentro do contêiner do mapa — não uma camada
-  // do Leaflet — porque precisa cobrir a tela inteira, e não uma área
-  // geográfica que se move junto com o mapa.
-  const veu = document.createElement('div');
-  veu.className = 'veu-mapa';
-  map.getContainer().appendChild(veu);
+  // Os rótulos ficam SEM filtro: só o desenho das ruas é tratado. Como a
+  // camada de rótulos entra depois da base, ela já fica por cima — não
+  // precisa de painel próprio.
 }
 
 /* ---------------- Largura do painel ajustável (divisória arrastável) ----------------

@@ -2552,3 +2552,90 @@ TESTES REALIZADOS
 
 VERSÃO: fecha a v3.3 (funcionalidade nova + correção do que a v3.2
 causou).
+
+--------------------------------------------------------
+[09/09/2026] v3.4 — Definição do mapa escuro
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Mandou um print do mapa escuro na região do Parque Municipal Morro do
+  Céu: "um exemplo de como ficou borrado um parque, tire como referencia
+  e ajuste todos".
+
+ERRO MEU, ADMITIDO E CORRIGIDO
+  A medição que guiou a v3.3 estava errada. Eu marcava como "parque" todo
+  pixel esverdeado do ladrilho, e isso incluía as RUAS que cortam o
+  parque; deu parque = 100 contra fundo = 71, e eu conclui que o parque
+  saltava do fundo.
+
+  Refeito direito: máscara montada no ladrilho CLARO (onde o parque é
+  verde de verdade) e lida no ladrilho ESCURO, descartando os pixels de
+  rua. Resultado: parque 74,5 contra fundo 71,1 — TRÊS tons de diferença,
+  já no mapa original, sem tratamento nenhum. O parque nunca foi mancha
+  clara.
+
+O QUE ERA O "BORRADO", DE VERDADE
+  Perda de DEFINIÇÃO — a distância entre rua e fundo, que é o que dá
+  desenho ao mapa. Sem rua desenhada em volta, uma área sem ruas (que é
+  o que um parque é, no mapa) vira mancha sem forma.
+
+  Luminância (0-255) medida no ladrilho do parque:
+
+    Tratamento                    Fundo  Rua  Parque  Definição
+    Referência do usuário (Waze)     37   82      45         45
+    Esri Dark Gray sem tratamento    71  102      75         31
+    v3.2 (contraste no escuro)       13   30      15         17
+    v3.3 (véu)                       26   34      27          8  <- o print
+    v3.4 (esta versão)               37   82      42         45
+
+  A v3.2 e a v3.3 erravam pelo mesmo motivo, em direções opostas:
+  escureciam o mapa inteiro junto, e a definição desabava.
+
+A SOLUÇÃO: A ORDEM DAS OPERAÇÕES
+
+    brightness(1.425)   sobe o mapa até o fundo chegar perto do meio da escala
+    contrast(2.035)     abre a distância entre rua e fundo
+    brightness(.5)      desce de volta para o tom escuro
+
+  O contrast() do CSS gira em torno do MEIO da escala. Aplicado direto num
+  mapa escuro — o que a v3.2 fazia — ele não abre nada: empurra tudo para
+  o preto. Clareando antes, o contraste trabalha na faixa em que de fato
+  separa os tons; escurecendo depois, o mapa volta ao tom escuro com a
+  separação já feita.
+
+  Os três números não foram tentados no olho: foram RESOLVIDOS. Chamando
+  b1, c e b2, o resultado final é
+
+    definição = 31 * b1 * c * b2
+    fundo     = ((71*b1 - 127,5) * c + 127,5) * b2
+
+  Impondo definição = 45 e fundo = 37 (os valores medidos na foto de
+  referência) e fixando b2 = 0,5, sai c = 2,035 e b1 = 1,425.
+
+  Conferido que nada satura: o ladrilho mais claro desta região tem
+  luminância 163, e o primeiro brilho só saturaria acima de 179 (0% dos
+  pixels do ladrilho medido).
+
+LIMPEZA
+  O véu e o painel exclusivo dos rótulos, criados na v3.3, foram
+  removidos — com o tratamento novo eles não fazem mais nada. Os rótulos
+  voltaram para o painel padrão: como a camada deles entra depois da
+  base, já ficam por cima naturalmente.
+
+PÁGINA DE COMPARAÇÃO
+  COMPARACAO-DEFINICAO-MAPA.html, centrada no mesmo parque do print,
+  alternando os quatro estados (cru, v3.2, v3.3, v3.4) com a tabela de
+  medição e a foto de referência ao lado. As duas páginas de comparação
+  anteriores foram apagadas; ficam fora do Git de qualquer forma.
+
+TESTES REALIZADOS
+  - Mesma vista do print do usuário, nos zooms 15 e 16: ruas desenhadas,
+    parque com forma reconhecível e borda definida.
+  - Rota traçada de 3 paradas: âmbar continua destacando no tema escuro.
+  - Tema claro conferido depois da mudança: sem filtro, ladrilhos do Esri
+    Light Gray, nada afetado.
+  - Filtro conferido pelo estilo computado; véu e painel extra confirmados
+    ausentes do DOM.
+  - Console sem erros. localStorage limpo ao final.
+
+VERSÃO: fecha a v3.4 (correção do que a v3.3 causou).
