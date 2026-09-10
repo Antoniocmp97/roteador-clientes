@@ -2639,3 +2639,91 @@ TESTES REALIZADOS
   - Console sem erros. localStorage limpo ao final.
 
 VERSÃO: fecha a v3.4 (correção do que a v3.3 causou).
+
+--------------------------------------------------------
+[09/09/2026] v3.5 — Localização: enquadramento e margem de erro
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "O botão que busca a minha localização aparentemente bugou, não pegou o
+  local certo."
+
+PRIMEIRO: O QUE **NÃO** ERA
+  O manipulador do botão 📍 não era tocado desde o primeiro commit
+  (conferido com git log -L no trecho). Nada das v3.1 a v3.4 passou perto
+  dele.
+
+  A hipótese que precisava ser descartada era outra, essa sim minha: a
+  divisória da v3.1 muda a largura do mapa, e mapa com tamanho
+  desatualizado desenha marcador fora do lugar. Testado: comparado o
+  ponto CALCULADO (latLngToContainerPoint) com o ponto DESENHADO (posição
+  real do marcador no DOM), antes e depois de arrastar a divisória de 340
+  para 600 px. Bateram exatamente nos dois casos, e o tamanho que o
+  Leaflet acha que tem é igual ao do DOM. Sem deslocamento.
+
+O DEFEITO DE VERDADE
+  setOrigin() NUNCA movia o mapa. O pino era colocado nas coordenadas
+  certas, mas se elas caíssem fora da vista atual, não aparecia nada — o
+  mapa ficava parado e o campo mostrava apenas "Minha localização", sem
+  dizer onde. Do lado de quem usa, é indistinguível de "não pegou o local
+  certo".
+
+  Valia para os dois caminhos: a localização E o endereço digitado.
+
+O QUE FOI FEITO
+  1. setOrigin ganhou o parâmetro `enquadrar`. Pedido na geolocalização e
+     nos dois caminhos de endereço (resultado único e escolha na lista).
+     NÃO é pedido no clique no mapa (o ponto já está à vista) nem na
+     restauração da origem salva (brigaria com o enquadramento dos
+     clientes recém-carregados).
+
+  2. A margem de erro que o navegador devolve (coords.accuracy) passou a
+     ser usada:
+       - até 100 m: mensagem verde "Localização encontrada (margem de X)"
+         e o mapa vai até o ponto no zoom 16.
+       - acima de 100 m: círculo âmbar com o raio da margem desenhado no
+         mapa, enquadramento no círculo inteiro, e aviso explicando que
+         sem GPS o navegador estima pela rede e o ponto pode cair longe,
+         apontando o 🎯 como caminho exato.
+     O corte em 100 m separa na prática o que vem de GPS ou de Wi-Fi
+     conhecido (dezenas de metros) do que vem de estimativa por IP
+     (quilômetros).
+
+  3. O endereço é buscado de volta (mesmo nomeDoPonto do 🎯) e substitui
+     "Minha localização" no campo. É o que permite CONFERIR onde o ponto
+     caiu, em vez de acreditar.
+
+  4. Opções da API: enableHighAccuracy (usa GPS onde existe; sem ele o
+     navegador pode devolver direto a estimativa grosseira), timeout de
+     15 s e maximumAge 0 (não aceita posição velha em cache).
+
+  5. Erros passaram a ser distinguidos: permissão negada (com a dica do
+     cadeado na barra de endereço), posição indisponível e tempo esgotado
+     — cada um com o próximo passo. Antes era uma mensagem só.
+
+  6. O enquadramento usa animate:false. A animação de deslocamento fica
+     congelada enquanto a aba não está à vista, e o mapa pararia no meio
+     do caminho se o usuário trocasse de aba logo depois de clicar.
+     Descoberto no teste, com a aba oculta.
+
+O QUE CONTINUA FORA DO ALCANCE DO APP
+  A posição em si vem do navegador. Nenhuma opção da API melhora isso
+  além do enableHighAccuracy, que já está ligado. Em computador de mesa
+  sem GPS e sem Wi-Fi conhecido, a estimativa por IP erra por
+  quilômetros. O app agora DIZ isso em vez de fingir precisão.
+
+TESTES REALIZADOS
+  - Leitura precisa simulada (25 m) longe da vista: mapa centralizou no
+    ponto em zoom 16, sem círculo, mensagem verde com a margem, e o campo
+    preenchido com o endereço buscado de volta.
+  - Leitura grosseira simulada (12 km): círculo de raio 12000 desenhado,
+    mapa recuou para o zoom 11 mostrando o círculo inteiro, mensagem de
+    aviso em vermelho.
+  - Os três códigos de erro da API, cada um com sua mensagem.
+  - Endereço com resultado ambíguo ("Avenida Centenário, Criciúma", 5
+    opções): escolher uma leva o mapa até ela em zoom 16.
+  - Marcador conferido contra o cálculo antes e depois de arrastar a
+    divisória — sem deslocamento.
+  - Console sem erros. localStorage limpo ao final.
+
+VERSÃO: fecha a v3.5 (correção de comportamento).

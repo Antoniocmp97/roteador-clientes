@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 09/09/2026 — v3.4 (definição do mapa escuro)
+> **Última atualização:** 09/09/2026 — v3.5 (localização com margem de erro à mostra)
 
 ---
 
@@ -66,6 +66,13 @@ sem dependências instaladas. Abre direto no navegador.
   digitado (Nominatim, com viés geográfico para o sul de SC) ou **clique direto no
   mapa** (🎯), que dá precisão exata. Quando a busca devolve mais de um endereço
   possível, o app lista e o usuário escolhe
+- **O mapa vai até a origem** assim que ela é definida pela localização ou por
+  endereço (v3.5). Antes o pino era colocado sem mover o mapa: se caísse fora da
+  vista, parecia que o botão não tinha feito nada
+- **Margem de erro da localização à mostra** (v3.5): o app informa a margem que o
+  navegador devolve e, acima de 100 m, desenha o círculo de incerteza no mapa e
+  avisa que a posição é estimada. Nos dois casos o endereço é buscado de volta e
+  aparece no campo, para dar para conferir onde o ponto caiu
 - **Origem padrão salva** no navegador: definida uma vez, volta pronta a cada
   abertura — a operação sai quase sempre do mesmo lugar
 - Checklist de seleção de quais clientes visitar na viagem
@@ -325,6 +332,12 @@ repositório é público (ver `.gitignore`).
   (auto-hospedadas, gratuitas) ou API paga (Mapbox Directions, Google Directions).
 - **Nominatim** tem política de uso justo — limite aproximado de 1 requisição por
   segundo. Volume alto de geocodificação exige alternativa.
+- **A localização do navegador (📍) pode cair longe.** Em computador sem GPS, o
+  navegador estima pela rede — e sem Wi-Fi conhecido, cai na estimativa por IP,
+  que erra por quilômetros. Isso é do navegador, não do app: nenhuma opção da
+  API muda o resultado além de `enableHighAccuracy`, que já é usado. O que o app
+  faz é **mostrar a margem**, desenhar o círculo de incerteza e apontar o 🎯
+  como caminho exato.
 - **Número de casa não funciona na busca de endereço.** Não é limitação do código:
   o OpenStreetMap tem pouquíssimos endereços numerados na região (verificado em
   06/09/2026 — apenas 122 em toda a área central de Criciúma). Digitar
@@ -413,6 +426,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 26 | **v3.2** — Mapa escurecido por filtro CSS sobre os ladrilhos do Esri, com os rótulos clareados à parte |
 | 27 | **v3.3** — Modo noturno para o app inteiro (interruptor nas duas telas), tema claro completo e véu no lugar do contraste que manchava o mapa |
 | 28 | **v3.4** — Definição do mapa escuro: clarear → contrastar → escurecer, batendo com a referência do usuário. Corrige a medição errada que guiou a v3.3 |
+| 29 | **v3.5** — Origem passa a enquadrar o mapa; margem de erro da geolocalização informada, com círculo de incerteza e endereço de conferência |
 
 ---
 
@@ -479,7 +493,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.4:  0 / 5
+Leves acumuladas desde a v3.5:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -531,3 +545,4 @@ os backups locais são conveniência, não garantia.
 | 3.2 | 09/09/2026 | Mapa escurecido (opção "cinza escuro", escolhida entre três em comparação lado a lado) |
 | 3.3 | 09/09/2026 | Modo noturno no app inteiro + véu no mapa (definição caiu para 8 — corrigido na v3.4) |
 | 3.4 | 09/09/2026 | Definição do mapa escuro igual à da referência (8 → 45) |
+| 3.5 | 09/09/2026 | Origem enquadra o mapa; margem de erro da localização à mostra |

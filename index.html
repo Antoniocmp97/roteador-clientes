@@ -691,7 +691,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '3.4';
+const VERSAO = '3.5';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1464,14 +1464,28 @@ function renderStopsList(){
 /* ---------------- Origin ---------------- */
 // Define o ponto de partida: guarda as coordenadas, (re)posiciona o marcador âmbar no mapa
 // e preenche o campo de texto com o rótulo (endereço) ou as coordenadas cruas
-function setOrigin(lat, lng, label, abrirPopup = true){
+// Círculo de incerteza da geolocalização (só existe quando o navegador informa
+// uma margem grande). Fica guardado aqui para ser apagado na próxima origem.
+let circuloPrecisao = null;
+
+// `enquadrar`: leva o mapa até o ponto. Precisa ser pedido caso a caso —
+// no clique no mapa o ponto já está à vista, e na origem salva o
+// enquadramento brigaria com o dos clientes recém-carregados.
+function setOrigin(lat, lng, label, abrirPopup = true, enquadrar = false){
   originLatLng = [lat, lng];
   esconderOpcoesEndereco(); // origem definida: a lista de alternativas não faz mais sentido
   if (originMarker) map.removeLayer(originMarker);
+  if (circuloPrecisao){ map.removeLayer(circuloPrecisao); circuloPrecisao = null; }
   originMarker = L.marker([lat, lng], { icon: dot('#F2A93C') }).addTo(map).bindPopup(label || 'Origem');
   if (abrirPopup) originMarker.openPopup(); // na restauração da origem salva não abre, para não cobrir o mapa
   document.getElementById('originInput').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   atualizarBotaoOrigemPadrao();
+  // Sem isto o pino podia cair fora da vista: o mapa não se mexia e parecia
+  // que o botão não tinha feito nada — foi o que o usuário relatou em 09/09.
+  // animate:false de propósito: a animação de deslocamento fica congelada
+  // enquanto a aba não está à vista, e o mapa pararia no meio do caminho se o
+  // usuário trocasse de aba logo depois de clicar. Ir direto é previsível.
+  if (enquadrar) map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate:false });
 }
 
 /* ---------------- Origem padrão salva no navegador ---------------- */
@@ -1566,13 +1580,59 @@ if (map){
   });
 }
 
-// Botão 📍: pede a localização atual ao navegador (API de geolocalização) e usa como origem
+// Acima desta margem a posição é tratada como estimativa, não como ponto exato.
+// 100 m separa na prática o que vem de GPS ou de rede Wi-Fi conhecida (dezenas
+// de metros) do que vem de estimativa por IP (quilômetros).
+const MARGEM_CONFIAVEL = 100;
+const formatarMargem = m => m >= 1000 ? `${(m/1000).toFixed(1).replace('.', ',')} km` : `${Math.round(m)} m`;
+
+// Botão 📍: pede a localização atual ao navegador (API de geolocalização) e usa como origem.
+//
+// Reescrito em 09/09/2026, depois de o usuário relatar que o botão "não pegou o
+// local certo". A posição em si vem do navegador — o app não tem como melhorá-la.
+// O que dava para consertar era tudo em volta dela, e era bastante:
+//   1. o mapa não ia até o ponto, então um ponto fora da vista era invisível;
+//   2. o campo ficava com "Minha localização", sem dizer ONDE foi parar;
+//   3. uma estimativa por IP, com quilômetros de margem, era anunciada com o
+//      mesmo "Localização encontrada." de uma leitura de GPS.
 document.getElementById('geoBtn').onclick = () => {
-  if (!navigator.geolocation){ setStatus('Geolocalização não suportada.'); return; }
+  if (!navigator.geolocation){ setStatus('Geolocalização não suportada neste navegador.'); return; }
   setStatus('Obtendo localização...', true);
   navigator.geolocation.getCurrentPosition(
-    pos => { setOrigin(pos.coords.latitude, pos.coords.longitude, 'Minha localização'); setStatus('Localização encontrada.', true); },
-    () => setStatus('Não foi possível obter localização. Digite um endereço.')
+    async pos => {
+      const { latitude: lat, longitude: lng, accuracy: margem } = pos.coords;
+      setOrigin(lat, lng, 'Minha localização');
+
+      if (margem > MARGEM_CONFIAVEL){
+        // Desenha a incerteza: o ponto está em algum lugar DENTRO deste círculo.
+        circuloPrecisao = L.circle([lat, lng], { radius: margem, color:'#F2A93C',
+          weight:1, opacity:.7, fillColor:'#F2A93C', fillOpacity:.08 }).addTo(map);
+        map.fitBounds(circuloPrecisao.getBounds(), { padding:[40,40], maxZoom:17, animate:false });
+        setStatus(`Localização aproximada: margem de ${formatarMargem(margem)}. Sem GPS o navegador estima pela rede, e o ponto pode cair longe. Confira no mapa ou marque o ponto exato com 🎯.`);
+      } else {
+        map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate:false });
+        setStatus(`Localização encontrada (margem de ${formatarMargem(margem)}).`, true);
+      }
+
+      // Mesmo caminho do 🎯: troca "Minha localização" pelo endereço de verdade,
+      // que é o que deixa conferir se o ponto faz sentido.
+      const nome = await nomeDoPonto(lat, lng);
+      if (nome && originLatLng && originLatLng[0] === lat){
+        document.getElementById('originInput').value = nome;
+        if (originMarker) originMarker.setPopupContent(nome);
+      }
+    },
+    err => {
+      const motivos = {
+        1: 'Permissão de localização negada. Libere o acesso no cadeado da barra de endereço, ou digite o endereço.',
+        2: 'O navegador não conseguiu determinar a localização. Digite o endereço ou marque o ponto com 🎯.',
+        3: 'A localização demorou demais para responder. Tente de novo ou marque o ponto com 🎯.'
+      };
+      setStatus(motivos[err.code] || 'Não foi possível obter localização. Digite um endereço.');
+    },
+    // enableHighAccuracy usa GPS onde existe; sem ele o navegador pode devolver
+    // direto a estimativa grosseira. maximumAge 0 impede uma posição velha em cache.
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
   );
 };
 
@@ -1675,7 +1735,7 @@ function mostrarOpcoesEndereco(resultados){
   box.querySelectorAll('.origem-opcao').forEach(btn => {
     btn.onclick = () => {
       const r = resultados[Number(btn.dataset.i)];
-      setOrigin(r.lat, r.lng, r.label); // já esconde a lista
+      setOrigin(r.lat, r.lng, r.label, true, true); // já esconde a lista; enquadra para o endereço ficar à vista
       if (!avisarNumeroIgnorado(r, document.getElementById('originInput').dataset.busca || '')){
         setStatus('Origem definida.', true);
       }
@@ -1706,7 +1766,7 @@ async function ensureOrigin(){
     document.getElementById('originInput').dataset.busca = q; // setOrigin sobrescreve o campo
     const rs = await geocode(q);
     if (rs.length === 1){
-      setOrigin(rs[0].lat, rs[0].lng, rs[0].label);
+      setOrigin(rs[0].lat, rs[0].lng, rs[0].label, true, true);
       avisarNumeroIgnorado(rs[0], q);
       return true;
     }
