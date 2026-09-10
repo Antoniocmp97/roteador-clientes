@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 09/09/2026 — v3.1 (painel de largura ajustável)
+> **Última atualização:** 09/09/2026 — v3.2 (mapa escurecido)
 
 ---
 
@@ -53,6 +53,9 @@ sem dependências instaladas. Abre direto no navegador.
   "Manutenção"). Cada parada selecionada ganha um seletor para escolher o
   tipo; aparece na lista de paradas do escritório e como etiqueta na tela
   do campo
+- **Mapa escurecido** (v3.2): filtro de cor sobre os ladrilhos do Esri, para o
+  mapa parar de destoar do painel escuro. As ruas escurecem e os rótulos são
+  clareados, em filtros separados. Rota, marcadores e popups não são afetados
 - Plot dos pontos no mapa (Leaflet) com popup mostrando filial e cliente
 - Definição de origem, por três caminhos: geolocalização do navegador, endereço
   digitado (Nominatim, com viés geográfico para o sul de SC) ou **clique direto no
@@ -86,7 +89,7 @@ sem dependências instaladas. Abre direto no navegador.
 | Camada | Escolha | Observação |
 |---|---|---|
 | Mapa | Leaflet 1.9.4 (CDN cdnjs) | Mesma base que o uMap usa |
-| Tiles | Esri Dark Gray Canvas (base + rótulos) | Sem cadastro. Substituiu o CARTO em 29/08/2026 |
+| Tiles | Esri Dark Gray Canvas (base + rótulos) | Sem cadastro. Substituiu o CARTO em 29/08/2026. Escurecido por filtro CSS desde a v3.2 |
 | Rotas | OSRM — `router.project-osrm.org` | **Servidor público de demonstração** |
 | Otimização | OSRM Trip API | Resolve TSP aproximado |
 | Geocodificação | Nominatim (OpenStreetMap) | Viés por caixa geográfica da região sul de SC. Sujeito a política de uso justo |
@@ -149,6 +152,25 @@ Custo da troca: o fundo ficou cinza médio, mais claro que o preto-azulado
 anterior, portanto menos integrado ao painel escuro. Alternativa avaliada e
 descartada: Stadia Maps combinaria melhor visualmente, mas responde 401 fora do
 `localhost` — exigiria cadastro e uma chave exposta no repositório público.
+
+**Mapa claro demais (09/09/2026).** O custo acima virou incômodo real: o usuário
+mandou uma referência (modo escuro do Waze) pedindo um mapa mais escuro.
+
+Solução aplicada na v3.2: **filtro de cor por CSS sobre os ladrilhos**, sem
+trocar de provedor — nenhuma requisição a mais, nenhum cadastro, nenhuma chave.
+As duas camadas recebem filtros opostos (`.camada-base` escurece,
+`.camada-rotulos` clareia), senão os nomes de rua sumiriam junto com o fundo.
+A classe vai no `className` da camada, e não no estilo de cada ladrilho — assim
+vale também para os que só chegam depois, ao arrastar ou dar zoom.
+
+Foram comparados três tratamentos no mapa real, numa página de comparação
+lado a lado com a referência: azul-marinho tipo Waze, azul suave e cinza
+escuro. O usuário escolheu o **cinza escuro** — escurecer sem introduzir cor.
+
+⚠️ Limite do método: como a origem é um mapa cinza, o filtro pinta tudo no
+mesmo tom. Não dá para tratar parque, água e via principal com cores
+diferentes, como faz o Waze. Isso exigiria um provedor **vetorial**
+(OpenFreeMap, Protomaps), que é troca de stack, não ajuste de CSS.
 
 ---
 
@@ -323,6 +345,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 23 | **v2.9** — Grupos do uMap: leitura das camadas aninhadas (que sumiam em silêncio) e cascata de três níveis no checklist |
 | 24 | **v3.0** — Base ordenada alfabeticamente ao carregar, nos três níveis, com ordenação ciente de acentos |
 | 25 | **v3.1** — Divisória arrastável entre mapa e painel, com a largura guardada; nomes longos passam a quebrar linha em vez de serem cortados |
+| 26 | **v3.2** — Mapa escurecido por filtro CSS sobre os ladrilhos do Esri, com os rótulos clareados à parte |
 
 ---
 
@@ -389,7 +412,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.1:  0 / 5
+Leves acumuladas desde a v3.2:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -438,3 +461,4 @@ os backups locais são conveniência, não garantia.
 | 2.9 | 08/09/2026 | Grupos do uMap: Grupo → Camada → Unidades no checklist |
 | 3.0 | 08/09/2026 | Ordenação alfabética da base nos três níveis |
 | 3.1 | 09/09/2026 | Painel de largura ajustável (medido: nome de 438px numa caixa de 207px) |
+| 3.2 | 09/09/2026 | Mapa escurecido (opção "cinza escuro", escolhida entre três em comparação lado a lado) |

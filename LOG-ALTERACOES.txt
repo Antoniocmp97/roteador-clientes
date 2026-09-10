@@ -2364,3 +2364,74 @@ TESTES REALIZADOS (base real, 23 camadas / 39 pontos)
   - Console sem erros. localStorage limpo ao final.
 
 VERSÃO: fecha a v3.1 (funcionalidade nova).
+
+--------------------------------------------------------
+[09/09/2026] v3.2 — Mapa escurecido
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Enviou uma foto ("REFERENCIA LAYOUT.jpeg" — modo escuro do Waze) e
+  pediu para deixar o mapa mais escuro seguindo aquela referência.
+  Pediu também para VER o resultado antes de eu implementar, porque tem
+  outros planos que dependem desse layout.
+
+O QUE A REFERÊNCIA MOSTRA
+  Fundo azul-marinho quase preto, ruas em azul-ardósia mais claro,
+  rótulos em cinza-claro. O mapa atual (Esri Dark Gray Canvas) é cinza
+  MÉDIO — já estava anotado como custo da troca do CARTO, em 29/08/2026,
+  e agora virou incômodo real.
+
+COMO FOI RESOLVIDO: FILTRO, NÃO TROCA DE PROVEDOR
+  Os ladrilhos continuam sendo os do Esri. O que muda é um filtro de cor
+  aplicado no navegador. Nenhuma requisição a mais, nenhum cadastro,
+  nenhuma chave — não repete o problema da CARTO (marca d'água) nem o do
+  Stadia (401 fora do localhost).
+
+  As duas camadas recebem tratamento OPOSTO:
+    .camada-base    -> grayscale(1) brightness(.45) contrast(1.2)
+    .camada-rotulos -> brightness(1.25)
+  Sem isso os nomes de rua escureceriam junto com o fundo e sumiriam.
+
+  A classe vai no className da CAMADA (contêiner), com a regra no CSS —
+  não em estilo inline no ladrilho. Assim vale para os ladrilhos que só
+  chegam depois, ao arrastar ou dar zoom. Isso foi aprendido na prática:
+  na página de comparação a primeira tentativa aplicava estilo inline e
+  só o ladrilho já carregado ficava escuro; o resto do mapa continuava
+  claro conforme novos ladrilhos entravam.
+
+  Rota, marcadores e popups NÃO são afetados: ficam em outros painéis do
+  Leaflet (overlayPane, markerPane), fora dos contêineres filtrados.
+  Confirmado na comparação — o âmbar da rota inclusive destaca mais no
+  fundo escuro do que destacava antes.
+
+PÁGINA DE COMPARAÇÃO (antes de mexer no app)
+  Criado COMPARACAO-TEMA-MAPA.html: mapa real de Criciúma, uma rota
+  traçada e os marcadores, com botões alternando quatro estados (atual +
+  três propostas) e a foto de referência embutida ao lado, para comparar
+  lado a lado. Fica fora do Git (é material de apoio, como as capturas de
+  tela da pasta Exemplos).
+
+  Propostas apresentadas:
+    A - Azul Waze:    grayscale sepia hue-rotate(187deg) saturate(1.7)
+                      brightness(.42) contrast(1.45)  — a mais fiel
+    B - Azul suave:   mesmo azul, brightness(.5), quase sem contraste
+    C - Cinza escuro: grayscale(1) brightness(.45) contrast(1.2)
+
+  ESCOLHA DO USUÁRIO: C — escurecer sem introduzir cor.
+
+LIMITE HONESTO DO MÉTODO (dito ao usuário antes da escolha)
+  Como a origem é um mapa cinza, o filtro pinta tudo no mesmo tom. Não dá
+  para tratar parque, água e via principal com cores diferentes, como o
+  Waze faz. Isso exigiria um provedor VETORIAL (OpenFreeMap, Protomaps),
+  que é troca de stack, não ajuste de CSS. Relevante porque o usuário
+  disse ter outros planos dependendo deste layout.
+
+TESTES REALIZADOS
+  - Base real carregada, origem definida, rota de 4 paradas traçada.
+  - Zoom 14 e 16: ladrilhos escurecidos, rótulos legíveis, rota âmbar e
+    marcadores teal destacando, popup normal.
+  - Filtro conferido pelo estilo computado, nas duas camadas.
+  - Ladrilhos que chegam depois (zoom e arraste) já nascem filtrados.
+  - Console sem erros. localStorage limpo ao final.
+
+VERSÃO: fecha a v3.2 (muda o que o usuário vê).

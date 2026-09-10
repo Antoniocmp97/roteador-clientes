@@ -29,6 +29,11 @@ Exemplos/*.jpeg
 # trabalho). Ficam fora do repositório público por decisão de privacidade.
 ARQUITETURA-E-REQUISITOS.html
 
+# --- Páginas de apoio para decisão visual ---
+# Geradas para o usuário comparar propostas antes de implementar (têm a foto
+# de referência embutida). São material de trabalho, não fazem parte do app.
+COMPARACAO-*.html
+
 # --- Pontos de restauração (backups locais) ---
 # Ficam só na máquina; o Git já é o histórico oficial.
 backups/

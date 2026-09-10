@@ -251,6 +251,21 @@
   /* Rodapé com créditos dos mapas/rotas */
   footer{padding:8px 22px;border-top:1px solid var(--line);font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
   .leaflet-container{background:#0C1418;font-family:'Inter',sans-serif;}
+  /* Tema escuro do mapa (v3.2). Os ladrilhos continuam sendo os do Esri; o que
+     muda é um filtro de cor aplicado no navegador, sobre a camada inteira.
+     Motivo: o Esri Dark Gray Canvas é cinza MÉDIO e destoava do painel escuro
+     — o usuário pediu, com uma referência do modo escuro do Waze, um mapa mais
+     escuro. Foram comparados três tratamentos no mapa real (azul-marinho, azul
+     suave e este); a escolha foi escurecer sem introduzir cor.
+
+     As duas camadas recebem tratamento OPOSTO de propósito: o desenho das ruas
+     escurece, mas os rótulos (nomes de rua e bairro) são CLAREADOS — no mesmo
+     filtro eles sumiriam junto com o fundo.
+
+     Rota, marcadores e popups não são afetados: ficam em outros painéis do
+     Leaflet, fora destes contêineres. */
+  .camada-base{filter:grayscale(1) brightness(.45) contrast(1.2);}
+  .camada-rotulos{filter:brightness(1.25);}
   /* Ícones customizados dos marcadores: bolinha simples (cliente/origem) e bolinha numerada (parada na rota) */
   .brand-icon{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);}
   .brand-icon.num{width:20px;height:20px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-family:'JetBrains Mono',monospace;}
@@ -564,7 +579,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '3.1';
+const VERSAO = '3.2';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 // "#r=" é o link legível (abre em qualquer navegador); "#z=" é o comprimido.
@@ -592,11 +607,15 @@ let map = null;
 if (!modoCampoAtivo) {
   map = L.map('map', { zoomControl: true }).setView([-28.6775, -49.3697], 13);
   const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+  // className põe a classe no contêiner da camada, então o filtro do CSS vale
+  // para todos os ladrilhos — inclusive os que só chegam depois, ao arrastar
+  // ou dar zoom (foi o erro da primeira tentativa, aplicando estilo direto).
   L.tileLayer(esri + 'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '&copy; Esri &copy; OpenStreetMap contributors', maxZoom: 19, maxNativeZoom: 16
+    attribution: '&copy; Esri &copy; OpenStreetMap contributors', maxZoom: 19, maxNativeZoom: 16,
+    className: 'camada-base'
   }).addTo(map);
   L.tileLayer(esri + 'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19, maxNativeZoom: 16
+    maxZoom: 19, maxNativeZoom: 16, className: 'camada-rotulos'
   }).addTo(map);
 }
 
