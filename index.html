@@ -37,7 +37,23 @@
   #map{flex:1;min-height:0;background:#0C1418;}
 
   /* Painel lateral ("console") com os controles: upload, origem, checklist, paradas, botões */
-  .console{width:340px;background:var(--panel);border-left:1px solid var(--line);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+  /* A largura vem de uma variável para a divisória poder alterá-la sem estilo
+     inline — assim o layout empilhado das telas estreitas (media query lá
+     embaixo) continua mandando, sem precisar competir com `style=""`. */
+  .console{width:var(--painel-w, 340px);background:var(--panel);border-left:1px solid var(--line);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+  /* Divisória arrastável entre o mapa e o painel */
+  .divisor{flex:0 0 7px; cursor:col-resize; background:var(--ink);
+           display:flex; align-items:center; justify-content:center;
+           touch-action:none; /* impede o navegador de rolar a página no arraste por toque */}
+  .divisor::after{content:''; width:3px; height:34px; border-radius:2px; background:var(--line);}
+  .divisor:hover::after{background:var(--amber-dim);}
+  /* Enquanto arrasta: cursor de redimensionar em qualquer lugar da tela, sem
+     seleção de texto acidental, e o mapa deixa de receber o mouse (senão o
+     Leaflet entende o arraste como "arrastar o mapa"). */
+  body.redimensionando{cursor:col-resize; user-select:none;}
+  body.redimensionando #map{pointer-events:none;}
+  body.redimensionando .divisor::after{background:var(--amber);}
+
   .field-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;color:var(--amber-dim);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
   .field-label small{color:var(--muted);letter-spacing:0;text-transform:none;font-size:10.5px;}
   .field-label-acoes{display:flex; gap:12px;}
@@ -152,13 +168,15 @@
   .grupo-head:hover{background:#22343E;}
   .grupo-seta{color:var(--muted);font-size:10px;transition:transform .15s;flex:none;}
   .grupo.aberto .grupo-seta{transform:rotate(90deg);}
-  .grupo-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  /* Dentro de um grupo o nome pode ocupar duas linhas em vez de ser cortado:
-     camadas irmãs costumam ter prefixo igual e só o final as distingue. */
-  .grupo-umap-corpo .grupo-nome{white-space:normal; overflow:visible; line-height:1.3;}
-  .grupo-umap-corpo .grupo-head{align-items:flex-start;}
-  .grupo-umap-corpo .grupo-seta,
-  .grupo-umap-corpo .grupo-marca{margin-top:3px;}
+  /* O nome quebra linha em vez de ser cortado com "…". Medido em 08/09/2026 na
+     base real: o maior nome precisa de 438px e a caixa tinha 207px — o corte
+     comia mais da metade, justamente o final, que é o que distingue uma unidade
+     da outra ("… - EDUCAÇÃO" / "… - ASSISTENCIA SOCIAL"). Com a divisória, quem
+     tem monitor largo abre o painel e o nome cabe numa linha; quem está numa
+     tela menor lê em duas linhas, mas lê inteiro. */
+  .grupo-nome{flex:1;min-width:0;white-space:normal;line-height:1.3;overflow-wrap:anywhere;}
+  .grupo-head{align-items:flex-start;}
+  .grupo-seta, .grupo-marca, .grupo-cont{margin-top:2px;}
   .grupo-cont{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);flex:none;}
   /* Bolinha teal que acende em âmbar quando o cliente tem filial selecionada —
      assim dá para ver o que está escolhido sem abrir grupo por grupo. */
@@ -173,7 +191,7 @@
      de cabeçalho + um filete à esquerda marcando o que pertence ao grupo, que
      lê melhor do que bordas aninhadas num painel de 340px. */
   .grupo-umap{display:flex; flex-direction:column;}
-  .grupo-umap-head{display:flex; align-items:center; gap:8px; padding:9px 10px; cursor:pointer;
+  .grupo-umap-head{display:flex; align-items:flex-start; gap:8px; padding:9px 10px; cursor:pointer;
                    user-select:none; font-size:13px; font-weight:700; color:var(--text);
                    background:var(--panel-2); border:1px solid var(--line); border-radius:7px;}
   .grupo-umap-head:hover{background:#22343E;}
@@ -196,7 +214,7 @@
   .stops > *{flex:none;}
   .stop-row{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;}
   .stop-row .n{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;width:16px;flex-shrink:0;}
-  .stop-row .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .stop-row .nm{flex:1;min-width:0;white-space:normal;line-height:1.3;overflow-wrap:anywhere;}
   .stop-row button{background:none;color:var(--muted);font-size:13px;padding:2px 4px;}
   .stop-row button:hover{color:var(--text);}
   /* Paradas prioritárias (★): ficam fixas na ordem escolhida, à frente das demais */
@@ -240,6 +258,9 @@
   /* Layout empilhado (mapa em cima, painel embaixo) em telas estreitas */
   @media (max-width:760px){
     main{flex-direction:column;}
+    /* Empilhado, o painel ocupa a largura inteira: a divisória vertical perde
+       o sentido e a largura guardada é ignorada. */
+    .divisor{display:none;}
     .console{width:auto;max-height:56%;border-left:none;border-top:1px solid var(--line);}
     /* Em tela estreita o painel inteiro tem pouca altura: um checklist de 320px
        sobraria quase nada para os outros passos. Todos continuam rolando. */
@@ -377,6 +398,12 @@
 
   <main>
     <div id="map"></div>
+    <!-- Divisória arrastável: ajusta a largura do painel. Existe porque os nomes
+         de cliente da base real chegam a 58 caracteres e não cabiam nos 340px
+         fixos; em monitor Full HD dá para alargar até o nome caber numa linha,
+         em tela menor o painel fica estreito e o nome quebra em duas linhas. -->
+    <div class="divisor" id="divisor" role="separator" aria-orientation="vertical"
+         title="Arraste para ajustar a largura do painel (duplo clique volta ao padrão)"></div>
     <div class="console">
 
       <!-- Passo 1: upload do .geojson (clique abre o seletor de arquivo; também aceita arrastar-e-soltar) -->
@@ -537,7 +564,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '3.0';
+const VERSAO = '3.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 // "#r=" é o link legível (abre em qualquer navegador); "#z=" é o comprimido.
@@ -571,6 +598,91 @@ if (!modoCampoAtivo) {
   L.tileLayer(esri + 'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19, maxNativeZoom: 16
   }).addTo(map);
+}
+
+/* ---------------- Largura do painel ajustável (divisória arrastável) ----------------
+   Motivo: os nomes de camada da base real chegam a 58 caracteres. Medido na
+   base do usuário em 08/09/2026: o maior nome precisa de 438px de texto e a
+   caixa do painel de 340px dava 207px. Uma largura fixa maior não serve para
+   todo mundo — o usuário usa tanto uma TV de 1366x768 quanto monitores Full HD.
+   Então a largura vira escolha de quem usa, e fica guardada no navegador junto
+   com as outras preferências do escritório (base, origem padrão, tipos). */
+const CHAVE_LARGURA = 'hg_largura_painel';
+const LARGURA_PADRAO = 340;   // a largura que o app sempre teve
+const LARGURA_MIN = 300;      // abaixo disso os controles começam a se espremer
+const MAPA_MIN = 380;         // o mapa nunca fica menor que isso, por mais que se arraste
+
+// Máximo depende da tela: em 1366 sobra pouco, em 1920 dá para abrir bem mais.
+function larguraMaxPainel(){
+  return Math.max(LARGURA_MIN, document.documentElement.clientWidth - MAPA_MIN);
+}
+function aplicarLarguraPainel(px, salvar){
+  const v = Math.round(Math.min(Math.max(px, LARGURA_MIN), larguraMaxPainel()));
+  document.documentElement.style.setProperty('--painel-w', v + 'px');
+  if (salvar){ try{ localStorage.setItem(CHAVE_LARGURA, String(v)); }catch(e){ /* segue sem persistir */ } }
+  return v;
+}
+if (!modoCampoAtivo){
+  // Largura guardada, se houver. Vem limitada pela tela ATUAL: a largura pode
+  // ter sido escolhida no monitor Full HD e o mesmo navegador abrir depois numa
+  // tela menor, onde ela não caberia.
+  let larguraSalva = null;
+  try{ larguraSalva = parseInt(localStorage.getItem(CHAVE_LARGURA), 10); }catch(e){}
+  if (larguraSalva > 0){
+    aplicarLarguraPainel(larguraSalva, false);
+    // O mapa já foi criado acima, com a largura padrão. Sem este aviso ele
+    // continua desenhando os ladrilhos no tamanho antigo e sobra faixa preta.
+    if (map) map.invalidateSize({ animate:false });
+  }
+
+  const divisor = document.getElementById('divisor');
+  // Um único rAF pendente por vez: o mousemove dispara dezenas de vezes por
+  // segundo e o invalidateSize do Leaflet recalcula os ladrilhos a cada chamada.
+  let pendente = false;
+  const avisarMapa = () => {
+    if (pendente) return;
+    pendente = true;
+    requestAnimationFrame(() => { pendente = false; if (map) map.invalidateSize({ animate:false }); });
+  };
+
+  // pointer* cobre mouse e toque no mesmo caminho; setPointerCapture garante que
+  // o arraste continue chegando aqui mesmo com o cursor passando por cima do mapa.
+  divisor.addEventListener('pointerdown', ev => {
+    ev.preventDefault();
+    divisor.setPointerCapture(ev.pointerId);
+    document.body.classList.add('redimensionando');
+
+    const mover = e => {
+      // O painel fica à direita: a largura é o que sobra do cursor até a borda.
+      aplicarLarguraPainel(document.documentElement.clientWidth - e.clientX - 3, false);
+      avisarMapa();
+    };
+    const soltar = () => {
+      divisor.removeEventListener('pointermove', mover);
+      document.body.classList.remove('redimensionando');
+      const atual = parseInt(getComputedStyle(document.querySelector('.console')).width, 10);
+      aplicarLarguraPainel(atual, true);   // só grava ao soltar, não a cada pixel
+      if (map) map.invalidateSize({ animate:false });
+    };
+    divisor.addEventListener('pointermove', mover);
+    divisor.addEventListener('pointerup', soltar, { once:true });
+    divisor.addEventListener('pointercancel', soltar, { once:true });
+  });
+
+  // Duplo clique volta ao padrão — saída fácil de uma largura que ficou ruim.
+  divisor.addEventListener('dblclick', () => {
+    aplicarLarguraPainel(LARGURA_PADRAO, true);
+    if (map) map.invalidateSize({ animate:false });
+  });
+
+  // Janela menor (ou monitor trocado): reaplica a largura para caber no espaço
+  // de agora, sem regravar — a preferência original continua salva.
+  window.addEventListener('resize', () => {
+    let alvo = LARGURA_PADRAO;
+    try{ const g = parseInt(localStorage.getItem(CHAVE_LARGURA), 10); if (g > 0) alvo = g; }catch(e){}
+    aplicarLarguraPainel(alvo, false);
+    if (map) map.invalidateSize({ animate:false });
+  });
 }
 
 // Ícone de bolinha simples (usado para clientes e para o marcador de origem, cor varia por chamada)

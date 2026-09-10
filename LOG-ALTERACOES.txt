@@ -2270,3 +2270,97 @@ TESTES REALIZADOS (arquivo real do usuário, 23 camadas / 39 pontos)
   - Console sem erros. localStorage limpo ao final.
 
 VERSÃO: fecha a v3.0 (funcionalidade nova).
+
+--------------------------------------------------------
+[09/09/2026] v3.1 — Painel de largura ajustável e nomes sem corte
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Diminuir ou aumentar o enquadramento na tela interna, onde é
+  organizado o roteiro. Motivo: acaba ficando difícil de ler o nome do
+  cliente quando é muito longo, caso tenha outra alternativa, me avise."
+
+MEDIÇÃO ANTES DE MEXER
+  O nome da camada ficava numa caixa de 207px no primeiro nível e 193px
+  dentro de um grupo. Os nomes da base real do usuário:
+
+    PREFEITURA MUNICIPAL BALNEARIO RINCAO - ASSISTENCIA SOCIAL  438px
+    PREFEITURA MUNICIPAL NOVA VENEZA - ASSISTENCIA SOCIAL       404px
+    PREFEITURA MUNICIPAL DE COCAL DO SUL - FUNDAMENTAL          388px
+
+  Ou seja: o corte comia MAIS DA METADE do nome, e comia justamente o
+  final — que é a parte que distingue uma unidade da outra
+  ("... - EDUCAÇÃO" x "... - ASSISTENCIA SOCIAL").
+
+  Isso mudou o diagnóstico: só alargar o painel não resolveria. Para o
+  pior nome caber numa linha o painel teria que ir de 340px para ~570px,
+  o que na TV de 1366x768 do usuário deixaria o mapa espremido.
+
+DECISÃO DO USUÁRIO
+  Apresentadas 4 alternativas (quebrar linha; alargar fixo; painel
+  ajustável; esconder prefixo repetido). Escolheu o PAINEL AJUSTÁVEL,
+  acrescentando um dado que faltava: o site também será usado em
+  monitores Full HD (1920x1080), não só na TV de 1366.
+
+  Esse dado é o que decide a questão — largura fixa nenhuma serve para as
+  duas telas ao mesmo tempo. Em 1920 dá para abrir o painel até o nome
+  inteiro caber numa linha; em 1366 não daria.
+
+O QUE FOI FEITO
+  1. Divisória arrastável entre o mapa e o painel (7px, cursor de
+     redimensionar). A largura escolhida fica guardada no navegador em
+     'hg_largura_painel', junto com as outras preferências do escritório.
+     Duplo clique na divisória volta ao padrão de 340px.
+
+     Limites: mínimo 300px de painel (abaixo disso os controles se
+     espremem) e o mapa nunca fica menor que 380px, por mais que se
+     arraste. O máximo é calculado pela tela ATUAL, então uma largura
+     escolhida no monitor grande é reduzida sozinha ao abrir numa tela
+     menor — sem apagar a preferência original.
+
+  2. O nome do cliente deixou de ser cortado com "…" e passou a quebrar
+     linha, tanto no checklist quanto na lista de paradas da viagem. Com
+     o painel estreito o nome ocupa duas ou três linhas, mas aparece
+     inteiro; com o painel largo cabe numa linha só.
+
+DETALHES DE IMPLEMENTAÇÃO
+  - A largura vai numa variável CSS (--painel-w), não em style inline.
+    Assim o layout empilhado das telas estreitas (media query) continua
+    mandando sem precisar competir com estilo inline. Em tela estreita a
+    divisória some e a largura guardada é ignorada, de propósito.
+  - Eventos pointer* (não mouse*): o mesmo caminho serve para mouse e
+    para toque. setPointerCapture mantém o arraste funcionando mesmo com
+    o cursor passando por cima do mapa; #map ganha pointer-events:none
+    durante o arraste, senão o Leaflet entende o gesto como "arrastar o
+    mapa".
+  - map.invalidateSize() é chamado a cada quadro (requestAnimationFrame)
+    durante o arraste, não a cada mousemove — o mousemove dispara dezenas
+    de vezes por segundo e cada invalidateSize recalcula os ladrilhos.
+  - A largura só é GRAVADA ao soltar o mouse, não a cada pixel.
+
+DEFEITO ENCONTRADO NO PRÓPRIO TESTE
+  Na primeira versão, ao restaurar a largura salva no carregamento da
+  página eu não avisava o Leaflet. O mapa já tinha sido criado com a
+  largura padrão e continuava desenhando os ladrilhos no tamanho antigo —
+  sobrava faixa preta na lateral. Corrigido com um invalidateSize logo
+  depois da restauração. Só apareceu porque o teste incluiu recarregar a
+  página com uma largura já salva.
+
+TESTES REALIZADOS (base real, 23 camadas / 39 pontos)
+  - Arraste real com o mouse: 340 -> 542px, mapa acompanhou.
+  - Limite máximo: arrastando tudo para a esquerda parou em 885px numa
+    janela de 1265px (= janela - 380 de mapa). Mínimo: parou em 300px.
+  - Duplo clique voltou para 340px e gravou.
+  - Recarregando a página com 520px salvos: voltou em 520px, com o mapa
+    no tamanho certo (Leaflet 738px = DOM 738px, 24 ladrilhos).
+  - Nomes: com painel de 542px, ZERO nomes cortados (dois maiores em duas
+    linhas, o resto em uma). Simulando 1920x1080 com painel de 600px,
+    todos os 23 nomes couberam em UMA linha, incluindo o de 58
+    caracteres, e o mapa ainda ficou com 1298px.
+  - Lista de paradas (passo 4): nomes completos, sem corte e sem rolagem
+    horizontal no painel.
+  - Tela estreita (375x812): divisória escondida, painel ocupando a
+    largura toda, largura salva ignorada, sem rolagem horizontal.
+  - Console sem erros. localStorage limpo ao final.
+
+VERSÃO: fecha a v3.1 (funcionalidade nova).

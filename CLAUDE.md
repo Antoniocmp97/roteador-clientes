@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 08/09/2026 — v3.0 (base ordenada alfabeticamente)
+> **Última atualização:** 09/09/2026 — v3.1 (painel de largura ajustável)
 
 ---
 
@@ -36,6 +36,13 @@ sem dependências instaladas. Abre direto no navegador.
 - **Base ordenada alfabeticamente** ao carregar, nos três níveis, com
   `Intl.Collator('pt-BR')` — acentos e cedilha entram no lugar certo. A ordem da
   rota não é afetada: quem decide a sequência da viagem é a otimização
+- **Painel de largura ajustável**: a divisória entre o mapa e o painel é
+  arrastável e a largura escolhida fica guardada no navegador (duplo clique
+  volta ao padrão). Existe porque o mesmo site é usado numa TV de 1366x768 e
+  em monitores Full HD — nenhuma largura fixa serve para as duas
+- **Nome do cliente nunca é cortado**: quebra em duas ou três linhas quando o
+  painel está estreito, em vez de terminar em "…" (o final do nome é justamente
+  o que distingue uma unidade da outra)
 - **Busca no checklist** (Fase 3): filtra por nome do cliente ou da filial;
   grupos com resultado abrem sozinhos durante a busca
 - **Base guardada no navegador** (Fase 3): depois de carregar o `.umap` uma vez,
@@ -239,8 +246,8 @@ repositório é público (ver `.gitignore`).
   exigiria trocar o Nominatim por um serviço com base própria de endereços
   brasileiros (Google, Mapbox), com cadastro e chave de acesso.
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
-  origem padrão, a lista de tipos de serviço, a preferência de formato do link
-  e o progresso do modo campo. **Não** ficam salvos:
+  origem padrão, a lista de tipos de serviço, a preferência de formato do link,
+  a largura do painel e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
   recarregar a página zera essa parte, de propósito (é o roteiro do dia, não
   configuração). Nada disso sai da máquina de quem usa.
@@ -315,6 +322,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 22 | **v2.8** — Marcação de prioridade passa a aparecer também na tela do campo |
 | 23 | **v2.9** — Grupos do uMap: leitura das camadas aninhadas (que sumiam em silêncio) e cascata de três níveis no checklist |
 | 24 | **v3.0** — Base ordenada alfabeticamente ao carregar, nos três níveis, com ordenação ciente de acentos |
+| 25 | **v3.1** — Divisória arrastável entre mapa e painel, com a largura guardada; nomes longos passam a quebrar linha em vez de serem cortados |
 
 ---
 
@@ -381,7 +389,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.0:  0 / 5
+Leves acumuladas desde a v3.1:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -429,3 +437,4 @@ os backups locais são conveniência, não garantia.
 | 2.8 | 06/09/2026 | Estrela de prioridade também no modo campo (formato do link v6) |
 | 2.9 | 08/09/2026 | Grupos do uMap: Grupo → Camada → Unidades no checklist |
 | 3.0 | 08/09/2026 | Ordenação alfabética da base nos três níveis |
+| 3.1 | 09/09/2026 | Painel de largura ajustável (medido: nome de 438px numa caixa de 207px) |
