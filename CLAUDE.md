@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 09/09/2026 — v3.5 (localização com margem de erro à mostra)
+> **Última atualização:** 09/09/2026 — v3.6 (localização com duas tentativas)
 
 ---
 
@@ -73,6 +73,10 @@ sem dependências instaladas. Abre direto no navegador.
   navegador devolve e, acima de 100 m, desenha o círculo de incerteza no mapa e
   avisa que a posição é estimada. Nos dois casos o endereço é buscado de volta e
   aparece no campo, para dar para conferir onde o ponto caiu
+- **Localização em duas tentativas** (v3.6): primeiro pede a posição precisa com
+  pouco tempo de espera; se não vier, pede de novo sem exigir GPS, com mais tempo
+  e aceitando uma posição recente. Sem isso o botão simplesmente falha em
+  computador de mesa — foi o que a v3.5 causou
 - **Origem padrão salva** no navegador: definida uma vez, volta pronta a cada
   abertura — a operação sai quase sempre do mesmo lugar
 - Checklist de seleção de quais clientes visitar na viagem
@@ -334,10 +338,14 @@ repositório é público (ver `.gitignore`).
   segundo. Volume alto de geocodificação exige alternativa.
 - **A localização do navegador (📍) pode cair longe.** Em computador sem GPS, o
   navegador estima pela rede — e sem Wi-Fi conhecido, cai na estimativa por IP,
-  que erra por quilômetros. Isso é do navegador, não do app: nenhuma opção da
-  API muda o resultado além de `enableHighAccuracy`, que já é usado. O que o app
-  faz é **mostrar a margem**, desenhar o círculo de incerteza e apontar o 🎯
-  como caminho exato.
+  que erra por quilômetros. Isso é do navegador, não do app. O que o app faz é
+  **mostrar a margem**, desenhar o círculo de incerteza e apontar o 🎯 como
+  caminho exato.
+
+  ⚠️ `enableHighAccuracy: true` **sozinho piora**: o navegador passa a esperar
+  por um GPS que o computador não tem e devolve ERRO no fim do tempo limite, em
+  vez da posição pela rede que entregaria na hora. Por isso o pedido é feito em
+  duas etapas (v3.6). Não trocar por uma chamada única.
 - **Número de casa não funciona na busca de endereço.** Não é limitação do código:
   o OpenStreetMap tem pouquíssimos endereços numerados na região (verificado em
   06/09/2026 — apenas 122 em toda a área central de Criciúma). Digitar
@@ -427,6 +435,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 27 | **v3.3** — Modo noturno para o app inteiro (interruptor nas duas telas), tema claro completo e véu no lugar do contraste que manchava o mapa |
 | 28 | **v3.4** — Definição do mapa escuro: clarear → contrastar → escurecer, batendo com a referência do usuário. Corrige a medição errada que guiou a v3.3 |
 | 29 | **v3.5** — Origem passa a enquadrar o mapa; margem de erro da geolocalização informada, com círculo de incerteza e endereço de conferência |
+| 30 | **v3.6** — Correção: a v3.5 quebrou o botão de localização em computador de mesa ao exigir GPS. Passa a tentar duas vezes, caindo para a rede |
 
 ---
 
@@ -493,7 +502,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.5:  0 / 5
+Leves acumuladas desde a v3.6:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -546,3 +555,4 @@ os backups locais são conveniência, não garantia.
 | 3.3 | 09/09/2026 | Modo noturno no app inteiro + véu no mapa (definição caiu para 8 — corrigido na v3.4) |
 | 3.4 | 09/09/2026 | Definição do mapa escuro igual à da referência (8 → 45) |
 | 3.5 | 09/09/2026 | Origem enquadra o mapa; margem de erro da localização à mostra |
+| 3.6 | 09/09/2026 | Correção da v3.5: localização em duas tentativas (exigir GPS quebrava o botão) |

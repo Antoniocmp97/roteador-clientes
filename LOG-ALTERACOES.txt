@@ -2727,3 +2727,60 @@ TESTES REALIZADOS
   - Console sem erros. localStorage limpo ao final.
 
 VERSÃO: fecha a v3.5 (correção de comportamento).
+
+--------------------------------------------------------
+[09/09/2026] v3.6 — Correção: a v3.5 quebrou o botão de localização
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Acho que bugou, testei no Edge e no Brave, nenhum conseguiu puxar a
+  localização, antes funcionava."
+
+REGRESSÃO MINHA, DA VERSÃO ANTERIOR
+  Na v3.5 eu acrescentei opções ao pedido de geolocalização:
+
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+
+  Parecia melhoria. É armadilha em computador de mesa:
+
+  - enableHighAccuracy manda o navegador usar a fonte PRECISA. Em celular
+    isso é o GPS; em computador sem GPS, o navegador fica esperando uma
+    fonte que não existe.
+  - com timeout, essa espera termina em ERRO (código 3) em vez de cair
+    sozinha para a estimativa de rede.
+  - maximumAge 0 ainda proíbe usar uma posição que o navegador já tinha
+    calculado há pouco.
+
+  Antes da v3.5 não havia opção nenhuma: o navegador entregava a posição
+  de rede na hora. Ou seja, eu troquei "posição imprecisa, mas na hora"
+  por "erro". Nos dois navegadores do usuário, o botão parou de funcionar.
+
+CORREÇÃO: DUAS TENTATIVAS
+  1ª — enableHighAccuracy true, timeout 6 s, maximumAge 0.
+       Serve para quem tem GPS (celular) ou Wi-Fi bem conhecido.
+  2ª — só se a primeira falhar: enableHighAccuracy false, timeout 20 s,
+       maximumAge 5 min. É o comportamento antigo, que funcionava.
+
+  Exceção: permissão negada (código 1) NÃO repete — a segunda tentativa
+  levaria à mesma recusa. Só tempo esgotado (3) e posição indisponível
+  (2) caem para a segunda.
+
+  Enquanto a segunda roda, o status diz "Sem GPS por perto; tentando pela
+  rede...", para não parecer travado.
+
+  A mensagem do código 2 passou a dizer que em computador sem GPS isso é
+  comum — antes soava como defeito do app.
+
+TESTES REALIZADOS (cinco caminhos, com a API simulada e contagem de chamadas)
+  - GPS responde de primeira: 1 chamada, "margem de 18 m".
+  - Primeira estoura o tempo (código 3): 2 chamadas, posição de rede com
+    2,4 km de margem, círculo de incerteza desenhado.
+  - Primeira devolve indisponível (código 2): 2 chamadas, posição obtida.
+  - Permissão negada (código 1): 1 chamada só — confirmado que NÃO repete.
+  - As duas falham: 2 chamadas e mensagem final explicando o caminho.
+
+  Observação: no navegador de teste a permissão está negada por padrão
+  (a API responde código 1 em 5 ms), então a verificação com posição real
+  fica com o usuário.
+
+VERSÃO: fecha a v3.6 (correção de regressão).
