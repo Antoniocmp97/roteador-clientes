@@ -1370,7 +1370,13 @@ document.getElementById('buscaClientes').addEventListener('input', e => {
 document.getElementById('selectAllBtn').onclick = () => {
   const allSelected = stops.length === clientPoints.length && clientPoints.length > 0;
   if (allSelected) clientPoints.forEach(c => c.prioritaria = false); // limpar seleção limpa a prioridade também
-  stops = allSelected ? [] : [...clientPoints];
+  // Ao marcar todos, as paradas já escolhidas ficam como estavam (inclusive a
+  // ordem que o escritório deu a elas) e as que faltavam entram depois. Antes a
+  // lista inteira era trocada pela ordem da base, e uma ★ ia parar no meio das
+  // demais — o título "Prioritárias" ficava em cima de uma parada comum e
+  // "Traçar nesta ordem" visitava a prioritária fora da vez (achado em 10/09/2026).
+  if (allSelected) stops = [];
+  else { stops = [...stops, ...clientPoints.filter(c => !stops.includes(c))]; reordenarPorPrioridade(); }
   renderChecklist();
   renderStopsList();
 };
