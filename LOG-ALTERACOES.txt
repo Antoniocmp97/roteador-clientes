@@ -2897,3 +2897,48 @@ LIÇÃO REGISTRADA NO CLAUDE.md (seção 7)
   Não mexer nesse botão sem testar numa máquina real do usuário.
 
 VERSÃO: v3.7 (correção — desfaz o que as v3.5 e v3.6 quebraram).
+
+--------------------------------------------------------
+[10/09/2026] Documentação — botão de localização confirmado (leve 1/5)
+--------------------------------------------------------
+
+O QUE O USUÁRIO ESCLARECEU
+  O que ele quer do 📍: qualquer pessoa que abrir o link (ex.: 10 clientes)
+  aperta o botão e o app pega a localização ATUAL daquela pessoa, sem nada
+  salvo. A "origem padrão salva" não atende esse caso.
+
+TESTES QUE FECHARAM A INVESTIGAÇÃO
+  - Celular do usuário, v3.7: posição real, a poucas quadras de onde ele
+    estava. O botão funciona.
+  - Computadores do usuário (casa e trabalho), linha colada direto no
+    console, sem código do app no meio:
+      -28.6789 -49.3695 margem (m): 50000
+    Esse ponto fica a 30 m do centroide de Criciúma no OpenStreetMap e a
+    2,8 km de onde o usuário estava. O navegador só sabe a cidade.
+    Permissões do Windows e do site conferidas por print: todas liberadas.
+  - Histórico: em todas as versões até a v3.4 o 📍 escrevia "Minha
+    localização" no campo — nunca nome de rua. O nome exato da rua vinha
+    do 🎯 e da origem padrão salva.
+  - Linha do tempo: o primeiro relato aconteceu com a v3.4 publicada, cujo
+    botão é idêntico ao da v2.5 (conferido por diff). A precisão dos
+    computadores caiu ANTES de qualquer mudança minha no botão.
+
+CORRIGIDO NO CLAUDE.md (seção 7)
+  Eu tinha escrito que a margem de 50 km era "só o pior caso" e que o ponto
+  servia. Estava errado — o erro era real (2,8 km). Texto reescrito com os
+  fatos confirmados.
+
+PRIVACIDADE
+  Conferido que nenhum endereço pessoal do usuário aparece em arquivo
+  versionado nem no histórico do git (o repositório é público). Esta
+  entrada fala só em distâncias, de propósito.
+
+NADA MUDOU NO CÓDIGO.
+
+PENDENTE COM O USUÁRIO
+  - Aviso para aparelhos que só informam a cidade (margem > 10 km).
+  - Wi-Fi ligado nos dois computadores? (o Windows se localiza pelas redes
+    Wi-Fi em volta).
+  - Endereço aparece em inglês no celular: as chamadas ao Nominatim não
+    pedem idioma, e ele responde no idioma do aparelho. Correção seria
+    acrescentar accept-language=pt-BR nas duas chamadas.

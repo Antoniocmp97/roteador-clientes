@@ -334,12 +334,23 @@ repositório é público (ver `.gitignore`).
   (auto-hospedadas, gratuitas) ou API paga (Mapbox Directions, Google Directions).
 - **Nominatim** tem política de uso justo — limite aproximado de 1 requisição por
   segundo. Volume alto de geocodificação exige alternativa.
-- **A posição do 📍 vem do navegador**, e em computador sem GPS ela é estimada
-  pela rede. Nas duas máquinas do usuário o navegador declara **~50 km de
-  margem** — e mesmo assim o botão da v2.5 funcionava para ele. A margem
-  declarada é o **pior caso**, não o erro real. Por isso o app não decide nada
-  pela margem: quem confere é o usuário, pelo endereço que aparece no campo, e
-  o 🎯 continua sendo o caminho exato.
+- **A posição do 📍 vem do navegador de quem aperta o botão**, e a precisão é
+  a do aparelho — nenhum código de página consegue mais do que isso.
+  Confirmado em 10/09/2026:
+  - **celular** (v3.7): posição real, a poucas quadras de onde o usuário estava.
+    O botão funciona;
+  - **os dois computadores do usuário** (Edge e Brave, permissões do Windows e
+    do site todas liberadas): o próprio navegador, testado direto no console
+    sem nenhum código do app, devolve o **centro de Criciúma com 50 km de
+    margem**. É localização por cidade, não posição — o ponto caiu a 30 m do
+    centroide da cidade no OpenStreetMap e a 2,8 km de onde o usuário estava.
+
+  ⚠️ Correção de uma conclusão minha anterior: cheguei a escrever aqui que a
+  margem de 50 km era "só o pior caso" e que o ponto servia. Estava errado — o
+  erro era real. E o primeiro relato do problema aconteceu com a **v3.4**, cujo
+  botão era idêntico ao da v2.5: a precisão caiu antes de qualquer mudança no
+  código. Causa provável nos computadores: o Windows se localiza pelas redes
+  Wi-Fi em volta; sem Wi-Fi ligado, sobra a estimativa pela internet.
 
   ⚠️ Lições das v3.5–v3.7, para não repetir:
   - `enableHighAccuracy: true` num computador sem GPS faz o navegador esperar
@@ -510,7 +521,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.7:  0 / 5
+Leves acumuladas desde a v3.7:  1 / 5
 ```
 
 ### Onde o número aparece
