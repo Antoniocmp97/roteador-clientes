@@ -301,10 +301,38 @@
   .empty-hint{font-size:12px;color:var(--muted);font-style:italic;}
 
   /* Lista ordenável das paradas selecionadas (ordem da viagem) */
-  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;}
+  /* position:relative: o indicador de "vai cair aqui" do arraste é posicionado
+     dentro da lista, e precisa rolar junto com ela. */
+  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;position:relative;}
   .stops > *{flex:none;}
   .stop-row{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;}
   .stop-row .n{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;width:16px;flex-shrink:0;}
+
+  /* Arrastar para reordenar (v3.8), como nas listas do celular.
+     O arraste começa só pela ALÇA, não pela linha inteira: no celular, o resto
+     da linha continua rolando a lista com o dedo. touch-action:none é o que
+     impede o navegador de tratar o arraste na alça como rolagem da página.
+     A alça é desenhada em CSS (pontinhos), e não com um caractere, porque os
+     símbolos de "arrastar" não existem em todas as fontes do Windows. */
+  .stop-row .alca{flex:none; align-self:stretch; display:flex; align-items:center;
+                  padding:0 5px; margin:-7px 0 -7px -5px; cursor:grab;
+                  touch-action:none; user-select:none; -webkit-user-select:none;}
+  .stop-row .alca::before{content:''; width:9px; height:15px; opacity:.65;
+                  background-image:radial-gradient(circle, var(--muted) 1.3px, transparent 1.6px);
+                  background-size:4.5px 5px;}
+  .stop-row .alca:hover::before{opacity:1;}
+  /* No dedo, alvo maior */
+  @media (pointer:coarse){ .stop-row .alca{padding:0 10px; margin-left:-9px;} }
+  /* A linha "levantada" que acompanha o ponteiro. As demais NÃO se mexem
+     durante o arraste — quem mostra o destino é o indicador âmbar. Mexer nas
+     outras mudaria as posições que servem de referência e a linha ficaria
+     pulando para frente e para trás na divisa entre duas paradas. */
+  .stop-row.arrastando{position:relative; z-index:5; border-color:var(--amber);
+                       box-shadow:0 6px 18px var(--sombra);}
+  .indicador-soltar{position:absolute; left:2px; right:2px; height:2px; border-radius:1px;
+                    background:var(--amber); pointer-events:none; list-style:none; z-index:6;}
+  body.arrastando-parada, body.arrastando-parada *{cursor:grabbing !important;}
+  body.arrastando-parada{user-select:none; -webkit-user-select:none;}
   .stop-row .nm{flex:1;min-width:0;white-space:normal;line-height:1.3;overflow-wrap:anywhere;}
   .stop-row button{background:none;color:var(--muted);font-size:13px;padding:2px 4px;}
   .stop-row button:hover{color:var(--text);}
@@ -691,7 +719,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '3.7';
+const VERSAO = '3.8';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1398,7 +1426,8 @@ document.getElementById('tipoNovoInput').addEventListener('keydown', e => {
 });
 
 // Redesenha a lista numerada de paradas (seção 4) a partir de `stops`, na ordem atual do array.
-// Cada linha tem botões ▲/▼ (troca de posição com o vizinho) e ✕ (remove da viagem)
+// Cada linha tem a alça de arraste (⋮⋮), botões ▲/▼ (troca de posição com o
+// vizinho) e ✕ (remove da viagem)
 // Mantém o invariante da lista: as paradas prioritárias sempre ficam à frente das
 // demais, preservando a ordem relativa dentro de cada bloco (filter é estável).
 function reordenarPorPrioridade(){
@@ -1412,9 +1441,10 @@ function renderStopsList(){
   list.innerHTML = '';
 
   const temPrioritaria = stops.some(s => s.prioritaria);
-  const cabecalho = txt => {
+  const cabecalho = (txt, bloco) => {
     const li = document.createElement('li');
     li.className = 'stop-grupo';
+    li.dataset.bloco = bloco; // o arraste usa para achar a divisa entre os blocos
     li.textContent = txt;
     return li;
   };
@@ -1422,9 +1452,9 @@ function renderStopsList(){
   stops.forEach((s, i) => {
     // Os dois cabeçalhos só aparecem quando existe alguma prioritária — sem isso
     // a lista fica igual ao que sempre foi, sem poluir a tela de quem não usa
-    if (temPrioritaria && i === 0) list.appendChild(cabecalho('Prioritárias · nesta ordem'));
+    if (temPrioritaria && i === 0) list.appendChild(cabecalho('Prioritárias · nesta ordem', 'prioritarias'));
     if (temPrioritaria && !s.prioritaria && stops[i-1] && stops[i-1].prioritaria){
-      list.appendChild(cabecalho('Demais · o app otimiza'));
+      list.appendChild(cabecalho('Demais · o app otimiza', 'demais'));
     }
 
     const li = document.createElement('li');
@@ -1433,12 +1463,13 @@ function renderStopsList(){
     // podem se chamar "CENTRAL" ou "MATRIZ", e a lista precisa ficar sem ambiguidade
     const sub = s.cliente ? `<span class="nm-cli">${escaparHtml(s.cliente)}</span>` : '';
     const tag = s.tipo ? `<span class="nm-tipo">${escaparHtml(s.tipo)}</span>` : '';
-    li.innerHTML = `<span class="n">${i+1}</span><span class="nm">${escaparHtml(s.name)}${sub}${tag}</span>
+    li.innerHTML = `<span class="alca" title="Arraste para mudar a ordem" aria-hidden="true"></span><span class="n">${i+1}</span><span class="nm">${escaparHtml(s.name)}${sub}${tag}</span>
       <button data-act="fixar" class="btn-fixar" title="${s.prioritaria ? 'Tirar da prioridade' : 'Marcar como prioritária'}">${s.prioritaria ? '★' : '☆'}</button>
       <button data-act="up" title="Mover para cima">▲</button>
       <button data-act="down" title="Mover para baixo">▼</button>
       <button data-act="rm" title="Remover">✕</button>`;
 
+    li.querySelector('.alca').addEventListener('pointerdown', ev => iniciarArraste(ev, i, li));
     li.querySelector('[data-act=fixar]').onclick = () => {
       s.prioritaria = !s.prioritaria;
       reordenarPorPrioridade();
@@ -1459,6 +1490,133 @@ function renderStopsList(){
     };
     list.appendChild(li);
   });
+}
+
+/* ---------------- Arrastar para reordenar (v3.8) ----------------
+   Pedido do usuário: mover uma parada como nas listas do celular — da terceira
+   posição para a primeira, ou o contrário — em vez de só uma casa por vez com
+   as setas (que continuam, para o ajuste fino).
+
+   REGRA DOS BLOCOS, decidida pelo usuário: a parada fica EXATAMENTE onde foi
+   solta. Soltou no bloco das prioritárias, vira ★; soltou uma ★ no bloco das
+   demais, perde a estrela. Na divisa exata entre os dois blocos, mantém o que
+   era — senão mexer uma parada até a ponta do próprio bloco a trocaria de
+   bloco sem querer. Sem nenhuma prioritária na lista, arrastar só reordena:
+   não existe bloco de prioridade para cair dentro.
+
+   Durante o arraste só a linha arrastada se mexe; o destino é mostrado por um
+   indicador âmbar. A lista (`stops`) só é alterada ao soltar. */
+function iniciarArraste(ev, indice, linha){
+  if (ev.button !== 0) return;       // só o botão principal do mouse (no toque, é sempre 0)
+  if (stops.length < 2) return;
+  ev.preventDefault();
+
+  const lista = document.getElementById('stopsList');
+  const alca = ev.currentTarget;
+  // Captura: o arraste continua chegando aqui mesmo com o ponteiro fora da alça
+  try{ alca.setPointerCapture(ev.pointerId); }catch(e){ /* evento sintético, sem ponteiro real */ }
+
+  const arrastada = stops[indice];
+  const outras = stops.filter((_, j) => j !== indice);
+  const p = outras.filter(s => s.prioritaria).length;   // as prioritárias são sempre um prefixo
+  const haPrioridade = stops.some(s => s.prioritaria);
+  const linhasOutras = [...lista.querySelectorAll('.stop-row')].filter(el => el !== linha);
+
+  // `slot`: em que posição, entre as OUTRAS paradas, a arrastada vai entrar.
+  // Começa na posição de onde saiu — soltar sem mexer não muda nada.
+  let slot = indice;
+  const prioridadeNoSlot = k =>
+    !haPrioridade ? false : k < p ? true : k > p ? false : !!arrastada.prioritaria;
+
+  const inicioY = ev.clientY, inicioScroll = lista.scrollTop;
+  let ponteiroY = ev.clientY;
+
+  linha.classList.add('arrastando');
+  document.body.classList.add('arrastando-parada');
+  const indicador = document.createElement('li');
+  indicador.className = 'indicador-soltar';
+  lista.appendChild(indicador);
+
+  // Elemento anterior de verdade, pulando a linha arrastada e o indicador
+  const anteriorDe = el => {
+    let a = el.previousElementSibling;
+    while (a && (a === linha || a === indicador)) a = a.previousElementSibling;
+    return a;
+  };
+
+  const atualizar = () => {
+    // A linha acompanha o ponteiro, compensando a rolagem automática da lista
+    linha.style.transform = `translateY(${ponteiroY - inicioY + lista.scrollTop - inicioScroll}px)`;
+    // Cai antes da primeira outra parada cujo meio ainda está abaixo do ponteiro
+    slot = linhasOutras.filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.top + r.height / 2 < ponteiroY;
+    }).length;
+
+    let y;
+    if (slot < linhasOutras.length){
+      let ref = linhasOutras[slot];
+      // Na divisa, o indicador fica do lado do cabeçalho "Demais" que
+      // corresponde ao destino: acima dele se vai continuar prioritária.
+      const ant = anteriorDe(ref);
+      if (ant && ant.dataset.bloco === 'demais' && prioridadeNoSlot(slot)) ref = ant;
+      y = ref.offsetTop - 4;
+    } else {
+      const ultima = linhasOutras[linhasOutras.length - 1];
+      y = ultima.offsetTop + ultima.offsetHeight + 2;
+    }
+    indicador.style.top = Math.max(0, y) + 'px';
+  };
+
+  // Rolagem automática: segurando perto da borda de cima/baixo da lista, ela
+  // rola sozinha — a lista tem altura limitada e o destino pode estar fora da vista.
+  let ativo = true;
+  const rolar = () => {
+    if (!ativo) return;
+    const r = lista.getBoundingClientRect(), zona = 28;
+    let d = 0;
+    if (ponteiroY < r.top + zona)         d = -Math.min(12, Math.ceil((r.top + zona - ponteiroY) / 3));
+    else if (ponteiroY > r.bottom - zona) d =  Math.min(12, Math.ceil((ponteiroY - (r.bottom - zona)) / 3));
+    if (d){
+      const antes = lista.scrollTop;
+      lista.scrollTop += d;
+      if (lista.scrollTop !== antes) atualizar();
+    }
+    requestAnimationFrame(rolar);
+  };
+  requestAnimationFrame(rolar);
+
+  const mover = e => { ponteiroY = e.clientY; atualizar(); };
+  const teclado = e => { if (e.key === 'Escape') terminar(false); }; // Esc cancela
+  const soltar = () => terminar(true);
+  const cancelar = () => terminar(false);
+
+  function terminar(aplicar){
+    if (!ativo) return;
+    ativo = false;
+    alca.removeEventListener('pointermove', mover);
+    alca.removeEventListener('pointerup', soltar);
+    alca.removeEventListener('pointercancel', cancelar);
+    document.removeEventListener('keydown', teclado);
+    indicador.remove();
+    linha.classList.remove('arrastando');
+    linha.style.transform = '';
+    document.body.classList.remove('arrastando-parada');
+    if (!aplicar) return;
+
+    const novaPrioridade = prioridadeNoSlot(slot);
+    if (slot === indice && novaPrioridade === !!arrastada.prioritaria) return; // não saiu do lugar
+    arrastada.prioritaria = novaPrioridade;
+    stops = [...outras.slice(0, slot), arrastada, ...outras.slice(slot)];
+    reordenarPorPrioridade(); // garantia: pela regra acima já sai em ordem
+    renderStopsList();
+  }
+
+  alca.addEventListener('pointermove', mover);
+  alca.addEventListener('pointerup', soltar);
+  alca.addEventListener('pointercancel', cancelar);
+  document.addEventListener('keydown', teclado);
+  atualizar();
 }
 
 /* ---------------- Origin ---------------- */

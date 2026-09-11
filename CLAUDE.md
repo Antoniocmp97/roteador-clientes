@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 10/09/2026 — v3.7 (botão de localização volta à lógica da v2.5)
+> **Última atualização:** 10/09/2026 — v3.8 (arrastar para reordenar paradas)
 
 ---
 
@@ -78,7 +78,12 @@ sem dependências instaladas. Abre direto no navegador.
 - **Origem padrão salva** no navegador: definida uma vez, volta pronta a cada
   abertura — a operação sai quase sempre do mesmo lugar
 - Checklist de seleção de quais clientes visitar na viagem
-- Lista de paradas reordenável manualmente (setas ▲▼ e remoção)
+- Lista de paradas reordenável manualmente: **arrastando pela alça** (⋮⋮), como
+  nas listas do celular (v3.8), ou pelas setas ▲▼ para mover uma casa; e remoção.
+  Soltar uma parada no bloco das prioritárias a torna ★; soltar uma ★ entre as
+  demais tira a estrela. Na divisa exata entre os blocos ela mantém o que era.
+  Esc cancela o arraste. O arraste começa só pela alça, então no celular o resto
+  da linha continua rolando a lista
 - **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
   escolhida, e "Otimizar ordem" reordena só as demais — para quando é preciso
   passar num lugar antes do resto do roteiro
@@ -455,6 +460,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 29 | **v3.5** — Origem passa a enquadrar o mapa; margem de erro da geolocalização informada, com círculo de incerteza e endereço de conferência |
 | 30 | **v3.6** — Correção: a v3.5 quebrou o botão de localização em computador de mesa ao exigir GPS. Passa a tentar duas vezes, caindo para a rede |
 | 31 | **v3.7** — Botão de localização volta à lógica da v2.5 (aceita a posição do navegador); ficam só o enquadramento no pino e o endereço de conferência. Desfaz as v3.5–v3.6 |
+| 32 | **v3.8** — Arrastar para reordenar as paradas, como no celular; soltar no outro bloco muda a prioridade |
 
 ---
 
@@ -521,7 +527,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.7:  1 / 5
+Leves acumuladas desde a v3.8:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -576,3 +582,4 @@ os backups locais são conveniência, não garantia.
 | 3.5 | 09/09/2026 | Origem enquadra o mapa; margem de erro da localização à mostra |
 | 3.6 | 09/09/2026 | Correção da v3.5: localização em duas tentativas (exigir GPS quebrava o botão) |
 | 3.7 | 10/09/2026 | Botão 📍 volta à lógica da v2.5, que funcionava nas máquinas do usuário |
+| 3.8 | 10/09/2026 | Arrastar para reordenar paradas; soltar no outro bloco muda a prioridade |

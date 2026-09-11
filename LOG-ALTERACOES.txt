@@ -2942,3 +2942,64 @@ PENDENTE COM O USUÁRIO
   - Endereço aparece em inglês no celular: as chamadas ao Nominatim não
     pedem idioma, e ele responde no idioma do aparelho. Correção seria
     acrescentar accept-language=pt-BR nas duas chamadas.
+
+--------------------------------------------------------
+[10/09/2026] v3.8 — Arrastar para reordenar as paradas
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Ao selecionar as paradas (ex.: 1, 2, 3), mover como num smartphone —
+  tirar da terceira posição para a primeira, ou o contrário. Até aqui só
+  existiam as setas, que andam uma casa por vez.
+
+DECISÕES DO USUÁRIO (perguntadas antes de implementar)
+  1. Parada solta no OUTRO bloco muda a prioridade: comum solta no meio
+     das prioritárias vira estrela; estrela solta entre as demais perde a
+     estrela. A parada fica exatamente onde foi solta.
+  2. As setas continuam, para o ajuste fino de uma casa.
+
+COMO FUNCIONA
+  - Alça de pontinhos no começo de cada linha. O arraste começa SÓ por
+    ela: no celular, o resto da linha continua rolando a lista com o dedo.
+    touch-action:none na alça impede o navegador de tratar o gesto como
+    rolagem. A alça é desenhada em CSS porque os caracteres de "arrastar"
+    não existem em todas as fontes do Windows.
+  - Eventos pointer* (um caminho só para mouse e toque) com captura do
+    ponteiro, para o arraste continuar mesmo saindo da alça.
+  - Durante o arraste só a linha arrastada se mexe (acompanha o ponteiro)
+    e um traço âmbar mostra onde ela vai cair. As outras linhas ficam
+    paradas de propósito: se elas se deslocassem, as posições que servem
+    de referência mudariam junto e a linha ficaria pulando na divisa entre
+    duas paradas.
+  - A lista só é alterada ao soltar. Esc cancela; soltar sem mexer não
+    muda nada.
+  - Rolagem automática da lista ao segurar perto da borda de cima ou de
+    baixo (a lista tem altura limitada).
+
+REGRA DA DIVISA
+  Na posição exata entre o último da prioridade e o primeiro das demais,
+  a parada mantém o que era. Sem isso, levar uma parada até a ponta do
+  próprio bloco a trocaria de bloco sem querer. O traço âmbar fica acima
+  ou abaixo do cabeçalho "Demais" conforme o destino, para mostrar isso.
+  Sem nenhuma prioritária na lista, arrastar só reordena — não existe
+  bloco de prioridade para cair dentro.
+
+TESTES (base real, 4 paradas, eventos de ponteiro simulados)
+  1. Sem prioridade, 3ª para o topo: HOSPITAL | ACUO | FORQUILHINHA | CRAS.
+  2. Soltar sem mexer: nada muda.
+  3. Esc no meio do arraste: nada muda.
+  5. Comum (última) solta no topo, com uma estrela na lista: vira estrela
+     e entra em 1º.
+  6. Estrela solta no fim: perde a estrela e vai para o fim.
+  7. Comum até a divisa: continua comum; traço abaixo do cabeçalho.
+  8. Estrela até a divisa: continua estrela; traço acima do cabeçalho.
+  9. Estrela reordenada dentro do próprio bloco.
+  Em todos, nenhum resto do arraste ficou na tela. Console sem erros.
+
+LIMITE DO TESTE
+  A captura de tela não respondeu (janela do app de testes atrás de
+  outra), então o arraste com o mouse de verdade e o toque no celular
+  ficam para o usuário conferir.
+
+VERSÃO: fecha a v3.8 (funcionalidade nova). A alteração leve de
+documentação que estava no contador (1/5) entra junto nesta versão.
