@@ -2616,6 +2616,18 @@ if (!modoCampoAtivo){
 
 // Só entra no modo campo se o link realmente trouxer um roteiro
 if (modoCampoAtivo) ativarModoCampo();
+
+// O modo (escritório ou campo) é decidido uma vez só, ao carregar a página. Mas
+// abrir um link que difere apenas depois do # NÃO recarrega a página: o
+// navegador só troca o fragmento. Sem isto, o técnico com o roteiro de ontem
+// aberto que tocasse no link de hoje, na mesma aba, continuaria vendo o de
+// ontem — e colar um link de campo na aba do escritório não fazia nada
+// (achado em 10/09/2026). Recarregar faz a página decidir de novo, do zero.
+// Troca de # que não envolve roteiro, no escritório, continua sendo ignorada.
+window.addEventListener('hashchange', () => {
+  const linkDeCampo = location.hash.startsWith('#r=') || location.hash.startsWith('#z=');
+  if (linkDeCampo || modoCampoAtivo) location.reload();
+});
 </script>
 </body>
 </html>
