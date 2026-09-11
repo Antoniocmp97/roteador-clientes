@@ -54,6 +54,14 @@
   /* Reset básico + ocupa a tela inteira (necessário para o mapa em tela cheia) */
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;background:var(--ink);color:var(--text);font-family:'Inter',system-ui,sans-serif;}
+  /* O atributo hidden SEMPRE esconde. Sem esta regra, qualquer display do CSS
+     passa por cima dele (o hidden do navegador é a regra mais fraca que existe).
+     Foi o que aconteceu com a tela do campo desde a v1.0: ela tem hidden no
+     HTML, mas o .campo{display:flex} a deixava desenhada embaixo do escritório
+     — rolando até o fim da página aparecia o cabeçalho dela, como uma segunda
+     página vazia. Relatado pelo usuário em 10/09/2026, quando o interruptor de
+     modo noturno (v3.3) tornou esse cabeçalho visível o bastante para notar. */
+  [hidden]{display:none !important;}
   .app{display:flex;flex-direction:column;height:100%;min-height:640px;}
 
   /* Cabeçalho com o nome do app */
@@ -67,7 +75,6 @@
           font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;
           color:var(--muted);border:1px solid var(--line);border-radius:4px;
           padding:1px 5px;margin-left:8px;vertical-align:middle;letter-spacing:.02em;}
-  header .sub{color:var(--muted);font-size:13px;font-family:'JetBrains Mono',monospace;}
 
   /* Interruptor de modo noturno (v3.3), no padrão dos aparelhos: trilho +
      bolinha que desliza. É um <button role="switch"> de verdade, e não uma
@@ -538,7 +545,6 @@
 <div class="app">
   <header>
     <div class="mark">hagamorfis<span>/</span>rotas<span class="versao" id="versaoEscritorio"></span></div>
-    <div class="sub">roteador multi-parada · clientes</div>
     <button class="interruptor" type="button" role="switch" aria-checked="true" data-tema-btn>
       <span class="interruptor-texto">Modo noturno</span>
       <span class="interruptor-trilho"><span class="interruptor-bolinha"></span></span>
@@ -719,7 +725,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '3.9';
+const VERSAO = '4.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 

@@ -3044,3 +3044,52 @@ TESTES (base real, eventos de ponteiro simulados)
   Nenhuma sobra do arraste na tela. Console sem erros.
 
 VERSÃO: fecha a v3.9 (muda o comportamento do arraste).
+
+--------------------------------------------------------
+[10/09/2026] v4.0 — Tela do campo parou de vazar; subtítulo removido
+--------------------------------------------------------
+
+PEDIDOS DO USUÁRIO
+  1. Remover o texto "roteador multi-parada · clientes" ao lado da versão.
+  2. Bug: "no rodapé criou a espécie de uma outra página" (print enviado:
+     depois do rodapé aparecia o cabeçalho com o nome, a versão e o
+     interruptor de modo noturno, e embaixo uma área vazia).
+
+1. SUBTÍTULO
+  Removido o elemento e a regra de CSS dele (header .sub), que ficaria
+  sem uso. No cabeçalho do escritório sobram o nome com a versão e o
+  interruptor de modo noturno.
+
+2. A "OUTRA PÁGINA" ERA A TELA DO CAMPO
+  O que aparecia embaixo do rodapé era a tela do técnico (#modoCampo),
+  que deveria estar escondida no escritório.
+
+  Causa: ela tem o atributo hidden no HTML, mas o CSS declara
+  .campo{display:flex}. Qualquer display do CSS passa por cima do hidden
+  — o hidden do navegador é a regra mais fraca que existe. A tela ficava
+  desenhada embaixo do escritório, ocupando uma altura de tela inteira.
+
+  Desde quando: desde a v1.0. Conferido nos commits 2c87046 (v1.0),
+  06b9fdc (v2.5) e a0d390b (v3.4): todos com o mesmo display:flex e sem
+  nenhuma regra para o hidden valer. Só chamou atenção agora porque a
+  v3.3 pôs o interruptor de modo noturno no cabeçalho dessa tela; antes
+  aparecia só o nome do app numa área escura.
+
+  Correção: regra global [hidden]{display:none !important}, que faz o
+  atributo sempre valer. O único elemento com hidden na página é a tela
+  do campo, e o JS tira o atributo quando o link do técnico é aberto.
+
+TESTES (tela emulada em 1366x768, a da TV do usuário)
+  - Escritório, SEM a correção (regra removida temporariamente no teste):
+    página com 1536 px de altura para 768 px de tela — 768 px sobrando
+    abaixo do rodapé, ocupados pela tela do campo. É o bug relatado.
+  - Escritório, COM a correção: página com 768 px, nada abaixo do
+    rodapé, tela do campo com display none e altura 0.
+  - Link do técnico (roteiro de 2 paradas gerado pelo próprio app): tela
+    do campo aparece (display flex) com as 2 paradas e o interruptor; a
+    tela do escritório fica escondida; página com 768 px.
+  - Interruptor de modo noturno continua alternando os temas.
+  - Console sem erros. localStorage limpo ao final.
+
+VERSÃO: fecha a v4.0 (correção de bug visível ao usuário). Pela regra da
+seção 11, 3.9 + 0.1 = 4.0; não marca nenhuma fase nova do projeto.

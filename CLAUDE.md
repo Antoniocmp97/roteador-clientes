@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 10/09/2026 — v3.9 (parada arrastada é incluída no fim das prioritárias)
+> **Última atualização:** 10/09/2026 — v4.0 (tela do campo parou de vazar no escritório; subtítulo removido)
 
 ---
 
@@ -253,6 +253,23 @@ brilho só saturaria acima de 179.
 O véu e o painel exclusivo dos rótulos, criados na v3.3, foram removidos: com
 o tratamento novo eles não faziam mais nada.
 
+**Tela do campo aparecendo embaixo do escritório (10/09/2026).** Relatado pelo
+usuário como "no rodapé criou uma espécie de outra página". Rolando até o fim
+do escritório, aparecia o cabeçalho da tela do técnico com o interruptor de
+modo noturno, e depois uma área vazia.
+
+Causa: a tela do campo tem o atributo hidden no HTML, mas o CSS dela declara
+display:flex — e **qualquer display do CSS passa por cima do hidden**, que no
+navegador é a regra mais fraca que existe. Existia **desde a v1.0**
+(conferido no commit 2c87046): a página sempre teve uma segunda tela inteira
+embaixo. Ficou visível o bastante para ser notado quando a v3.3 pôs o
+interruptor no cabeçalho dessa tela.
+
+Medido numa tela de 768 px: a página tinha 1536 px — 768 px sobrando abaixo do
+rodapé. Solução na v4.0: regra global [hidden]{display:none !important}, que
+faz o atributo sempre valer. Com ela, a página tem exatamente 768 px, e o link
+do técnico continua abrindo a tela do campo normalmente (o JS tira o hidden).
+
 ---
 
 ## 6. Formato de dados esperado
@@ -464,6 +481,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 31 | **v3.7** — Botão de localização volta à lógica da v2.5 (aceita a posição do navegador); ficam só o enquadramento no pino e o endereço de conferência. Desfaz as v3.5–v3.6 |
 | 32 | **v3.8** — Arrastar para reordenar as paradas, como no celular; soltar no outro bloco muda a prioridade |
 | 33 | **v3.9** — Parada comum arrastada para as prioritárias passa a ser incluída no fim delas, em vez de só conseguir entrar à frente de todas |
+| 34 | **v4.0** — Correção: a tela do campo ficava desenhada embaixo do escritório desde a v1.0 (display do CSS vencia o hidden). Subtítulo do cabeçalho removido |
 
 ---
 
@@ -530,7 +548,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.9:  0 / 5
+Leves acumuladas desde a v4.0:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -587,3 +605,4 @@ os backups locais são conveniência, não garantia.
 | 3.7 | 10/09/2026 | Botão 📍 volta à lógica da v2.5, que funcionava nas máquinas do usuário |
 | 3.8 | 10/09/2026 | Arrastar para reordenar paradas; soltar no outro bloco muda a prioridade |
 | 3.9 | 10/09/2026 | Arrastar para as prioritárias inclui a parada no fim delas (a divisa segue o título "Demais") |
+| 4.0 | 10/09/2026 | Tela do campo parou de vazar embaixo do escritório (bug da v1.0); subtítulo do cabeçalho removido |
