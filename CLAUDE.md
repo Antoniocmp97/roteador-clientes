@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 10/09/2026 — v4.0 (tela do campo parou de vazar no escritório; subtítulo removido)
+> **Última atualização:** 10/09/2026 — v4.1 (6 correções da revisão de código)
 
 ---
 
@@ -276,6 +276,28 @@ rodapé. Solução na v4.0: regra global [hidden]{display:none !important}, que
 faz o atributo sempre valer. Com ela, a página tem exatamente 768 px, e o link
 do técnico continua abrindo a tela do campo normalmente (o JS tira o hidden).
 
+**Revisão de código completa (10/09/2026, v4.1).** A pedido do usuário, o
+index.html inteiro foi revisado atrás de bugs. Seis achados, todos corrigidos e
+testados um por um antes de passar ao próximo:
+
+1. **"Marcar todos" tirava as ★ da frente** — trocava a lista pela ordem da
+   base (reproduzido: ★ na 11ª posição de 39). Agora as já escolhidas ficam
+   como estavam, com as ★ na frente, e as que faltavam entram depois.
+2. **Botão do balão do mapa não fazia nada com a busca ativa** — ele dependia
+   do checkbox, que a busca não desenha. Agora troca direto e avisa.
+3. **Link do roteiro saía desatualizado** — mudar as paradas depois de traçar
+   não desfazia a rota: o técnico podia receber outra lista, fora da ordem
+   traçada, com km/min da viagem antiga. Nova função invalidarRota(),
+   chamada em todo ponto que muda a lista. Mudar só o tipo de serviço mantém a
+   rota e tira apenas o link já gerado.
+4. **Carregar outra base deixava os números da rota antiga no mapa** — mesma
+   função, chamada em importClients (e limpa o aviso "Rota traçada…").
+5. **Balões do mapa interpretavam símbolos como HTML** — "POSTO <CENTRO>"
+   aparecia como "POSTO ". Agora passam por escaparHtml.
+6. **Abrir outro roteiro na mesma aba não trocava a tela** — o modo era
+   decidido só ao carregar, e trocar apenas o # não recarrega. Um listener de
+   hashchange recarrega quando o # é (ou deixa de ser) um roteiro.
+
 ---
 
 ## 6. Formato de dados esperado
@@ -488,6 +510,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 32 | **v3.8** — Arrastar para reordenar as paradas, como no celular; soltar no outro bloco muda a prioridade |
 | 33 | **v3.9** — Parada comum arrastada para as prioritárias passa a ser incluída no fim delas, em vez de só conseguir entrar à frente de todas |
 | 34 | **v4.0** — Correção: a tela do campo ficava desenhada embaixo do escritório desde a v1.0 (display do CSS vencia o hidden). Subtítulo do cabeçalho removido |
+| 35 | **v4.1** — Revisão de código completa: 6 correções (marcar todos e prioridades, balão com busca, rota/link desatualizados, marcadores velhos ao trocar base, símbolos nos balões, novo roteiro na mesma aba). Inclui a remoção do rodapé |
 
 ---
 
@@ -554,7 +577,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v4.0:  1 / 5
+Leves acumuladas desde a v4.1:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -612,3 +635,4 @@ os backups locais são conveniência, não garantia.
 | 3.8 | 10/09/2026 | Arrastar para reordenar paradas; soltar no outro bloco muda a prioridade |
 | 3.9 | 10/09/2026 | Arrastar para as prioritárias inclui a parada no fim delas (a divisa segue o título "Demais") |
 | 4.0 | 10/09/2026 | Tela do campo parou de vazar embaixo do escritório (bug da v1.0); subtítulo do cabeçalho removido |
+| 4.1 | 10/09/2026 | 6 correções da revisão de código completa (ver seção 5) |

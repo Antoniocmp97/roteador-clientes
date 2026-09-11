@@ -3125,3 +3125,79 @@ TESTES (tela emulada em 1366x768)
   - Console sem erros.
 
 VERSÃO: alteração leve (texto), continua v4.0. Contador em 1/5.
+
+--------------------------------------------------------
+[10/09/2026] v4.1 — Revisão de código completa: 6 correções
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Analise o código novamente e procure por bugs, se certifique que está
+  tudo certo." Depois do relatório: "Corrija todos, um por um, só passe
+  para o próximo ao confirmar que realmente está certo."
+
+MÉTODO
+  O index.html inteiro foi lido. Cada suspeita foi confirmada no código;
+  as duas mais sérias foram reproduzidas no navegador antes de reportar.
+  Cada correção teve o próprio teste e um commit separado, e só depois
+  vinha a próxima. No fim, um teste do fluxo completo.
+
+1. "MARCAR TODOS" TIRAVA AS ★ DA FRENTE  (commit 80f605b)
+   Causa: stops = [...clientPoints] trocava a lista pela ordem da base.
+   Reproduzido: ★ na 11ª posição de 39, título "Prioritárias" em cima de
+   uma parada comum.
+   Correção: as já escolhidas ficam como estavam; as que faltavam entram
+   depois; reordenarPorPrioridade() garante as ★ na frente.
+   Teste: ★ em 1º, a outra escolhida em 2º, 39 sem repetição, um título
+   "Demais" só; desmarcar todos zera e tira as estrelas.
+
+2. BOTÃO DO BALÃO DO MAPA NÃO FAZIA NADA COM A BUSCA ATIVA  (608d65e)
+   Causa: toggleStop() dependia do checkbox, que a busca não desenha.
+   Reproduzido: busca "ACUO", balão de um ponto do BURIGOS, nada acontecia.
+   Correção: sem checkbox, a troca é feita direto (mesma regra) e o aviso
+   diz "X entrou/saiu da viagem".
+   Teste: entrou; segundo clique saiu e limpou a estrela; sem busca, o
+   caminho normal pelo checkbox continua igual.
+
+3 e 4. ROTA E LINK DESATUALIZADOS; NÚMEROS VELHOS AO TROCAR DE BASE
+   (60a2c01)
+   Causa comum: nada desfazia a rota traçada quando a lista mudava ou
+   outra base era carregada. O link saía com a lista nova e os km/min da
+   rota antiga (ultimoResumo), e as bolinhas numeradas ficavam no mapa.
+   Correção: invalidarRota() tira linha, números, resumo e seção do link
+   e zera o resumo guardado; paradasMudaram() faz isso e avisa. Chamada
+   em 7 pontos (checklist, marcar todos, estrela, setas, remover, arraste,
+   e o balão do mapa) e em importClients, que também limpa o aviso "Rota
+   traçada…". Tipo de serviço mantém a rota e tira só o link já gerado.
+   Achado durante o teste e corrigido junto: ao carregar outra base o
+   aviso "Rota traçada…" continuava na tela.
+   Testes (rota traçada de verdade): remover, arrastar, estrela, seta com
+   troca, desmarcar no checklist e balão com busca -> tudo desfeito com
+   aviso; seta sem troca -> nada muda; tipo -> rota fica, link sai;
+   otimizar -> termina com a rota na tela; outra base -> 0 marcadores
+   numerados, aviso limpo. Sem rota traçada, mexer na lista não avisa.
+
+5. BALÕES DO MAPA INTERPRETAVAM SÍMBOLOS COMO HTML  (38b3b71)
+   Causa: parada numerada, origem e endereço da busca reversa iam para o
+   Leaflet sem escaparHtml.
+   Teste: "POSTO <CENTRO> & CIA", "Rua <b>X</b> & Y" e
+   "Praça <i>Nereu</i> & Centro" aparecem exatamente assim, sem nenhuma
+   marcação interpretada.
+
+6. OUTRO ROTEIRO NA MESMA ABA NÃO TROCAVA A TELA  (202b7d1)
+   Causa: o modo é decidido só ao carregar, e trocar apenas o # não
+   recarrega a página.
+   Correção: hashchange recarrega quando o # é (ou deixa de ser) um
+   roteiro; outros # no escritório continuam ignorados.
+   Teste: escritório -> link A abriu o campo com 2 paradas; campo A ->
+   link B mostrou as 3 do B; # vazio voltou ao escritório; "#qualquer-
+   coisa" no escritório não recarregou.
+
+TESTE DO FLUXO COMPLETO
+  Base carregada, 4 paradas, ★ marcada, arraste incluindo uma parada no
+  fim das ★, otimizar (★ ficaram na frente, rota traçada), gerar link,
+  abrir no campo: ordem recebida idêntica à enviada, com a estrela, resumo
+  "4 paradas · 56.4 km · 62 min", concluir parada com confirmação -> 1/4.
+  Console sem erros. localStorage limpo ao final.
+
+VERSÃO: fecha a v4.1. A alteração leve pendente (remoção do rodapé, 1/5)
+entra junto nesta versão.
