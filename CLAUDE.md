@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 09/09/2026 — v3.6 (localização com duas tentativas)
+> **Última atualização:** 10/09/2026 — v3.7 (botão de localização volta à lógica da v2.5)
 
 ---
 
@@ -69,14 +69,12 @@ sem dependências instaladas. Abre direto no navegador.
 - **O mapa vai até a origem** assim que ela é definida pela localização ou por
   endereço (v3.5). Antes o pino era colocado sem mover o mapa: se caísse fora da
   vista, parecia que o botão não tinha feito nada
-- **Margem de erro da localização à mostra** (v3.5): o app informa a margem que o
-  navegador devolve e, acima de 100 m, desenha o círculo de incerteza no mapa e
-  avisa que a posição é estimada. Nos dois casos o endereço é buscado de volta e
-  aparece no campo, para dar para conferir onde o ponto caiu
-- **Localização em duas tentativas** (v3.6): primeiro pede a posição precisa com
-  pouco tempo de espera; se não vier, pede de novo sem exigir GPS, com mais tempo
-  e aceitando uma posição recente. Sem isso o botão simplesmente falha em
-  computador de mesa — foi o que a v3.5 causou
+- **Endereço de conferência na localização** (v3.5, mantido na v3.7): depois do
+  📍, o endereço do ponto é buscado de volta e aparece no campo de origem, para
+  dar para conferir onde o pino caiu
+- **O botão 📍 aceita a posição que o navegador devolve** (v3.7, igual à v2.5):
+  uma chamada, sem opções, sem julgar a margem. Entre a v3.5 e a v3.7 houve
+  tentativas de filtrar pela margem — todas pioraram o botão (ver seção 7)
 - **Origem padrão salva** no navegador: definida uma vez, volta pronta a cada
   abertura — a operação sai quase sempre do mesmo lugar
 - Checklist de seleção de quais clientes visitar na viagem
@@ -336,16 +334,25 @@ repositório é público (ver `.gitignore`).
   (auto-hospedadas, gratuitas) ou API paga (Mapbox Directions, Google Directions).
 - **Nominatim** tem política de uso justo — limite aproximado de 1 requisição por
   segundo. Volume alto de geocodificação exige alternativa.
-- **A localização do navegador (📍) pode cair longe.** Em computador sem GPS, o
-  navegador estima pela rede — e sem Wi-Fi conhecido, cai na estimativa por IP,
-  que erra por quilômetros. Isso é do navegador, não do app. O que o app faz é
-  **mostrar a margem**, desenhar o círculo de incerteza e apontar o 🎯 como
-  caminho exato.
+- **A posição do 📍 vem do navegador**, e em computador sem GPS ela é estimada
+  pela rede. Nas duas máquinas do usuário o navegador declara **~50 km de
+  margem** — e mesmo assim o botão da v2.5 funcionava para ele. A margem
+  declarada é o **pior caso**, não o erro real. Por isso o app não decide nada
+  pela margem: quem confere é o usuário, pelo endereço que aparece no campo, e
+  o 🎯 continua sendo o caminho exato.
 
-  ⚠️ `enableHighAccuracy: true` **sozinho piora**: o navegador passa a esperar
-  por um GPS que o computador não tem e devolve ERRO no fim do tempo limite, em
-  vez da posição pela rede que entregaria na hora. Por isso o pedido é feito em
-  duas etapas (v3.6). Não trocar por uma chamada única.
+  ⚠️ Lições das v3.5–v3.7, para não repetir:
+  - `enableHighAccuracy: true` num computador sem GPS faz o navegador esperar
+    um GPS que não existe e devolver ERRO no tempo limite (v3.5).
+  - Enquadrar o círculo de uma margem de 50 km afasta o mapa até ~100 km de
+    largura e, com a mensagem em vermelho, parece falha mesmo com o pino no
+    lugar certo (v3.6).
+  - Recusar posições acima de um limite de margem é recusar exatamente o que
+    funcionava (v3.7 na primeira forma, nunca publicada).
+
+  Regra: **não mexer nesse botão sem testar numa máquina real do usuário** —
+  a aba de testes do Claude não tem permissão de localização, então todo teste
+  lá é com leitura simulada.
 - **Número de casa não funciona na busca de endereço.** Não é limitação do código:
   o OpenStreetMap tem pouquíssimos endereços numerados na região (verificado em
   06/09/2026 — apenas 122 em toda a área central de Criciúma). Digitar
@@ -436,6 +443,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 28 | **v3.4** — Definição do mapa escuro: clarear → contrastar → escurecer, batendo com a referência do usuário. Corrige a medição errada que guiou a v3.3 |
 | 29 | **v3.5** — Origem passa a enquadrar o mapa; margem de erro da geolocalização informada, com círculo de incerteza e endereço de conferência |
 | 30 | **v3.6** — Correção: a v3.5 quebrou o botão de localização em computador de mesa ao exigir GPS. Passa a tentar duas vezes, caindo para a rede |
+| 31 | **v3.7** — Botão de localização volta à lógica da v2.5 (aceita a posição do navegador); ficam só o enquadramento no pino e o endereço de conferência. Desfaz as v3.5–v3.6 |
 
 ---
 
@@ -502,7 +510,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.6:  0 / 5
+Leves acumuladas desde a v3.7:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -556,3 +564,4 @@ os backups locais são conveniência, não garantia.
 | 3.4 | 09/09/2026 | Definição do mapa escuro igual à da referência (8 → 45) |
 | 3.5 | 09/09/2026 | Origem enquadra o mapa; margem de erro da localização à mostra |
 | 3.6 | 09/09/2026 | Correção da v3.5: localização em duas tentativas (exigir GPS quebrava o botão) |
+| 3.7 | 10/09/2026 | Botão 📍 volta à lógica da v2.5, que funcionava nas máquinas do usuário |

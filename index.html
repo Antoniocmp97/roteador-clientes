@@ -691,7 +691,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '3.6';
+const VERSAO = '3.7';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1464,10 +1464,6 @@ function renderStopsList(){
 /* ---------------- Origin ---------------- */
 // Define o ponto de partida: guarda as coordenadas, (re)posiciona o marcador âmbar no mapa
 // e preenche o campo de texto com o rótulo (endereço) ou as coordenadas cruas
-// Círculo de incerteza da geolocalização (só existe quando o navegador informa
-// uma margem grande). Fica guardado aqui para ser apagado na próxima origem.
-let circuloPrecisao = null;
-
 // `enquadrar`: leva o mapa até o ponto. Precisa ser pedido caso a caso —
 // no clique no mapa o ponto já está à vista, e na origem salva o
 // enquadramento brigaria com o dos clientes recém-carregados.
@@ -1475,7 +1471,6 @@ function setOrigin(lat, lng, label, abrirPopup = true, enquadrar = false){
   originLatLng = [lat, lng];
   esconderOpcoesEndereco(); // origem definida: a lista de alternativas não faz mais sentido
   if (originMarker) map.removeLayer(originMarker);
-  if (circuloPrecisao){ map.removeLayer(circuloPrecisao); circuloPrecisao = null; }
   originMarker = L.marker([lat, lng], { icon: dot('#F2A93C') }).addTo(map).bindPopup(label || 'Origem');
   if (abrirPopup) originMarker.openPopup(); // na restauração da origem salva não abre, para não cobrir o mapa
   document.getElementById('originInput').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -1580,78 +1575,43 @@ if (map){
   });
 }
 
-// Acima desta margem a posição é tratada como estimativa, não como ponto exato.
-// 100 m separa na prática o que vem de GPS ou de rede Wi-Fi conhecida (dezenas
-// de metros) do que vem de estimativa por IP (quilômetros).
-const MARGEM_CONFIAVEL = 100;
-const formatarMargem = m => m >= 1000 ? `${(m/1000).toFixed(1).replace('.', ',')} km` : `${Math.round(m)} m`;
-
-// Botão 📍: pede a localização atual ao navegador (API de geolocalização) e usa
-// como origem.
+// Botão 📍: pede a localização atual ao navegador e usa como origem.
 //
-// DUAS TENTATIVAS, e a segunda é o que faz o botão funcionar em computador de
-// mesa. A v3.5 pedia só `enableHighAccuracy: true` com 15 s de limite: o
-// navegador fica esperando um GPS que a máquina não tem, estoura o tempo e
-// devolve ERRO — em vez da posição pela rede, que ele teria entregue na hora.
-// Foi assim que a v3.5 quebrou o botão nos dois navegadores do usuário.
+// Volta à lógica da v2.5, que era a que funcionava nos computadores do
+// usuário (confirmado por ele em duas máquinas diferentes, em 10/09/2026):
+// UMA chamada, sem opções, e a posição devolvida vira a origem — sem julgar
+// a margem.
 //
-// Então: primeiro pede o preciso, com pouco tempo de espera; se não vier,
-// volta a pedir do jeito antigo, sem exigir GPS, com mais tempo e aceitando uma
-// posição recente que o navegador já tenha em mãos.
+// Entre a v3.5 e a v3.7 eu tentei "proteger" o usuário da margem que o
+// navegador informa (nas máquinas dele, ~50 km). Cada tentativa piorou:
+//   v3.5  exigiu GPS (enableHighAccuracy) -> o navegador passou a dar erro;
+//   v3.6  caiu para a rede, mas afastava o mapa até mostrar um círculo de
+//         100 km e pintava a mensagem de vermelho — parecia falha;
+//   v3.7  (nunca publicada) recusava a posição. É exatamente o contrário do
+//         que funcionava.
+// A margem que o navegador informa é o PIOR caso, não o erro real: a
+// estimativa pela rede costuma acertar a vizinhança e mesmo assim declarar
+// dezenas de km. Então o app não decide mais pela margem. Quem confere é o
+// usuário, pelo endereço que aparece no campo.
+//
+// Do que foi feito depois da v2.5 ficaram só as duas partes que não
+// bloqueiam nada: o mapa vai até o pino (antes ele podia cair fora da vista)
+// e o endereço é buscado de volta para dar para conferir onde o ponto caiu.
 document.getElementById('geoBtn').onclick = () => {
-  if (!navigator.geolocation){ setStatus('Geolocalização não suportada neste navegador.'); return; }
+  if (!navigator.geolocation){ setStatus('Geolocalização não suportada.'); return; }
   setStatus('Obtendo localização...', true);
-
-  const usar = async pos => {
-    const { latitude: lat, longitude: lng, accuracy: margem } = pos.coords;
-    setOrigin(lat, lng, 'Minha localização');
-
-    if (margem > MARGEM_CONFIAVEL){
-      // Desenha a incerteza: o ponto está em algum lugar DENTRO deste círculo.
-      circuloPrecisao = L.circle([lat, lng], { radius: margem, color:'#F2A93C',
-        weight:1, opacity:.7, fillColor:'#F2A93C', fillOpacity:.08 }).addTo(map);
-      map.fitBounds(circuloPrecisao.getBounds(), { padding:[40,40], maxZoom:17, animate:false });
-      setStatus(`Localização aproximada: margem de ${formatarMargem(margem)}. Sem GPS o navegador estima pela rede, e o ponto pode cair longe. Confira no mapa ou marque o ponto exato com 🎯.`);
-    } else {
-      map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate:false });
-      setStatus(`Localização encontrada (margem de ${formatarMargem(margem)}).`, true);
-    }
-
-    // Mesmo caminho do 🎯: troca "Minha localização" pelo endereço de verdade,
-    // que é o que deixa conferir se o ponto faz sentido.
-    const nome = await nomeDoPonto(lat, lng);
-    if (nome && originLatLng && originLatLng[0] === lat){
-      document.getElementById('originInput').value = nome;
-      if (originMarker) originMarker.setPopupContent(nome);
-    }
-  };
-
-  const desistir = err => {
-    const motivos = {
-      1: 'Permissão de localização negada. Libere o acesso no cadeado da barra de endereço, ou digite o endereço.',
-      2: 'O navegador não conseguiu determinar a localização — em computador sem GPS isso é comum. Digite o endereço ou marque o ponto com 🎯.',
-      3: 'A localização demorou demais para responder. Tente de novo, digite o endereço ou marque o ponto com 🎯.'
-    };
-    setStatus(motivos[err && err.code] || 'Não foi possível obter localização. Digite um endereço.');
-  };
-
-  // Segunda tentativa: sem exigir GPS. maximumAge de 5 min aceita uma posição
-  // que o navegador já tenha calculado há pouco — em vez de recusá-la e
-  // devolver erro, que é o que a v3.5 fazia.
-  const tentarPelaRede = () => {
-    setStatus('Sem GPS por perto; tentando pela rede...', true);
-    navigator.geolocation.getCurrentPosition(usar, desistir,
-      { enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 });
-  };
-
   navigator.geolocation.getCurrentPosition(
-    usar,
-    err => {
-      // Permissão negada não adianta repetir — a segunda tentativa levaria à
-      // mesma recusa. Tempo esgotado e posição indisponível, sim.
-      if (err && err.code === 1) desistir(err); else tentarPelaRede();
+    async pos => {
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      setOrigin(lat, lng, 'Minha localização', true, true);
+      setStatus('Localização encontrada. Confira o endereço no campo de origem.', true);
+      const nome = await nomeDoPonto(lat, lng);
+      if (nome && originLatLng && originLatLng[0] === lat){
+        document.getElementById('originInput').value = nome;
+        if (originMarker) originMarker.setPopupContent(nome);
+      }
     },
-    { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+    () => setStatus('Não foi possível obter localização. Digite um endereço ou marque o ponto com 🎯.')
   );
 };
 // Wrapper de fetch()+JSON usado por todas as chamadas de rede (Nominatim e OSRM).

@@ -2784,3 +2784,116 @@ TESTES REALIZADOS (cinco caminhos, com a API simulada e contagem de chamadas)
   fica com o usuário.
 
 VERSÃO: fecha a v3.6 (correção de regressão).
+
+--------------------------------------------------------
+[09/09/2026] v3.7 — Localização grosseira deixa de virar origem
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  Mandou o print da mensagem do app: "Localização aproximada: margem de
+  50,0 km". Disse "mesmo erro".
+
+LEITURA DO PRINT
+  O botão FUNCIONOU — a v3.6 corrigiu a regressão e a posição chegou. O
+  problema é o número: 50 km de margem é a assinatura da estimativa pelo
+  endereço de internet, que é o que sobra quando a máquina não tem
+  serviço de localização do Windows ligado, ou não enxerga redes Wi-Fi
+  (desktop no cabo). Nessa faixa a posição aponta a região, não o local.
+
+O RISCO QUE ISSO EXPÔS — E QUE ERA MEU
+  O app ADOTAVA esse ponto como origem, e ainda sobrescrevia o campo de
+  endereço com o resultado da busca reversa — inclusive por cima da
+  origem padrão salva. Um roteiro traçado depois disso sairia de um ponto
+  a dezenas de quilômetros do lugar certo, e nada na tela deixaria isso
+  evidente depois que a mensagem sumisse.
+
+  Ou seja: além de não ajudar, o botão podia estragar uma origem que já
+  estava correta.
+
+O QUE FOI FEITO — TRÊS FAIXAS
+    até 100 m ....... GPS ou Wi-Fi conhecido. Vira origem, mensagem verde.
+    100 m a 2 km .... rede. Vira origem, com aviso e círculo âmbar.
+    acima de 2 km ... estimativa por IP. NÃO vira origem: desenha a área
+                      estimada em vermelho, enquadra o círculo, mantém a
+                      origem anterior e o texto do campo, e explica que o
+                      caminho é o alvo no mapa ou o endereço digitado.
+
+  A mensagem da terceira faixa só menciona "a origem que já estava
+  definida foi mantida" quando de fato havia uma.
+
+TESTES REALIZADOS (API simulada, com origem já definida antes)
+  - 50 km: origem preservada (conferido por comparação do par de
+    coordenadas), campo de endereço preservado, círculo de 50000 m
+    desenhado, mensagem explicando.
+  - 800 m: virou origem, círculo de 800 m, aviso.
+  - 30 m: virou origem, sem círculo, mensagem verde.
+
+O QUE CONTINUA FORA DO ALCANCE DO APP
+  A precisão em si. Se a máquina não tem fonte de localização, nenhuma
+  opção da API inventa uma. O que dava para fazer era parar de tratar uma
+  estimativa de região como se fosse um endereço.
+
+VERSÃO: fecha a v3.7 (correção de comportamento com risco de dado errado).
+
+--------------------------------------------------------
+[10/09/2026] v3.7 (revisada antes de publicar) — Botão 📍 volta à v2.5
+--------------------------------------------------------
+
+ATENÇÃO: a entrada anterior ("v3.7 — Localização grosseira deixa de virar
+origem") descreve uma versão que NUNCA foi publicada. Ela foi substituída
+por esta antes do commit. O site ficou na v3.6 até aqui.
+
+RELATO DO USUÁRIO
+  "Hoje confirmei algo que suspeitava ontem, realmente o botão que busca a
+  localização bugou. No trabalho é um computador diferente e também não
+  funcionou, o que exclui a possibilidade de ser algo na minha máquina.
+  Compare com a versão 2.5 onde funcionava."
+
+COMPARAÇÃO FEITA
+  - Entre a v2.5 (06b9fdc) e a v3.4 (a0d390b): ZERO linhas alteradas em
+    qualquer código de localização ou origem (diff filtrado por
+    geolocation, geoBtn, getCurrentPosition, setOrigin, originLatLng,
+    originMarker).
+  - O botão da v2.5: UMA chamada getCurrentPosition, sem opções, e a
+    posição devolvida vira origem — sem olhar a margem.
+  - Todas as mudanças de comportamento vieram de mim, a partir da v3.5.
+
+DIAGNÓSTICO
+  Nas duas máquinas do usuário o navegador declara ~50 km de margem. Isso
+  é o PIOR caso que ele admite, não o erro real — a v2.5 aceitava a
+  posição e, para o usuário, ela servia. Cada versão minha tratou a
+  margem como se fosse o erro:
+    v3.5  exigiu GPS -> o navegador passou a dar erro no tempo limite;
+    v3.6  voltou a obter a posição, mas afastava o mapa até mostrar um
+          círculo de ~100 km e pintava a mensagem de vermelho. O pino
+          podia estar certo e a tela dizia "falhou". Foi o que o usuário
+          testou no trabalho (a v3.6 era a publicada);
+    v3.7  (primeira forma, não publicada) recusava a posição — o oposto do
+          que funcionava.
+
+O QUE FOI FEITO
+  O botão volta à lógica exata da v2.5 (uma chamada, sem opções, aceita a
+  posição). Das mudanças posteriores ficam só as duas que não bloqueiam
+  nada:
+    - o mapa vai até o pino (na v2.5 ele podia cair fora da vista);
+    - o endereço é buscado de volta e aparece no campo, para conferir.
+  Removidos: enableHighAccuracy, a segunda tentativa, as faixas de
+  margem, o círculo de incerteza e a mensagem vermelha.
+
+TESTE LADO A LADO (mesma leitura simulada: 50 km de margem)
+  v2.5: vira origem, "Localização encontrada.", campo "Minha
+        localização", mapa parado.
+  v3.7: vira origem nas MESMAS coordenadas, mapa centralizado no pino
+        (zoom 16), campo com o endereço real, nenhum círculo, mensagem
+        verde. Erro da API: mensagem com o caminho do 🎯.
+  Console sem erros.
+
+LIMITE DO TESTE
+  A aba de testes do Claude não tem permissão de localização (a API
+  responde "User denied Geolocation"), então os testes usam leitura
+  simulada. A confirmação real só vem da máquina do usuário.
+
+LIÇÃO REGISTRADA NO CLAUDE.md (seção 7)
+  Não mexer nesse botão sem testar numa máquina real do usuário.
+
+VERSÃO: v3.7 (correção — desfaz o que as v3.5 e v3.6 quebraram).
