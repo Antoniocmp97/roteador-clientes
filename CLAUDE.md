@@ -143,6 +143,12 @@ nos dois temas, porque o preenchimento continua sendo a cor forte.
 Âmbar = origem, rota traçada e paradas numeradas. Teal = clientes não
 selecionados e estados de sucesso.
 
+O escritório **não tem rodapé** (removido em 10/09/2026, a pedido do usuário).
+O crédito obrigatório ao OpenStreetMap e à Esri fica no canto do próprio mapa,
+no controle de atribuição do Leaflet (opção attribution da camada base) — é
+exigência das licenças dos mapas, não remover. A tela do campo mantém o rodapé
+dela ("Roteiro recebido por link · nada é enviado para servidor").
+
 ---
 
 ## 4. Decisões tomadas
@@ -548,7 +554,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v4.0:  0 / 5
+Leves acumuladas desde a v4.0:  1 / 5
 ```
 
 ### Onde o número aparece

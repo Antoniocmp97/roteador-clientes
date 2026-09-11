@@ -3093,3 +3093,35 @@ TESTES (tela emulada em 1366x768, a da TV do usuário)
 
 VERSÃO: fecha a v4.0 (correção de bug visível ao usuário). Pela regra da
 seção 11, 3.9 + 0.1 = 4.0; não marca nenhuma fase nova do projeto.
+
+--------------------------------------------------------
+[10/09/2026] Rodapé do escritório removido (leve 1/5 desde a v4.0)
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Remover a escrita "Mapas © OpenStreetMap contributors · Tiles © Esri ·
+  Rotas via OSRM (servidor de demonstração público — ...)".
+
+CONFERIDO ANTES DE REMOVER
+  O crédito ao OpenStreetMap e à Esri é exigência das licenças dos mapas.
+  Ele já aparece no canto do próprio mapa, pelo controle de atribuição do
+  Leaflet ("Leaflet | © Esri © OpenStreetMap contributors"), então o
+  rodapé só repetia. O aviso sobre o servidor de rotas de demonstração
+  continua registrado no CLAUDE.md (seções 3 e 7).
+
+O QUE SAIU
+  O <footer> do escritório e a regra de CSS "footer{}". A tela do campo
+  tem o próprio rodapé (.campo-pe), cujo estilo já definia tudo o que a
+  regra geral definia — por isso ela não mudou. Deixado um comentário no
+  HTML avisando para não remover o crédito do mapa.
+
+TESTES (tela emulada em 1366x768)
+  - Escritório sem rodapé; o mapa desce até a borda da tela (768 px) e o
+    tamanho que o Leaflet usa bate com o da tela.
+  - Crédito "Leaflet | © Esri © OpenStreetMap contributors" visível no
+    canto do mapa.
+  - Rodapé da tela do campo inalterado: mesmo texto, espaçamento, borda e
+    fonte.
+  - Console sem erros.
+
+VERSÃO: alteração leve (texto), continua v4.0. Contador em 1/5.

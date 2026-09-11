@@ -374,8 +374,6 @@
   .steps li{font-size:12.5px;line-height:1.4;color:var(--text);padding-left:14px;border-left:2px solid var(--teal);}
   .steps li.leg-header{border-left-color:var(--amber);color:var(--amber);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;}
 
-  /* Rodapé com créditos dos mapas/rotas */
-  footer{padding:8px 22px;border-top:1px solid var(--line);font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
   .leaflet-container{background:var(--map-bg);font-family:'Inter',sans-serif;}
   /* Tema escuro do mapa (v3.2). Os ladrilhos continuam sendo os do Esri; o que
      muda é um filtro de cor aplicado no navegador, sobre a camada inteira.
@@ -681,10 +679,9 @@
       </div>
     </div>
   </main>
-
-  <footer>
-    Mapas © OpenStreetMap contributors · Tiles © Esri · Rotas via OSRM (servidor de demonstração público — para uso em produção, hospede sua própria instância ou use uma API paga).
-  </footer>
+  <!-- Sem rodapé desde 10/09/2026, a pedido do usuário. O crédito obrigatório
+       ao OpenStreetMap e à Esri continua no canto do próprio mapa (controle de
+       atribuição do Leaflet, opção `attribution` da camada base) — não remover. -->
 </div>
 
 <!-- ==========================================================
