@@ -986,6 +986,35 @@ let originMarker = null; // marcador do Leaflet para a origem no mapa
 let routeLine = null;    // polyline da rota traçada no mapa
 let stopMarkers = [];    // marcadores numerados das paradas atuais (redesenhados a cada traçado)
 
+// Rota traçada só vale para a lista de paradas que a gerou. Quando a lista
+// muda (entra/sai parada, muda a ordem ou a prioridade) ou outra base é
+// carregada, tudo o que veio daquela rota sai de cena: a linha, os números no
+// mapa, o resumo de distância/tempo e a seção do link.
+//
+// Antes nada disso era desfeito (achado em 10/09/2026): dava para traçar com 5
+// paradas, remover uma e gerar o link — o técnico recebia 4 paradas, numa ordem
+// que não era a da rota traçada, com os km/min da viagem de 5. E carregar outra
+// base deixava os números da rota antiga no mapa.
+//
+// Devolve true se havia uma rota para desfazer, para quem chama decidir se avisa.
+function invalidarRota(){
+  const envio = document.getElementById('envioSection');
+  const havia = !!routeLine || stopMarkers.length > 0 || (envio && envio.style.display !== 'none');
+  if (routeLine){ map.removeLayer(routeLine); routeLine = null; }
+  stopMarkers.forEach(m => map.removeLayer(m));
+  stopMarkers = [];
+  document.getElementById('readout').classList.remove('show');
+  if (envio) envio.style.display = 'none';
+  document.getElementById('linkPronto').style.display = 'none';
+  document.getElementById('linkCampo').value = '';
+  ultimoResumo = null;
+  return havia;
+}
+// Para os pontos em que o usuário mexe na lista: desfaz a rota e explica por quê.
+function paradasMudaram(){
+  if (invalidarRota()) setStatus('A lista de paradas mudou — trace a rota de novo para gerar o link.', true);
+}
+
 // Escreve a mensagem de status/erro abaixo dos botões (verde/teal = sucesso, vermelho = erro)
 function setStatus(msg, ok=false){
   const el = document.getElementById('status');
@@ -1157,8 +1186,9 @@ function importClients(grupos, filename, salvoEm){
   buscaAtual = '';
   const buscaInput = document.getElementById('buscaClientes');
   if (buscaInput) buscaInput.value = '';
-  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
-  document.getElementById('readout').classList.remove('show');
+  // Base nova: nada da rota anterior pode sobrar no mapa nem no link — nem o
+  // aviso "Rota traçada…" embaixo dos botões, que passaria a mentir.
+  if (invalidarRota()) setStatus('');
 
   // clientPoints continua sendo a lista plana de TODAS as filiais — é o que o
   // roteamento, a otimização e a seleção usam. O agrupamento vive em
@@ -1206,7 +1236,9 @@ function toggleStop(id){
   else { ponto.prioritaria = false; stops = stops.filter(s => s !== ponto); }
   renderChecklist();
   renderStopsList();
-  setStatus(`${ponto.name} ${entrou ? 'entrou na' : 'saiu da'} viagem.`, true);
+  const rotaCaiu = invalidarRota();
+  setStatus(`${ponto.name} ${entrou ? 'entrou na' : 'saiu da'} viagem.` +
+            (rotaCaiu ? ' Trace a rota de novo para gerar o link.' : ''), true);
 }
 window.toggleStop = toggleStop; // precisa estar em escopo global: é chamado via onclick inline no HTML do popup
 
@@ -1324,12 +1356,20 @@ function renderChecklist(){
         else { c.prioritaria = false; stops = stops.filter(s => s.id !== c.id); }
         renderChecklist();   // atualiza a contagem, o destaque do cabeçalho e mostra/esconde o seletor
         renderStopsList();
+        paradasMudaram();
       });
       const sel = row.querySelector('.tipo-select');
       if (sel){
         sel.addEventListener('change', () => {
           c.tipo = sel.value; // c é o mesmo objeto referenciado em stops — não precisa procurar de novo
           renderStopsList();  // só a etiqueta na seção 4 precisa atualizar
+          // O tipo vai no link, mas não muda a rota: basta tirar da tela um
+          // link já gerado, para não ser enviado sem o tipo novo.
+          if (document.getElementById('linkPronto').style.display !== 'none'){
+            document.getElementById('linkPronto').style.display = 'none';
+            document.getElementById('linkCampo').value = '';
+            setStatus('Tipo de serviço mudou — gere o link de novo.', true);
+          }
         });
       }
       corpo.appendChild(row);
@@ -1391,6 +1431,7 @@ document.getElementById('selectAllBtn').onclick = () => {
   else { stops = [...stops, ...clientPoints.filter(c => !stops.includes(c))]; reordenarPorPrioridade(); }
   renderChecklist();
   renderStopsList();
+  paradasMudaram();
 };
 
 /* ---------------- Configuração dos tipos de serviço (Fase 2) ---------------- */
@@ -1495,19 +1536,21 @@ function renderStopsList(){
       s.prioritaria = !s.prioritaria;
       reordenarPorPrioridade();
       renderStopsList();
+      paradasMudaram();
     };
     // ▲▼ só trocam com o vizinho do MESMO bloco — mover uma prioritária para
     // baixo do separador quebraria o invariante e seria desfeito na hora
     li.querySelector('[data-act=up]').onclick = () => {
-      if (i>0 && !!stops[i-1].prioritaria === !!s.prioritaria){ [stops[i-1],stops[i]]=[stops[i],stops[i-1]]; renderStopsList(); }
+      if (i>0 && !!stops[i-1].prioritaria === !!s.prioritaria){ [stops[i-1],stops[i]]=[stops[i],stops[i-1]]; renderStopsList(); paradasMudaram(); }
     };
     li.querySelector('[data-act=down]').onclick = () => {
-      if (i<stops.length-1 && !!stops[i+1].prioritaria === !!s.prioritaria){ [stops[i+1],stops[i]]=[stops[i],stops[i+1]]; renderStopsList(); }
+      if (i<stops.length-1 && !!stops[i+1].prioritaria === !!s.prioritaria){ [stops[i+1],stops[i]]=[stops[i],stops[i+1]]; renderStopsList(); paradasMudaram(); }
     };
     li.querySelector('[data-act=rm]').onclick = () => {
       s.prioritaria = false; // sai limpa, para não voltar priorizada se for remarcada
       stops.splice(i,1);
       renderStopsList(); renderChecklist();
+      paradasMudaram();
     };
     list.appendChild(li);
   });
@@ -1642,6 +1685,7 @@ function iniciarArraste(ev, indice, linha){
     stops = [...outras.slice(0, slot), arrastada, ...outras.slice(slot)];
     reordenarPorPrioridade(); // garantia: pela regra acima já sai em ordem
     renderStopsList();
+    paradasMudaram();
   }
 
   alca.addEventListener('pointermove', mover);
