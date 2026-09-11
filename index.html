@@ -1705,7 +1705,10 @@ function setOrigin(lat, lng, label, abrirPopup = true, enquadrar = false){
   originLatLng = [lat, lng];
   esconderOpcoesEndereco(); // origem definida: a lista de alternativas não faz mais sentido
   if (originMarker) map.removeLayer(originMarker);
-  originMarker = L.marker([lat, lng], { icon: dot('#F2A93C') }).addTo(map).bindPopup(label || 'Origem');
+  // escaparHtml: o Leaflet trata o texto do balão como HTML. O rótulo vem do
+  // Nominatim ou do que foi salvo como origem padrão — "<" ou "&" num nome de
+  // lugar não podem virar marcação (achado em 10/09/2026).
+  originMarker = L.marker([lat, lng], { icon: dot('#F2A93C') }).addTo(map).bindPopup(escaparHtml(label || 'Origem'));
   if (abrirPopup) originMarker.openPopup(); // na restauração da origem salva não abre, para não cobrir o mapa
   document.getElementById('originInput').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   atualizarBotaoOrigemPadrao();
@@ -1804,7 +1807,7 @@ if (map){
     const nome = await nomeDoPonto(lat, lng);
     if (nome && originLatLng && originLatLng[0] === lat){
       document.getElementById('originInput').value = nome;
-      if (originMarker) originMarker.setPopupContent(nome);
+      if (originMarker) originMarker.setPopupContent(escaparHtml(nome));
     }
   });
 }
@@ -1842,7 +1845,7 @@ document.getElementById('geoBtn').onclick = () => {
       const nome = await nomeDoPonto(lat, lng);
       if (nome && originLatLng && originLatLng[0] === lat){
         document.getElementById('originInput').value = nome;
-        if (originMarker) originMarker.setPopupContent(nome);
+        if (originMarker) originMarker.setPopupContent(escaparHtml(nome));
       }
     },
     () => setStatus('Não foi possível obter localização. Digite um endereço ou marque o ponto com 🎯.')
@@ -2003,7 +2006,7 @@ function drawResult(distance, duration, geometry, legs){
   routeLine = L.polyline(coords, { color:'#F2A93C', weight:5, opacity:0.9 }).addTo(map);
 
   stops.forEach((s, i) => {
-    const m = L.marker([s.lat, s.lng], { icon: numIcon(i+1) }).addTo(map).bindPopup(`${i+1}. ${s.name}`);
+    const m = L.marker([s.lat, s.lng], { icon: numIcon(i+1) }).addTo(map).bindPopup(`${i+1}. ${escaparHtml(s.name)}`);
     stopMarkers.push(m);
   });
 
