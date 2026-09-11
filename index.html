@@ -1191,10 +1191,22 @@ function toggleStop(id){
   // Abre a cascata do cliente correspondente, senão a marcação aconteceria
   // dentro de um grupo fechado e o usuário não veria o resultado do clique
   const ponto = clientPoints.find(c => c.id === id);
-  if (ponto && ponto.cliente) gruposAbertos.add(ponto.cliente);
+  if (!ponto) return;
+  if (ponto.cliente) gruposAbertos.add(ponto.cliente);
   const cb = document.getElementById('chk-' + id);
-  if (cb){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
-  else renderChecklist();
+  if (cb){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); return; }
+
+  // Sem checkbox na tela: a busca do checklist escondeu esta parada. Antes o
+  // clique no balão só redesenhava a lista e não adicionava nem removia nada —
+  // o botão parecia quebrado (achado em 10/09/2026). Agora a troca é feita
+  // direto, com a mesma regra do checkbox, e o aviso diz o que aconteceu, já
+  // que o checklist filtrado não mostra a parada.
+  const entrou = !stops.includes(ponto);
+  if (entrou) stops.push(ponto);
+  else { ponto.prioritaria = false; stops = stops.filter(s => s !== ponto); }
+  renderChecklist();
+  renderStopsList();
+  setStatus(`${ponto.name} ${entrou ? 'entrou na' : 'saiu da'} viagem.`, true);
 }
 window.toggleStop = toggleStop; // precisa estar em escopo global: é chamado via onclick inline no HTML do popup
 
