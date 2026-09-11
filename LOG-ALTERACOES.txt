@@ -3003,3 +3003,44 @@ LIMITE DO TESTE
 
 VERSÃO: fecha a v3.8 (funcionalidade nova). A alteração leve de
 documentação que estava no contador (1/5) entra junto nesta versão.
+
+--------------------------------------------------------
+[10/09/2026] v3.9 — Parada arrastada é incluída no fim das prioritárias
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Funcionou, quero uma alteração. Ao jogar do bloco que não tem
+  prioridade para o que TEM prioridade, deve ser incluído, não feito a
+  troca de um por um."
+
+CAUSA
+  A posição entre a última estrela e a primeira comum é o MESMO índice
+  no array para os dois blocos ("fim das prioritárias" = "começo das
+  demais"). A v3.8 desempatava mantendo o bloco de origem: soltar uma
+  comum logo abaixo da última estrela a deixava comum. Então a única
+  forma de entrar nas estrelas era soltar acima da primeira — a parada
+  passava à frente de todas, e com uma estrela só na lista isso parecia
+  exatamente uma troca de lugar com a 1ª.
+
+O QUE MUDOU
+  Na divisa, quem decide agora é o cabeçalho "Demais", que é o que a
+  tela mostra entre os blocos: solta ACIMA do meio dele entra no fim das
+  estrelas; solta ABAIXO fica no começo das demais. Vale nos dois
+  sentidos — uma estrela levada até logo abaixo do cabeçalho perde a
+  estrela. O traço âmbar fica do lado do cabeçalho correspondente.
+  Fora da divisa nada mudou.
+
+TESTES (base real, eventos de ponteiro simulados)
+  A. Comum (última) solta acima do "Demais", com uma estrela na lista:
+     entra como 2ª estrela — ★ACUO | ★CRAS | FORQUILHINHA | HOSPITAL.
+     É o caso relatado.
+  B. Comum solta abaixo do "Demais": continua comum, no topo das demais.
+  C. Estrela solta abaixo do "Demais": perde a estrela.
+  D. Única estrela solta acima do "Demais": nada muda.
+  E. Comum solta no topo: vira a 1ª estrela (como antes).
+  F. Estrela solta no fim: perde a estrela (como antes).
+  G. Única comum numa lista de estrelas, solta acima do "Demais": vira a
+     última estrela.
+  Nenhuma sobra do arraste na tela. Console sem erros.
+
+VERSÃO: fecha a v3.9 (muda o comportamento do arraste).

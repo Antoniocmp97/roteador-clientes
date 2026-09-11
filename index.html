@@ -719,7 +719,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '3.8';
+const VERSAO = '3.9';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1499,10 +1499,17 @@ function renderStopsList(){
 
    REGRA DOS BLOCOS, decidida pelo usuário: a parada fica EXATAMENTE onde foi
    solta. Soltou no bloco das prioritárias, vira ★; soltou uma ★ no bloco das
-   demais, perde a estrela. Na divisa exata entre os dois blocos, mantém o que
-   era — senão mexer uma parada até a ponta do próprio bloco a trocaria de
-   bloco sem querer. Sem nenhuma prioritária na lista, arrastar só reordena:
-   não existe bloco de prioridade para cair dentro.
+   demais, perde a estrela. Sem nenhuma prioritária na lista, arrastar só
+   reordena: não existe bloco de prioridade para cair dentro.
+
+   A DIVISA (v3.9). A posição entre a última ★ e a primeira comum é a mesma
+   no array para os dois blocos — "fim das prioritárias" e "começo das demais"
+   são o mesmo índice. Quem desempata é o cabeçalho "Demais" que fica ali:
+   solta ACIMA do meio dele entra no fim das ★; solta ABAIXO fica no começo das
+   demais. É o que a tela mostra.
+   A v3.8 desempatava mantendo o bloco de origem. Resultado, relatado pelo
+   usuário: uma parada comum só conseguia entrar nas ★ passando à frente de
+   todas — parecia uma troca de lugar com a 1ª, e não uma inclusão no bloco.
 
    Durante o arraste só a linha arrastada se mexe; o destino é mostrado por um
    indicador âmbar. A lista (`stops`) só é alterada ao soltar. */
@@ -1525,24 +1532,28 @@ function iniciarArraste(ev, indice, linha){
   // `slot`: em que posição, entre as OUTRAS paradas, a arrastada vai entrar.
   // Começa na posição de onde saiu — soltar sem mexer não muda nada.
   let slot = indice;
-  const prioridadeNoSlot = k =>
-    !haPrioridade ? false : k < p ? true : k > p ? false : !!arrastada.prioritaria;
-
   const inicioY = ev.clientY, inicioScroll = lista.scrollTop;
   let ponteiroY = ev.clientY;
+
+  // Cabeçalho "Demais": só existe quando há ★ e comuns ao mesmo tempo. Ele fica
+  // parado durante o arraste (a lista só é redesenhada ao soltar).
+  const cabDemais = lista.querySelector('.stop-grupo[data-bloco="demais"]');
+  const prioridadeNoSlot = k => {
+    if (!haPrioridade) return false;
+    if (k < p) return true;
+    if (k > p) return false;
+    // Na divisa: acima do meio do cabeçalho "Demais" é o bloco das ★.
+    // Sem cabeçalho (todas as paradas são ★), não há para onde sair.
+    if (!cabDemais) return !!arrastada.prioritaria;
+    const r = cabDemais.getBoundingClientRect();
+    return ponteiroY < r.top + r.height / 2;
+  };
 
   linha.classList.add('arrastando');
   document.body.classList.add('arrastando-parada');
   const indicador = document.createElement('li');
   indicador.className = 'indicador-soltar';
   lista.appendChild(indicador);
-
-  // Elemento anterior de verdade, pulando a linha arrastada e o indicador
-  const anteriorDe = el => {
-    let a = el.previousElementSibling;
-    while (a && (a === linha || a === indicador)) a = a.previousElementSibling;
-    return a;
-  };
 
   const atualizar = () => {
     // A linha acompanha o ponteiro, compensando a rolagem automática da lista
@@ -1554,13 +1565,13 @@ function iniciarArraste(ev, indice, linha){
     }).length;
 
     let y;
-    if (slot < linhasOutras.length){
-      let ref = linhasOutras[slot];
-      // Na divisa, o indicador fica do lado do cabeçalho "Demais" que
-      // corresponde ao destino: acima dele se vai continuar prioritária.
-      const ant = anteriorDe(ref);
-      if (ant && ant.dataset.bloco === 'demais' && prioridadeNoSlot(slot)) ref = ant;
-      y = ref.offsetTop - 4;
+    if (slot === p && cabDemais && haPrioridade){
+      // Na divisa, o traço fica do lado do cabeçalho "Demais" que corresponde
+      // ao destino: acima dele = entra no fim das ★; abaixo = começo das demais.
+      y = prioridadeNoSlot(slot) ? cabDemais.offsetTop - 4
+                                 : cabDemais.offsetTop + cabDemais.offsetHeight + 2;
+    } else if (slot < linhasOutras.length){
+      y = linhasOutras[slot].offsetTop - 4;
     } else {
       const ultima = linhasOutras[linhasOutras.length - 1];
       y = ultima.offsetTop + ultima.offsetHeight + 2;

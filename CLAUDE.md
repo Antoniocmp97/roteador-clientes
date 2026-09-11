@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 10/09/2026 — v3.8 (arrastar para reordenar paradas)
+> **Última atualização:** 10/09/2026 — v3.9 (parada arrastada é incluída no fim das prioritárias)
 
 ---
 
@@ -81,7 +81,9 @@ sem dependências instaladas. Abre direto no navegador.
 - Lista de paradas reordenável manualmente: **arrastando pela alça** (⋮⋮), como
   nas listas do celular (v3.8), ou pelas setas ▲▼ para mover uma casa; e remoção.
   Soltar uma parada no bloco das prioritárias a torna ★; soltar uma ★ entre as
-  demais tira a estrela. Na divisa exata entre os blocos ela mantém o que era.
+  demais tira a estrela. Na divisa, quem decide é o título "Demais": soltou
+  acima dele, a parada entra no **fim das ★** (v3.9); abaixo, fica no começo das
+  demais.
   Esc cancela o arraste. O arraste começa só pela alça, então no celular o resto
   da linha continua rolando a lista
 - **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
@@ -461,6 +463,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 30 | **v3.6** — Correção: a v3.5 quebrou o botão de localização em computador de mesa ao exigir GPS. Passa a tentar duas vezes, caindo para a rede |
 | 31 | **v3.7** — Botão de localização volta à lógica da v2.5 (aceita a posição do navegador); ficam só o enquadramento no pino e o endereço de conferência. Desfaz as v3.5–v3.6 |
 | 32 | **v3.8** — Arrastar para reordenar as paradas, como no celular; soltar no outro bloco muda a prioridade |
+| 33 | **v3.9** — Parada comum arrastada para as prioritárias passa a ser incluída no fim delas, em vez de só conseguir entrar à frente de todas |
 
 ---
 
@@ -527,7 +530,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v3.8:  0 / 5
+Leves acumuladas desde a v3.9:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -583,3 +586,4 @@ os backups locais são conveniência, não garantia.
 | 3.6 | 09/09/2026 | Correção da v3.5: localização em duas tentativas (exigir GPS quebrava o botão) |
 | 3.7 | 10/09/2026 | Botão 📍 volta à lógica da v2.5, que funcionava nas máquinas do usuário |
 | 3.8 | 10/09/2026 | Arrastar para reordenar paradas; soltar no outro bloco muda a prioridade |
+| 3.9 | 10/09/2026 | Arrastar para as prioritárias inclui a parada no fim delas (a divisa segue o título "Demais") |
