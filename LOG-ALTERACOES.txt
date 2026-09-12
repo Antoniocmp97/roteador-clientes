@@ -3304,3 +3304,55 @@ PENDENTES
     virando uma guia ao lado do mapa.
   - Mover "Traçar nesta ordem" e "Otimizar ordem" para o topo (pedido de
     10/09, adiado pelo usuário para depois dos módulos).
+
+--------------------------------------------------------
+[11/09/2026] v4.4 — Módulo 4 vira guia ao lado do mapa
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Gostei da alteração, porém ainda não me satisfez por completo, preciso
+  deixar totalmente customizado. Dê início ao ponto 1" — o ponto 1 da
+  lista de pendências: puxar o módulo 4 para o lado, virando uma guia ao
+  lado do mapa.
+
+O QUE FOI FEITO
+  Alça ao lado do título "4 · Ordem da viagem". Arrastar para a esquerda
+  (mais de 80px) leva o módulo para uma coluna nova à esquerda do mapa;
+  arrastar de volta para a direita o devolve ao painel. Duplo clique na
+  alça faz a mesma troca, para quem não quiser arrastar. Enquanto arrasta,
+  uma faixa âmbar acende no destino.
+
+  DECISÃO CENTRAL: o módulo é o MESMO elemento nos dois lugares — ele é
+  movido no HTML, não duplicado. Por isso tudo que já existia continua
+  valendo dentro da guia (arrastar paradas, estrela, setas, remover) sem
+  nenhuma linha repetida. Uma âncora invisível no painel guarda o lugar
+  exato dele, para voltar de onde saiu.
+
+  Na guia a lista ocupa a coluna inteira (a altura repartida com o item 3
+  só faz sentido quando os dois estão no mesmo painel) e a divisória 3↔4
+  fica escondida. Em tela estreita, onde o layout é empilhado, a guia não
+  existe: o módulo fica no painel e a preferência é ignorada sem ser
+  apagada. A escolha fica em 'hg_modulo4_local'.
+
+TESTES FEITOS
+  Só no nível da lógica e do HTML. A janela do app de testes parou de
+  desenhar a página (ficou atrás de outra) e não voltou em 20 s de espera;
+  com clientWidth 0 qualquer medida de largura sai inválida, e a própria
+  regra "tela comporta guia" recusaria a troca. A função foi substituída
+  no teste para simular tela larga. Verificado:
+  - começa no painel, logo após a âncora;
+  - duplo clique leva para a guia e traz de volta, gravando a escolha;
+  - arrastar 120px para a esquerda leva para a guia, com o destaque do
+    destino aceso; 120px para a direita devolve ao painel;
+  - arrastar só 40px (abaixo do limite) não troca nada e não acende;
+  - nenhum resíduo depois do arraste (sem faixa de destino, sem transform);
+  - com o módulo na guia, remover uma parada continua funcionando (4 -> 3).
+
+  FALTA CONFERIR NA TELA: largura da guia, o mapa se ajustando ao espaço
+  que sobra, a lista ocupando a coluna inteira e o comportamento em tela
+  estreita. Fica com o usuário.
+
+VERSÃO: fecha a v4.4.
+
+PENDENTE
+  Mover "Traçar nesta ordem" e "Otimizar ordem" para o topo (ponto 2).
