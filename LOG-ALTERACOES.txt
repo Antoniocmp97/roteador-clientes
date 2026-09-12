@@ -3487,3 +3487,63 @@ DECISÃO DO USUÁRIO
 
 NADA MUDOU NO CÓDIGO. Alteração leve (documentação): continua v4.6,
 contador em 1/5.
+
+--------------------------------------------------------
+[12/09/2026] v4.7 — Módulo 3 também vai para a guia
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Aplique o mesmo efeito do módulo 4 para o módulo 3, ou seja, também
+  poder jogar para uma coluna auxiliar."
+
+O QUE FOI FEITO
+  Em vez de copiar o código do módulo 4, ele virou uma TABELA de módulos:
+
+      MODULOS = { m3: {...}, m4: {...} }
+
+  Cada linha diz o elemento, a âncora (o lugar dele no painel), a alça e a
+  classe que marca "este módulo está na guia". Incluir o 1, o 2 ou o 5
+  depois é somar uma linha aqui, mais a âncora e a alça no HTML. Nenhuma
+  lógica repetida.
+
+  Os dois módulos cabem na guia ao mesmo tempo, dividindo a coluna, e a
+  ordem natural é mantida (3 em cima, 4 embaixo) mesmo que sejam enviados
+  fora de ordem. A guia aparece quando recebe o primeiro módulo e some
+  quando o último volta.
+
+CONTROLES DE ALTURA POR SITUAÇÃO
+  3 e 4 no painel .... divisória 3<->4 + puxador do 4
+  só o 4 na guia ..... puxador do 3 (no painel) — como já era
+  só o 3 na guia ..... puxador do 4 (no painel); a divisória some, porque
+                       ela mora dentro do 4 e só faz sentido com os dois
+                       vizinhos no painel
+  os dois na guia .... nenhum: na coluna cada um ocupa metade e cresce
+                       sozinho
+
+  Regra nova no CSS: .guia .divisor-modulos, .guia .puxador-modulo ficam
+  escondidos com !important — as regras do painel usam id e ganhariam por
+  especificidade.
+
+TESTES
+  - As quatro combinações (nenhum, só 3, só 4, os dois na guia): módulo no
+    lugar certo, guia aparecendo e sumindo, e os controles de altura
+    exatamente como na tabela acima.
+  - Voltando os dois, a ordem no painel é a original:
+    âncora 3, módulo 3, âncora 4, módulo 4, botões, status, envio, roteiro.
+  - Módulo 3 dentro da guia continua inteiro: a busca filtra (BURIGOS ->
+    1 camada), marcar um cliente adicionou a parada e ela apareceu no
+    módulo 4, que estava no painel (3 -> 4 paradas), e os links "tipos de
+    serviço" e "marcar todos" foram junto.
+  - Console sem erros; localStorage limpo ao final.
+
+  A janela do app de testes segue sem desenhar a página: a conferência
+  visual (largura, proporções na coluna) fica com o usuário.
+
+AJUSTE DE CONSISTÊNCIA ENCONTRADO NO TESTE
+  O divisor de largura do painel (v3.1) era o único dos seis controles de
+  arraste sem try/catch no setPointerCapture. Não afeta uso real — ponteiro
+  de verdade sempre existe — mas era a mesma inconsistência já corrigida
+  nos outros cinco. Igualado. Depois disso, exercitar os seis controles não
+  lançou erro nenhum.
+
+VERSÃO: fecha a v4.7.

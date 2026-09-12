@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 12/09/2026 — v4.6 (módulo 4 abre no painel e tem puxador próprio)
+> **Última atualização:** 12/09/2026 — v4.7 (módulo 3 também vai para a guia)
 
 ---
 
@@ -86,12 +86,14 @@ sem dependências instaladas. Abre direto no navegador.
   demais.
   Esc cancela o arraste. O arraste começa só pela alça, então no celular o resto
   da linha continua rolando a lista
-- **Módulo 4 como guia lateral** (v4.4, posição corrigida na v4.5): a alça ao
-  lado do título "4 · Ordem da viagem" leva o módulo para uma coluna **encostada
-  no painel** (ordem na tela: mapa · guia · divisória · painel), para ele ficar ao
-  lado dos outros módulos. ⚠️ O lugar **não** é guardado entre aberturas (v4.6):
-  o módulo sempre abre junto dos outros, e mandar para a guia vale só enquanto a
-  página estiver aberta
+- **Módulos 3 e 4 podem ir para a guia lateral** (v4.4–v4.7): a alça ao lado do
+  título leva o módulo para uma coluna **encostada no painel** (ordem na tela: mapa · guia · divisória · painel), para ele ficar ao
+  lado dos outros módulos. Os dois cabem lá ao mesmo tempo, na ordem 3 e depois
+  4, dividindo a coluna. ⚠️ O lugar **não** é guardado entre aberturas (v4.6):
+  os módulos sempre abrem junto dos outros, e mandar para a guia vale só enquanto
+  a página estiver aberta.
+  O mecanismo é **uma tabela de módulos** (v4.7): incluir o 1, o 2 ou o 5 depois
+  é somar uma linha nela, mais a âncora e a alça no HTML
 - **Cada módulo redimensionável** (v4.6): no painel o módulo 4 tem puxador
   próprio na borda de baixo (cresce sem tirar do 3, empurrando o que vem depois)
   **e** a divisória 3↔4 (cresce tirando do 3) — escolha do usuário entre os dois
@@ -548,6 +550,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 38 | **v4.4** — Módulo 4 pode ser puxado para o lado e virar guia ao lado do mapa, com volta ao painel pela âncora |
 | 39 | **v4.5** — A guia passa a ficar encostada no painel (estava na borda da tela) e o módulo 3 ganha puxador próprio quando o 4 está na guia |
 | 40 | **v4.6** — Módulo 4 volta a abrir sempre no painel (o lugar deixa de ser guardado) e ganha puxador próprio, ao lado da divisória 3↔4 |
+| 41 | **v4.7** — Módulo 3 também pode ir para a guia; o mecanismo vira uma tabela de módulos, pronta para os demais |
 
 ---
 
@@ -614,7 +617,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v4.6:  1 / 5
+Leves acumuladas desde a v4.7:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -678,3 +681,4 @@ os backups locais são conveniência, não garantia.
 | 4.4 | 11/09/2026 | Módulo 4 vira guia ao lado do mapa (arrastar para o lado ou duplo clique) |
 | 4.5 | 12/09/2026 | Guia encostada no painel; módulo 3 com puxador próprio |
 | 4.6 | 12/09/2026 | Módulo 4 abre sempre no painel e ganha puxador próprio |
+| 4.7 | 12/09/2026 | Módulo 3 também vai para a guia; mecanismo generalizado |

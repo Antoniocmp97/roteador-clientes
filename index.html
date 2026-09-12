@@ -142,12 +142,14 @@
      ver a primeira versão, que jogava a coluna para a borda esquerda da tela. */
   .guia{width:var(--guia-w, 360px); background:var(--panel); border-left:1px solid var(--line);
         padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:none;}
-  /* Na guia o módulo ocupa a coluna inteira: a lista de paradas cresce até o
-     fim da tela em vez de obedecer à altura repartida com o item 3, que só faz
-     sentido quando os dois estão no mesmo painel. */
-  .guia #stopsSection{flex:1; min-height:0; display:flex !important; flex-direction:column;}
-  .guia .stops{max-height:none; flex:1; min-height:0;}
-  .guia .divisor-modulos{display:none;}
+  /* Na guia o módulo ocupa a coluna inteira: a lista cresce até o fim da tela em
+     vez de obedecer à altura do painel, que só faz sentido lá. Vale para
+     qualquer módulo movido para cá. */
+  .guia .modulo-movel{flex:1; min-height:0; display:flex !important; flex-direction:column;}
+  .guia .stops, .guia .checklist{max-height:none; flex:1; min-height:0;}
+  /* Controles de altura não fazem sentido dentro da guia. !important porque as
+     regras do painel abaixo usam id e ganhariam por especificidade. */
+  .guia .divisor-modulos, .guia .puxador-modulo{display:none !important;}
   .guia-vazia{font-size:12px; color:var(--muted); font-style:italic;}
 
   /* Alça do módulo: arrasta para o lado para levar o módulo à guia, ou de volta
@@ -368,9 +370,9 @@
      controles lado a lado só confundiriam. */
   #puxadorChecklist{display:none;}
   body.modulo4-na-guia #puxadorChecklist{display:flex;}
-  /* Na guia a lista já ocupa a coluna inteira: o puxador do módulo 4 não teria
-     o que fazer ali. */
-  body.modulo4-na-guia #puxadorParadas{display:none;}
+  /* A divisória 3<->4 mora dentro do módulo 4 e só faz sentido com os DOIS no
+     painel, um embaixo do outro. Se o 3 foi para a guia, ela some. */
+  body.modulo3-na-guia #divisorModulos{display:none;}
   .divisor-modulos::before{
     content:''; width:46px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
   }
@@ -664,9 +666,15 @@
       </div>
 
       <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
-      <div>
+      <!-- Âncora: guarda o lugar do módulo 3 no painel, para ele voltar exatamente
+           daqui quando sair da guia -->
+      <div id="ancoraModulo3" hidden></div>
+      <div id="modulo3" class="modulo-movel">
         <div class="field-label">
-          <span class="field-label-titulo">3 ·<span class="titulo-palavras"><span>Selecionar</span><span>paradas</span></span></span>
+          <span class="field-label-titulo">
+            <span class="modulo-alca" id="alcaModulo3"
+                  title="Arraste para o lado para abrir como guia ao lado do mapa (duplo clique faz o mesmo)"></span>
+            3 ·<span class="titulo-palavras"><span>Selecionar</span><span>paradas</span></span></span>
           <span class="field-label-acoes">
             <button class="link-btn" id="tiposBtn">tipos de serviço</button>
             <button class="link-btn" id="selectAllBtn">marcar todos</button>
@@ -708,7 +716,7 @@
       <!-- Âncora: marca o lugar do módulo 4 no painel, para ele voltar exatamente
            daqui quando sair da guia -->
       <div id="ancoraModulo4" hidden></div>
-      <div id="stopsSection" style="display:none;">
+      <div id="stopsSection" class="modulo-movel" style="display:none;">
         <!-- Divisória 3 <-> 4: puxar para cima aumenta a Ordem da viagem e
              diminui o Selecionar paradas, sem mexer no resto do painel. -->
         <div class="divisor-modulos" id="divisorModulos" role="separator" aria-orientation="horizontal"
@@ -818,7 +826,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '4.6';
+const VERSAO = '4.7';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -946,7 +954,9 @@ if (!modoCampoAtivo){
   // o arraste continue chegando aqui mesmo com o cursor passando por cima do mapa.
   divisor.addEventListener('pointerdown', ev => {
     ev.preventDefault();
-    divisor.setPointerCapture(ev.pointerId);
+    // try/catch como nos outros arrastes: com ponteiro simulado a captura é
+    // recusada, e a exceção abortaria o resto do arraste.
+    try{ divisor.setPointerCapture(ev.pointerId); }catch(e){}
     document.body.classList.add('redimensionando');
 
     const mover = e => {
@@ -1805,115 +1815,130 @@ if (!modoCampoAtivo){
   puxador4.addEventListener('dblclick', () => aplicarAlturas(alturasGuardadas().c, ALTURA_PARADAS_PADRAO, true));
 }
 
-/* ---------------- Módulo 4 na guia lateral (v4.4) ----------------
-   Pedido do usuário: poder puxar o módulo 4 para o lado, virando uma guia ao
-   lado do mapa — segundo passo do "deixar o site totalmente customizável".
+/* ---------------- Módulos na guia lateral (v4.4, generalizado na v4.7) ----------------
+   O usuário pediu o mesmo efeito do módulo 4 para o módulo 3: poder jogar para
+   a coluna auxiliar. Em vez de repetir o código, ele virou uma tabela de
+   módulos — acrescentar o 1, o 2 ou o 5 depois é só somar uma linha aqui, a
+   âncora e a alça no HTML.
 
-   O módulo é o MESMO elemento nos dois lugares: ele é movido no HTML, não
-   duplicado. Por isso tudo que já existia continua valendo dentro da guia —
-   arrastar paradas, estrela, setas, remover — sem nenhum código repetido.
+   O módulo é o MESMO elemento nos dois lugares: é movido no HTML, não
+   duplicado. Por isso tudo que já existia continua valendo dentro da guia
+   (arrastar paradas, estrela, setas, remover, busca, seleção) sem código
+   repetido. Uma âncora invisível guarda o lugar dele no painel.
 
-   Uma âncora invisível guarda o lugar dele no painel, para voltar exatamente
-   de onde saiu. A escolha fica guardada no navegador.
+   O lugar NÃO é guardado entre aberturas, de propósito: os módulos sempre
+   abrem no painel, junto dos outros, e mandar para a guia vale enquanto a
+   página estiver aberta.
 
-   Em tela estreita (layout empilhado) a guia não existe: o módulo fica no
-   painel, e a preferência é ignorada sem ser apagada. */
-/* O lugar do módulo 4 NÃO é guardado entre aberturas, de propósito: o usuário
-   pediu que ele "inicie na mesma coluna dos outros". Mandar para a guia é uma
-   escolha do momento — vale enquanto a página estiver aberta e some ao recarregar.
-   A chave antiga é apagada para quem já tinha 'guia' gravado do teste da v4.4. */
-const CHAVE_MODULO4 = 'hg_modulo4_local';
-try{ localStorage.removeItem(CHAVE_MODULO4); }catch(e){}
-let modulo4Local = 'painel';       // só em memória, nesta sessão
+   Em tela estreita (layout empilhado) a guia não existe: os módulos ficam no
+   painel e a escolha da sessão espera a tela alargar de novo. */
+try{ localStorage.removeItem('hg_modulo4_local'); }catch(e){}   // resquício da v4.4
+
+const MODULOS = {
+  m3: { sec:'modulo3',      ancora:'ancoraModulo3', alca:'alcaModulo3', classe:'modulo3-na-guia' },
+  m4: { sec:'stopsSection', ancora:'ancoraModulo4', alca:'alcaModulo4', classe:'modulo4-na-guia' }
+};
+const localDoModulo = { m3:'painel', m4:'painel' };   // só em memória, nesta sessão
 const LARGURA_MINIMA_GUIA = 761;   // abaixo disso o layout é empilhado (ver media query)
 
 function telaComportaGuia(){ return document.documentElement.clientWidth >= LARGURA_MINIMA_GUIA; }
 
-function colocarModulo4(local){
-  modulo4Local = local === 'guia' ? 'guia' : 'painel';
-  const sec = document.getElementById('stopsSection');
+function moduloEstaNaGuia(chave){
+  return document.getElementById(MODULOS[chave].sec).parentElement === document.getElementById('guiaLateral');
+}
+
+function colocarModulo(chave, local){
+  const cfg = MODULOS[chave];
+  const sec = document.getElementById(cfg.sec);
   const guia = document.getElementById('guiaLateral');
-  const ancora = document.getElementById('ancoraModulo4');
   const naGuia = local === 'guia' && telaComportaGuia();
+  localDoModulo[chave] = local === 'guia' ? 'guia' : 'painel';
 
   if (naGuia){
     if (sec.parentElement !== guia) guia.appendChild(sec);
-    guia.hidden = false;
   }else{
-    if (sec.parentElement !== ancora.parentElement) ancora.after(sec);
-    guia.hidden = true;
+    const ancora = document.getElementById(cfg.ancora);
+    if (sec.previousElementSibling !== ancora) ancora.after(sec);
   }
-  document.body.classList.toggle('modulo4-na-guia', naGuia);
+  document.body.classList.toggle(cfg.classe, naGuia);
+
+  // Com os dois na guia, mantém a ordem natural: 3 em cima, 4 embaixo
+  const m3 = document.getElementById(MODULOS.m3.sec), m4 = document.getElementById(MODULOS.m4.sec);
+  if (m3.parentElement === guia && m4.parentElement === guia) guia.insertBefore(m3, m4);
+
+  // A guia só existe enquanto tiver algum módulo dentro
+  guia.hidden = !guia.querySelector('.modulo-movel');
   atualizarGuiaVazia();
   // A largura do mapa mudou: sem isto o Leaflet segue desenhando no tamanho antigo
   if (map) map.invalidateSize({ animate:false });
 }
 
-function modulo4EstaNaGuia(){
-  return document.getElementById('stopsSection').parentElement === document.getElementById('guiaLateral');
-}
-
-// Sem paradas o módulo se esconde sozinho (renderStopsList). Na guia isso
-// deixaria uma coluna vazia sem explicação — daí a linha de aviso.
+// Sem paradas o módulo 4 se esconde sozinho (renderStopsList). Na guia isso
+// deixaria uma coluna sem explicação — daí a linha de aviso.
 function atualizarGuiaVazia(){
   const aviso = document.getElementById('guiaVazia');
   if (!aviso) return;
-  aviso.hidden = !(modulo4EstaNaGuia() && !stops.length);
+  aviso.hidden = !(moduloEstaNaGuia('m4') && !stops.length);
 }
 
 if (!modoCampoAtivo){
-  const alca = document.getElementById('alcaModulo4');
-  const sec = document.getElementById('stopsSection');
+  Object.keys(MODULOS).forEach(chave => {
+    const cfg = MODULOS[chave];
+    const alca = document.getElementById(cfg.alca);
+    const sec = document.getElementById(cfg.sec);
 
-  // Duplo clique: caminho rápido, sem arrastar
-  alca.addEventListener('dblclick', () => {
-    if (!telaComportaGuia()) return;
-    colocarModulo4(modulo4EstaNaGuia() ? 'painel' : 'guia');
+    // Duplo clique: caminho rápido, sem arrastar
+    alca.addEventListener('dblclick', () => {
+      if (!telaComportaGuia()) return;
+      colocarModulo(chave, moduloEstaNaGuia(chave) ? 'painel' : 'guia');
+    });
+
+    alca.addEventListener('pointerdown', ev => {
+      if (ev.button !== 0 || !telaComportaGuia()) return;
+      ev.preventDefault();
+      try{ alca.setPointerCapture(ev.pointerId); }catch(e){}
+
+      const naGuia = moduloEstaNaGuia(chave);
+      const inicioX = ev.clientX;
+      const LIMITE = 80;   // quanto precisa andar para a troca valer
+
+      document.body.classList.add('movendo-modulo');
+      sec.classList.add('movendo');
+      // Faixa acesa no destino: esquerda (virar guia) ou direita (voltar ao painel)
+      const alvo = document.createElement('div');
+      alvo.className = 'alvo-modulo ' + (naGuia ? 'direita' : 'esquerda');
+      document.querySelector('main').appendChild(alvo);
+
+      let dx = 0;
+      const mover = e => {
+        dx = e.clientX - inicioX;
+        // Só deixa arrastar para o lado que faz sentido
+        const util = naGuia ? Math.max(0, dx) : Math.min(0, dx);
+        sec.style.transform = `translateX(${util}px)`;
+        alvo.classList.toggle('aceso', Math.abs(util) >= LIMITE);
+      };
+      const soltar = () => {
+        alca.removeEventListener('pointermove', mover);
+        alca.removeEventListener('pointerup', soltar);
+        alca.removeEventListener('pointercancel', soltar);
+        document.body.classList.remove('movendo-modulo');
+        sec.classList.remove('movendo');
+        sec.style.transform = '';
+        alvo.remove();
+        const trocou = naGuia ? dx >= LIMITE : dx <= -LIMITE;
+        if (trocou) colocarModulo(chave, naGuia ? 'painel' : 'guia');
+      };
+      alca.addEventListener('pointermove', mover);
+      alca.addEventListener('pointerup', soltar);
+      alca.addEventListener('pointercancel', soltar);
+    });
   });
 
-  alca.addEventListener('pointerdown', ev => {
-    if (ev.button !== 0 || !telaComportaGuia()) return;
-    ev.preventDefault();
-    try{ alca.setPointerCapture(ev.pointerId); }catch(e){}
-
-    const naGuia = modulo4EstaNaGuia();
-    const inicioX = ev.clientX;
-    const LIMITE = 80;   // quanto precisa andar para a troca valer
-
-    document.body.classList.add('movendo-modulo');
-    sec.classList.add('movendo');
-    // Faixa acesa no destino: esquerda (virar guia) ou direita (voltar ao painel)
-    const alvo = document.createElement('div');
-    alvo.className = 'alvo-modulo ' + (naGuia ? 'direita' : 'esquerda');
-    document.querySelector('main').appendChild(alvo);
-
-    let dx = 0;
-    const mover = e => {
-      dx = e.clientX - inicioX;
-      // Só deixa arrastar para o lado que faz sentido
-      const util = naGuia ? Math.max(0, dx) : Math.min(0, dx);
-      sec.style.transform = `translateX(${util}px)`;
-      alvo.classList.toggle('aceso', Math.abs(util) >= LIMITE);
-    };
-    const soltar = () => {
-      alca.removeEventListener('pointermove', mover);
-      alca.removeEventListener('pointerup', soltar);
-      alca.removeEventListener('pointercancel', soltar);
-      document.body.classList.remove('movendo-modulo');
-      sec.classList.remove('movendo');
-      sec.style.transform = '';
-      alvo.remove();
-      const trocou = naGuia ? dx >= LIMITE : dx <= -LIMITE;
-      if (trocou) colocarModulo4(naGuia ? 'painel' : 'guia');
-    };
-    alca.addEventListener('pointermove', mover);
-    alca.addEventListener('pointerup', soltar);
-    alca.addEventListener('pointercancel', soltar);
+  // Janela estreita demais: os módulos voltam para o painel. Alargando de novo
+  // eles retornam, porque a escolha da sessão continua em memória.
+  window.addEventListener('resize', () => {
+    Object.keys(MODULOS).forEach(chave => colocarModulo(chave, localDoModulo[chave]));
   });
-
-  // Janela estreita demais: o módulo volta para o painel. Alargando de novo ele
-  // retorna para a guia, porque a escolha da sessão continua em memória.
-  window.addEventListener('resize', () => colocarModulo4(modulo4Local));
 }
 
 /* ---------------- Arrastar para reordenar (v3.8) ----------------
