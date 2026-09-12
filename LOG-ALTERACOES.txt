@@ -3254,3 +3254,53 @@ PENDENTE
   Mover "Traçar nesta ordem" e "Otimizar ordem" para o topo, ao lado do
   interruptor de modo noturno (pedido de 10/09, adiado pelo usuário para
   depois dos módulos).
+
+--------------------------------------------------------
+[11/09/2026] v4.3 — Divisória entre os módulos 3 e 4
+--------------------------------------------------------
+
+RETORNO DO USUÁRIO SOBRE A v4.2
+  "Testei e realmente consigo puxar para baixo, porém não é o que foi
+  solicitado. O módulo 4 pode ser puxado para CIMA para ficar maior,
+  talvez se o item 3 do site virar módulo fique mais fácil."
+  E: "Preciso que o projeto seja voltado para monitores Full HD, esqueça
+  que estou usando a TV."
+
+O QUE EU TINHA ENTENDIDO ERRADO
+  A v4.2 pôs um puxador na borda de BAIXO do módulo 4: ele crescia para
+  baixo e empurrava itens 5 e Roteiro. O pedido era o módulo crescer para
+  CIMA, o que só faz sentido se o vizinho de cima (item 3) ceder espaço —
+  e o próprio usuário apontou isso ao dizer que o item 3 virar módulo
+  facilitaria.
+
+O QUE FOI FEITO
+  Divisória entre os módulos 3 e 4. A soma das duas alturas é conservada
+  durante o arraste: puxar para cima tira do 3 e dá para o 4; para baixo,
+  o contrário. Como a soma não muda, o resto do painel não se mexe.
+
+  Piso de 120px por módulo. O teto amarrado a 70% da altura da tela, que
+  existia na v4.2 por causa da TV, foi removido — o alvo agora é Full HD
+  (registrado como decisão 6 no CLAUDE.md).
+
+  O puxador da v4.2 e todo o código dele foram removidos; a chave antiga
+  'hg_altura_paradas' deu lugar a 'hg_alturas_modulos', que guarda as duas
+  alturas juntas.
+
+TESTES (janela emulada em 1920x1080, com 10 paradas)
+  - Início: 3=320, 4=240 (soma 560).
+  - Puxar para cima 150: 3=170, 4=390. Soma 560.
+  - Puxar para baixo 100: 3=270, 4=290. Soma 560.
+  - Além do limite para cima: 3=120, 4=440. Para baixo: 3=440, 4=120.
+  - A linha dos botões "Traçar/Otimizar" ficou no MESMO lugar antes e
+    depois do arraste (topo em 1001 nos dois) — o resto do painel não se
+    mexe, que é a diferença central em relação à v4.2.
+  - Grava só ao soltar; duplo clique volta a 320/240; recarregando a
+    página a divisão volta (160px/400px restaurados do navegador).
+
+VERSÃO: fecha a v4.3.
+
+PENDENTES
+  - Segunda parte do pedido de módulos: puxar o módulo 4 para o lado,
+    virando uma guia ao lado do mapa.
+  - Mover "Traçar nesta ordem" e "Otimizar ordem" para o topo (pedido de
+    10/09, adiado pelo usuário para depois dos módulos).

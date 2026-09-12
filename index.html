@@ -254,7 +254,7 @@
      era o bug relatado em 29/08/2026: com os grupos, a lista comprimia os
      ultimos clientes e nao rolava. Vale para .checklist, .stops e .steps. */
   .busca-clientes{width:100%; margin-bottom:8px;}
-  .checklist{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;padding-right:2px;}
+  .checklist{display:flex;flex-direction:column;gap:6px;max-height:var(--altura-checklist, 320px);overflow-y:auto;padding-right:2px;}
   .checklist > *{flex:none;}
   .check-row{display:flex;align-items:flex-start;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:13px;}
   .check-row input{margin-top:2px;accent-color:var(--teal);}
@@ -314,21 +314,21 @@
      inline — mesma ideia da largura do painel (--painel-w). */
   .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:var(--altura-paradas, 240px);overflow-y:auto;position:relative;}
 
-  /* Puxador de altura do módulo 4: arrasta para esticar ou encolher a lista de
-     paradas. Existe porque 240px mostram ~5 paradas, e num roteiro maior a
-     lista fica rolando o tempo todo — quem tem tela grande quer ver tudo de
-     uma vez, quem tem tela pequena quer o contrário.
-     touch-action:none: no celular, o arraste no puxador não pode virar rolagem. */
-  .puxador-altura{
-    height:14px; margin-top:2px; display:flex; align-items:center; justify-content:center;
+  /* Divisória entre os módulos 3 (Selecionar paradas) e 4 (Ordem da viagem).
+     Puxar para CIMA faz o 4 crescer e o 3 encolher na mesma medida; para baixo,
+     o contrário. A soma das duas alturas não muda, então o resto do painel fica
+     parado — é isso que diferencia da v4.2, que empurrava tudo para baixo.
+     touch-action:none: no celular o arraste aqui não pode virar rolagem. */
+  .divisor-modulos{
+    height:16px; margin:2px 0 4px; display:flex; align-items:center; justify-content:center;
     cursor:ns-resize; touch-action:none; user-select:none; -webkit-user-select:none;
   }
-  .puxador-altura::before{
-    content:''; width:38px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
+  .divisor-modulos::before{
+    content:''; width:46px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
   }
-  .puxador-altura:hover::before{background:var(--amber-dim);}
+  .divisor-modulos:hover::before{background:var(--amber-dim);}
   body.altura-arrastando{cursor:ns-resize; user-select:none;}
-  body.altura-arrastando .puxador-altura::before{background:var(--amber);}
+  body.altura-arrastando .divisor-modulos::before{background:var(--amber);}
   .stops > *{flex:none;}
   .stop-row{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;}
   .stop-row .n{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;width:16px;flex-shrink:0;}
@@ -646,10 +646,12 @@
 
       <!-- Passo 4: lista reordenável das paradas escolhidas (só aparece quando há paradas) -->
       <div id="stopsSection" style="display:none;">
+        <!-- Divisória 3 <-> 4: puxar para cima aumenta a Ordem da viagem e
+             diminui o Selecionar paradas, sem mexer no resto do painel. -->
+        <div class="divisor-modulos" id="divisorModulos" role="separator" aria-orientation="horizontal"
+             title="Arraste para cima ou para baixo para dividir o espaço entre os itens 3 e 4 (duplo clique volta ao padrão)"></div>
         <div class="field-label">4 · Ordem da viagem</div>
         <ul class="stops" id="stopsList"></ul>
-        <div class="puxador-altura" id="puxadorParadas" role="separator" aria-orientation="horizontal"
-             title="Arraste para aumentar ou diminuir a lista (duplo clique volta ao padrão)"></div>
       </div>
 
       <!-- Ações: calcular rota respeitando a ordem atual, ou deixar o OSRM otimizar a ordem -->
@@ -742,7 +744,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '4.2';
+const VERSAO = '4.3';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1576,69 +1578,80 @@ function renderStopsList(){
   });
 }
 
-/* ---------------- Altura do módulo 4 ajustável (v4.2) ----------------
-   Pedido do usuário: poder "puxar" o módulo da Ordem da viagem para esticar e
-   ver mais paradas de uma vez. Os 240px do padrão mostram cerca de 5.
+/* ---------------- Espaço dividido entre os módulos 3 e 4 (v4.3) ----------------
+   Pedido do usuário: poder "puxar o módulo 4 para cima" para ele ficar maior —
+   e a observação dele de que ficaria mais fácil se o item 3 também fosse um
+   módulo. É exatamente isso: os dois dividem a mesma coluna e a divisória entre
+   eles move a fronteira.
 
-   Mesma mecânica da divisória do painel: a medida vive numa variável CSS, o
-   arraste usa eventos pointer* (mouse e toque no mesmo caminho) e a escolha
-   fica guardada no navegador. Duplo clique volta ao padrão. */
-const CHAVE_ALTURA_PARADAS = 'hg_altura_paradas';
+   A SOMA das duas alturas não muda durante o arraste. Por isso o módulo 4
+   cresce PARA CIMA (a fronteira sobe) e o resto do painel — itens 5, Roteiro —
+   fica parado. A v4.2 tinha um puxador embaixo do módulo 4: ele crescia para
+   baixo e empurrava todo o resto, que não era o pedido.
+
+   O alvo do projeto passou a ser monitor Full HD (decisão do usuário em
+   11/09/2026), então não há mais teto amarrado à altura da tela; só um piso por
+   módulo, para nenhum dos dois sumir. */
+const CHAVE_ALTURAS = 'hg_alturas_modulos';
+const ALTURA_CHECKLIST_PADRAO = 320;
 const ALTURA_PARADAS_PADRAO = 240;
-const ALTURA_PARADAS_MIN = 120;   // abaixo disso não cabe nem duas paradas
-// O teto acompanha a tela: numa TV de 768px não faz sentido uma lista de 900px,
-// que empurraria todo o resto do painel para fora da vista.
-function alturaParadasMax(){
-  return Math.max(ALTURA_PARADAS_MIN, Math.round(document.documentElement.clientHeight * 0.7));
+const ALTURA_MODULO_MIN = 120;   // abaixo disso o módulo não mostra nem duas linhas
+
+function aplicarAlturas(checklist, paradas, salvar){
+  const c = Math.round(Math.max(checklist, ALTURA_MODULO_MIN));
+  const p = Math.round(Math.max(paradas, ALTURA_MODULO_MIN));
+  document.documentElement.style.setProperty('--altura-checklist', c + 'px');
+  document.documentElement.style.setProperty('--altura-paradas', p + 'px');
+  if (salvar){ try{ localStorage.setItem(CHAVE_ALTURAS, JSON.stringify({ c, p })); }catch(e){ /* segue sem persistir */ } }
+  return { c, p };
 }
-function aplicarAlturaParadas(px, salvar){
-  const v = Math.round(Math.min(Math.max(px, ALTURA_PARADAS_MIN), alturaParadasMax()));
-  document.documentElement.style.setProperty('--altura-paradas', v + 'px');
-  if (salvar){ try{ localStorage.setItem(CHAVE_ALTURA_PARADAS, String(v)); }catch(e){ /* segue sem persistir */ } }
-  return v;
-}
+
 if (!modoCampoAtivo){
-  let alturaSalva = null;
-  try{ alturaSalva = parseInt(localStorage.getItem(CHAVE_ALTURA_PARADAS), 10); }catch(e){}
-  if (alturaSalva > 0) aplicarAlturaParadas(alturaSalva, false);
+  // Alturas guardadas, se houver
+  try{
+    const g = JSON.parse(localStorage.getItem(CHAVE_ALTURAS));
+    if (g && g.c > 0 && g.p > 0) aplicarAlturas(g.c, g.p, false);
+  }catch(e){ /* guardado inválido: segue com os padrões */ }
 
-  const puxador = document.getElementById('puxadorParadas');
-  const lista = document.getElementById('stopsList');
+  const divisor = document.getElementById('divisorModulos');
+  const checklistEl = document.getElementById('checklist');
+  const paradasEl = document.getElementById('stopsList');
 
-  puxador.addEventListener('pointerdown', ev => {
+  divisor.addEventListener('pointerdown', ev => {
     if (ev.button !== 0) return;
     ev.preventDefault();
     // try/catch: com ponteiro simulado (testes) a captura é recusada, e sem isso
-    // a exceção abortaria o resto do arraste. Mesma proteção do arraste de paradas.
-    try{ puxador.setPointerCapture(ev.pointerId); }catch(e){}
+    // a exceção abortaria o resto do arraste.
+    try{ divisor.setPointerCapture(ev.pointerId); }catch(e){}
     document.body.classList.add('altura-arrastando');
+
     const inicioY = ev.clientY;
-    const alturaInicial = lista.getBoundingClientRect().height;
+    const cInicial = checklistEl.getBoundingClientRect().height;
+    const pInicial = paradasEl.getBoundingClientRect().height;
+    const total = cInicial + pInicial;   // o que a divisória reparte
 
-    const mover = e => aplicarAlturaParadas(alturaInicial + (e.clientY - inicioY), false);
-    const soltar = () => {
-      puxador.removeEventListener('pointermove', mover);
-      puxador.removeEventListener('pointerup', soltar);
-      puxador.removeEventListener('pointercancel', soltar);
-      document.body.classList.remove('altura-arrastando');
-      // Só grava ao soltar, não a cada pixel
-      aplicarAlturaParadas(lista.getBoundingClientRect().height, true);
+    const mover = e => {
+      // Divisória para cima (dy negativo): o checklist encolhe, as paradas crescem.
+      const dy = e.clientY - inicioY;
+      const c = Math.min(Math.max(cInicial + dy, ALTURA_MODULO_MIN), total - ALTURA_MODULO_MIN);
+      aplicarAlturas(c, total - c, false);
     };
-    puxador.addEventListener('pointermove', mover);
-    puxador.addEventListener('pointerup', soltar);
-    puxador.addEventListener('pointercancel', soltar);
+    const soltar = () => {
+      divisor.removeEventListener('pointermove', mover);
+      divisor.removeEventListener('pointerup', soltar);
+      divisor.removeEventListener('pointercancel', soltar);
+      document.body.classList.remove('altura-arrastando');
+      // Grava só ao soltar, não a cada pixel
+      aplicarAlturas(checklistEl.getBoundingClientRect().height,
+                     paradasEl.getBoundingClientRect().height, true);
+    };
+    divisor.addEventListener('pointermove', mover);
+    divisor.addEventListener('pointerup', soltar);
+    divisor.addEventListener('pointercancel', soltar);
   });
 
-  // Duplo clique volta ao padrão — saída fácil de uma altura que ficou ruim
-  puxador.addEventListener('dblclick', () => aplicarAlturaParadas(ALTURA_PARADAS_PADRAO, true));
-
-  // Tela menor (ou janela redimensionada): reaplica dentro do teto de agora,
-  // sem regravar — a preferência original continua salva.
-  window.addEventListener('resize', () => {
-    let alvo = ALTURA_PARADAS_PADRAO;
-    try{ const g = parseInt(localStorage.getItem(CHAVE_ALTURA_PARADAS), 10); if (g > 0) alvo = g; }catch(e){}
-    aplicarAlturaParadas(alvo, false);
-  });
+  // Duplo clique devolve os dois ao padrão
+  divisor.addEventListener('dblclick', () => aplicarAlturas(ALTURA_CHECKLIST_PADRAO, ALTURA_PARADAS_PADRAO, true));
 }
 
 /* ---------------- Arrastar para reordenar (v3.8) ----------------

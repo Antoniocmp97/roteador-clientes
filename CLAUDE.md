@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 11/09/2026 — v4.2 (altura do módulo 4 ajustável)
+> **Última atualização:** 11/09/2026 — v4.3 (espaço dividido entre os módulos 3 e 4)
 
 ---
 
@@ -86,11 +86,14 @@ sem dependências instaladas. Abre direto no navegador.
   demais.
   Esc cancela o arraste. O arraste começa só pela alça, então no celular o resto
   da linha continua rolando a lista
-- **Altura do módulo 4 ajustável** (v4.2): um puxador na borda de baixo da lista
-  de paradas estica ou encolhe o bloco, para ver mais paradas de uma vez. Piso de
-  120px, teto de 70% da altura da tela, escolha guardada no navegador e duplo
-  clique voltando ao padrão de 240px. Primeiro passo do pedido de deixar o site
-  customizável por módulos
+- **Espaço dividido entre os módulos 3 e 4** (v4.3): uma divisória entre
+  "Selecionar paradas" e "Ordem da viagem". Puxar para cima faz o 4 crescer e o 3
+  encolher na mesma medida; para baixo, o contrário. A **soma das duas alturas não
+  muda**, então o resto do painel (itens 5 e Roteiro) fica parado. Piso de 120px
+  por módulo, escolha guardada no navegador, duplo clique volta ao padrão
+  (320/240). Primeiro passo do pedido de deixar o site customizável por módulos.
+  ⚠️ A v4.2 tinha um puxador na borda de BAIXO do módulo 4: ele crescia para
+  baixo e empurrava o resto do painel, que não era o pedido — foi substituído
 - **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
   escolhida, e "Otimizar ordem" reordena só as demais — para quando é preciso
   passar num lugar antes do resto do roteiro
@@ -168,6 +171,10 @@ dela ("Roteiro recebido por link · nada é enviado para servidor").
 4. **Filiais de exemplo removidas** (Rio Maina / Próspera do primeiro protótipo).
    Apenas os pontos carregados pelo usuário aparecem.
 5. **Arquivo HTML único** por enquanto — sem build step, sem framework.
+6. **O alvo é monitor Full HD** (decidido em 11/09/2026). A TV de 1366x768 deixou
+   de guiar as decisões de layout: limites de altura amarrados a telas pequenas
+   foram removidos. O layout empilhado para telas estreitas continua existindo,
+   mas não é mais o caso a otimizar.
 
 ---
 
@@ -517,6 +524,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 34 | **v4.0** — Correção: a tela do campo ficava desenhada embaixo do escritório desde a v1.0 (display do CSS vencia o hidden). Subtítulo do cabeçalho removido |
 | 35 | **v4.1** — Revisão de código completa: 6 correções (marcar todos e prioridades, balão com busca, rota/link desatualizados, marcadores velhos ao trocar base, símbolos nos balões, novo roteiro na mesma aba). Inclui a remoção do rodapé |
 | 36 | **v4.2** — Altura do módulo 4 (Ordem da viagem) ajustável por puxador, guardada no navegador. Primeiro passo dos módulos customizáveis |
+| 37 | **v4.3** — Divisória entre os módulos 3 e 4: o 4 cresce para cima e o 3 encolre junto, sem empurrar o resto. Substitui o puxador da v4.2. Alvo do projeto passa a ser Full HD |
 
 ---
 
@@ -583,7 +591,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v4.2:  0 / 5
+Leves acumuladas desde a v4.3:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -643,3 +651,4 @@ os backups locais são conveniência, não garantia.
 | 4.0 | 10/09/2026 | Tela do campo parou de vazar embaixo do escritório (bug da v1.0); subtítulo do cabeçalho removido |
 | 4.1 | 10/09/2026 | 6 correções da revisão de código completa (ver seção 5) |
 | 4.2 | 11/09/2026 | Altura do módulo 4 ajustável (puxador), guardada no navegador |
+| 4.3 | 11/09/2026 | Divisória entre os módulos 3 e 4 (o 4 cresce para cima); alvo Full HD |
