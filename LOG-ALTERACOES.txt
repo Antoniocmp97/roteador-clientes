@@ -3464,3 +3464,26 @@ VERSÃO: fecha a v4.6.
 
 PENDENTE
   Ponto 2: mover "Traçar nesta ordem" e "Otimizar ordem" para o topo.
+
+--------------------------------------------------------
+[12/09/2026] Pendência cancelada: botões no topo (leve 1/5 desde a v4.6)
+--------------------------------------------------------
+
+DECISÃO DO USUÁRIO
+  "Ficou muito bom. Acredito que o ajuste dos botões não faz tanto sentido
+  agora que funcionou a parte de separar por módulos."
+
+  O pedido de 10/09 — mover "Traçar nesta ordem" e "Otimizar ordem" para o
+  topo, ao lado do interruptor de modo noturno — está CANCELADO. Os botões
+  ficam onde estão, no painel, abaixo da lista de paradas.
+
+  Motivo: o pedido nasceu de querer os botões sempre à vista. Com os
+  módulos redimensionáveis e a guia lateral (v4.2 a v4.6), o painel deixou
+  de empurrar os botões para fora da vista, e a mudança perdeu a razão de
+  ser.
+
+  As entradas anteriores deste log (v4.4, v4.5 e v4.6) listam esse item
+  como pendente; esta entrada é que vale.
+
+NADA MUDOU NO CÓDIGO. Alteração leve (documentação): continua v4.6,
+contador em 1/5.
