@@ -3786,3 +3786,47 @@ TESTES
   - Arraste pela alça continua funcionando: HOSPITAL da 3ª para a 1ª.
 
 VERSÃO: fecha a v5.3.
+
+--------------------------------------------------------
+[12/09/2026] v5.4 — Módulo 3 ajustável desde a abertura
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Ao carregar o site, antes de selecionar qualquer parada, seja possível
+  regular a expansão ou vice-versa do módulo 3."
+
+CAUSA
+  A divisória 3<->4 mora dentro do módulo 4, que só aparece quando existe
+  alguma parada escolhida. E o puxador do módulo 3 só aparecia no caso do
+  módulo 4 estar na guia. Resultado: ao abrir o site, o módulo 3 não tinha
+  nenhum controle de altura.
+
+O QUE FOI FEITO
+  O puxador do módulo 3 passou a aparecer sempre que NÃO há divisória
+  disponível: módulo 4 na guia (como já era) ou módulo 4 ainda sem
+  paradas. Uma marca no <body> ('modulo4-oculto'), atualizada a cada
+  redesenho da lista de paradas, é o que liga os dois casos.
+
+DOIS PROBLEMAS ENCONTRADOS NO CAMINHO
+  1. A marca dependia de renderStopsList, que NÃO era chamada ao abrir a
+     página. O ajuste não teria efeito justamente no caso relatado.
+     Corrigido com uma primeira chamada na abertura (só no modo
+     escritório).
+
+  2. Achado por tabela: importClients zerava a viagem (stops = []) mas
+     nunca redesenhava a seção 4. Carregar outra base deixava as linhas da
+     base anterior desenhadas na tela — e clicáveis. Reproduzido: 2 linhas
+     fantasmas com a viagem já em zero. Corrigido chamando renderStopsList
+     no fim de importClients.
+
+TESTES
+  - Ao abrir sem base: puxador do 3 visível, marca 'modulo4-oculto' posta.
+  - Base carregada, sem paradas: puxador visível e a divisória de fato
+    invisível (conferido por offsetParent, não por display calculado — o
+    display de um filho não muda quando o pai está oculto).
+  - Arrastar o puxador nesse estado: 320 -> 480, gravado.
+  - Ao escolher uma parada: puxador some e a divisória aparece.
+  - Ao remover a parada: puxador volta.
+  - Carregar outra base com parada escolhida: 0 paradas e 0 linhas na tela.
+
+VERSÃO: fecha a v5.4.

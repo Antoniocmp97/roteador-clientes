@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 12/09/2026 — v5.3 (largura da alça dobrada)
+> **Última atualização:** 12/09/2026 — v5.4 (módulo 3 ajustável desde a abertura)
 
 ---
 
@@ -119,10 +119,11 @@ sem dependências instaladas. Abre direto no navegador.
   lugar dele no painel. Na guia a lista ocupa a coluna inteira e a divisória 3↔4
   some, porque ali ela não faz sentido. Em tela estreita o módulo fica no painel
   e a preferência é ignorada sem ser apagada
-- **Módulo 3 com puxador próprio** (v4.5): aparece só quando o módulo 4 está na
-  guia — nessa hora a divisória 3↔4 foi embora junto com ele, e sem isso o módulo
-  3 ficaria preso na altura em que estava. Com os dois no painel continua valendo
-  a divisória, para não haver dois controles lado a lado
+- **Módulo 3 com puxador próprio** (v4.5, ampliado na v5.4): aparece sempre que
+  **não há divisória 3↔4 disponível** — ou seja, quando o módulo 4 está na guia
+  (a divisória mora dentro dele e vai junto) ou quando ainda não há parada
+  selecionada, caso em que o módulo 4 nem aparece. Com os dois no painel e uma
+  parada escolhida, vale a divisória, para não haver dois controles lado a lado
 - **Espaço dividido entre os módulos 3 e 4** (v4.3): uma divisória entre
   "Selecionar paradas" e "Ordem da viagem". Puxar para cima faz o 4 crescer e o 3
   encolher na mesma medida; para baixo, o contrário. A **soma das duas alturas não
@@ -578,6 +579,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 45 | **v5.1** — Botões ★ ▲ ▼ ✕ da lista de paradas com alvo de toque maior (32×32, e 44×44 no toque) |
 | 46 | **v5.2** — Desfaz a v5.1 e aumenta o que o usuário realmente pediu: a área de pegada da alça de arrastar |
 | 47 | **v5.3** — Largura da alça dobrada (27 → 54; 37 → 74 no toque) |
+| 48 | **v5.4** — Módulo 3 ajustável desde a abertura, antes de escolher paradas; corrigidas as linhas fantasmas da lista de paradas ao trocar de base |
 
 ---
 
@@ -644,7 +646,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v5.3:  0 / 5
+Leves acumuladas desde a v5.4:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -715,3 +717,4 @@ os backups locais são conveniência, não garantia.
 | 5.1 | 12/09/2026 | Alvo de toque maior nos botões da lista de paradas (revertida na v5.2) |
 | 5.2 | 12/09/2026 | Área de pegada maior na alça de arrastar paradas |
 | 5.3 | 12/09/2026 | Largura da alça dobrada (54px; 74px no toque) |
+| 5.4 | 12/09/2026 | Módulo 3 ajustável desde a abertura; linhas fantasmas corrigidas |

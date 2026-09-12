@@ -386,8 +386,14 @@
   /* O puxador do módulo 3 só aparece quando o módulo 4 saiu para a guia: com os
      dois no painel, quem reparte a altura é a divisória entre eles, e dois
      controles lado a lado só confundiriam. */
+  /* O puxador do módulo 3 existe para quando NÃO há divisória 3<->4 disponível.
+     Isso acontece em dois casos: o módulo 4 foi para a guia (a divisória mora
+     dentro dele e vai junto) ou ainda não há parada selecionada, quando o módulo
+     4 nem aparece — foi o caso relatado pelo usuário em 12/09/2026, que deixava
+     o módulo 3 sem como ser ajustado logo ao abrir o site. */
   #puxadorChecklist{display:none;}
-  body.modulo4-na-guia #puxadorChecklist{display:flex;}
+  body.modulo4-na-guia #puxadorChecklist,
+  body.modulo4-oculto #puxadorChecklist{display:flex;}
   /* A divisória 3<->4 mora dentro do módulo 4 e só faz sentido com os DOIS no
      painel, um embaixo do outro. Se o 3 foi para a guia, ela some. */
   body.modulo3-na-guia #divisorModulos{display:none;}
@@ -860,7 +866,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '5.3';
+const VERSAO = '5.4';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1359,6 +1365,11 @@ function importClients(grupos, filename, salvoEm){
     `✓ ${clientPoints.length} ${clientPoints.length === 1 ? 'ponto' : 'pontos'} em ${nCli} ${nCli === 1 ? 'cliente' : 'clientes'}, de "${filename}"${quando}`;
   document.getElementById('countLabel').textContent = `(${clientPoints.length})`;
   renderChecklist();
+  // A viagem foi zerada acima (stops = []), mas a lista da seção 4 continuava
+  // desenhada com as paradas da base anterior — linhas fantasmas, ainda
+  // clicáveis (achado em 12/09/2026). Redesenhar também acerta a marca
+  // "modulo4-oculto", que o puxador do módulo 3 usa.
+  renderStopsList();
 }
 
 // Chamado pelo botão do popup do marcador no mapa: simula o clique no checkbox correspondente
@@ -1662,6 +1673,9 @@ function renderStopsList(){
   const section = document.getElementById('stopsSection');
   const list = document.getElementById('stopsList');
   section.style.display = stops.length ? 'block' : 'none';
+  // Sem parada nenhuma o módulo 4 não aparece, e com ele some a divisória 3<->4.
+  // A marca abaixo é o que faz o puxador do módulo 3 entrar no lugar dela.
+  document.body.classList.toggle('modulo4-oculto', !stops.length);
   // Na guia, mostra/esconde o aviso de coluna vazia
   if (typeof atualizarGuiaVazia === 'function') atualizarGuiaVazia();
   list.innerHTML = '';
@@ -3209,6 +3223,11 @@ if (!modoCampoAtivo){
   if (origem) setOrigin(origem.lat, origem.lng, origem.label, false);
   atualizarBotaoOrigemPadrao();
 }
+
+// Primeira pintura da seção 4: sem isso a marca "modulo4-oculto" só apareceria
+// depois da primeira seleção, e o puxador do módulo 3 ficaria indisponível
+// justamente ao abrir o site, que é quando ele mais serve.
+if (!modoCampoAtivo) renderStopsList();
 
 // Só entra no modo campo se o link realmente trouxer um roteiro
 if (modoCampoAtivo) ativarModoCampo();
