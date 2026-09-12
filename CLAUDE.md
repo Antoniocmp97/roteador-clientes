@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 12/09/2026 — v5.1 (alvo de toque maior nos botões da lista de paradas)
+> **Última atualização:** 12/09/2026 — v5.2 (área de pegada maior na alça de arrastar)
 
 ---
 
@@ -131,10 +131,11 @@ sem dependências instaladas. Abre direto no navegador.
   (320/240). Primeiro passo do pedido de deixar o site customizável por módulos.
   ⚠️ A v4.2 tinha um puxador na borda de BAIXO do módulo 4: ele crescia para
   baixo e empurrava o resto do painel, que não era o pedido — foi substituído
-- **Alvo de toque dos botões da lista** (v5.1): ★ ▲ ▼ ✕ passaram de ~21×21 para
-  32×32 pontos, e 44×44 em telas de toque (medida recomendada por Apple e Google).
-  O símbolo continua do mesmo tamanho — o que cresceu foi a área que responde ao
-  clique. O espaço saiu das folgas entre os botões, não do nome da parada
+- **Área de pegada da alça de arrastar** (v5.2): os seis pontinhos que movem a
+  parada para cima ou para baixo têm área de 27×altura-da-linha, e 37 de largura
+  em telas de toque. Os pontinhos desenhados continuam do mesmo tamanho.
+  ⚠️ A v5.1 tinha aumentado os botões ★ ▲ ▼ ✕ por engano — o pedido era a alça;
+  os botões voltaram ao tamanho original
 - **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
   escolhida, e "Otimizar ordem" reordena só as demais — para quando é preciso
   passar num lugar antes do resto do roteiro
@@ -574,6 +575,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 43 | **v4.9** — Divisória entre os dois módulos dentro da guia, repartindo a altura da coluna |
 | 44 | **v5.0** — Cascata do cliente fecha ao selecionar uma filial, inclusive durante a busca |
 | 45 | **v5.1** — Botões ★ ▲ ▼ ✕ da lista de paradas com alvo de toque maior (32×32, e 44×44 no toque) |
+| 46 | **v5.2** — Desfaz a v5.1 e aumenta o que o usuário realmente pediu: a área de pegada da alça de arrastar |
 
 ---
 
@@ -640,7 +642,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v5.1:  0 / 5
+Leves acumuladas desde a v5.2:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -708,4 +710,5 @@ os backups locais são conveniência, não garantia.
 | 4.8 | 12/09/2026 | Guia com largura ajustável; campo de busca não estica mais na coluna |
 | 4.9 | 12/09/2026 | Divisória entre os dois módulos da guia |
 | 5.0 | 12/09/2026 | Cascata fecha ao selecionar uma filial |
-| 5.1 | 12/09/2026 | Alvo de toque maior nos botões da lista de paradas |
+| 5.1 | 12/09/2026 | Alvo de toque maior nos botões da lista de paradas (revertida na v5.2) |
+| 5.2 | 12/09/2026 | Área de pegada maior na alça de arrastar paradas |

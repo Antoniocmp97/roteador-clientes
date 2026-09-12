@@ -3727,3 +3727,35 @@ TESTES
     medição. Fica para o usuário conferir.
 
 VERSÃO: fecha a v5.1.
+
+--------------------------------------------------------
+[12/09/2026] v5.2 — Área de pegada da alça de arrastar
+--------------------------------------------------------
+
+CORREÇÃO DE ROTA
+  "Na verdade não era para mexer no tamanho da seta em si, mas sim nos 6
+  pontinhos onde consigo arrastar com o mouse para cima ou para baixo."
+
+  Eu tinha entendido "área de toque para subir ou descer" como os botões
+  ▲▼. Era a ALÇA de arrastar. A v5.1 foi desfeita: botões ★ ▲ ▼ ✕ de volta
+  ao padding original e o gap da linha de volta a 8px.
+
+O QUE FOI FEITO
+  A alça tinha 19px de largura — pedia mira, no mouse e no dedo. Agora tem
+  27px, e 37px em telas de toque. A altura já era a da linha inteira
+  (align-self:stretch, com margens negativas anulando o padding da linha);
+  o que faltava era largura.
+
+  Os seis pontinhos desenhados continuam do mesmo tamanho: cresceu só a
+  área que pega o arraste. A alça também ganhou realce de fundo ao passar
+  o mouse, que ajuda a perceber onde ela começa e termina.
+
+TESTES
+  - Alça: padding lateral de 9px dos dois lados, 27px de largura calculada,
+    ainda esticando na altura da linha.
+  - Botões: padding de volta a 2px 4px, sem largura mínima; gap da linha
+    de volta a 8px.
+  - Arraste pela alça continua funcionando: HOSPITAL saiu da 3ª posição
+    para a 1ª.
+
+VERSÃO: fecha a v5.2.

@@ -398,9 +398,7 @@
   body.altura-arrastando{cursor:ns-resize; user-select:none;}
   body.altura-arrastando .divisor-modulos::before{background:var(--amber);}
   .stops > *{flex:none;}
-  /* gap menor que o padrão do painel: os botões de ação cresceram (v5.1) e o
-     espaço tinha que sair de algum lugar — veio das folgas, não do nome. */
-  .stop-row{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;}
+  .stop-row{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;}
   .stop-row .n{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;width:16px;flex-shrink:0;}
 
   /* Arrastar para reordenar (v3.8), como nas listas do celular.
@@ -409,15 +407,21 @@
      impede o navegador de tratar o arraste na alça como rolagem da página.
      A alça é desenhada em CSS (pontinhos), e não com um caractere, porque os
      símbolos de "arrastar" não existem em todas as fontes do Windows. */
-  .stop-row .alca{flex:none; align-self:stretch; display:flex; align-items:center;
-                  padding:0 5px; margin:-7px 0 -7px -5px; cursor:grab;
+  /* Área de pegada da alça (v5.2), a pedido do usuário: era 19px de largura, o
+     que exige mira tanto no mouse quanto no dedo. Agora vai a 27px, e a 37px em
+     telas de toque. A altura já era a da linha inteira (align-self:stretch com
+     as margens negativas anulando o padding da linha) — o que faltava era
+     largura. Os pontinhos desenhados continuam do mesmo tamanho. */
+  .stop-row .alca{flex:none; align-self:stretch; display:flex; align-items:center; justify-content:center;
+                  padding:0 9px; margin:-7px 0 -7px -9px; cursor:grab; border-radius:6px;
                   touch-action:none; user-select:none; -webkit-user-select:none;}
+  .stop-row .alca:hover{background:var(--hover);}
   .stop-row .alca::before{content:''; width:9px; height:15px; opacity:.65;
                   background-image:radial-gradient(circle, var(--muted) 1.3px, transparent 1.6px);
                   background-size:4.5px 5px;}
   .stop-row .alca:hover::before{opacity:1;}
   /* No dedo, alvo maior */
-  @media (pointer:coarse){ .stop-row .alca{padding:0 10px; margin-left:-9px;} }
+  @media (pointer:coarse){ .stop-row .alca{padding:0 14px; margin-left:-14px;} }
   /* A linha "levantada" que acompanha o ponteiro. As demais NÃO se mexem
      durante o arraste — quem mostra o destino é o indicador âmbar. Mexer nas
      outras mudaria as posições que servem de referência e a linha ficaria
@@ -429,16 +433,10 @@
   body.arrastando-parada, body.arrastando-parada *{cursor:grabbing !important;}
   body.arrastando-parada{user-select:none; -webkit-user-select:none;}
   .stop-row .nm{flex:1;min-width:0;white-space:normal;line-height:1.3;overflow-wrap:anywhere;}
-  /* Alvo de toque dos botões ★ ▲ ▼ ✕ (v5.1). Antes tinham ~21x21 pontos, o que
-     é pequeno para o mouse e bem abaixo do recomendado para o dedo. O símbolo
-     continua do mesmo tamanho; o que cresceu foi a área que responde ao clique.
-     Em telas de toque vai a 44x44, a medida recomendada pela Apple e pelo
-     Google — lá o espaço existe, porque o painel ocupa a largura inteira. */
-  .stop-row button{background:none;color:var(--muted);font-size:13px;padding:0;
-                   min-width:32px; min-height:32px; border-radius:6px;
-                   display:inline-flex; align-items:center; justify-content:center; flex:none;}
-  .stop-row button:hover{color:var(--text); background:var(--hover);}
-  @media (pointer:coarse){ .stop-row button{min-width:44px; min-height:44px;} }
+  /* Os botões ★ ▲ ▼ ✕ voltaram ao tamanho original na v5.2: a v5.1 os aumentou
+     por engano — o pedido era a área de PEGADA da alça de arrastar. */
+  .stop-row button{background:none;color:var(--muted);font-size:13px;padding:2px 4px;}
+  .stop-row button:hover{color:var(--text);}
   /* Paradas prioritárias (★): ficam fixas na ordem escolhida, à frente das demais */
   .stop-row.prioritaria{border-color:var(--amber-dim);}
   .stop-row .btn-fixar{color:var(--muted);}
@@ -862,7 +860,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '5.1';
+const VERSAO = '5.2';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
