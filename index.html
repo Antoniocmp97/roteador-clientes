@@ -368,6 +368,9 @@
      controles lado a lado só confundiriam. */
   #puxadorChecklist{display:none;}
   body.modulo4-na-guia #puxadorChecklist{display:flex;}
+  /* Na guia a lista já ocupa a coluna inteira: o puxador do módulo 4 não teria
+     o que fazer ali. */
+  body.modulo4-na-guia #puxadorParadas{display:none;}
   .divisor-modulos::before{
     content:''; width:46px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
   }
@@ -718,6 +721,11 @@
           </span>
         </div>
         <ul class="stops" id="stopsList"></ul>
+        <!-- Puxador do módulo 4: cresce/encolhe só ele, empurrando o que vem
+             depois. Escondido quando o módulo está na guia, onde a lista já
+             ocupa a coluna inteira. -->
+        <div class="puxador-modulo" id="puxadorParadas" role="separator" aria-orientation="horizontal"
+             title="Arraste para aumentar ou diminuir a lista de paradas (duplo clique volta ao padrão)"></div>
       </div>
 
       <!-- Ações: calcular rota respeitando a ordem atual, ou deixar o OSRM otimizar a ordem -->
@@ -810,7 +818,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '4.5';
+const VERSAO = '4.6';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1765,6 +1773,36 @@ if (!modoCampoAtivo){
   });
 
   puxador3.addEventListener('dblclick', () => aplicarAlturas(ALTURA_CHECKLIST_PADRAO, alturasGuardadas().p, true));
+
+  /* Puxador do módulo 4 (v4.6). Escolha do usuário: a divisória 3<->4 continua
+     (cresce um tirando do outro) E o módulo 4 ganha um puxador próprio, que o
+     faz crescer sem tirar do 3 — o que vem depois dele é que acompanha.
+     Some quando o módulo vai para a guia, onde a lista já ocupa a coluna. */
+  const puxador4 = document.getElementById('puxadorParadas');
+
+  puxador4.addEventListener('pointerdown', ev => {
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    try{ puxador4.setPointerCapture(ev.pointerId); }catch(e){}
+    document.body.classList.add('altura-arrastando');
+
+    const inicioY = ev.clientY;
+    const pInicial = paradasEl.getBoundingClientRect().height;
+
+    const mover = e => aplicarAlturas(alturasGuardadas().c, pInicial + (e.clientY - inicioY), false);
+    const soltar = () => {
+      puxador4.removeEventListener('pointermove', mover);
+      puxador4.removeEventListener('pointerup', soltar);
+      puxador4.removeEventListener('pointercancel', soltar);
+      document.body.classList.remove('altura-arrastando');
+      aplicarAlturas(alturasGuardadas().c, paradasEl.getBoundingClientRect().height, true);
+    };
+    puxador4.addEventListener('pointermove', mover);
+    puxador4.addEventListener('pointerup', soltar);
+    puxador4.addEventListener('pointercancel', soltar);
+  });
+
+  puxador4.addEventListener('dblclick', () => aplicarAlturas(alturasGuardadas().c, ALTURA_PARADAS_PADRAO, true));
 }
 
 /* ---------------- Módulo 4 na guia lateral (v4.4) ----------------
@@ -1780,12 +1818,19 @@ if (!modoCampoAtivo){
 
    Em tela estreita (layout empilhado) a guia não existe: o módulo fica no
    painel, e a preferência é ignorada sem ser apagada. */
+/* O lugar do módulo 4 NÃO é guardado entre aberturas, de propósito: o usuário
+   pediu que ele "inicie na mesma coluna dos outros". Mandar para a guia é uma
+   escolha do momento — vale enquanto a página estiver aberta e some ao recarregar.
+   A chave antiga é apagada para quem já tinha 'guia' gravado do teste da v4.4. */
 const CHAVE_MODULO4 = 'hg_modulo4_local';
+try{ localStorage.removeItem(CHAVE_MODULO4); }catch(e){}
+let modulo4Local = 'painel';       // só em memória, nesta sessão
 const LARGURA_MINIMA_GUIA = 761;   // abaixo disso o layout é empilhado (ver media query)
 
 function telaComportaGuia(){ return document.documentElement.clientWidth >= LARGURA_MINIMA_GUIA; }
 
-function colocarModulo4(local, salvar){
+function colocarModulo4(local){
+  modulo4Local = local === 'guia' ? 'guia' : 'painel';
   const sec = document.getElementById('stopsSection');
   const guia = document.getElementById('guiaLateral');
   const ancora = document.getElementById('ancoraModulo4');
@@ -1802,7 +1847,6 @@ function colocarModulo4(local, salvar){
   atualizarGuiaVazia();
   // A largura do mapa mudou: sem isto o Leaflet segue desenhando no tamanho antigo
   if (map) map.invalidateSize({ animate:false });
-  if (salvar){ try{ localStorage.setItem(CHAVE_MODULO4, local); }catch(e){ /* segue sem persistir */ } }
 }
 
 function modulo4EstaNaGuia(){
@@ -1818,17 +1862,13 @@ function atualizarGuiaVazia(){
 }
 
 if (!modoCampoAtivo){
-  let localSalvo = null;
-  try{ localSalvo = localStorage.getItem(CHAVE_MODULO4); }catch(e){}
-  if (localSalvo === 'guia') colocarModulo4('guia', false);
-
   const alca = document.getElementById('alcaModulo4');
   const sec = document.getElementById('stopsSection');
 
   // Duplo clique: caminho rápido, sem arrastar
   alca.addEventListener('dblclick', () => {
     if (!telaComportaGuia()) return;
-    colocarModulo4(modulo4EstaNaGuia() ? 'painel' : 'guia', true);
+    colocarModulo4(modulo4EstaNaGuia() ? 'painel' : 'guia');
   });
 
   alca.addEventListener('pointerdown', ev => {
@@ -1864,19 +1904,16 @@ if (!modoCampoAtivo){
       sec.style.transform = '';
       alvo.remove();
       const trocou = naGuia ? dx >= LIMITE : dx <= -LIMITE;
-      if (trocou) colocarModulo4(naGuia ? 'painel' : 'guia', true);
+      if (trocou) colocarModulo4(naGuia ? 'painel' : 'guia');
     };
     alca.addEventListener('pointermove', mover);
     alca.addEventListener('pointerup', soltar);
     alca.addEventListener('pointercancel', soltar);
   });
 
-  // Janela estreita demais: o módulo volta para o painel sem apagar a escolha
-  window.addEventListener('resize', () => {
-    let alvo = 'painel';
-    try{ if (localStorage.getItem(CHAVE_MODULO4) === 'guia') alvo = 'guia'; }catch(e){}
-    colocarModulo4(alvo, false);
-  });
+  // Janela estreita demais: o módulo volta para o painel. Alargando de novo ele
+  // retorna para a guia, porque a escolha da sessão continua em memória.
+  window.addEventListener('resize', () => colocarModulo4(modulo4Local));
 }
 
 /* ---------------- Arrastar para reordenar (v3.8) ----------------

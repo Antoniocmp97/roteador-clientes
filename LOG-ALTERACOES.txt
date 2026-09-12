@@ -3415,3 +3415,52 @@ VERSÃO: fecha a v4.5.
 
 PENDENTE
   Ponto 2: mover "Traçar nesta ordem" e "Otimizar ordem" para o topo.
+
+--------------------------------------------------------
+[12/09/2026] v4.6 — Módulo 4 abre no painel e ganha puxador próprio
+--------------------------------------------------------
+
+RETORNO DO USUÁRIO SOBRE A v4.5
+  "A parte do módulo 3 ficou boa. A do módulo 4 é que precisamos alterar:
+  ele já iniciou como uma coluna auxiliar. Ele deve iniciar na mesma
+  coluna dos outros, porém pode ser expandida ou recolhida, e também pode
+  ser jogada para o lado como uma guia auxiliar."
+
+1. POR QUE ELE "JÁ INICIOU" NA GUIA
+  Eu guardava o lugar do módulo no navegador ('hg_modulo4_local'), então
+  ele abria onde tinha sido deixado no teste anterior. Removido: o lugar
+  agora vive só em memória, na sessão. O módulo sempre abre junto dos
+  outros e mandar para a guia vale enquanto a página estiver aberta.
+  A chave antiga é apagada na abertura, para quem já tinha 'guia' gravado.
+
+  A escolha da sessão continua valendo para a janela: se a tela estreitar,
+  o módulo volta ao painel; alargando de novo, ele retorna à guia.
+
+2. MÓDULO 4 COM PUXADOR PRÓPRIO
+  Perguntado se o módulo 4 deveria ter só um puxador (como o 3) ou manter
+  a divisória e ganhar um puxador, o usuário escolheu MANTER OS DOIS:
+    - divisória 3<->4: cresce um tirando do outro (soma conservada);
+    - puxador do 4: cresce só o 4, empurrando o que vem depois.
+
+  Controles visíveis em cada situação:
+    módulo 4 no painel -> divisória 3<->4 + puxador do 4
+    módulo 4 na guia   -> puxador do 3 (os outros dois somem, porque na
+                          guia a lista já ocupa a coluna inteira)
+
+TESTES
+  - Com 'hg_modulo4_local' gravado como 'guia' e alturas salvas: abriu no
+    PAINEL, apagou a chave antiga e preservou as alturas.
+  - Controles no painel: divisória flex, puxador do 3 none, puxador do 4
+    flex. Na guia: divisória none, puxador do 3 flex, puxador do 4 none.
+    Voltando ao painel, tudo como antes. Nada é gravado na troca.
+  - Puxador do 4: 240 -> 390 -> 330, piso em 120, duplo clique de volta a
+    240, e o módulo 3 intacto em 320 o tempo todo.
+  - Divisória: 100px para cima deu 3=220 e 4=340, soma 560 conservada.
+
+  A janela do app de testes segue sem desenhar a página; as medidas usam
+  as variáveis de altura, e a conferência visual fica com o usuário.
+
+VERSÃO: fecha a v4.6.
+
+PENDENTE
+  Ponto 2: mover "Traçar nesta ordem" e "Otimizar ordem" para o topo.
