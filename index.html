@@ -157,6 +157,18 @@
      regras do painel abaixo usam id e ganhariam por especificidade. */
   .guia .divisor-modulos, .guia .puxador-modulo{display:none !important;}
   .guia-vazia{font-size:12px; color:var(--muted); font-style:italic;}
+  /* Divisória ENTRE os dois módulos dentro da guia (v4.9). Classe própria, e não
+     .divisor-modulos, porque aquela é escondida dentro da guia — esta é a única
+     que deve viver lá. */
+  .divisor-guia{
+    height:16px; flex:none; display:flex; align-items:center; justify-content:center;
+    cursor:ns-resize; touch-action:none; user-select:none; -webkit-user-select:none;
+  }
+  .divisor-guia::before{
+    content:''; width:46px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
+  }
+  .divisor-guia:hover::before{background:var(--amber-dim);}
+  body.altura-arrastando .divisor-guia::before{background:var(--amber);}
 
   /* Alça do módulo: arrasta para o lado para levar o módulo à guia, ou de volta
      ao painel. Duplo clique faz a mesma troca, para quem preferir um clique. */
@@ -636,6 +648,10 @@
          Fica vazia (e escondida) até alguém puxar um módulo para cá. -->
     <aside class="guia" id="guiaLateral" hidden>
       <div class="guia-vazia" id="guiaVazia" hidden>Sem paradas selecionadas ainda.</div>
+      <!-- Divisória entre os dois módulos da coluna. Só aparece quando os dois
+           estão aqui; o JS a coloca entre eles. -->
+      <div class="divisor-guia" id="divisorGuiaModulos" role="separator" aria-orientation="horizontal" hidden
+           title="Arraste para dividir a altura entre os dois módulos (duplo clique volta ao meio a meio)"></div>
     </aside>
     <!-- Divisória arrastável: ajusta a largura do painel. Existe porque os nomes
          de cliente da base real chegam a 58 caracteres e não cabiam nos 340px
@@ -836,7 +852,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '4.8';
+const VERSAO = '4.9';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1902,9 +1918,65 @@ function colocarModulo(chave, local){
   // aparece e some junto
   guia.hidden = !guia.querySelector('.modulo-movel');
   document.getElementById('divisorGuia').hidden = guia.hidden;
+  repartirAlturaDaGuia();
   atualizarGuiaVazia();
   // A largura do mapa mudou: sem isto o Leaflet segue desenhando no tamanho antigo
   if (map) map.invalidateSize({ animate:false });
+}
+
+/* Reparte a altura da coluna entre os dois módulos (v4.9).
+   Com um módulo só, ele ocupa tudo (regra do CSS). Com os dois, o de cima
+   recebe uma altura fixa e o de baixo fica com o resto — é o que permite a
+   divisória mover a fronteira, igual à do painel.
+
+   ATENÇÃO: o estilo inline precisa ser limpo quando o módulo sai da guia. O
+   painel também é um flex em coluna, e um flex:0 0 300px esquecido no elemento
+   iria junto com ele e prenderia a altura lá. */
+const CHAVE_ALTURA_TOPO_GUIA = 'hg_altura_guia_topo';
+const ALTURA_TOPO_GUIA_PADRAO = 0;   // 0 = meio a meio, deixando o CSS decidir
+const ALTURA_MODULO_GUIA_MIN = 120;
+
+function alturaTopoGuiaGuardada(){
+  try{ const g = parseInt(localStorage.getItem(CHAVE_ALTURA_TOPO_GUIA), 10); if (g > 0) return g; }catch(e){}
+  return ALTURA_TOPO_GUIA_PADRAO;
+}
+
+function repartirAlturaDaGuia(){
+  const guia = document.getElementById('guiaLateral');
+  const divisor = document.getElementById('divisorGuiaModulos');
+  const m3 = document.getElementById(MODULOS.m3.sec), m4 = document.getElementById(MODULOS.m4.sec);
+  const ambos = m3.parentElement === guia && m4.parentElement === guia;
+
+  // Fora da guia, nenhum resquício de altura
+  [m3, m4].forEach(el => { if (el.parentElement !== guia) el.style.flex = ''; });
+
+  if (!ambos){
+    divisor.hidden = true;
+    [m3, m4].forEach(el => { if (el.parentElement === guia) el.style.flex = ''; });
+    return;
+  }
+  guia.insertBefore(divisor, m4);   // sempre entre os dois
+  divisor.hidden = false;
+  const h = alturaTopoGuiaGuardada();
+  if (h > 0){
+    m3.style.flex = `0 0 ${h}px`;
+    m4.style.flex = '1 1 auto';
+  }else{
+    m3.style.flex = '';   // meio a meio
+    m4.style.flex = '';
+  }
+}
+
+function aplicarAlturaTopoGuia(px, salvar){
+  const guia = document.getElementById('guiaLateral');
+  const m3 = document.getElementById(MODULOS.m3.sec), m4 = document.getElementById(MODULOS.m4.sec);
+  const disponivel = guia.getBoundingClientRect().height - 16;   // menos a divisória
+  const teto = Math.max(ALTURA_MODULO_GUIA_MIN, disponivel - ALTURA_MODULO_GUIA_MIN);
+  const v = Math.round(Math.min(Math.max(px, ALTURA_MODULO_GUIA_MIN), teto));
+  m3.style.flex = `0 0 ${v}px`;
+  m4.style.flex = '1 1 auto';
+  if (salvar){ try{ localStorage.setItem(CHAVE_ALTURA_TOPO_GUIA, String(v)); }catch(e){ /* segue sem persistir */ } }
+  return v;
 }
 
 // Sem paradas o módulo 4 se esconde sozinho (renderStopsList). Na guia isso
@@ -2013,6 +2085,41 @@ if (!modoCampoAtivo){
   });
 
   aplicarLarguraGuia(larguraGuiaGuardada(), false);
+
+  /* Divisória entre os dois módulos da guia (v4.9), a pedido do usuário: com os
+     dois na coluna, poder dar mais altura a um deles. Mesma ideia da divisória
+     3<->4 do painel — o de cima recebe uma altura e o de baixo fica com o
+     resto —, e o duplo clique volta ao meio a meio. */
+  const divisorGuiaMods = document.getElementById('divisorGuiaModulos');
+
+  divisorGuiaMods.addEventListener('pointerdown', ev => {
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    try{ divisorGuiaMods.setPointerCapture(ev.pointerId); }catch(e){}
+    document.body.classList.add('altura-arrastando');
+
+    const topo = document.getElementById(MODULOS.m3.sec);
+    const inicioY = ev.clientY;
+    const alturaInicial = topo.getBoundingClientRect().height;
+
+    const mover = e => aplicarAlturaTopoGuia(alturaInicial + (e.clientY - inicioY), false);
+    const soltar = () => {
+      divisorGuiaMods.removeEventListener('pointermove', mover);
+      divisorGuiaMods.removeEventListener('pointerup', soltar);
+      divisorGuiaMods.removeEventListener('pointercancel', soltar);
+      document.body.classList.remove('altura-arrastando');
+      aplicarAlturaTopoGuia(topo.getBoundingClientRect().height, true);
+    };
+    divisorGuiaMods.addEventListener('pointermove', mover);
+    divisorGuiaMods.addEventListener('pointerup', soltar);
+    divisorGuiaMods.addEventListener('pointercancel', soltar);
+  });
+
+  // Duplo clique: volta ao meio a meio (sem altura fixa, o CSS divide igual)
+  divisorGuiaMods.addEventListener('dblclick', () => {
+    try{ localStorage.removeItem(CHAVE_ALTURA_TOPO_GUIA); }catch(e){}
+    repartirAlturaDaGuia();
+  });
 }
 
 /* ---------------- Arrastar para reordenar (v3.8) ----------------

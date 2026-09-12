@@ -3594,3 +3594,49 @@ TESTES
   largura da janela) foi simulado; a conferência visual fica com o usuário.
 
 VERSÃO: fecha a v4.8.
+
+--------------------------------------------------------
+[12/09/2026] v4.9 — Divisória entre os dois módulos da guia
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Ao adicionar dois módulos na guia auxiliar, implemente a possibilidade
+  de expandir também."
+
+O QUE FOI FEITO
+  Com os dois módulos na coluna, uma divisória entre eles reparte a
+  altura: o de cima recebe uma altura fixa e o de baixo fica com o resto.
+  Duplo clique volta ao meio a meio (sem altura fixa, o CSS divide igual).
+
+  A divisória mora dentro da guia e o JS a coloca entre os dois módulos.
+  Ela precisou de classe própria (.divisor-guia): a regra da v4.7 esconde
+  .divisor-modulos e .puxador-modulo dentro da guia, e ela seria apanhada
+  junto.
+
+  A altura é guardada em 'hg_altura_guia_topo' e reaplicada quando a dupla
+  se forma de novo.
+
+CUIDADO PRINCIPAL
+  O estilo inline de altura é LIMPO dos dois módulos assim que a dupla se
+  desfaz. O painel também é uma coluna flexível: um flex:0 0 480px
+  esquecido no elemento iria junto com ele e prenderia a altura lá.
+
+TESTES
+  - Posição: a divisória é inserida entre os dois e só aparece com os dois
+    na coluna.
+  - Arraste (altura de guia simulada em 800px): topo 400 -> 550 -> 460,
+    teto em 664 (800 menos a divisória menos o mínimo do outro módulo),
+    piso em 120. Duplo clique limpa a altura e volta ao meio a meio.
+  - Ciclo completo: os dois no painel (sem estilo inline) -> os dois na
+    guia (topo 0 0 480px, o outro 1 1 auto, divisória visível) -> módulo 3
+    volta (estilo limpo nos DOIS, divisória escondida) -> módulo 4 volta
+    (tudo limpo).
+
+  Um teste intermediário meu leu o número errado do estilo (pegava o "0"
+  de "0 0 400px") e fez todas as medidas caírem no piso; refeito com a
+  leitura correta.
+
+  A janela de testes segue sem desenhar a página: as alturas reais foram
+  simuladas e a conferência visual fica com o usuário.
+
+VERSÃO: fecha a v4.9.

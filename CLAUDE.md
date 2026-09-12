@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 12/09/2026 — v4.8 (guia com largura ajustável)
+> **Última atualização:** 12/09/2026 — v4.9 (divisória entre os dois módulos da guia)
 
 ---
 
@@ -94,6 +94,12 @@ sem dependências instaladas. Abre direto no navegador.
   a página estiver aberta.
   O mecanismo é **uma tabela de módulos** (v4.7): incluir o 1, o 2 ou o 5 depois
   é somar uma linha nela, mais a âncora e a alça no HTML
+- **Divisória entre os dois módulos da guia** (v4.9): com os dois na coluna,
+  uma divisória reparte a altura entre eles — o de cima recebe uma altura e o de
+  baixo fica com o resto. Duplo clique volta ao meio a meio. A altura é guardada
+  e reaplicada quando a dupla se forma de novo; quando um deles sai, o estilo é
+  **limpo dos dois**, senão a altura fixa iria junto para o painel, que também é
+  uma coluna flexível
 - **Guia com largura ajustável** (v4.8): a coluna auxiliar tem divisória própria,
   que aparece junto com ela. Mínimo de 260px, teto calculado para as três colunas
   caberem (painel + mapa de 380px), duplo clique volta a 360px. A largura **é**
@@ -556,6 +562,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 40 | **v4.6** — Módulo 4 volta a abrir sempre no painel (o lugar deixa de ser guardado) e ganha puxador próprio, ao lado da divisória 3↔4 |
 | 41 | **v4.7** — Módulo 3 também pode ir para a guia; o mecanismo vira uma tabela de módulos, pronta para os demais |
 | 42 | **v4.8** — Guia ganha divisória de largura; corrigido o campo de busca que esticava na vertical dentro da coluna |
+| 43 | **v4.9** — Divisória entre os dois módulos dentro da guia, repartindo a altura da coluna |
 
 ---
 
@@ -622,7 +629,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v4.8:  0 / 5
+Leves acumuladas desde a v4.9:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -688,3 +695,4 @@ os backups locais são conveniência, não garantia.
 | 4.6 | 12/09/2026 | Módulo 4 abre sempre no painel e ganha puxador próprio |
 | 4.7 | 12/09/2026 | Módulo 3 também vai para a guia; mecanismo generalizado |
 | 4.8 | 12/09/2026 | Guia com largura ajustável; campo de busca não estica mais na coluna |
+| 4.9 | 12/09/2026 | Divisória entre os dois módulos da guia |
