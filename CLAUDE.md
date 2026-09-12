@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 12/09/2026 — v5.4 (módulo 3 ajustável desde a abertura)
+> **Última atualização:** 12/09/2026 — v5.5 (alça acompanha a largura da coluna)
 
 ---
 
@@ -132,10 +132,12 @@ sem dependências instaladas. Abre direto no navegador.
   (320/240). Primeiro passo do pedido de deixar o site customizável por módulos.
   ⚠️ A v4.2 tinha um puxador na borda de BAIXO do módulo 4: ele crescia para
   baixo e empurrava o resto do painel, que não era o pedido — foi substituído
-- **Área de pegada da alça de arrastar** (v5.2, dobrada na v5.3): os seis
-  pontinhos que movem a parada para cima ou para baixo têm área de
-  54×altura-da-linha, e 74 de largura em telas de toque. Os pontinhos desenhados
-  continuam do mesmo tamanho; a largura sai do nome da parada, que quebra linha.
+- **Área de pegada da alça de arrastar** (v5.2 a v5.5): os seis pontinhos que
+  movem a parada têm área de 54×altura-da-linha **quando a coluna é larga** e
+  27 quando ela aperta — a troca é automática, por `@container`, e vale tanto no
+  painel quanto na guia, cada um com sua largura. Os pontinhos desenhados
+  continuam do mesmo tamanho. Os botões ★ ▲ ▼ ✕ são `flex:none`: nunca se
+  deformam; quem cede espaço é a alça e depois o nome, que quebra linha
   ⚠️ A v5.1 tinha aumentado os botões ★ ▲ ▼ ✕ por engano — o pedido era a alça;
   os botões voltaram ao tamanho original
 - **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
@@ -580,6 +582,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 46 | **v5.2** — Desfaz a v5.1 e aumenta o que o usuário realmente pediu: a área de pegada da alça de arrastar |
 | 47 | **v5.3** — Largura da alça dobrada (27 → 54; 37 → 74 no toque) |
 | 48 | **v5.4** — Módulo 3 ajustável desde a abertura, antes de escolher paradas; corrigidas as linhas fantasmas da lista de paradas ao trocar de base |
+| 49 | **v5.5** — Correção do aperto na lista de paradas: botões deixam de encolher e a alça acompanha a largura da coluna |
 
 ---
 
@@ -646,7 +649,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v5.4:  0 / 5
+Leves acumuladas desde a v5.5:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -718,3 +721,4 @@ os backups locais são conveniência, não garantia.
 | 5.2 | 12/09/2026 | Área de pegada maior na alça de arrastar paradas |
 | 5.3 | 12/09/2026 | Largura da alça dobrada (54px; 74px no toque) |
 | 5.4 | 12/09/2026 | Módulo 3 ajustável desde a abertura; linhas fantasmas corrigidas |
+| 5.5 | 12/09/2026 | Alça acompanha a largura da coluna; botões não encolhem mais |

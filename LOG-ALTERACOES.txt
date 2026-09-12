@@ -3830,3 +3830,45 @@ TESTES
   - Carregar outra base com parada escolhida: 0 paradas e 0 linhas na tela.
 
 VERSÃO: fecha a v5.4.
+
+--------------------------------------------------------
+[12/09/2026] v5.5 — Aperto na lista de paradas corrigido
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Testei esse problema de ajustes finos de largura, realmente apertou e
+  ficou bugado."
+
+DUAS CAUSAS
+  1. Os botões ★ ▲ ▼ ✕ podiam ENCOLHER. Ao devolver o tamanho original
+     deles na v5.2, ficaram sem flex:none, e com a linha apertada o
+     navegador os espremia — símbolo deformado.
+  2. A alça de 54px (v5.3) não cedia nada. Medido antes da correção: com o
+     painel em 300px o nome da parada ficava com 44px e quebrava quase
+     letra a letra.
+
+O QUE FOI FEITO
+  - Botões com flex:none: nunca se deformam. Quem cede espaço é a alça e,
+    depois, o nome, que quebra linha.
+  - A alça virou flex:0 1 54px com piso de 27px e, principalmente, passou
+    a acompanhar a largura da COLUNA por @container: 54px em coluna larga,
+    27px quando ela aperta (limite em 460px de conteúdo). Vale no painel e
+    na guia, cada um com sua largura, porque os dois viraram contêineres
+    de consulta (container-type:inline-size).
+
+ERRO MEU NO MEIO DO CAMINHO
+  Escrevi o bloco @container ANTES da regra base da alça. @container não
+  soma especificidade, então a regra escrita depois vencia o empate e a
+  alça continuava com 54px. Só apareceu porque medi de novo em vez de
+  confiar no código. Movido para depois.
+
+MEDIÇÕES (janela 1920, três paradas)
+  painel 700 -> alça 54, nome 459      painel 470 -> alça 27, nome 256
+  painel 600 -> alça 54, nome 359      painel 340 -> alça 27, nome 126
+  painel 500 -> alça 54, nome 259      painel 300 -> alça 27, nome  86
+  Antes da correção, o nome tinha 99 no painel 340 e 44 no 300.
+  Nenhuma largura transbordou, e os botões mediram 19-21 em todas.
+  Na guia o comportamento é o mesmo: larga -> 54, estreita -> 27.
+  Arraste conferido nas duas larguras de alça, com a ordem mudando.
+
+VERSÃO: fecha a v5.5.
