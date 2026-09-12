@@ -3691,3 +3691,39 @@ RESSALVA DITA AO USUÁRIO
   dá para restringir o fechamento só ao caso da busca.
 
 VERSÃO: fecha a v5.0 (4.9 + 0.1; não marca fase nova do projeto).
+
+--------------------------------------------------------
+[12/09/2026] v5.1 — Alvo de toque dos botões da lista de paradas
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Tem como deixar a área de toque para subir ou descer algum ponto de
+  parada?"
+
+SITUAÇÃO ANTERIOR
+  Os botões ★ ▲ ▼ ✕ tinham padding de 2px 4px, o que dava cerca de 21×21
+  pontos. É pequeno para o mouse e bem abaixo do recomendado para o dedo
+  (44×44 na orientação da Apple e do Google).
+
+O QUE FOI FEITO
+  Área mínima de 32×32 no mouse e 44×44 em telas de toque
+  (@media (pointer:coarse)). O símbolo continua do mesmo tamanho: cresceu
+  só a área que responde ao clique, com o botão virando um flex centrado.
+  Também ganharam realce de fundo ao passar o mouse, que antes só mudava
+  a cor do símbolo.
+
+  O espaço veio das folgas: o gap da linha caiu de 8 para 6. A conta na
+  largura padrão do painel (340px): sobram cerca de 94px para o nome da
+  parada, que quebra em duas linhas quando precisa. Quem quiser mais nome
+  à vista alarga o painel ou manda o módulo para a coluna auxiliar.
+
+TESTES
+  - Os quatro botões medem 32×32 e respondem: ▼ trocou a ordem
+    (ACUO > FORQUILHINHA virou FORQUILHINHA > ACUO), ★ marcou a
+    prioridade e ✕ removeu a parada.
+  - NÃO conferido na tela: quanto o nome realmente ocupa depois da
+    mudança. A janela de testes não está desenhando a página (a linha
+    inteira reportou 20px de largura), então o número acima é conta, não
+    medição. Fica para o usuário conferir.
+
+VERSÃO: fecha a v5.1.
