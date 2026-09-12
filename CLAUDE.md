@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 12/09/2026 — v4.7 (módulo 3 também vai para a guia)
+> **Última atualização:** 12/09/2026 — v4.8 (guia com largura ajustável)
 
 ---
 
@@ -94,6 +94,10 @@ sem dependências instaladas. Abre direto no navegador.
   a página estiver aberta.
   O mecanismo é **uma tabela de módulos** (v4.7): incluir o 1, o 2 ou o 5 depois
   é somar uma linha nela, mais a âncora e a alça no HTML
+- **Guia com largura ajustável** (v4.8): a coluna auxiliar tem divisória própria,
+  que aparece junto com ela. Mínimo de 260px, teto calculado para as três colunas
+  caberem (painel + mapa de 380px), duplo clique volta a 360px. A largura **é**
+  guardada no navegador — diferente do lugar dos módulos, que é escolha do momento
 - **Cada módulo redimensionável** (v4.6): no painel o módulo 4 tem puxador
   próprio na borda de baixo (cresce sem tirar do 3, empurrando o que vem depois)
   **e** a divisória 3↔4 (cresce tirando do 3) — escolha do usuário entre os dois
@@ -551,6 +555,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 39 | **v4.5** — A guia passa a ficar encostada no painel (estava na borda da tela) e o módulo 3 ganha puxador próprio quando o 4 está na guia |
 | 40 | **v4.6** — Módulo 4 volta a abrir sempre no painel (o lugar deixa de ser guardado) e ganha puxador próprio, ao lado da divisória 3↔4 |
 | 41 | **v4.7** — Módulo 3 também pode ir para a guia; o mecanismo vira uma tabela de módulos, pronta para os demais |
+| 42 | **v4.8** — Guia ganha divisória de largura; corrigido o campo de busca que esticava na vertical dentro da coluna |
 
 ---
 
@@ -617,7 +622,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v4.7:  0 / 5
+Leves acumuladas desde a v4.8:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -682,3 +687,4 @@ os backups locais são conveniência, não garantia.
 | 4.5 | 12/09/2026 | Guia encostada no painel; módulo 3 com puxador próprio |
 | 4.6 | 12/09/2026 | Módulo 4 abre sempre no painel e ganha puxador próprio |
 | 4.7 | 12/09/2026 | Módulo 3 também vai para a guia; mecanismo generalizado |
+| 4.8 | 12/09/2026 | Guia com largura ajustável; campo de busca não estica mais na coluna |

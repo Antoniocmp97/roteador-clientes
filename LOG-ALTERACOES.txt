@@ -3547,3 +3547,50 @@ AJUSTE DE CONSISTÊNCIA ENCONTRADO NO TESTE
   lançou erro nenhum.
 
 VERSÃO: fecha a v4.7.
+
+--------------------------------------------------------
+[12/09/2026] v4.8 — Guia com largura ajustável; busca sem esticar
+--------------------------------------------------------
+
+PEDIDOS DO USUÁRIO
+  1. "Ao puxar o módulo 3 para a coluna auxiliar, o campo de filtro de
+     busca acaba ficando muito grande, ficando desproporcional."
+  2. "Preciso que seja implementado na coluna auxiliar a possibilidade de
+     poder ser estendida para o lado também."
+
+1. POR QUE A BUSCA ESTICAVA
+  Existe uma regra geral antiga no CSS: input[type="text"]{flex:1}. Ela
+  serve para o campo de endereço dividir a linha com os botões 🎯 e 📍.
+
+  No painel o módulo 3 é um bloco comum, então a regra não tinha efeito.
+  Dentro da guia o módulo vira uma COLUNA flexível — e aí flex:1 passou a
+  valer no eixo vertical: o campo de busca esticava em altura.
+
+  Correção: dentro da guia nada estica (.guia .modulo-movel > *{flex:none})
+  e logo depois a exceção para as listas, que são justamente o que deve
+  crescer. Vale para qualquer módulo que for para a coluna depois.
+
+2. LARGURA DA GUIA
+  Divisória própria, no mesmo formato da divisória do painel, que aparece e
+  some junto com a coluna. Piso de 260px (abaixo disso o nome do cliente
+  não cabe) e teto calculado na hora: largura da janela menos o painel,
+  menos os 380px mínimos do mapa, menos as duas divisórias — as três
+  colunas precisam caber.
+
+  A largura É guardada no navegador ('hg_largura_guia'), diferente do LUGAR
+  dos módulos, que é escolha do momento e não sobrevive a recarregar. São
+  coisas distintas: onde o módulo está é decisão do dia; quanto espaço a
+  coluna ocupa é preferência de layout, como a largura do painel.
+
+TESTES
+  - Busca: flex-grow 1 no painel, 0 dentro da guia; o checklist continua
+    sendo o único que cresce (flex 1). Voltando ao painel, tudo como antes.
+  - Divisória da guia: escondida sem módulo na coluna, visível com módulo.
+  - Largura: 360 -> 500 -> 440, trava no teto (900 no teste) e no piso
+    (260), duplo clique volta a 360, e cada valor é gravado ao soltar.
+  - Recarregando com 480 guardado, a função lê 480 e aplica 480px.
+
+  Com a janela de testes sem desenhar a página, o teto real (que depende da
+  largura da janela) foi simulado; a conferência visual fica com o usuário.
+
+VERSÃO: fecha a v4.8.

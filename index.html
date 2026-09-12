@@ -146,7 +146,13 @@
      vez de obedecer à altura do painel, que só faz sentido lá. Vale para
      qualquer módulo movido para cá. */
   .guia .modulo-movel{flex:1; min-height:0; display:flex !important; flex-direction:column;}
-  .guia .stops, .guia .checklist{max-height:none; flex:1; min-height:0;}
+  /* Dentro da guia o módulo é uma coluna flexível, e aí a regra geral
+     input[type=text]{flex:1} passa a valer: o campo de busca esticava na
+     VERTICAL e ficava desproporcional (relatado em 12/09/2026). No painel isso
+     não acontecia porque lá o módulo é um bloco comum, não um flex.
+     Regra: na guia nada estica, exceto as listas logo abaixo. */
+  .guia .modulo-movel > *{flex:none;}
+  .guia .stops, .guia .checklist{max-height:none; flex:1 1 auto; min-height:0;}
   /* Controles de altura não fazem sentido dentro da guia. !important porque as
      regras do painel abaixo usam id e ganhariam por especificidade. */
   .guia .divisor-modulos, .guia .puxador-modulo{display:none !important;}
@@ -621,6 +627,10 @@
 
   <main>
     <div id="map"></div>
+    <!-- Divisória da guia: ajusta a largura da coluna auxiliar. Aparece junto
+         com ela. -->
+    <div class="divisor" id="divisorGuia" role="separator" aria-orientation="vertical" hidden
+         title="Arraste para ajustar a largura da coluna (duplo clique volta ao padrão)"></div>
     <!-- Guia lateral: coluna extra encostada no painel, para o módulo puxado
          para fora ficar ao lado dos outros módulos, e não na borda da tela.
          Fica vazia (e escondida) até alguém puxar um módulo para cá. -->
@@ -826,7 +836,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '4.7';
+const VERSAO = '4.8';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1839,6 +1849,28 @@ const MODULOS = {
   m4: { sec:'stopsSection', ancora:'ancoraModulo4', alca:'alcaModulo4', classe:'modulo4-na-guia' }
 };
 const localDoModulo = { m3:'painel', m4:'painel' };   // só em memória, nesta sessão
+
+/* Largura da coluna auxiliar. Ao contrário do LUGAR dos módulos, ela É guardada:
+   é preferência de layout, como a largura do painel. */
+const CHAVE_LARGURA_GUIA = 'hg_largura_guia';
+const LARGURA_GUIA_PADRAO = 360;
+const LARGURA_GUIA_MIN = 260;   // abaixo disso o nome do cliente não cabe
+
+function larguraGuiaGuardada(){
+  try{ const g = parseInt(localStorage.getItem(CHAVE_LARGURA_GUIA), 10); if (g > 0) return g; }catch(e){}
+  return LARGURA_GUIA_PADRAO;
+}
+// O teto considera o painel e o mínimo do mapa: as três colunas precisam caber
+function larguraMaxGuia(){
+  const painel = document.querySelector('.console').getBoundingClientRect().width || LARGURA_PADRAO;
+  return Math.max(LARGURA_GUIA_MIN, document.documentElement.clientWidth - painel - MAPA_MIN - 14);
+}
+function aplicarLarguraGuia(px, salvar){
+  const v = Math.round(Math.min(Math.max(px, LARGURA_GUIA_MIN), larguraMaxGuia()));
+  document.documentElement.style.setProperty('--guia-w', v + 'px');
+  if (salvar){ try{ localStorage.setItem(CHAVE_LARGURA_GUIA, String(v)); }catch(e){ /* segue sem persistir */ } }
+  return v;
+}
 const LARGURA_MINIMA_GUIA = 761;   // abaixo disso o layout é empilhado (ver media query)
 
 function telaComportaGuia(){ return document.documentElement.clientWidth >= LARGURA_MINIMA_GUIA; }
@@ -1866,8 +1898,10 @@ function colocarModulo(chave, local){
   const m3 = document.getElementById(MODULOS.m3.sec), m4 = document.getElementById(MODULOS.m4.sec);
   if (m3.parentElement === guia && m4.parentElement === guia) guia.insertBefore(m3, m4);
 
-  // A guia só existe enquanto tiver algum módulo dentro
+  // A guia só existe enquanto tiver algum módulo dentro — e a divisória dela
+  // aparece e some junto
   guia.hidden = !guia.querySelector('.modulo-movel');
+  document.getElementById('divisorGuia').hidden = guia.hidden;
   atualizarGuiaVazia();
   // A largura do mapa mudou: sem isto o Leaflet segue desenhando no tamanho antigo
   if (map) map.invalidateSize({ animate:false });
@@ -1938,7 +1972,47 @@ if (!modoCampoAtivo){
   // eles retornam, porque a escolha da sessão continua em memória.
   window.addEventListener('resize', () => {
     Object.keys(MODULOS).forEach(chave => colocarModulo(chave, localDoModulo[chave]));
+    aplicarLarguraGuia(larguraGuiaGuardada(), false);
   });
+
+  /* Largura da guia (v4.8), a pedido do usuário: a coluna também precisa poder
+     ser esticada para o lado. Mesma mecânica da divisória do painel; a largura
+     é guardada no navegador — diferente do LUGAR do módulo, que é escolha do
+     momento e não sobrevive a recarregar. */
+  const divisorGuia = document.getElementById('divisorGuia');
+
+  divisorGuia.addEventListener('pointerdown', ev => {
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    try{ divisorGuia.setPointerCapture(ev.pointerId); }catch(e){}
+    document.body.classList.add('redimensionando');
+
+    const mover = e => {
+      // A guia fica à esquerda do painel: a largura é do cursor até a borda
+      // direita dela.
+      const direita = document.getElementById('guiaLateral').getBoundingClientRect().right;
+      aplicarLarguraGuia(direita - e.clientX, false);
+      if (map) map.invalidateSize({ animate:false });
+    };
+    const soltar = () => {
+      divisorGuia.removeEventListener('pointermove', mover);
+      divisorGuia.removeEventListener('pointerup', soltar);
+      divisorGuia.removeEventListener('pointercancel', soltar);
+      document.body.classList.remove('redimensionando');
+      aplicarLarguraGuia(document.getElementById('guiaLateral').getBoundingClientRect().width, true);
+      if (map) map.invalidateSize({ animate:false });
+    };
+    divisorGuia.addEventListener('pointermove', mover);
+    divisorGuia.addEventListener('pointerup', soltar);
+    divisorGuia.addEventListener('pointercancel', soltar);
+  });
+
+  divisorGuia.addEventListener('dblclick', () => {
+    aplicarLarguraGuia(LARGURA_GUIA_PADRAO, true);
+    if (map) map.invalidateSize({ animate:false });
+  });
+
+  aplicarLarguraGuia(larguraGuiaGuardada(), false);
 }
 
 /* ---------------- Arrastar para reordenar (v3.8) ----------------
