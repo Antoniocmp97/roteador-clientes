@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 11/09/2026 — v4.4 (módulo 4 pode virar guia ao lado do mapa)
+> **Última atualização:** 12/09/2026 — v4.5 (guia ao lado do painel; módulo 3 com puxador próprio)
 
 ---
 
@@ -86,14 +86,20 @@ sem dependências instaladas. Abre direto no navegador.
   demais.
   Esc cancela o arraste. O arraste começa só pela alça, então no celular o resto
   da linha continua rolando a lista
-- **Módulo 4 como guia lateral** (v4.4): a alça ao lado do título "4 · Ordem da
-  viagem" leva o módulo para uma coluna à esquerda do mapa — arrastando para o
+- **Módulo 4 como guia lateral** (v4.4, posição corrigida na v4.5): a alça ao
+  lado do título "4 · Ordem da viagem" leva o módulo para uma coluna **encostada
+  no painel** (ordem na tela: mapa · guia · divisória · painel), para ele ficar ao
+  lado dos outros módulos — arrastando para o
   lado ou com duplo clique. De lá volta do mesmo jeito. É o **mesmo elemento**
   movido no HTML, não uma cópia: arrastar paradas, ★, setas e remover continuam
   funcionando dentro da guia, sem código repetido. Uma âncora invisível guarda o
   lugar dele no painel. Na guia a lista ocupa a coluna inteira e a divisória 3↔4
   some, porque ali ela não faz sentido. Em tela estreita o módulo fica no painel
   e a preferência é ignorada sem ser apagada
+- **Módulo 3 com puxador próprio** (v4.5): aparece só quando o módulo 4 está na
+  guia — nessa hora a divisória 3↔4 foi embora junto com ele, e sem isso o módulo
+  3 ficaria preso na altura em que estava. Com os dois no painel continua valendo
+  a divisória, para não haver dois controles lado a lado
 - **Espaço dividido entre os módulos 3 e 4** (v4.3): uma divisória entre
   "Selecionar paradas" e "Ordem da viagem". Puxar para cima faz o 4 crescer e o 3
   encolher na mesma medida; para baixo, o contrário. A **soma das duas alturas não
@@ -534,6 +540,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 36 | **v4.2** — Altura do módulo 4 (Ordem da viagem) ajustável por puxador, guardada no navegador. Primeiro passo dos módulos customizáveis |
 | 37 | **v4.3** — Divisória entre os módulos 3 e 4: o 4 cresce para cima e o 3 encolre junto, sem empurrar o resto. Substitui o puxador da v4.2. Alvo do projeto passa a ser Full HD |
 | 38 | **v4.4** — Módulo 4 pode ser puxado para o lado e virar guia ao lado do mapa, com volta ao painel pela âncora |
+| 39 | **v4.5** — A guia passa a ficar encostada no painel (estava na borda da tela) e o módulo 3 ganha puxador próprio quando o 4 está na guia |
 
 ---
 
@@ -600,7 +607,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v4.4:  0 / 5
+Leves acumuladas desde a v4.5:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -662,3 +669,4 @@ os backups locais são conveniência, não garantia.
 | 4.2 | 11/09/2026 | Altura do módulo 4 ajustável (puxador), guardada no navegador |
 | 4.3 | 11/09/2026 | Divisória entre os módulos 3 e 4 (o 4 cresce para cima); alvo Full HD |
 | 4.4 | 11/09/2026 | Módulo 4 vira guia ao lado do mapa (arrastar para o lado ou duplo clique) |
+| 4.5 | 12/09/2026 | Guia encostada no painel; módulo 3 com puxador próprio |

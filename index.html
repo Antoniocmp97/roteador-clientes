@@ -137,7 +137,10 @@
   /* Guia lateral (v4.4): coluna à esquerda do mapa que recebe um módulo puxado
      para fora do painel. Hoje só o módulo 4 usa; a ideia é o mesmo mecanismo
      servir para os outros depois. */
-  .guia{width:var(--guia-w, 360px); background:var(--panel); border-right:1px solid var(--line);
+  /* A guia fica ENTRE o mapa e o painel: assim o módulo puxado para fora
+     continua ao lado dos outros módulos, que é o que o usuário pediu depois de
+     ver a primeira versão, que jogava a coluna para a borda esquerda da tela. */
+  .guia{width:var(--guia-w, 360px); background:var(--panel); border-left:1px solid var(--line);
         padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:none;}
   /* Na guia o módulo ocupa a coluna inteira: a lista de paradas cresce até o
      fim da tela em vez de obedecer à altura repartida com o item 3, que só faz
@@ -161,7 +164,9 @@
   .alvo-modulo{position:absolute; top:0; bottom:0; width:10px; z-index:500; pointer-events:none;
                background:var(--amber); opacity:0; transition:opacity .15s;}
   .alvo-modulo.aceso{opacity:.85;}
-  .alvo-modulo.esquerda{left:0;}
+  /* Destino "guia": faixa colada na borda esquerda do painel, que é onde a
+     coluna vai aparecer. Destino "painel": faixa na borda direita da tela. */
+  .alvo-modulo.esquerda{right:calc(var(--painel-w, 340px) + 7px);}
   .alvo-modulo.direita{right:0;}
 
   /* Painel lateral ("console") com os controles: upload, origem, checklist, paradas, botões */
@@ -349,10 +354,20 @@
      o contrário. A soma das duas alturas não muda, então o resto do painel fica
      parado — é isso que diferencia da v4.2, que empurrava tudo para baixo.
      touch-action:none: no celular o arraste aqui não pode virar rolagem. */
-  .divisor-modulos{
+  .divisor-modulos, .puxador-modulo{
     height:16px; margin:2px 0 4px; display:flex; align-items:center; justify-content:center;
     cursor:ns-resize; touch-action:none; user-select:none; -webkit-user-select:none;
   }
+  .puxador-modulo::before{
+    content:''; width:46px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
+  }
+  .puxador-modulo:hover::before{background:var(--amber-dim);}
+  body.altura-arrastando .puxador-modulo::before{background:var(--amber);}
+  /* O puxador do módulo 3 só aparece quando o módulo 4 saiu para a guia: com os
+     dois no painel, quem reparte a altura é a divisória entre eles, e dois
+     controles lado a lado só confundiriam. */
+  #puxadorChecklist{display:none;}
+  body.modulo4-na-guia #puxadorChecklist{display:flex;}
   .divisor-modulos::before{
     content:''; width:46px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
   }
@@ -600,11 +615,13 @@
   </header>
 
   <main>
-    <!-- Guia lateral: vazia até alguém puxar um módulo para cá -->
+    <div id="map"></div>
+    <!-- Guia lateral: coluna extra encostada no painel, para o módulo puxado
+         para fora ficar ao lado dos outros módulos, e não na borda da tela.
+         Fica vazia (e escondida) até alguém puxar um módulo para cá. -->
     <aside class="guia" id="guiaLateral" hidden>
       <div class="guia-vazia" id="guiaVazia" hidden>Sem paradas selecionadas ainda.</div>
     </aside>
-    <div id="map"></div>
     <!-- Divisória arrastável: ajusta a largura do painel. Existe porque os nomes
          de cliente da base real chegam a 58 caracteres e não cabiam nos 340px
          fixos; em monitor Full HD dá para alargar até o nome caber numa linha,
@@ -678,6 +695,10 @@
         <div class="checklist" id="checklist">
           <div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>
         </div>
+        <!-- Puxador do módulo 3: só aparece quando o módulo 4 está na guia.
+             Ver a regra em #puxadorChecklist no CSS. -->
+        <div class="puxador-modulo" id="puxadorChecklist" role="separator" aria-orientation="horizontal"
+             title="Arraste para aumentar ou diminuir a lista de clientes (duplo clique volta ao padrão)"></div>
       </div>
 
       <!-- Passo 4: lista reordenável das paradas escolhidas (só aparece quando há paradas) -->
@@ -789,7 +810,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '4.4';
+const VERSAO = '4.5';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1644,6 +1665,17 @@ const ALTURA_CHECKLIST_PADRAO = 320;
 const ALTURA_PARADAS_PADRAO = 240;
 const ALTURA_MODULO_MIN = 120;   // abaixo disso o módulo não mostra nem duas linhas
 
+// Alturas guardadas (ou os padrões). O puxador do módulo 3 precisa saber a
+// altura do 4 sem medir a tela: com o módulo 4 na guia, o que está desenhado é a
+// coluna inteira, e medir isso gravaria um valor que não vale para o painel.
+function alturasGuardadas(){
+  try{
+    const g = JSON.parse(localStorage.getItem(CHAVE_ALTURAS));
+    if (g && g.c > 0 && g.p > 0) return g;
+  }catch(e){}
+  return { c: ALTURA_CHECKLIST_PADRAO, p: ALTURA_PARADAS_PADRAO };
+}
+
 function aplicarAlturas(checklist, paradas, salvar){
   const c = Math.round(Math.max(checklist, ALTURA_MODULO_MIN));
   const p = Math.round(Math.max(paradas, ALTURA_MODULO_MIN));
@@ -1699,6 +1731,40 @@ if (!modoCampoAtivo){
 
   // Duplo clique devolve os dois ao padrão
   divisor.addEventListener('dblclick', () => aplicarAlturas(ALTURA_CHECKLIST_PADRAO, ALTURA_PARADAS_PADRAO, true));
+
+  /* Puxador do módulo 3 (v4.5). Só fica visível quando o módulo 4 está na guia:
+     nessa hora a divisória 3<->4 foi embora junto com o 4, e sem isto o módulo 3
+     ficaria preso na altura em que estava — foi o que o usuário relatou ("o
+     módulo 3 acabou ficando curto").
+
+     Diferente da divisória, aqui não há soma a conservar: só o módulo 3 muda, e
+     o que está abaixo dele acompanha. A altura do módulo 4 é lida do que está
+     guardado, não da tela, porque na guia ele ocupa a coluna inteira. */
+  const puxador3 = document.getElementById('puxadorChecklist');
+
+  puxador3.addEventListener('pointerdown', ev => {
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    try{ puxador3.setPointerCapture(ev.pointerId); }catch(e){}
+    document.body.classList.add('altura-arrastando');
+
+    const inicioY = ev.clientY;
+    const cInicial = checklistEl.getBoundingClientRect().height;
+
+    const mover = e => aplicarAlturas(cInicial + (e.clientY - inicioY), alturasGuardadas().p, false);
+    const soltar = () => {
+      puxador3.removeEventListener('pointermove', mover);
+      puxador3.removeEventListener('pointerup', soltar);
+      puxador3.removeEventListener('pointercancel', soltar);
+      document.body.classList.remove('altura-arrastando');
+      aplicarAlturas(checklistEl.getBoundingClientRect().height, alturasGuardadas().p, true);
+    };
+    puxador3.addEventListener('pointermove', mover);
+    puxador3.addEventListener('pointerup', soltar);
+    puxador3.addEventListener('pointercancel', soltar);
+  });
+
+  puxador3.addEventListener('dblclick', () => aplicarAlturas(ALTURA_CHECKLIST_PADRAO, alturasGuardadas().p, true));
 }
 
 /* ---------------- Módulo 4 na guia lateral (v4.4) ----------------

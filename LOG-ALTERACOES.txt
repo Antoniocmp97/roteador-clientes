@@ -3356,3 +3356,62 @@ VERSÃO: fecha a v4.4.
 
 PENDENTE
   Mover "Traçar nesta ordem" e "Otimizar ordem" para o topo (ponto 2).
+
+--------------------------------------------------------
+[12/09/2026] v4.5 — Guia ao lado do painel e puxador do módulo 3
+--------------------------------------------------------
+
+RETORNO DO USUÁRIO SOBRE A v4.4
+  "O módulo 4 pode virar independente, porém não foi para o local certo,
+  ele foi totalmente para o canto esquerdo, quero que ele fique ao lado
+  dos outros módulos. Outra observação: ao realizar o teste anterior, o
+  módulo 3 acabou ficando curto, altere o módulo 3 para poder expandir ou
+  recuar também."
+
+1. A GUIA MUDOU DE LUGAR
+  Na v4.4 a coluna nascia como primeiro elemento do <main>, ou seja, na
+  borda esquerda da tela, com o mapa inteiro separando o módulo dos
+  outros. Agora ela fica entre o mapa e a divisória do painel:
+
+      mapa · guia · divisória · painel
+
+  A guia ficou ANTES da divisória de propósito: assim a divisória, que
+  ajusta a largura do painel, continua encostada no painel — se ficasse do
+  outro lado da guia, estaria a duas colunas do que ela controla.
+  A borda da guia passou de border-right para border-left, e a faixa âmbar
+  que acende no destino do arraste agora fica em
+  calc(--painel-w + 7px), que é onde a coluna vai aparecer, e não na
+  borda da tela.
+
+2. MÓDULO 3 COM PUXADOR PRÓPRIO
+  Causa do "ficou curto": a divisória 3<->4 mora DENTRO do módulo 4, então
+  ela vai junto quando ele sai para a guia. Sem ela, o módulo 3 ficava
+  preso na altura em que estava.
+
+  O módulo 3 ganhou um puxador na borda de baixo, visível só quando o
+  módulo 4 está na guia. Com os dois no painel continua valendo a
+  divisória — dois controles lado a lado, fazendo quase a mesma coisa, só
+  confundiriam.
+
+  Diferença em relação à divisória: aqui não há soma a conservar, só o
+  módulo 3 muda e o que está abaixo acompanha. A altura do módulo 4 é lida
+  do que está GUARDADO, não da tela: na guia ele ocupa a coluna inteira, e
+  medir isso gravaria um valor que não vale para o painel.
+
+TESTES
+  - Ordem dos elementos na tela: mapa, guia, divisória, painel.
+  - Módulo vai para a guia e volta; a divisória 3<->4 fica escondida na
+    guia (display none) e volta no painel.
+  - Puxador do módulo 3: escondido com o módulo 4 no painel, visível com
+    ele na guia.
+  - Arrastar o puxador do 3: estica (320 -> 520), encolhe (-> 440),
+    respeita o piso (-> 120) e NÃO altera a altura guardada do módulo 4
+    (240 em todos). Duplo clique volta para 320.
+
+  A janela do app de testes segue sem desenhar a página, então largura da
+  guia e ajuste do mapa continuam para o usuário conferir.
+
+VERSÃO: fecha a v4.5.
+
+PENDENTE
+  Ponto 2: mover "Traçar nesta ordem" e "Otimizar ordem" para o topo.
