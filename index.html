@@ -852,7 +852,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '4.9';
+const VERSAO = '5.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1039,6 +1039,11 @@ let clientPoints = [];   // { id, name, lat, lng, marker } — todos os clientes
 let stops = [];          // subconjunto/ordem de clientPoints selecionados para esta viagem
 let gruposClientes = [];  // [{cliente, pontos:[...]}] — agrupamento por camada do uMap, usado só no checklist
 let gruposAbertos = new Set(); // nomes das CAMADAS (clientes) com a cascata aberta
+/* Durante uma busca as cascatas com resultado abrem sozinhas. Este conjunto
+   guarda as que foram FECHADAS mesmo assim — pelo clique no cabeçalho ou porque
+   uma filial acabou de ser selecionada (v5.0). Sem ele, a regra da busca
+   reabriria a cascata no primeiro redesenho. Some quando a busca é limpa. */
+let gruposFechadosNaBusca = new Set();
 let gruposUmapAbertos = new Set(); // nomes dos GRUPOS do uMap com a cascata aberta
 let buscaAtual = ''; // texto digitado no campo de busca do checklist (Fase 3)
 
@@ -1314,6 +1319,7 @@ function importClients(grupos, filename, salvoEm){
   clientPoints = []; stops = [];
   gruposClientes = grupos;
   gruposAbertos = new Set();
+  gruposFechadosNaBusca = new Set();
   gruposUmapAbertos = new Set();
   buscaAtual = '';
   const buscaInput = document.getElementById('buscaClientes');
@@ -1429,7 +1435,7 @@ function renderChecklist(){
     // Durante uma busca, o grupo com resultado abre sozinho — não faz sentido
     // pedir pra clicar de novo no que já foi filtrado. Isso não mexe no
     // gruposAbertos "de verdade": limpar a busca volta ao que estava antes.
-    const aberto = termo ? true : gruposAbertos.has(g.cliente);
+    const aberto = termo ? !gruposFechadosNaBusca.has(g.cliente) : gruposAbertos.has(g.cliente);
     const selecionadas = g.pontos.filter(pt => stops.some(s => s.id === pt.id)).length;
 
     const box = document.createElement('div');
@@ -1443,8 +1449,15 @@ function renderChecklist(){
       <span class="grupo-nome">${escaparHtml(g.cliente)}</span>
       <span class="grupo-cont">${selecionadas ? selecionadas + '/' : ''}${g.pontos.length}</span>`;
     head.onclick = () => {
-      if (gruposAbertos.has(g.cliente)) gruposAbertos.delete(g.cliente);
-      else gruposAbertos.add(g.cliente);
+      // Durante a busca, quem manda é a lista de "fechadas apesar da busca";
+      // fora dela, a de abertas.
+      if (termo){
+        if (gruposFechadosNaBusca.has(g.cliente)) gruposFechadosNaBusca.delete(g.cliente);
+        else gruposFechadosNaBusca.add(g.cliente);
+      }else{
+        if (gruposAbertos.has(g.cliente)) gruposAbertos.delete(g.cliente);
+        else gruposAbertos.add(g.cliente);
+      }
       renderChecklist();
     };
     box.appendChild(head);
@@ -1484,7 +1497,13 @@ function renderChecklist(){
       const cb = row.querySelector('input');
       cb.checked = !!marcado;
       cb.addEventListener('change', () => {
-        if (cb.checked){ if (!stops.some(s=>s.id===c.id)) stops.push(c); }
+        if (cb.checked){
+          if (!stops.some(s=>s.id===c.id)) stops.push(c);
+          // Selecionou: a cascata fecha, para a lista não ficar poluída (v5.0).
+          // Vale nos dois casos — busca ativa ou não.
+          gruposAbertos.delete(g.cliente);
+          if (termo) gruposFechadosNaBusca.add(g.cliente);
+        }
         else { c.prioritaria = false; stops = stops.filter(s => s.id !== c.id); }
         renderChecklist();   // atualiza a contagem, o destaque do cabeçalho e mostra/esconde o seletor
         renderStopsList();
@@ -1547,6 +1566,9 @@ function renderChecklist(){
 // Busca (Fase 3): cada tecla digitada refiltra o checklist
 document.getElementById('buscaClientes').addEventListener('input', e => {
   buscaAtual = e.target.value;
+  // Busca nova (ou limpa): as cascatas fechadas durante a busca anterior não
+  // valem mais — o estado "de verdade" (gruposAbertos) volta a mandar.
+  gruposFechadosNaBusca = new Set();
   renderChecklist();
 });
 

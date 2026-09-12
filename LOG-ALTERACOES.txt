@@ -3640,3 +3640,54 @@ TESTES
   simuladas e a conferência visual fica com o usuário.
 
 VERSÃO: fecha a v4.9.
+
+--------------------------------------------------------
+[12/09/2026] v5.0 — Cascata fecha ao selecionar uma filial
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Ao selecionar manualmente ou buscar pelo filtro alguma filial, a
+  cascata fica aberta; preciso que ao selecionar a cascata fique fechada,
+  para diminuir a poluição visual."
+
+O QUE FOI FEITO
+  Marcar uma filial fecha a cascata daquele cliente. Desmarcar NÃO fecha —
+  quem está tirando uma parada normalmente quer continuar mexendo ali.
+
+  Dentro de um grupo do uMap, só a camada fecha; o grupo segue aberto, para
+  a pessoa continuar vendo as camadas irmãs.
+
+  O que a cascata fechada ainda mostra: o contador no cabeçalho ("1/9") e a
+  bolinha âmbar de "tem seleção aqui dentro". Nada se perde de vista.
+
+DETALHE QUE EXIGIU ESTADO NOVO
+  Durante uma busca, as cascatas com resultado abrem sozinhas. Se a
+  seleção só apagasse o nome de gruposAbertos, o próximo redesenho
+  reabriria tudo. Entrou um segundo conjunto — gruposFechadosNaBusca —
+  com as cascatas fechadas APESAR da busca, seja por clique no cabeçalho,
+  seja por uma seleção recém-feita.
+
+  Ele é zerado a cada tecla nova na busca (e ao carregar outra base): a
+  cada busca diferente o estado "de verdade" (gruposAbertos) volta a
+  mandar. O clique no cabeçalho passou a mexer num conjunto ou no outro,
+  conforme haja busca ativa.
+
+TESTES (base real)
+  - Sem busca: abrir a cascata, marcar uma filial -> cascata fechou, 1
+    parada, cabeçalho mostrando "1/9".
+  - Desmarcar: cascata continua aberta.
+  - Com busca ("GIASSI"): abre sozinha; ao marcar, fecha e o cliente
+    continua visível no resultado.
+  - Clique no cabeçalho durante a busca reabre; trocar o termo volta a
+    abrir; limpar a busca devolve o estado de verdade (fechada).
+  - Pelo balão do mapa: selecionar fecha, desmarcar abre (mostra o que
+    mudou).
+  - Camada dentro do grupo PMNV: ao marcar, a camada fechou e o GRUPO
+    continuou aberto.
+
+RESSALVA DITA AO USUÁRIO
+  Com a cascata fechando a cada seleção, marcar várias filiais do mesmo
+  cliente exige reabrir a cada uma (o BURIGOS tem 9). Se incomodar no uso,
+  dá para restringir o fechamento só ao caso da busca.
+
+VERSÃO: fecha a v5.0 (4.9 + 0.1; não marca fase nova do projeto).

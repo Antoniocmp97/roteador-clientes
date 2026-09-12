@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 12/09/2026 — v4.9 (divisória entre os dois módulos da guia)
+> **Última atualização:** 12/09/2026 — v5.0 (cascata fecha ao selecionar uma filial)
 
 ---
 
@@ -45,6 +45,11 @@ sem dependências instaladas. Abre direto no navegador.
   o que distingue uma unidade da outra)
 - **Busca no checklist** (Fase 3): filtra por nome do cliente ou da filial;
   grupos com resultado abrem sozinhos durante a busca
+- **A cascata fecha ao selecionar** (v5.0): marcar uma filial fecha a cascata do
+  cliente, para a lista não ficar poluída. O contador no cabeçalho (ex.: "1/9")
+  e a bolinha âmbar continuam mostrando que há seleção ali dentro. Desmarcar
+  **não** fecha. Dentro de um grupo do uMap, só a camada fecha — o grupo
+  continua aberto
 - **Base guardada no navegador** (Fase 3): depois de carregar o `.umap` uma vez,
   a base volta sozinha na próxima abertura. Também é a rede de segurança se o
   uMap sair do ar. Link "esquecer base" apaga a base guardada (com confirmação)
@@ -563,6 +568,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 41 | **v4.7** — Módulo 3 também pode ir para a guia; o mecanismo vira uma tabela de módulos, pronta para os demais |
 | 42 | **v4.8** — Guia ganha divisória de largura; corrigido o campo de busca que esticava na vertical dentro da coluna |
 | 43 | **v4.9** — Divisória entre os dois módulos dentro da guia, repartindo a altura da coluna |
+| 44 | **v5.0** — Cascata do cliente fecha ao selecionar uma filial, inclusive durante a busca |
 
 ---
 
@@ -629,7 +635,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v4.9:  0 / 5
+Leves acumuladas desde a v5.0:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -696,3 +702,4 @@ os backups locais são conveniência, não garantia.
 | 4.7 | 12/09/2026 | Módulo 3 também vai para a guia; mecanismo generalizado |
 | 4.8 | 12/09/2026 | Guia com largura ajustável; campo de busca não estica mais na coluna |
 | 4.9 | 12/09/2026 | Divisória entre os dois módulos da guia |
+| 5.0 | 12/09/2026 | Cascata fecha ao selecionar uma filial |
