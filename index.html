@@ -453,7 +453,11 @@
                     background:var(--amber); pointer-events:none; list-style:none; z-index:6;}
   body.arrastando-parada, body.arrastando-parada *{cursor:grabbing !important;}
   body.arrastando-parada{user-select:none; -webkit-user-select:none;}
-  .stop-row .nm{flex:1;min-width:0;white-space:normal;line-height:1.3;overflow-wrap:anywhere;}
+  /* min-width de 88px: rede de segurança para o nome nunca ser espremido a ponto
+     de quebrar letra a letra. Com o piso de 320px das colunas sobram ~110px, então
+     este limite não deve ser alcançado — ele existe para o caso de a linha ganhar
+     mais algum elemento no futuro. */
+  .stop-row .nm{flex:1;min-width:88px;white-space:normal;line-height:1.3;overflow-wrap:anywhere;}
   /* Os botões ★ ▲ ▼ ✕ voltaram ao tamanho original na v5.2: a v5.1 os aumentou
      por engano — o pedido era a área de PEGADA da alça de arrastar.
      flex:none (v5.5): sem isso eles encolhiam quando a linha apertava, e o
@@ -465,6 +469,17 @@
   .stop-row.prioritaria{border-color:var(--amber-dim);}
   .stop-row .btn-fixar{color:var(--muted);}
   .stop-row.prioritaria .btn-fixar{color:var(--amber);}
+  /* Coluna estreita: os botões descem para uma segunda linha e o nome fica com a
+     largura inteira. Antes eles disputavam a linha com o nome, que sobrava com
+     ~40px e quebrava letra a letra ("ANG/ELO/NI") — foi o print que o usuário
+     mandou com a guia fechada ao máximo. Nada é escondido: só muda de lugar. */
+  @container (max-width: 400px){
+    .stop-row{flex-wrap:wrap;}
+    .stop-row .nm{min-width:120px;}
+    .stop-row .alca{align-self:center; margin-top:0; margin-bottom:0; height:34px;}
+    .stop-row [data-act]{margin-left:auto;}
+    .stop-row [data-act] ~ [data-act]{margin-left:0;}
+  }
   .stop-grupo{
     font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.1em;
     text-transform:uppercase; color:var(--muted); padding:4px 2px 0; list-style:none;
@@ -884,7 +899,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '5.5';
+const VERSAO = '5.6';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -972,7 +987,10 @@ if (!modoCampoAtivo) {
    com as outras preferências do escritório (base, origem padrão, tipos). */
 const CHAVE_LARGURA = 'hg_largura_painel';
 const LARGURA_PADRAO = 340;   // a largura que o app sempre teve
-const LARGURA_MIN = 300;      // abaixo disso os controles começam a se espremer
+/* 320 e não 300: medido em 12/09/2026 na lista de paradas, abaixo disso sobra
+   menos de ~100px para o nome da parada e ele quebra letra a letra ("ANG/ELO/NI"),
+   como o usuário mostrou num print da guia estreitada ao máximo. */
+const LARGURA_MIN = 320;
 const MAPA_MIN = 380;         // o mapa nunca fica menor que isso, por mais que se arraste
 
 // Máximo depende da tela: em 1366 sobra pouco, em 1920 dá para abrir bem mais.
@@ -1932,7 +1950,7 @@ const localDoModulo = { m3:'painel', m4:'painel' };   // só em memória, nesta 
    é preferência de layout, como a largura do painel. */
 const CHAVE_LARGURA_GUIA = 'hg_largura_guia';
 const LARGURA_GUIA_PADRAO = 360;
-const LARGURA_GUIA_MIN = 260;   // abaixo disso o nome do cliente não cabe
+const LARGURA_GUIA_MIN = 320;   // mesmo piso do painel, pelo mesmo motivo
 
 function larguraGuiaGuardada(){
   try{ const g = parseInt(localStorage.getItem(CHAVE_LARGURA_GUIA), 10); if (g > 0) return g; }catch(e){}

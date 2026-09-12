@@ -3872,3 +3872,44 @@ MEDIÇÕES (janela 1920, três paradas)
   Arraste conferido nas duas larguras de alça, com a ordem mudando.
 
 VERSÃO: fecha a v5.5.
+
+--------------------------------------------------------
+[12/09/2026] v5.6 — Limite de largura para o nome não quebrar
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  Print da guia fechada ao máximo: nomes quebrando letra a letra
+  ("ANG/ELO/NI", "ESC/RIT/ORI/O"). "Sugiro que coloque um limite para não
+  acontecer isso."
+
+MEDIDO
+  Com a guia no piso antigo (260px), sobravam ~39px para o nome depois da
+  alça, do número e dos quatro botões.
+
+O QUE FOI FEITO
+  1. Piso das colunas subiu para 320px (painel e guia; o painel estava em
+     300 e a guia em 260). Larguras menores já gravadas são elevadas ao
+     abrir, porque a função de aplicar largura sempre limita pelo piso.
+  2. Nome da parada com mínimo de 120px em coluna estreita
+     (@container max-width 400px) e 88px como rede de segurança geral.
+
+  Resultado medido: no piso de 320px o nome passou de ~39px para 131px no
+  painel e 132px na guia — suficiente para "FORQUILHINHA" (~95px) numa
+  linha só.
+
+ERRO MEU, DE NOVO POR ORDEM DE REGRAS
+  Escrevi o bloco @container do nome ANTES da regra base .stop-row .nm.
+  Como @container não soma especificidade, a regra base vencia o empate e
+  o mínimo não valia — o nome continuava com 106px. Movido para depois de
+  todas as regras da linha. É a segunda vez que tropeço nisso (a primeira
+  foi na v5.5, com a alça); ficou registrado no comentário do código.
+
+TESTES (janela 1920, três paradas)
+  painel 600 -> nome 359    painel 380 -> nome 166
+  painel 440 -> nome 226    painel 320 -> nome 131
+  painel 420 -> nome 206
+  guia no piso (320) -> nome 132; guia 600 -> nome 359, alça de volta a 54.
+  Em nenhuma largura houve transbordo nem palavra cortada, e o arraste
+  continua funcionando na coluna estreita.
+
+VERSÃO: fecha a v5.6.

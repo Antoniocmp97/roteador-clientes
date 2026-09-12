@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 12/09/2026 — v5.5 (alça acompanha a largura da coluna)
+> **Última atualização:** 12/09/2026 — v5.6 (limite de largura: nome da parada nunca mais quebra letra a letra)
 
 ---
 
@@ -38,7 +38,8 @@ sem dependências instaladas. Abre direto no navegador.
   rota não é afetada: quem decide a sequência da viagem é a otimização
 - **Painel de largura ajustável**: a divisória entre o mapa e o painel é
   arrastável e a largura escolhida fica guardada no navegador (duplo clique
-  volta ao padrão). Existe porque o mesmo site é usado numa TV de 1366x768 e
+  volta ao padrão). Piso de **320px** no painel e na guia (v5.6): abaixo disso o
+  nome da parada ficava com ~40px e quebrava letra a letra. Existe porque o mesmo site é usado numa TV de 1366x768 e
   em monitores Full HD — nenhuma largura fixa serve para as duas
 - **Nome do cliente nunca é cortado**: quebra em duas ou três linhas quando o
   painel está estreito, em vez de terminar em "…" (o final do nome é justamente
@@ -583,6 +584,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 47 | **v5.3** — Largura da alça dobrada (27 → 54; 37 → 74 no toque) |
 | 48 | **v5.4** — Módulo 3 ajustável desde a abertura, antes de escolher paradas; corrigidas as linhas fantasmas da lista de paradas ao trocar de base |
 | 49 | **v5.5** — Correção do aperto na lista de paradas: botões deixam de encolher e a alça acompanha a largura da coluna |
+| 50 | **v5.6** — Limite de largura das colunas (320px) e mínimo para o nome da parada: fim da quebra letra a letra |
 
 ---
 
@@ -649,7 +651,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v5.5:  0 / 5
+Leves acumuladas desde a v5.6:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -722,3 +724,4 @@ os backups locais são conveniência, não garantia.
 | 5.3 | 12/09/2026 | Largura da alça dobrada (54px; 74px no toque) |
 | 5.4 | 12/09/2026 | Módulo 3 ajustável desde a abertura; linhas fantasmas corrigidas |
 | 5.5 | 12/09/2026 | Alça acompanha a largura da coluna; botões não encolhem mais |
+| 5.6 | 12/09/2026 | Piso de 320px nas colunas e mínimo de 120px para o nome da parada |
