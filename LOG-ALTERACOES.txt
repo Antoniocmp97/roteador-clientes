@@ -3759,3 +3759,30 @@ TESTES
     para a 1ª.
 
 VERSÃO: fecha a v5.2.
+
+--------------------------------------------------------
+[12/09/2026] v5.3 — Largura da alça dobrada
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "O tamanho em altura ficou bom, dobre o tamanho da largura do toque
+  agora."
+
+O QUE FOI FEITO
+  A alça passou de 27px para 54px de largura, e de 37px para 74px em telas
+  de toque. Feito com min-width, mantendo o padding e as margens negativas
+  que encaixam a alça na borda da linha.
+
+  Histórico da medida: 19px (v3.8) -> 27px (v5.2) -> 54px (v5.3).
+
+  Os seis pontinhos continuam com 9x15: só a área que pega o arraste
+  cresceu. A largura sai do nome da parada, que já quebra em duas linhas
+  quando precisa — e o painel e a coluna auxiliar são ajustáveis para quem
+  quiser mais nome à vista.
+
+TESTES
+  - min-width de 54px, padding de 9px dos dois lados, ainda esticando na
+    altura da linha; pseudo-elemento dos pontinhos em 9x15.
+  - Arraste pela alça continua funcionando: HOSPITAL da 3ª para a 1ª.
+
+VERSÃO: fecha a v5.3.

@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 12/09/2026 — v5.2 (área de pegada maior na alça de arrastar)
+> **Última atualização:** 12/09/2026 — v5.3 (largura da alça dobrada)
 
 ---
 
@@ -131,9 +131,10 @@ sem dependências instaladas. Abre direto no navegador.
   (320/240). Primeiro passo do pedido de deixar o site customizável por módulos.
   ⚠️ A v4.2 tinha um puxador na borda de BAIXO do módulo 4: ele crescia para
   baixo e empurrava o resto do painel, que não era o pedido — foi substituído
-- **Área de pegada da alça de arrastar** (v5.2): os seis pontinhos que movem a
-  parada para cima ou para baixo têm área de 27×altura-da-linha, e 37 de largura
-  em telas de toque. Os pontinhos desenhados continuam do mesmo tamanho.
+- **Área de pegada da alça de arrastar** (v5.2, dobrada na v5.3): os seis
+  pontinhos que movem a parada para cima ou para baixo têm área de
+  54×altura-da-linha, e 74 de largura em telas de toque. Os pontinhos desenhados
+  continuam do mesmo tamanho; a largura sai do nome da parada, que quebra linha.
   ⚠️ A v5.1 tinha aumentado os botões ★ ▲ ▼ ✕ por engano — o pedido era a alça;
   os botões voltaram ao tamanho original
 - **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
@@ -576,6 +577,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 44 | **v5.0** — Cascata do cliente fecha ao selecionar uma filial, inclusive durante a busca |
 | 45 | **v5.1** — Botões ★ ▲ ▼ ✕ da lista de paradas com alvo de toque maior (32×32, e 44×44 no toque) |
 | 46 | **v5.2** — Desfaz a v5.1 e aumenta o que o usuário realmente pediu: a área de pegada da alça de arrastar |
+| 47 | **v5.3** — Largura da alça dobrada (27 → 54; 37 → 74 no toque) |
 
 ---
 
@@ -642,7 +644,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v5.2:  0 / 5
+Leves acumuladas desde a v5.3:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -712,3 +714,4 @@ os backups locais são conveniência, não garantia.
 | 5.0 | 12/09/2026 | Cascata fecha ao selecionar uma filial |
 | 5.1 | 12/09/2026 | Alvo de toque maior nos botões da lista de paradas (revertida na v5.2) |
 | 5.2 | 12/09/2026 | Área de pegada maior na alça de arrastar paradas |
+| 5.3 | 12/09/2026 | Largura da alça dobrada (54px; 74px no toque) |

@@ -407,13 +407,13 @@
      impede o navegador de tratar o arraste na alça como rolagem da página.
      A alça é desenhada em CSS (pontinhos), e não com um caractere, porque os
      símbolos de "arrastar" não existem em todas as fontes do Windows. */
-  /* Área de pegada da alça (v5.2), a pedido do usuário: era 19px de largura, o
-     que exige mira tanto no mouse quanto no dedo. Agora vai a 27px, e a 37px em
-     telas de toque. A altura já era a da linha inteira (align-self:stretch com
-     as margens negativas anulando o padding da linha) — o que faltava era
-     largura. Os pontinhos desenhados continuam do mesmo tamanho. */
+  /* Área de pegada da alça. Histórico: 19px no começo, 27px na v5.2 e 54px na
+     v5.3, a pedido do usuário ("dobre a largura"). A altura é a da linha inteira
+     (align-self:stretch, com as margens negativas anulando o padding da linha).
+     Os pontinhos desenhados continuam do mesmo tamanho: o que cresce é só a área
+     que pega o arraste. A largura sai do nome da parada, que quebra linha. */
   .stop-row .alca{flex:none; align-self:stretch; display:flex; align-items:center; justify-content:center;
-                  padding:0 9px; margin:-7px 0 -7px -9px; cursor:grab; border-radius:6px;
+                  min-width:54px; padding:0 9px; margin:-7px 0 -7px -9px; cursor:grab; border-radius:6px;
                   touch-action:none; user-select:none; -webkit-user-select:none;}
   .stop-row .alca:hover{background:var(--hover);}
   .stop-row .alca::before{content:''; width:9px; height:15px; opacity:.65;
@@ -421,7 +421,7 @@
                   background-size:4.5px 5px;}
   .stop-row .alca:hover::before{opacity:1;}
   /* No dedo, alvo maior */
-  @media (pointer:coarse){ .stop-row .alca{padding:0 14px; margin-left:-14px;} }
+  @media (pointer:coarse){ .stop-row .alca{min-width:74px; padding:0 14px; margin-left:-14px;} }
   /* A linha "levantada" que acompanha o ponteiro. As demais NÃO se mexem
      durante o arraste — quem mostra o destino é o indicador âmbar. Mexer nas
      outras mudaria as posições que servem de referência e a linha ficaria
@@ -860,7 +860,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '5.2';
+const VERSAO = '5.3';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
