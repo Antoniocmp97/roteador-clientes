@@ -3201,3 +3201,56 @@ TESTE DO FLUXO COMPLETO
 
 VERSÃO: fecha a v4.1. A alteração leve pendente (remoção do rodapé, 1/5)
 entra junto nesta versão.
+
+--------------------------------------------------------
+[11/09/2026] v4.2 — Altura do módulo 4 ajustável
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Deixar o site customizável por módulos, começando pelo item 4 (Ordem da
+  viagem). Perguntado o que era "puxar o conjunto pro lado", respondeu:
+  "Ele poderá ser puxado para cima, estendendo para uma visualização
+  melhor. Uma segunda opção pode ser poder puxar o módulo 4 para o lado,
+  sendo uma segunda guia."
+
+  São duas coisas. Esta versão faz a primeira (esticar/encolher). A
+  segunda (virar guia ao lado) fica para depois da confirmação, porque é
+  bem maior e mexe no layout das duas colunas.
+
+O QUE FOI FEITO
+  Puxador na borda de baixo da lista de paradas. Arrastar estica ou
+  encolhe; duplo clique volta ao padrão de 240px; a escolha fica em
+  'hg_altura_paradas'.
+
+  Mesma mecânica da divisória do painel, de propósito: medida numa
+  variável CSS (--altura-paradas), eventos pointer* (mouse e toque no
+  mesmo caminho), gravação só ao soltar e não a cada pixel.
+
+  Piso de 120px (abaixo disso não cabem duas paradas) e teto de 70% da
+  altura da tela — uma lista de 900px numa TV de 768 empurraria todo o
+  resto do painel para fora da vista. Ao redimensionar a janela a altura
+  é reaplicada dentro do teto novo, sem regravar a preferência.
+
+DEFEITO ENCONTRADO NO PRÓPRIO TESTE
+  Faltou try/catch no setPointerCapture. Com ponteiro simulado a captura
+  é recusada, a exceção abortava o resto do arraste e nada acontecia — o
+  arraste da lista de paradas (v3.8) já tinha essa proteção, aqui eu
+  esqueci. Corrigido.
+
+TESTES
+  Feitos no nível da lógica, porque a janela do app de testes parou de
+  desenhar a página (ficou atrás de outra) e qualquer medida de altura
+  sairia inválida — clientHeight voltava 0. Verificado:
+  - pedir 400 aplica max-height de 400px e grava 400;
+  - pedir 2000 vira o teto; pedir 10 vira o piso de 120;
+  - durante o arraste o corpo é marcado; mover 120px muda a altura na
+    hora e NÃO grava; ao soltar, grava 360;
+  - duplo clique volta para 240 e grava.
+  Falta a conferência visual, que fica com o usuário.
+
+VERSÃO: fecha a v4.2 (funcionalidade nova).
+
+PENDENTE
+  Mover "Traçar nesta ordem" e "Otimizar ordem" para o topo, ao lado do
+  interruptor de modo noturno (pedido de 10/09, adiado pelo usuário para
+  depois dos módulos).

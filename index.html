@@ -310,7 +310,25 @@
   /* Lista ordenável das paradas selecionadas (ordem da viagem) */
   /* position:relative: o indicador de "vai cair aqui" do arraste é posicionado
      dentro da lista, e precisa rolar junto com ela. */
-  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;position:relative;}
+  /* A altura vem de uma variável para o puxador poder mudá-la sem estilo
+     inline — mesma ideia da largura do painel (--painel-w). */
+  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:var(--altura-paradas, 240px);overflow-y:auto;position:relative;}
+
+  /* Puxador de altura do módulo 4: arrasta para esticar ou encolher a lista de
+     paradas. Existe porque 240px mostram ~5 paradas, e num roteiro maior a
+     lista fica rolando o tempo todo — quem tem tela grande quer ver tudo de
+     uma vez, quem tem tela pequena quer o contrário.
+     touch-action:none: no celular, o arraste no puxador não pode virar rolagem. */
+  .puxador-altura{
+    height:14px; margin-top:2px; display:flex; align-items:center; justify-content:center;
+    cursor:ns-resize; touch-action:none; user-select:none; -webkit-user-select:none;
+  }
+  .puxador-altura::before{
+    content:''; width:38px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
+  }
+  .puxador-altura:hover::before{background:var(--amber-dim);}
+  body.altura-arrastando{cursor:ns-resize; user-select:none;}
+  body.altura-arrastando .puxador-altura::before{background:var(--amber);}
   .stops > *{flex:none;}
   .stop-row{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;}
   .stop-row .n{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;width:16px;flex-shrink:0;}
@@ -630,6 +648,8 @@
       <div id="stopsSection" style="display:none;">
         <div class="field-label">4 · Ordem da viagem</div>
         <ul class="stops" id="stopsList"></ul>
+        <div class="puxador-altura" id="puxadorParadas" role="separator" aria-orientation="horizontal"
+             title="Arraste para aumentar ou diminuir a lista (duplo clique volta ao padrão)"></div>
       </div>
 
       <!-- Ações: calcular rota respeitando a ordem atual, ou deixar o OSRM otimizar a ordem -->
@@ -722,7 +742,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '4.1';
+const VERSAO = '4.2';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1553,6 +1573,71 @@ function renderStopsList(){
       paradasMudaram();
     };
     list.appendChild(li);
+  });
+}
+
+/* ---------------- Altura do módulo 4 ajustável (v4.2) ----------------
+   Pedido do usuário: poder "puxar" o módulo da Ordem da viagem para esticar e
+   ver mais paradas de uma vez. Os 240px do padrão mostram cerca de 5.
+
+   Mesma mecânica da divisória do painel: a medida vive numa variável CSS, o
+   arraste usa eventos pointer* (mouse e toque no mesmo caminho) e a escolha
+   fica guardada no navegador. Duplo clique volta ao padrão. */
+const CHAVE_ALTURA_PARADAS = 'hg_altura_paradas';
+const ALTURA_PARADAS_PADRAO = 240;
+const ALTURA_PARADAS_MIN = 120;   // abaixo disso não cabe nem duas paradas
+// O teto acompanha a tela: numa TV de 768px não faz sentido uma lista de 900px,
+// que empurraria todo o resto do painel para fora da vista.
+function alturaParadasMax(){
+  return Math.max(ALTURA_PARADAS_MIN, Math.round(document.documentElement.clientHeight * 0.7));
+}
+function aplicarAlturaParadas(px, salvar){
+  const v = Math.round(Math.min(Math.max(px, ALTURA_PARADAS_MIN), alturaParadasMax()));
+  document.documentElement.style.setProperty('--altura-paradas', v + 'px');
+  if (salvar){ try{ localStorage.setItem(CHAVE_ALTURA_PARADAS, String(v)); }catch(e){ /* segue sem persistir */ } }
+  return v;
+}
+if (!modoCampoAtivo){
+  let alturaSalva = null;
+  try{ alturaSalva = parseInt(localStorage.getItem(CHAVE_ALTURA_PARADAS), 10); }catch(e){}
+  if (alturaSalva > 0) aplicarAlturaParadas(alturaSalva, false);
+
+  const puxador = document.getElementById('puxadorParadas');
+  const lista = document.getElementById('stopsList');
+
+  puxador.addEventListener('pointerdown', ev => {
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    // try/catch: com ponteiro simulado (testes) a captura é recusada, e sem isso
+    // a exceção abortaria o resto do arraste. Mesma proteção do arraste de paradas.
+    try{ puxador.setPointerCapture(ev.pointerId); }catch(e){}
+    document.body.classList.add('altura-arrastando');
+    const inicioY = ev.clientY;
+    const alturaInicial = lista.getBoundingClientRect().height;
+
+    const mover = e => aplicarAlturaParadas(alturaInicial + (e.clientY - inicioY), false);
+    const soltar = () => {
+      puxador.removeEventListener('pointermove', mover);
+      puxador.removeEventListener('pointerup', soltar);
+      puxador.removeEventListener('pointercancel', soltar);
+      document.body.classList.remove('altura-arrastando');
+      // Só grava ao soltar, não a cada pixel
+      aplicarAlturaParadas(lista.getBoundingClientRect().height, true);
+    };
+    puxador.addEventListener('pointermove', mover);
+    puxador.addEventListener('pointerup', soltar);
+    puxador.addEventListener('pointercancel', soltar);
+  });
+
+  // Duplo clique volta ao padrão — saída fácil de uma altura que ficou ruim
+  puxador.addEventListener('dblclick', () => aplicarAlturaParadas(ALTURA_PARADAS_PADRAO, true));
+
+  // Tela menor (ou janela redimensionada): reaplica dentro do teto de agora,
+  // sem regravar — a preferência original continua salva.
+  window.addEventListener('resize', () => {
+    let alvo = ALTURA_PARADAS_PADRAO;
+    try{ const g = parseInt(localStorage.getItem(CHAVE_ALTURA_PARADAS), 10); if (g > 0) alvo = g; }catch(e){}
+    aplicarAlturaParadas(alvo, false);
   });
 }
 

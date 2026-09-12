@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 10/09/2026 — v4.1 (6 correções da revisão de código)
+> **Última atualização:** 11/09/2026 — v4.2 (altura do módulo 4 ajustável)
 
 ---
 
@@ -86,6 +86,11 @@ sem dependências instaladas. Abre direto no navegador.
   demais.
   Esc cancela o arraste. O arraste começa só pela alça, então no celular o resto
   da linha continua rolando a lista
+- **Altura do módulo 4 ajustável** (v4.2): um puxador na borda de baixo da lista
+  de paradas estica ou encolhe o bloco, para ver mais paradas de uma vez. Piso de
+  120px, teto de 70% da altura da tela, escolha guardada no navegador e duplo
+  clique voltando ao padrão de 240px. Primeiro passo do pedido de deixar o site
+  customizável por módulos
 - **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
   escolhida, e "Otimizar ordem" reordena só as demais — para quando é preciso
   passar num lugar antes do resto do roteiro
@@ -511,6 +516,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 33 | **v3.9** — Parada comum arrastada para as prioritárias passa a ser incluída no fim delas, em vez de só conseguir entrar à frente de todas |
 | 34 | **v4.0** — Correção: a tela do campo ficava desenhada embaixo do escritório desde a v1.0 (display do CSS vencia o hidden). Subtítulo do cabeçalho removido |
 | 35 | **v4.1** — Revisão de código completa: 6 correções (marcar todos e prioridades, balão com busca, rota/link desatualizados, marcadores velhos ao trocar base, símbolos nos balões, novo roteiro na mesma aba). Inclui a remoção do rodapé |
+| 36 | **v4.2** — Altura do módulo 4 (Ordem da viagem) ajustável por puxador, guardada no navegador. Primeiro passo dos módulos customizáveis |
 
 ---
 
@@ -577,7 +583,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v4.1:  0 / 5
+Leves acumuladas desde a v4.2:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -636,3 +642,4 @@ os backups locais são conveniência, não garantia.
 | 3.9 | 10/09/2026 | Arrastar para as prioritárias inclui a parada no fim delas (a divisa segue o título "Demais") |
 | 4.0 | 10/09/2026 | Tela do campo parou de vazar embaixo do escritório (bug da v1.0); subtítulo do cabeçalho removido |
 | 4.1 | 10/09/2026 | 6 correções da revisão de código completa (ver seção 5) |
+| 4.2 | 11/09/2026 | Altura do módulo 4 ajustável (puxador), guardada no navegador |
