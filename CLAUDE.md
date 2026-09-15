@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 14/09/2026 — v6.1.2 (contorno da coluna só com a borda; nova regra de versão MAIOR.MENOR.AJUSTE)
+> **Última atualização:** 14/09/2026 — v6.1.6 (destaque âmbar também na alça das paradas)
 
 ---
 
@@ -91,7 +91,8 @@ sem dependências instaladas. Abre direto no navegador.
   acima dele, a parada entra no **fim das ★** (v3.9); abaixo, fica no começo das
   demais.
   Esc cancela o arraste. O arraste começa só pela alça, então no celular o resto
-  da linha continua rolando a lista
+  da linha continua rolando a lista. A alça tem o mesmo destaque âmbar translúcido
+  da alça dos módulos, ao passar o mouse e durante o arraste (v6.1.6)
 - **Todos os módulos em até três colunas** (v4.4–v4.7; ampliado na v5.7): ordem
   na tela **mapa · coluna 3 · coluna 2 · painel**. Os sete módulos — 1 Clientes,
   2 Origem, 3 Selecionar paradas, 4 Ordem da viagem, Rota (botões + status), 5
@@ -104,7 +105,15 @@ sem dependências instaladas. Abre direto no navegador.
   (v6.1, escolha do usuário: "abrir espaço real") vai para onde ele cairia — os
   módulos em volta se afastam de verdade. O contorno âmbar da coluna só aparece
   quando o módulo **muda de coluna** (ou abre uma nova); na mesma coluna, só o vão
-  (v6.1.1). O contorno é **só a borda**, sem preenchimento (v6.1.2). Vão limitado a 60% da altura visível do
+  (v6.1.1). O contorno é **só a borda**, sem preenchimento (v6.1.2). A alça do
+  módulo é um **retângulo compacto em volta dos pontinhos e do número** do título
+  (v6.1.5, pelo print do usuário): 39×30px, 47×44 no toque; Rota e Roteiro, sem
+  número, só nos pontinhos (classe `sem-numero`, marcada no JS). Fica acima do
+  número (`z-index:1`), com destaque âmbar translúcido. ⚠️ Histórico para não
+  repetir: 15×13 (só os pontinhos) era pequeno; a v6.1.4 fez 60×64 invisível,
+  estendendo para cima do título, e o usuário achou **desproporcional** — a área
+  deve corresponder ao que se vê. Números dos títulos alinhados no mesmo x
+  (v6.1.4: o 3 tinha 5px a mais). Vão limitado a 60% da altura visível do
   destino; sem destino, volta à origem. Posição calculada com o vão aberto (é
   estável). Eventos do arraste escutados na **janela**, porque a alça some junto
   com o módulo. Perto do topo ou do fim de uma coluna que rola, ela rola sozinha. O arranjo guarda `local` (coluna) e
@@ -638,6 +647,10 @@ de arquitetura, para retomar quando fizer sentido):
 | 55 | **v6.1** — Vão de encaixe do tamanho do módulo arrastado, abrindo espaço real no destino (substitui a linha âmbar) |
 | 56 | **v6.1.1** — Contorno da coluna só ao mudar de coluna. Adotada a regra MAIOR.MENOR.AJUSTE |
 | 57 | **v6.1.2** — Contorno da coluna só com a borda, sem preenchimento |
+| 58 | **v6.1.3** — Área de pegada da alça dos módulos de 15×13 para 30×32px (44×44 no toque) |
+| 59 | **v6.1.4** — Alça dos módulos com 60×64px (88×88 no toque), conteúdo com prioridade no clique; "3 · Selecionar paradas" alinhado aos outros títulos |
+| 60 | **v6.1.5** — Alça como retângulo em volta dos pontinhos e do número (39×30), no lugar da área invisível da v6.1.4 |
+| 61 | **v6.1.6** — Destaque âmbar translúcido também na alça das paradas (módulo 4) |
 
 ---
 
@@ -702,7 +715,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-6.1.2
+6.1.6
 ```
 
 ### Onde o número aparece
@@ -784,3 +797,7 @@ os backups locais são conveniência, não garantia.
 | 6.1 | 14/09/2026 | Vão de encaixe proporcional ao módulo arrastado |
 | 6.1.1 | 14/09/2026 | Contorno da coluna só quando o módulo muda de coluna (primeira versão na regra de três números) |
 | 6.1.2 | 14/09/2026 | Contorno da coluna só com a borda, sem preenchimento |
+| 6.1.3 | 14/09/2026 | Área de pegada maior na alça dos módulos |
+| 6.1.4 | 14/09/2026 | Alça com o dobro da área e números dos títulos alinhados |
+| 6.1.5 | 14/09/2026 | Alça em volta dos pontinhos e do número, proporcional ao que se vê |
+| 6.1.6 | 14/09/2026 | Destaque âmbar na alça das paradas |

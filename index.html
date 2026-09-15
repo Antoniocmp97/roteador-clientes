@@ -188,8 +188,34 @@
 
   /* Alça do módulo: arrasta até outra coluna. Duplo clique leva à coluna
      seguinte (painel → coluna 2 → coluna 3 → painel). */
-  .modulo-alca{flex:none; display:flex; align-items:center; padding:0 6px 0 0; margin-left:-2px;
+  /* Área de pegada. Histórico: só os pontinhos (15x13px) até a v6.1.2; 30x32 na
+     v6.1.3; 60x64 invisível na v6.1.4, que o usuário achou desproporcional.
+     Desde a v6.1.5, pelo print que ele mandou: um retângulo compacto em volta
+     dos PONTINHOS E DO NÚMERO ("⋮⋮ 2"), 39x30px (47x44 no toque). Clicar no
+     número também pega o módulo.
+     Medidas: número de 8,1px começando 15px depois dos pontinhos; folga de 9px
+     antes dos pontinhos e 7px depois do número; 8px acima e abaixo da linha de
+     14px do título — não chega no conteúdo do módulo (margem de 8px embaixo)
+     nem passa do espaço entre módulos (14px em cima).
+     Os pontinhos e o título continuam no lugar: as margens negativas devolvem o
+     espaço. z-index:1 põe a caixa acima do número, senão o texto ficaria com o
+     clique. */
+  .modulo-alca{flex:none; box-sizing:border-box; position:relative; z-index:1;
+               display:flex; align-items:center; justify-content:flex-start;
+               width:39px; height:30px; padding-left:9px; margin:-8px -15px -8px -11px; border-radius:5px;
                cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;}
+  /* Fundo translúcido: a caixa fica por cima do número, que precisa continuar legível */
+  .modulo-alca:hover{background:color-mix(in srgb, var(--amber) 16%, transparent);}
+  /* Rota e Roteiro não têm número: a caixa fica só nos pontinhos (marcado no JS) */
+  .modulo-alca.sem-numero{width:24px; margin-right:0;}
+  /* No título do 3 a alça fica num contêiner com gap de 5px, que empurrava o
+     "3 ·" para a direita dos outros títulos (alinhado na v6.1.4) */
+  .field-label-titulo > .modulo-alca{margin-right:-20px;}
+  @media (pointer:coarse){
+    .modulo-alca{width:47px; height:44px; padding-left:12px; margin:-15px -20px -15px -14px;}
+    .modulo-alca.sem-numero{width:27px; margin-right:0;}
+    .field-label-titulo > .modulo-alca{margin-right:-25px;}
+  }
   .modulo-alca::before{content:''; width:9px; height:13px; opacity:.65;
                background-image:radial-gradient(circle, var(--amber-dim) 1.3px, transparent 1.6px);
                background-size:4.5px 5px;}
@@ -501,7 +527,9 @@
                   align-items:center; justify-content:center;
                   padding:0 9px; margin:-7px 0 -7px -9px; cursor:grab; border-radius:6px;
                   touch-action:none; user-select:none; -webkit-user-select:none;}
-  .stop-row .alca:hover{background:var(--hover);}
+  /* Mesmo destaque âmbar translúcido da alça dos módulos (v6.1.6, pedido do
+     usuário), ao passar o mouse e enquanto a parada está sendo arrastada */
+  .stop-row .alca:hover, .stop-row.arrastando .alca{background:color-mix(in srgb, var(--amber) 16%, transparent);}
   .stop-row .alca::before{content:''; width:9px; height:15px; opacity:.65;
                   background-image:radial-gradient(circle, var(--muted) 1.3px, transparent 1.6px);
                   background-size:4.5px 5px;}
@@ -1026,7 +1054,7 @@
 // 14/09/2026: MAIOR.MENOR.AJUSTE — cada alteração leve soma 1 no terceiro número
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '6.1.2';
+const VERSAO = '6.1.6';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2576,6 +2604,14 @@ if (!modoCampoAtivo){
     // não mexe nesses atributos do corpo, então não há laço.
     new MutationObserver(atualizarModulosNasColunas)
       .observe(corpoDoModulo(k), { attributes:true, attributeFilter:['hidden', 'style', 'class'] });
+  });
+
+  // A área da alça cobre os pontinhos e o número do título (v6.1.5). Título sem
+  // número (Rota, Roteiro) fica com a caixa só nos pontinhos.
+  document.querySelectorAll('[data-alca]').forEach(alca => {
+    let n = alca.nextSibling;
+    while (n && !(n.textContent || '').trim()) n = n.nextSibling;
+    alca.classList.toggle('sem-numero', !n || !/^\s*\d/.test(n.textContent));
   });
 
   // Uma escuta só para todas as alças, inclusive as dos avisos

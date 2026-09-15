@@ -4254,3 +4254,118 @@ TESTES (1920x1080)
   Módulo 1 arrastado do painel para a coluna 2: contorno visível, fundo
   transparente (rgba 0,0,0,0), borda âmbar; vão no topo da coluna com o
   fundo suave de sempre. Selo do cabeçalho: v6.1.2. Esc limpou tudo.
+
+--------------------------------------------------------
+[14/09/2026] v6.1.3 — Área de pegada maior na alça dos módulos
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Aumente a área de toque para transição de aba/posição."
+
+MEDIDO ANTES
+  A alça dos módulos só pegava no desenho dos pontinhos: 15x13px.
+
+O QUE FOI FEITO
+  - Área de 30x32px (44x44px em tela de toque), crescendo para a esquerda,
+    para cima e para baixo. Margens negativas devolvem o espaço: pontinhos,
+    títulos e altura das linhas de título ficaram no mesmo pixel.
+  - Fundo suave ao passar o mouse, mostrando até onde a área vai.
+
+TESTES (1920x1080, os 7 módulos no painel)
+  - Pontinhos, início do título, altura e topo da linha de título: iguais
+    ao medido antes, nos 7 módulos (inclusive o 3, de título em 2 linhas).
+  - Área de 30x32 em todos; clique nos cantos superior-esquerdo,
+    inferior-esquerdo e superior-direito cai na alça em todos.
+  - Divisórias de altura continuam com o clique no centro: 3<->4 do painel
+    (só 1px no canto inferior esquerdo fica com a alça), divisória e
+    puxador entre módulos na coluna 2.
+
+--------------------------------------------------------
+[14/09/2026] v6.1.4 — Alça dos módulos com o dobro da área; números alinhados
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Dobre o tamanho atual testado. Ajuste o posicionamento dos números,
+  deixe alinhado."
+
+O QUE FOI FEITO
+  1. Área da alça: 30x32 -> 60x64px (44x44 -> 88x88 no toque). Pontinhos e
+     títulos continuam no lugar. A área cresce mais para cima (34px) do que
+     para baixo (16px), porque embaixo do título já começa o conteúdo. Para
+     a esquerda vai só até a borda da coluna (16px): além disso a coluna
+     corta.
+  2. Com a área maior sobrepondo o fim do módulo anterior e o começo do
+     conteúdo, o conteúdo ganha o clique onde houver sobreposição (upload,
+     campos, listas, botões, status, divisórias e puxadores).
+  3. Números dos títulos alinhados: o "3 · Selecionar paradas" começava 5px
+     à direita dos outros (a alça dele fica num contêiner com espaçamento
+     próprio). Agora 1, 2, 3, 4 e 5 começam no mesmo x.
+
+MEDIDO (painel)
+  - Início do texto dos títulos: 37px em 1, 2, 3, 4, Rota e 5 (antes, o 3
+    em 42). Pontinhos em 22px em todos. Linhas de título com a mesma
+    altura de antes (14; 28 no título de duas linhas do 3).
+  - Área efetiva (grade de 4 em 4 px sobre a área de 60x64): ~2.400px² por
+    módulo, cerca de 2,5x a da v6.1.3. Não pegam, de propósito: o texto do
+    título e o conteúdo vizinho.
+  - Cliques que continuam indo para o conteúdo: topo do upload, topo do
+    campo de origem, topo da busca, centro e lado da divisória 3<->4, lado
+    do puxador do 4, botão da última parada, status da Rota, "tipos de
+    serviço". Nas colunas: divisória e puxador de altura.
+  - Na coluna 2 (módulos 1, 3 e 4): títulos no mesmo x, alça pegando à
+    esquerda e acima do título.
+
+--------------------------------------------------------
+[14/09/2026] v6.1.5 — Alça do módulo como caixa em volta dos pontinhos e do número
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  Números alinhados ficaram bons, mas a área de toque ficou
+  "desproporcional". Mandou um print com um retângulo vermelho em volta dos
+  pontinhos e do número ("⋮⋮ 2") mostrando como deve ficar.
+
+O QUE ESTAVA ERRADO NA v6.1.4
+  A área de 60x64px era invisível e se estendia 34px para cima e 16px para
+  baixo do título, por cima do fim do módulo anterior — não tinha relação
+  com o que se vê.
+
+O QUE FOI FEITO
+  1. A área virou um retângulo compacto em volta dos pontinhos e do número:
+     39x30px (47x44 no toque), com 9px de folga antes dos pontinhos, 7px
+     depois do número e 8px acima e abaixo da linha do título. Clicar no
+     número também pega o módulo.
+  2. Títulos sem número (Rota, Roteiro): caixa só nos pontinhos, 24x30
+     (27x44 no toque). Marcado no JS (classe sem-numero).
+  3. Destaque ao passar o mouse em âmbar translúcido, porque a caixa fica
+     por cima do número e ele precisa continuar legível.
+  4. Removida a regra da v6.1.4 que dava prioridade de clique ao conteúdo:
+     a caixa nova não chega no conteúdo, então ela deixou de ser necessária.
+  Números continuam alinhados (v6.1.4).
+
+MEDIDO (painel, 1920x1080)
+  - 1, 2, 3, 4 e 5: caixa 39x30, de x1586 a x1625; pontinhos em x1595;
+    número em x1610-1618 (dentro da caixa). Rota e Roteiro: 24x30.
+  - Linha do título com a mesma altura de antes (14; 28 no 3).
+  - Clique pega em 100% da caixa (grade de 3 em 3 px).
+  - Topo do upload, topo do campo de origem, topo da busca e divisória
+    3<->4 continuam recebendo o próprio clique; o "·" depois do número já
+    fica fora da caixa.
+
+--------------------------------------------------------
+[14/09/2026] v6.1.6 — Destaque âmbar também na alça das paradas
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Gostou da cor de destaque da alça dos módulos; implementar também no
+  módulo 4 antes de publicar.
+
+O QUE FOI FEITO
+  A alça de arrastar das paradas (lista "Ordem da viagem") trocou o fundo
+  cinza de hover pelo mesmo âmbar translúcido (16%) da alça dos módulos.
+  O destaque também fica aceso enquanto a parada está sendo arrastada.
+
+TESTES (1600x900)
+  - Mouse real sobre a alça da primeira parada: :hover ativo, fundo âmbar
+    16%.
+  - Parada em arraste (classe arrastando): fundo âmbar 16%.
+  - Sem mouse em cima: transparente.
