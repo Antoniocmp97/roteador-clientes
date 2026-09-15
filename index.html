@@ -354,6 +354,26 @@
   .dropzone:hover,.dropzone.drag{border-color:var(--teal);background:var(--teal-hover);color:var(--text);}
   .dropzone strong{color:var(--text);}
   .file-status{font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--teal);margin-top:6px;min-height:14px;}
+  /* Módulo 1 compacto (v6.2): com base carregada — o caso de todo dia — a caixa
+     de upload de 122px some e fica uma linha: resumo à esquerda, "trocar base"
+     à direita. Nome do arquivo e data ficam na dica do resumo (title). Sem base,
+     a caixa grande volta. Soltar um arquivo em qualquer ponto do módulo continua
+     carregando. */
+  .file-linha{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
+  .file-linha .file-status{min-width:0;}
+  .com-base .dropzone{display:none;}
+  /* v6.2.1: "✓ Base carregada" com respiro — 8px entre o check e o texto, e a
+     linha um pouco afastada do título do módulo */
+  .com-base .file-linha{margin-top:4px;}
+  .com-base .file-linha .file-status{margin-top:0;}
+  .file-check{display:inline-block; margin-right:8px;}
+  /* Fonte maior só no "✓ Base carregada": 15,5px na v6.2.2, 14,5px na v6.2.3
+     ("diminua 1"). As mensagens de erro do mesmo lugar continuam em 11,5px. */
+  .file-status.carregada{font-size:14.5px;}
+  .file-linha .link-btn{flex:none;}
+  .file-linha .link-btn:hover{color:var(--amber);}
+  /* Arquivo sendo arrastado sobre o módulo compacto */
+  .com-base.recebendo-arquivo .file-linha{outline:1.5px dashed var(--teal); outline-offset:5px; border-radius:4px;}
   /* Lista de endereços possíveis, quando a busca de origem é ambígua */
   .origem-opcoes{display:flex; flex-direction:column; gap:4px; margin-top:6px;}
   .origem-opcao{
@@ -570,16 +590,15 @@
   .stop-row.prioritaria{border-color:var(--amber-dim);}
   .stop-row .btn-fixar{color:var(--muted);}
   .stop-row.prioritaria .btn-fixar{color:var(--amber);}
-  /* Coluna estreita: os botões descem para uma segunda linha e o nome fica com a
-     largura inteira. Antes eles disputavam a linha com o nome, que sobrava com
-     ~40px e quebrava letra a letra ("ANG/ELO/NI") — foi o print que o usuário
-     mandou com a guia fechada ao máximo. Nada é escondido: só muda de lugar. */
+  /* Coluna estreita (v6.2): a parada fica numa linha só, sem as setas ▲▼.
+     Histórico: na v5.6 os botões desciam para uma segunda linha, para o nome
+     não quebrar letra a letra ("ANG/ELO/NI"); o resultado era o ✕ sozinho na
+     linha de baixo e ~75px por parada. Mover uma casa continua possível pela
+     alça de arrastar, que já existe; ★ e ✕ ficam. Com isso o nome tem ~160px no
+     painel de 340px e ~140px no piso de 320px. */
   @container (max-width: 400px){
-    .stop-row{flex-wrap:wrap;}
     .stop-row .nm{min-width:120px;}
-    .stop-row .alca{align-self:center; margin-top:0; margin-bottom:0; height:34px;}
-    .stop-row [data-act]{margin-left:auto;}
-    .stop-row [data-act] ~ [data-act]{margin-left:0;}
+    .stop-row [data-act=up], .stop-row [data-act=down]{display:none;}
   }
   .stop-grupo{
     font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.1em;
@@ -597,14 +616,18 @@
   /* Mensagem de status/erro exibida abaixo dos botões */
   .status{font-size:12.5px;color:var(--danger);font-family:'JetBrains Mono',monospace;min-height:16px;}
   /* Desde a v5.7 botões e status moram no mesmo módulo, fora do gap do painel */
-  .btn-row + .status{margin-top:14px;}
+  #status{margin-top:14px;}
+
+  /* Resumo da rota (v6.2): distância e tempo logo abaixo de Traçar/Otimizar,
+     onde a pessoa acabou de clicar. Antes ficava no topo do Roteiro, no fim do
+     painel, depois do "Gerar link". Some junto com a rota (invalidarRota). */
+  .resumo-rota{margin-top:14px; border:1px solid var(--line); border-radius:8px; padding:12px 14px; background:var(--panel-2);}
+  .resumo-rota .row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--amber);font-weight:700;}
+  .resumo-rota .row + .row{margin-top:2px;font-size:13px;color:var(--muted);font-weight:400;}
 
   /* Painel de resultado: distância, tempo e roteiro passo a passo (escondido até haver uma rota) */
   .readout{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--panel-2);display:none;}
   .readout.show{display:block;}
-  .readout .row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--amber);font-weight:700;}
-  .readout .row + .row{margin-top:2px;font-size:13px;color:var(--muted);font-weight:400;}
-  .readout hr{border:none;border-top:1px solid var(--line);margin:10px 0;}
   .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
   .steps > *{flex:none;}
   .steps li{font-size:12.5px;line-height:1.4;color:var(--text);padding-left:14px;border-left:2px solid var(--teal);}
@@ -856,7 +879,11 @@
           <strong>Clique para carregar</strong> ou arraste o backup<br>completo do uMap (.umap) aqui
         </div>
         <input type="file" id="fileInput" accept=".umap,.json,application/json" style="display:none">
-        <div class="file-status" id="fileStatus"></div>
+        <div class="file-linha">
+          <div class="file-status" id="fileStatus"></div>
+          <!-- Só aparece com base carregada, quando a caixa de upload some (v6.2) -->
+          <button class="link-btn" id="trocarBaseBtn" type="button" hidden>trocar base</button>
+        </div>
       </div>
       </section>
 
@@ -958,6 +985,11 @@
           <button class="go-btn" id="routeBtn">Traçar nesta ordem</button>
           <button class="go-btn secondary" id="optimizeBtn">Otimizar ordem</button>
         </div>
+        <!-- Resumo da rota (v6.2): veio do topo do Roteiro para junto dos botões -->
+        <div class="resumo-rota" id="resumoRota" hidden>
+          <div class="row"><span id="distVal">--</span><span id="timeVal">--</span></div>
+          <div class="row"><span>distância total</span><span>tempo estimado</span></div>
+        </div>
         <div class="status" id="status"></div>
       </div>
       </section>
@@ -998,10 +1030,8 @@
 
       <!-- Resultado: distância/tempo totais + instruções passo a passo por parada -->
       <section class="modulo-movel" data-modulo="m7">
+      <!-- Passo a passo. Distância e tempo foram para o módulo Rota na v6.2 -->
       <div class="readout modulo-corpo" id="readout">
-        <div class="row"><span id="distVal">--</span><span id="timeVal">--</span></div>
-        <div class="row"><span>distância total</span><span>tempo estimado</span></div>
-        <hr>
         <div class="field-label" style="margin-bottom:10px;">
           <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Roteiro</span>
         </div>
@@ -1054,7 +1084,7 @@
 // 14/09/2026: MAIOR.MENOR.AJUSTE — cada alteração leve soma 1 no terceiro número
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '6.1.6';
+const VERSAO = '6.2.3';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1352,6 +1382,7 @@ function invalidarRota(){
   stopMarkers.forEach(m => map.removeLayer(m));
   stopMarkers = [];
   document.getElementById('readout').classList.remove('show');
+  document.getElementById('resumoRota').hidden = true;
   if (envio) envio.style.display = 'none';
   document.getElementById('linkPronto').style.display = 'none';
   document.getElementById('linkCampo').value = '';
@@ -1387,6 +1418,20 @@ dropzone.addEventListener('drop', e=>{
   const f = e.dataTransfer.files[0];
   if (f) loadFile(f);
 });
+// Módulo 1 compacto (v6.2): sem a caixa de upload, "trocar base" abre o seletor,
+// e soltar um arquivo em qualquer ponto do módulo também carrega.
+// value = '' antes: sem isso, escolher de novo o mesmo arquivo (a base
+// atualizada com o mesmo nome) não dispara "change" e nada acontece.
+document.getElementById('trocarBaseBtn').onclick = () => { fileInput.value = ''; fileInput.click(); };
+const corpoClientes = dropzone.closest('.modulo-corpo');
+['dragover','dragleave','drop'].forEach(evt=>{
+  corpoClientes.addEventListener(evt, e=>{
+    if (!corpoClientes.classList.contains('com-base')) return;   // sem base, quem atende é a dropzone
+    e.preventDefault();
+    corpoClientes.classList.toggle('recebendo-arquivo', evt === 'dragover');
+    if (evt === 'drop' && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
+});
 // Arquivo escolhido pelo seletor nativo (clique) é carregado
 fileInput.addEventListener('change', e=>{
   if (e.target.files[0]) loadFile(e.target.files[0]);
@@ -1418,6 +1463,8 @@ function loadFile(file){
     }catch(err){
       document.getElementById('fileStatus').style.color = 'var(--danger)';
       document.getElementById('fileStatus').textContent = 'Erro: ' + err.message;
+      document.getElementById('fileStatus').title = '';
+      document.getElementById('fileStatus').classList.remove('carregada');
     }
   };
   reader.readAsText(file);
@@ -1557,9 +1604,17 @@ function importClients(grupos, filename, salvoEm){
   // Data só aparece quando a base foi restaurada do navegador — assim dá para
   // perceber que ela pode estar desatualizada em relação ao uMap.
   const quando = salvoEm ? ` · salva em ${new Date(salvoEm).toLocaleDateString('pt-BR')}` : '';
-  document.getElementById('fileStatus').style.color = 'var(--teal)';
-  document.getElementById('fileStatus').textContent =
-    `✓ ${clientPoints.length} ${clientPoints.length === 1 ? 'ponto' : 'pontos'} em ${nCli} ${nCli === 1 ? 'cliente' : 'clientes'}, de "${filename}"${quando}`;
+  // Módulo 1 compacto (v6.2): uma linha só, ao lado de "trocar base". Desde a
+  // v6.2.1, a pedido do usuário, ela diz só "Base carregada" — a contagem de
+  // pontos já aparece no título "1 · Clientes (39)". Contagem de clientes, nome
+  // do arquivo e data ficam na dica.
+  const statusEl = document.getElementById('fileStatus');
+  statusEl.style.color = 'var(--teal)';
+  statusEl.innerHTML = '<span class="file-check" aria-hidden="true">✓</span>Base carregada';
+  statusEl.classList.add('carregada');
+  statusEl.title = `${clientPoints.length} ${clientPoints.length === 1 ? 'ponto' : 'pontos'} em ${nCli} ${nCli === 1 ? 'cliente' : 'clientes'} · arquivo "${filename}"${quando}`;
+  statusEl.closest('.modulo-corpo').classList.add('com-base');
+  document.getElementById('trocarBaseBtn').hidden = false;
   document.getElementById('countLabel').textContent = `(${clientPoints.length})`;
   renderChecklist();
   // A viagem foi zerada acima (stops = []), mas a lista da seção 4 continuava
@@ -3278,6 +3333,7 @@ function drawResult(distance, duration, geometry, legs){
   });
 
   document.getElementById('readout').classList.add('show');
+  document.getElementById('resumoRota').hidden = false;
 }
 
 // Botão "Traçar nesta ordem": chama a OSRM Route API respeitando a ordem atual de `stops`.

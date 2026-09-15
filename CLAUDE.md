@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 14/09/2026 — v6.1.6 (destaque âmbar também na alça das paradas)
+> **Última atualização:** 15/09/2026 — v6.2.3 (fonte do "✓ Base carregada" em 14,5px)
 
 ---
 
@@ -27,7 +27,11 @@ sem dependências instaladas. Abre direto no navegador.
 
 ### Funcionalidades implementadas
 
-- Upload do **backup completo do uMap (`.umap`)** por clique ou arrastar-e-soltar
+- Upload do **backup completo do uMap (`.umap`)** por clique ou arrastar-e-soltar.
+  **Módulo 1 compacto** (v6.2): com base carregada a caixa de upload some e fica
+  uma linha "✓ Base carregada" (v6.2.1, 8px entre check e texto; fonte 14,5px —
+  15,5 na v6.2.2, 14,5 na v6.2.3; erros no mesmo lugar ficam em 11,5px) + "trocar base";
+  contagem, nome do arquivo e data ficam na dica. Soltar arquivo em qualquer ponto do módulo carrega. Sem base, a caixa volta
 - Parse das camadas: cada camada é um **cliente**, os pontos dentro dela são as
   **filiais**. Camadas vazias são ignoradas
 - Checklist com **cascata de três níveis** quando o uMap tem grupos:
@@ -92,7 +96,9 @@ sem dependências instaladas. Abre direto no navegador.
   demais.
   Esc cancela o arraste. O arraste começa só pela alça, então no celular o resto
   da linha continua rolando a lista. A alça tem o mesmo destaque âmbar translúcido
-  da alça dos módulos, ao passar o mouse e durante o arraste (v6.1.6)
+  da alça dos módulos, ao passar o mouse e durante o arraste (v6.1.6).
+  **Em coluna de até 400px a parada fica em uma linha só** (v6.2): as setas ▲▼ saem
+  e ★ ✕ ficam na linha do nome; em coluna mais larga as setas voltam
 - **Todos os módulos em até três colunas** (v4.4–v4.7; ampliado na v5.7): ordem
   na tela **mapa · coluna 3 · coluna 2 · painel**. Os sete módulos — 1 Clientes,
   2 Origem, 3 Selecionar paradas, 4 Ordem da viagem, Rota (botões + status), 5
@@ -202,7 +208,9 @@ sem dependências instaladas. Abre direto no navegador.
 - **Otimizar ordem** — OSRM Trip API recalcula a melhor sequência e reordena a
   lista automaticamente (`source=first`, `roundtrip=false`)
 - Marcadores numerados conforme a ordem final de visita
-- Distância total, tempo estimado e instruções passo a passo agrupadas por parada
+- Distância total e tempo estimado **logo abaixo de Traçar/Otimizar**, no módulo
+  Rota (v6.2; antes ficavam no topo do Roteiro, no fim do painel). Instruções passo
+  a passo agrupadas por parada no módulo Roteiro
 - **Modo campo (Fase 1):** depois de traçar a rota, um botão gera um link com o
   roteiro inteiro. Quem abre esse link (ex.: recebido pelo WhatsApp) cai numa
   tela separada, feita para celular: lista das paradas na ordem certa, botão
@@ -651,6 +659,10 @@ de arquitetura, para retomar quando fizer sentido):
 | 59 | **v6.1.4** — Alça dos módulos com 60×64px (88×88 no toque), conteúdo com prioridade no clique; "3 · Selecionar paradas" alinhado aos outros títulos |
 | 60 | **v6.1.5** — Alça como retângulo em volta dos pontinhos e do número (39×30), no lugar da área invisível da v6.1.4 |
 | 61 | **v6.1.6** — Destaque âmbar translúcido também na alça das paradas (módulo 4) |
+| 62 | **v6.2** — Painel enxuto (sugestões de layout 1–3): parada em uma linha, distância/tempo junto dos botões, módulo 1 compacto |
+| 63 | **v6.2.1** — Módulo 1 compacto diz "✓ Base carregada", com espaçamento |
+| 64 | **v6.2.2** — Fonte do "✓ Base carregada" 4px maior (15,5px) |
+| 65 | **v6.2.3** — Fonte do "✓ Base carregada" 1px menor (14,5px) |
 
 ---
 
@@ -715,7 +727,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-6.1.6
+6.2.3
 ```
 
 ### Onde o número aparece
@@ -801,3 +813,7 @@ os backups locais são conveniência, não garantia.
 | 6.1.4 | 14/09/2026 | Alça com o dobro da área e números dos títulos alinhados |
 | 6.1.5 | 14/09/2026 | Alça em volta dos pontinhos e do número, proporcional ao que se vê |
 | 6.1.6 | 14/09/2026 | Destaque âmbar na alça das paradas |
+| 6.2 | 15/09/2026 | Paradas em uma linha, resultado junto dos botões e módulo 1 compacto |
+| 6.2.1 | 15/09/2026 | "✓ Base carregada" no módulo 1 compacto |
+| 6.2.2 | 15/09/2026 | Fonte maior no "✓ Base carregada" |
+| 6.2.3 | 15/09/2026 | Fonte do "✓ Base carregada" em 14,5px |

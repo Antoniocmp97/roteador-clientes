@@ -4369,3 +4369,99 @@ TESTES (1600x900)
     16%.
   - Parada em arraste (classe arrastando): fundo âmbar 16%.
   - Sem mouse em cima: transparente.
+
+--------------------------------------------------------
+[15/09/2026] v6.2 — Painel mais enxuto: paradas em uma linha, resultado
+                    junto dos botões, módulo 1 compacto
+--------------------------------------------------------
+
+CONTEXTO
+  O usuário pediu sugestões de layout olhando o app como um todo. Em Full
+  HD, com base, 5 paradas e rota: painel de 340px, mapa de 1.573px, e o
+  conteúdo do painel com 1.468px para 1.015px visíveis. Das 7 sugestões,
+  o usuário liberou as três primeiras.
+
+O QUE FOI FEITO
+  1. Parada em uma linha só. Em coluna estreita (até 400px) as setas ▲▼
+     saem; ★ e ✕ ficam na linha do nome. Mover continua possível pela alça
+     de arrastar. Em coluna mais larga as setas voltam. (Na v5.6 os botões
+     desciam para uma segunda linha e o ✕ ficava sozinho embaixo.)
+  2. Distância e tempo foram do topo do Roteiro para o módulo Rota, logo
+     abaixo de Traçar/Otimizar, num quadro próprio. Somem junto com a rota
+     (invalidarRota). O Roteiro ficou só com o passo a passo.
+  3. Módulo 1 compacto com base carregada: a caixa de upload some e fica
+     uma linha "✓ 39 pontos · 23 clientes", com "trocar base" à direita.
+     Nome do arquivo e data ("salva em") passaram para a dica do resumo.
+     Soltar um arquivo em qualquer ponto do módulo continua carregando, com
+     contorno tracejado durante o arraste. Sem base, a caixa grande volta.
+     "trocar base" limpa o seletor antes de abrir, para aceitar de novo um
+     arquivo com o mesmo nome.
+
+MEDIDO (1920x1080, painel de 340px, 5 paradas, rota real do OSRM)
+  - Módulo 1: 122px -> 37px (sem base continua com a caixa: 106px).
+  - Linha de parada: 46px, uma linha só, botões ☆ e ✕; nome com 184px
+    (164px numa coluna de 320px). Coluna de 520px: ☆ ▲ ▼ ✕ de volta.
+  - As 5 paradas cabem na lista sem rolar.
+  - Resumo (13.7 km / 21 min) 14px abaixo dos botões; botões e resumo
+    visíveis sem rolar o painel. Conteúdo do painel: 1.468 -> 1.402px (o
+    módulo 4 mantém a altura ajustada; o ganho ali é caber mais paradas).
+  - Removendo uma parada: resumo e Roteiro somem.
+  - Arquivo solto no módulo compacto (exemplo.umap): contorno durante o
+    arraste, base trocada para "6 pontos · 4 clientes", contorno some.
+  - Módulo Rota numa coluna: o resumo vai junto.
+  - Print do painel em tamanho real conferido.
+
+VERSÃO: fecha a v6.2. Não publicada — aguardando teste do usuário.
+
+--------------------------------------------------------
+[15/09/2026] v6.2.1 — "✓ Base carregada" no módulo 1 compacto
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Manter o ícone de check e escrever "Base carregada", na mesma cor, com
+  um espaçamento para ficar melhor visualmente.
+
+O QUE FOI FEITO
+  - A linha do módulo 1 compacto passou de "✓ 39 pontos · 23 clientes"
+    para "✓ Base carregada", em teal como antes. A contagem de pontos já
+    aparece no título ("1 · Clientes (39)").
+  - 8px entre o check e o texto; a linha desceu 4px, ficando a 8px do
+    título do módulo.
+  - A dica (ao parar o mouse) ganhou a contagem: "39 pontos em 23 clientes
+    · arquivo "BASETESTEGRUPO.umap" · salva em 15/09/2026".
+
+TESTES
+  Cor rgb(47,182,166) (teal); 8px check->texto; 8px título->linha; "trocar
+  base" na mesma linha; dica com contagem, arquivo e data. Print conferido.
+
+--------------------------------------------------------
+[15/09/2026] v6.2.2 — Fonte maior no "✓ Base carregada"
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Aumente o tamanho da fonte em 4."
+
+O QUE FOI FEITO
+  "✓ Base carregada" de 11,5px para 15,5px (classe "carregada" no
+  resumo). Mensagens de erro no mesmo lugar continuam em 11,5px — a classe
+  sai quando dá erro.
+
+TESTES
+  Fonte 15,5px, teal, linha com 22px de altura, "trocar base" (11px) na
+  mesma linha. Arquivo inválido solto com base carregada: erro em 11,5px;
+  base recarregada: volta a 15,5px. Print conferido.
+
+--------------------------------------------------------
+[15/09/2026] v6.2.3 — Fonte do "✓ Base carregada" 1px menor
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Diminua 1."
+
+O QUE FOI FEITO
+  "✓ Base carregada" de 15,5px para 14,5px. Erros no mesmo lugar seguem
+  em 11,5px.
+
+TESTES
+  Fonte 14,5px, teal, "trocar base" na mesma linha, selo v6.2.3. Print
+  conferido.
