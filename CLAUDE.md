@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 14/09/2026 — v5.7 (terceira coluna e todos os módulos móveis, com salvar arranjo)
+> **Última atualização:** 14/09/2026 — v5.9 (puxador de altura para módulo sozinho na coluna)
 
 ---
 
@@ -120,7 +120,16 @@ sem dependências instaladas. Abre direto no navegador.
   ocupam o que precisam. Entre dois módulos com lista na mesma coluna o JS cria
   uma divisória. Os pesos viram as alturas em pixels ao arrastar (proporção se
   mantém se a janela muda), são zerados na coluna quando um módulo entra ou sai, e
-  fazem parte do arranjo salvo. Duplo clique divide igual
+  fazem parte do arranjo salvo. Duplo clique divide igual.
+  **Puxador na borda de baixo** (v5.9) do último módulo com lista de cada coluna —
+  sem ele, um módulo sozinho na coluna não tinha controle de altura. O primeiro
+  arraste passa a coluna para **altura fixa** (`arranjo.fixas[col]`, classe
+  `.alturas-fixas`): o peso vira a altura em pixels, sobra espaço embaixo ou a
+  coluna rola. Duplo clique no puxador volta a preencher (mesma proporção); na
+  altura fixa o duplo clique na divisória iguala pela média. O modo é salvo no
+  arranjo e zerado quando a coluna muda de módulos. ⚠️ Ao entrar no modo, medir
+  **todos** antes de aplicar — aplicar um redistribui a coluna e o próximo é
+  medido encolhido. Módulos 1, 2, Rota e 5 não têm puxador (sem lista)
 - **Colunas com largura ajustável** (v4.8): cada coluna auxiliar tem divisória
   própria. Mínimo de 320px, teto calculado para tudo caber (painel + outra coluna
   + mapa de 380px), duplo clique volta a 360px. A largura **é** guardada na hora
@@ -147,6 +156,11 @@ sem dependências instaladas. Abre direto no navegador.
   muda**, então o resto do painel (itens 5 e Roteiro) fica parado. Piso de 120px
   por módulo, escolha guardada no navegador, duplo clique volta ao padrão
   (320/240). Primeiro passo do pedido de deixar o site customizável por módulos.
+  ⚠️ v5.8: as listas dos módulos 3 e 4 têm **altura fixa** (`height`), não
+  `max-height`, e os controles partem de `alturasAtuais()` (as variáveis CSS),
+  nunca da medida da tela. Com `max-height` uma busca de poucos resultados
+  encolhia a caixa até o conteúdo e travava divisória e puxadores — além de
+  gravar o valor estragado. Única exceção: sem base carregada (`.sem-base`)
   ⚠️ A v4.2 tinha um puxador na borda de BAIXO do módulo 4: ele crescia para
   baixo e empurrava o resto do painel, que não era o pedido — foi substituído
 - **Área de pegada da alça de arrastar** (v5.2 a v5.5): os seis pontinhos que
@@ -603,6 +617,8 @@ de arquitetura, para retomar quando fizer sentido):
 | 49 | **v5.5** — Correção do aperto na lista de paradas: botões deixam de encolher e a alça acompanha a largura da coluna |
 | 50 | **v5.6** — Limite de largura das colunas (320px) e mínimo para o nome da parada: fim da quebra letra a letra |
 | 51 | **v5.7** — Terceira coluna; todos os módulos móveis entre painel e duas colunas; salvar arranjo e voltar ao normal |
+| 52 | **v5.8** — Correção: divisória e puxadores dos módulos 3 e 4 travavam durante uma busca de poucos resultados |
+| 53 | **v5.9** — Correção: módulo com lista sozinho numa coluna não tinha controle de altura; puxador e modo de altura fixa |
 
 ---
 
@@ -669,7 +685,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v5.7:  1 / 5
+Leves acumuladas desde a v5.9:  0 / 5
 ```
 
 ### Onde o número aparece
@@ -744,3 +760,5 @@ os backups locais são conveniência, não garantia.
 | 5.5 | 12/09/2026 | Alça acompanha a largura da coluna; botões não encolhem mais |
 | 5.6 | 12/09/2026 | Piso de 320px nas colunas e mínimo de 120px para o nome da parada |
 | 5.7 | 14/09/2026 | Terceira coluna, os 7 módulos móveis e botões de salvar/voltar ao normal o arranjo |
+| 5.8 | 14/09/2026 | Listas dos módulos 3 e 4 com altura fixa: controles de altura não travam mais na busca |
+| 5.9 | 14/09/2026 | Puxador de altura nas colunas para módulo com lista sozinho (modo de altura fixa) |

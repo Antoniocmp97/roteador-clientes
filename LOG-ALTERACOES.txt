@@ -4014,3 +4014,93 @@ TESTES
   Mover módulo -> disquete pendente; clicar -> salvo gravado e ✓; 2 s
   depois volta ao disquete sem bolinha. Lixeira -> tudo no painel e salvo
   apagado. Ícones conferidos ampliados nos três estados.
+
+--------------------------------------------------------
+[14/09/2026] v5.8 — Controles de altura travados durante a busca
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Ao realizar uma busca no filtro, o extensor vertical do módulo 3 e 4
+  ficam travados."
+
+CAUSA (reproduzida)
+  As listas dos módulos 3 e 4 tinham altura MÁXIMA, não altura. Uma busca de
+  poucos resultados ("acuo") encolhia a caixa do módulo 3 até o conteúdo:
+  89px. Os controles partiam da altura medida na tela, então:
+  - divisória para baixo: o 3 não crescia (já estava abaixo do teto) e o 4
+    encolhia;
+  - divisória para cima: os dois caíam para o mínimo de 120px;
+  - e o valor estragado ainda era gravado no navegador.
+  O módulo 4 tinha o mesmo defeito com poucas paradas.
+
+O QUE FOI FEITO
+  1. Lista do módulo 3 e lista de paradas com altura fixa (a ajustada), em
+     vez de máxima. A caixa não encolhe mais com a busca. Exceção: antes de
+     carregar a base, a lista se ajusta ao aviso "Carregue o backup…", para
+     o site não abrir com um vão vazio.
+  2. Divisória 3<->4 e os dois puxadores partem das alturas em vigor
+     (alturasAtuais), não da medida da tela.
+  Nas colunas e no layout de tela estreita nada muda.
+  Efeito visível: com poucas paradas, o módulo 4 mantém o tamanho ajustado
+  (sobra espaço vazio embaixo), como já acontecia nas colunas.
+
+TESTES (1920x1080, busca "acuo")
+  - Divisória +100: 120/220 -> 220/120. Divisória -150: para no mínimo 120.
+  - Puxador 4 +100: 220 -> 320. Puxador 3 (sem paradas) +80: 170 -> 250.
+  - Busca sem resultado ("zzzz"): divisória +50 funcionou; ao limpar a
+    busca as alturas continuam as ajustadas, e o guardado bate com a tela.
+  - Sem base: lista com 30px (só o aviso). Módulo 3 na coluna: ocupa a
+    coluna (903px); de volta ao painel, altura ajustada.
+
+VERSÃO: fecha a v5.8.
+
+--------------------------------------------------------
+[14/09/2026] v5.9 — Controle de altura para módulo sozinho na coluna
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Quando o módulo 3 fica sozinho em alguma aba auxiliar a extensão para
+  vertical não aparece." Pediu para testar nos outros módulos também.
+
+CAUSA
+  Nas colunas, o módulo com lista (3, 4, Roteiro) ocupa a coluna inteira e
+  o único controle de altura era a divisória ENTRE dois deles. Sozinho — ou
+  só com módulos sem lista (1, 2, Rota, 5) — não havia controle nenhum.
+
+O QUE FOI FEITO
+  1. Puxador na borda de baixo do último módulo com lista de cada coluna,
+     com o mesmo desenho da divisória.
+  2. Dois modos de altura por coluna:
+     - preencher (padrão, como antes): os módulos com lista dividem a
+       coluna inteira;
+     - fixa: cada um tem a altura em pixels. O primeiro arraste do puxador
+       entra nesse modo, com cada módulo na altura que tinha. Embaixo sobra
+       espaço, ou a coluna rola se passar da tela.
+     Duplo clique no puxador volta a preencher, na mesma proporção.
+  3. Na altura fixa, a divisória entre dois módulos continua trocando
+     altura entre eles (a soma não muda), e o duplo clique nela iguala os
+     dois pela média.
+  4. O modo de cada coluna entra no arranjo salvo (campo "fixas") e é
+     zerado quando um módulo entra ou sai da coluna, junto com os pesos.
+  Módulos 1, 2, Rota e 5 não têm lista para esticar: seguem do tamanho do
+  conteúdo, sem puxador — igual ao painel.
+
+ERRO NO MEIO DO CAMINHO
+  Ao entrar na altura fixa eu aplicava a altura de cada módulo logo depois
+  de medi-lo. Aplicar a do módulo 3 já redistribuía a coluna, e o 4 era
+  medido encolhido (120 em vez de 469). Agora mede todos e só depois aplica.
+
+TESTES (1920x1080)
+  - 3, 4 e Roteiro, cada um sozinho na coluna 2: puxador presente;
+    967 -> -300 = 667 -> +150 = 817 -> mínimo 120; duplo clique volta a 967.
+  - 1, 2, Rota e 5 sozinhos: nenhum puxador.
+  - 1 + 3 + Rota na mesma coluna: 3 de 740 -> 540 pelo puxador.
+  - 3 + 4 juntos: puxador -200 = 469/269; divisória -100 = 369/369 (soma
+    mantida); puxador +500 = 869 com a coluna rolando; duplo clique na
+    divisória = 619/619; duplo clique no puxador = volta a 469/469.
+  - 4 some (sem paradas) e volta: puxador passa para o 3 e depois de volta.
+  - Tirar o 4 da coluna em altura fixa: coluna volta a preencher (967).
+  - Salvar com altura fixa e recarregar: modo e alturas restaurados, sem
+    marca de pendente.
+
+VERSÃO: fecha a v5.9.

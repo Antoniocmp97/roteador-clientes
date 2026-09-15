@@ -155,6 +155,9 @@
      altura ajustam. Com peso igual, dividem meio a meio. */
   .guia .modulo-movel{display:flex; flex-direction:column; flex:none; min-height:0;}
   .guia .modulo-movel.elastico:not(.esperando){flex:var(--peso, 1) 1 0px; min-height:120px;}
+  /* Altura fixa (v5.9): o peso vira a altura em pixels e a coluna para de
+     esticar os módulos — o que sobrar fica vazio embaixo, ou a coluna rola */
+  .guia.alturas-fixas .modulo-movel.elastico:not(.esperando){flex:none; height:calc(var(--peso, 300) * 1px);}
   .guia .modulo-movel.esperando > .modulo-espera{display:block;}
   .guia .modulo-movel.elastico > .modulo-corpo{display:flex; flex-direction:column; flex:1 1 auto; min-height:0;}
   /* O Roteiro se esconde por classe (.show), não por hidden: a regra acima o
@@ -165,21 +168,23 @@
      VERTICAL e ficava desproporcional (relatado em 12/09/2026).
      Regra: na coluna nada estica, exceto as listas. */
   .guia .modulo-corpo > *{flex:none;}
-  .guia .stops, .guia .checklist, .guia .steps{max-height:none; flex:1 1 auto; min-height:0;}
+  .guia .stops, .guia .checklist, .guia .steps{height:auto; max-height:none; flex:1 1 auto; min-height:0;}
   /* Controles de altura do painel não fazem sentido nas colunas. !important
      porque as regras do painel abaixo usam id e ganhariam por especificidade. */
   .guia .divisor-modulos, .guia .puxador-modulo{display:none !important;}
   /* Divisória de altura entre dois módulos elásticos da mesma coluna (v4.9,
      generalizada na v5.7). Criada pelo JS antes do módulo de baixo. */
-  .divisor-guia{
+  /* .puxador-guia (v5.9): mesmo desenho, na borda de baixo do último módulo
+     com lista — muda só a altura dele. */
+  .divisor-guia, .puxador-guia{
     height:16px; flex:none; display:flex; align-items:center; justify-content:center;
     margin:-7px 0; cursor:ns-resize; touch-action:none; user-select:none; -webkit-user-select:none;
   }
-  .divisor-guia::before{
+  .divisor-guia::before, .puxador-guia::before{
     content:''; width:46px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
   }
-  .divisor-guia:hover::before{background:var(--amber-dim);}
-  body.altura-arrastando .divisor-guia::before{background:var(--amber);}
+  .divisor-guia:hover::before, .puxador-guia:hover::before{background:var(--amber-dim);}
+  body.altura-arrastando .divisor-guia::before, body.altura-arrastando .puxador-guia::before{background:var(--amber);}
 
   /* Alça do módulo: arrasta até outra coluna. Duplo clique leva à coluna
      seguinte (painel → coluna 2 → coluna 3 → painel). */
@@ -354,7 +359,15 @@
      era o bug relatado em 29/08/2026: com os grupos, a lista comprimia os
      ultimos clientes e nao rolava. Vale para .checklist, .stops e .steps. */
   .busca-clientes{width:100%; margin-bottom:8px;}
-  .checklist{display:flex;flex-direction:column;gap:6px;max-height:var(--altura-checklist, 320px);overflow-y:auto;padding-right:2px;}
+  /* height, e não max-height (v5.7): com max-height a caixa encolhia até o
+     conteúdo durante uma busca de poucos resultados (89px com "acuo"), e aí a
+     divisória 3<->4 e os puxadores ficavam travados — a lista não tinha como
+     crescer, e medir a caixa encolhida ainda estragava as alturas guardadas.
+     Relatado pelo usuário em 14/09/2026. Agora a caixa fica do tamanho
+     ajustado, com ou sem busca. Só antes de carregar a base ela se ajusta ao
+     aviso, para não abrir o site com um vão vazio. */
+  .checklist{display:flex;flex-direction:column;gap:6px;height:var(--altura-checklist, 320px);overflow-y:auto;padding-right:2px;}
+  .checklist.sem-base{height:auto;}
   .checklist > *{flex:none;}
   .check-row{display:flex;align-items:flex-start;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:13px;}
   .check-row input{margin-top:2px;accent-color:var(--teal);}
@@ -412,7 +425,9 @@
      dentro da lista, e precisa rolar junto com ela. */
   /* A altura vem de uma variável para o puxador poder mudá-la sem estilo
      inline — mesma ideia da largura do painel (--painel-w). */
-  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:var(--altura-paradas, 240px);overflow-y:auto;position:relative;}
+  /* Altura fixa pelo mesmo motivo do .checklist: com poucas paradas a caixa
+     encolhia e o puxador do módulo 4 não tinha o que puxar. */
+  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;height:var(--altura-paradas, 240px);overflow-y:auto;position:relative;}
 
   /* Divisória entre os módulos 3 (Selecionar paradas) e 4 (Ordem da viagem).
      Puxar para CIMA faz o 4 crescer e o 3 encolher na mesma medida; para baixo,
@@ -585,8 +600,8 @@
     .console{width:auto;max-height:56%;border-left:none;border-top:1px solid var(--line);}
     /* Em tela estreita o painel inteiro tem pouca altura: um checklist de 320px
        sobraria quase nada para os outros passos. Todos continuam rolando. */
-    .checklist{max-height:200px;}
-    .stops{max-height:170px;}
+    .checklist{height:auto;max-height:200px;}
+    .stops{height:auto;max-height:170px;}
   }
 
   /* Campo "5 · Enviar para o campo": o input do link e a dica de uso */
@@ -855,7 +870,7 @@
              numa lista vazia. -->
         <input type="text" id="buscaClientes" class="busca-clientes"
                placeholder="Buscar cliente ou filial..." style="display:none;">
-        <div class="checklist" id="checklist">
+        <div class="checklist sem-base" id="checklist">
           <div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>
         </div>
         <!-- Puxador do módulo 3: só aparece quando o módulo 4 está na guia.
@@ -995,7 +1010,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '5.7';
+const VERSAO = '5.9';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1545,6 +1560,7 @@ function renderChecklist(){
   const el = document.getElementById('checklist');
   const buscaInput = document.getElementById('buscaClientes');
   el.innerHTML = '';
+  el.classList.toggle('sem-base', !clientPoints.length);
   if (!clientPoints.length){
     buscaInput.style.display = 'none';
     el.innerHTML = '<div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>';
@@ -1900,6 +1916,19 @@ function alturasGuardadas(){
   return { c: ALTURA_CHECKLIST_PADRAO, p: ALTURA_PARADAS_PADRAO };
 }
 
+// Alturas em vigor na tela: as variáveis CSS aplicadas nesta sessão, ou as
+// guardadas. É daqui que os controles partem, e NÃO da medida da caixa na tela:
+// medir era o que travava a divisória durante uma busca de poucos resultados
+// (a caixa encolhida entrava na conta, v5.7) e o que gravaria a altura da coluna
+// quando o módulo está fora do painel.
+function alturasAtuais(){
+  const estilo = document.documentElement.style;
+  const c = parseInt(estilo.getPropertyValue('--altura-checklist'), 10);
+  const p = parseInt(estilo.getPropertyValue('--altura-paradas'), 10);
+  const g = alturasGuardadas();
+  return { c: c > 0 ? c : g.c, p: p > 0 ? p : g.p };
+}
+
 function aplicarAlturas(checklist, paradas, salvar){
   const c = Math.round(Math.max(checklist, ALTURA_MODULO_MIN));
   const p = Math.round(Math.max(paradas, ALTURA_MODULO_MIN));
@@ -1917,8 +1946,6 @@ if (!modoCampoAtivo){
   }catch(e){ /* guardado inválido: segue com os padrões */ }
 
   const divisor = document.getElementById('divisorModulos');
-  const checklistEl = document.getElementById('checklist');
-  const paradasEl = document.getElementById('stopsList');
 
   divisor.addEventListener('pointerdown', ev => {
     if (ev.button !== 0) return;
@@ -1929,8 +1956,7 @@ if (!modoCampoAtivo){
     document.body.classList.add('altura-arrastando');
 
     const inicioY = ev.clientY;
-    const cInicial = checklistEl.getBoundingClientRect().height;
-    const pInicial = paradasEl.getBoundingClientRect().height;
+    const { c: cInicial, p: pInicial } = alturasAtuais();
     const total = cInicial + pInicial;   // o que a divisória reparte
 
     const mover = e => {
@@ -1945,8 +1971,8 @@ if (!modoCampoAtivo){
       divisor.removeEventListener('pointercancel', soltar);
       document.body.classList.remove('altura-arrastando');
       // Grava só ao soltar, não a cada pixel
-      aplicarAlturas(checklistEl.getBoundingClientRect().height,
-                     paradasEl.getBoundingClientRect().height, true);
+      const atual = alturasAtuais();
+      aplicarAlturas(atual.c, atual.p, true);
     };
     divisor.addEventListener('pointermove', mover);
     divisor.addEventListener('pointerup', soltar);
@@ -1973,22 +1999,22 @@ if (!modoCampoAtivo){
     document.body.classList.add('altura-arrastando');
 
     const inicioY = ev.clientY;
-    const cInicial = checklistEl.getBoundingClientRect().height;
+    const { c: cInicial, p: pFixo } = alturasAtuais();
 
-    const mover = e => aplicarAlturas(cInicial + (e.clientY - inicioY), alturasGuardadas().p, false);
+    const mover = e => aplicarAlturas(cInicial + (e.clientY - inicioY), pFixo, false);
     const soltar = () => {
       puxador3.removeEventListener('pointermove', mover);
       puxador3.removeEventListener('pointerup', soltar);
       puxador3.removeEventListener('pointercancel', soltar);
       document.body.classList.remove('altura-arrastando');
-      aplicarAlturas(checklistEl.getBoundingClientRect().height, alturasGuardadas().p, true);
+      aplicarAlturas(alturasAtuais().c, pFixo, true);
     };
     puxador3.addEventListener('pointermove', mover);
     puxador3.addEventListener('pointerup', soltar);
     puxador3.addEventListener('pointercancel', soltar);
   });
 
-  puxador3.addEventListener('dblclick', () => aplicarAlturas(ALTURA_CHECKLIST_PADRAO, alturasGuardadas().p, true));
+  puxador3.addEventListener('dblclick', () => aplicarAlturas(ALTURA_CHECKLIST_PADRAO, alturasAtuais().p, true));
 
   /* Puxador do módulo 4 (v4.6). Escolha do usuário: a divisória 3<->4 continua
      (cresce um tirando do outro) E o módulo 4 ganha um puxador próprio, que o
@@ -2003,22 +2029,22 @@ if (!modoCampoAtivo){
     document.body.classList.add('altura-arrastando');
 
     const inicioY = ev.clientY;
-    const pInicial = paradasEl.getBoundingClientRect().height;
+    const { c: cFixo, p: pInicial } = alturasAtuais();
 
-    const mover = e => aplicarAlturas(alturasGuardadas().c, pInicial + (e.clientY - inicioY), false);
+    const mover = e => aplicarAlturas(cFixo, pInicial + (e.clientY - inicioY), false);
     const soltar = () => {
       puxador4.removeEventListener('pointermove', mover);
       puxador4.removeEventListener('pointerup', soltar);
       puxador4.removeEventListener('pointercancel', soltar);
       document.body.classList.remove('altura-arrastando');
-      aplicarAlturas(alturasGuardadas().c, paradasEl.getBoundingClientRect().height, true);
+      aplicarAlturas(cFixo, alturasAtuais().p, true);
     };
     puxador4.addEventListener('pointermove', mover);
     puxador4.addEventListener('pointerup', soltar);
     puxador4.addEventListener('pointercancel', soltar);
   });
 
-  puxador4.addEventListener('dblclick', () => aplicarAlturas(alturasGuardadas().c, ALTURA_PARADAS_PADRAO, true));
+  puxador4.addEventListener('dblclick', () => aplicarAlturas(alturasAtuais().c, ALTURA_PARADAS_PADRAO, true));
 }
 
 /* ---------------- Módulos nas colunas (v4.4; generalizado na v4.7 e na v5.7) ----------------
@@ -2066,7 +2092,7 @@ const COLUNAS = {
 function arranjoNormal(){
   const local = {};
   ORDEM_MODULOS.forEach(k => local[k] = 'painel');
-  return { local, pesos:{} };
+  return { local, pesos:{}, fixas:{} };
 }
 let arranjo = arranjoNormal();   // o que está na tela agora
 
@@ -2157,7 +2183,15 @@ function aplicarArranjo(){
 /* Módulo escondido (4 sem paradas, 5 e Roteiro sem rota) numa coluna vira um
    aviso com o título e a alça — senão ficaria impossível ver onde ele está ou
    tirá-lo de lá. No painel continua simplesmente escondido, como sempre foi.
-   Também remonta as divisórias de altura e aplica os pesos. */
+   Também remonta as divisórias e puxadores de altura e aplica os pesos.
+
+   Dois modos de altura por coluna:
+   - PREENCHER (padrão): os módulos com lista dividem a coluna inteira, e o peso
+     é só a proporção entre eles.
+   - FIXA (v5.9): o peso é a altura em pixels de cada um. Entra-se nele pelo
+     puxador na borda de baixo do último módulo com lista — pedido do usuário:
+     sozinho numa coluna, o módulo 3 não tinha controle de altura nenhum. Duplo
+     clique no puxador volta a preencher, mantendo a proporção. */
 function atualizarModulosNasColunas(){
   ORDEM_MODULOS.forEach(k => {
     const vaga = vagaDoModulo(k);
@@ -2165,12 +2199,15 @@ function atualizarModulosNasColunas(){
   });
   Object.keys(COLUNAS).forEach(col => {
     const coluna = document.getElementById(COLUNAS[col].el);
-    coluna.querySelectorAll(':scope > .divisor-guia').forEach(d => d.remove());
+    coluna.querySelectorAll(':scope > .divisor-guia, :scope > .puxador-guia').forEach(d => d.remove());
+    const fixa = !!arranjo.fixas[col];
+    coluna.classList.toggle('alturas-fixas', fixa);
     const elasticos = elasticosVisiveis(coluna);
     // Módulo sem peso numa coluna em que os outros têm (ex.: o 4 que acabou de
-    // ganhar paradas) entra com a média, e não com 1 ao lado de 400
+    // ganhar paradas) entra com a média, e não com 1 ao lado de 400. Na altura
+    // fixa, sem referência nenhuma, entra com 300px.
     const definidos = elasticos.map(v => arranjo.pesos[v.dataset.modulo]).filter(p => p > 0);
-    const media = definidos.length ? definidos.reduce((a, b) => a + b, 0) / definidos.length : 1;
+    const media = definidos.length ? definidos.reduce((a, b) => a + b, 0) / definidos.length : (fixa ? 300 : 1);
     elasticos.forEach((vaga, i) => {
       vaga.style.setProperty('--peso', String(arranjo.pesos[vaga.dataset.modulo] || media));
       if (i === 0) return;
@@ -2183,6 +2220,20 @@ function atualizarModulosNasColunas(){
       div.dataset.abaixo = vaga.dataset.modulo;
       coluna.insertBefore(div, vaga);
     });
+    // Puxador na borda de baixo do último módulo com lista: é o que dá altura
+    // ao módulo sozinho na coluna, e à coluna inteira quando há mais de um
+    if (elasticos.length){
+      const ultimo = elasticos[elasticos.length - 1];
+      const pux = document.createElement('div');
+      pux.className = 'puxador-guia';
+      pux.setAttribute('role', 'separator');
+      pux.setAttribute('aria-orientation', 'horizontal');
+      pux.title = fixa
+        ? 'Arraste para aumentar ou diminuir o módulo (duplo clique volta a ocupar a coluna)'
+        : 'Arraste para aumentar ou diminuir o módulo';
+      pux.dataset.modulo = ultimo.dataset.modulo;
+      coluna.insertBefore(pux, ultimo.nextSibling);
+    }
   });
 }
 function elasticosVisiveis(coluna){
@@ -2200,6 +2251,7 @@ function moverModulo(chave, local){
   const mudou = new Set();
   ORDEM_MODULOS.forEach(k => { if (antes[k] !== arranjo.local[k]){ mudou.add(antes[k]); mudou.add(arranjo.local[k]); } });
   ORDEM_MODULOS.forEach(k => { if (mudou.has(arranjo.local[k]) || mudou.has(antes[k])) delete arranjo.pesos[k]; });
+  mudou.forEach(local => delete arranjo.fixas[local]);
   aplicarArranjo();
 }
 
@@ -2208,12 +2260,15 @@ const CHAVE_ARRANJO = 'hg_arranjo_modulos';
 
 // Forma comparável do arranjo: pesos só de módulos nas colunas, arredondados
 function descreverArranjo(a){
-  const local = {}, pesos = {};
+  const local = {}, pesos = {}, fixas = {};
   ORDEM_MODULOS.forEach(k => {
     local[k] = a.local[k] || 'painel';
     if (local[k] !== 'painel' && a.pesos[k] > 0) pesos[k] = Math.round(a.pesos[k]);
   });
-  return { local, pesos };
+  Object.keys(COLUNAS).forEach(col => {
+    if (a.fixas && a.fixas[col] && ORDEM_MODULOS.some(k => local[k] === col)) fixas[col] = true;
+  });
+  return { local, pesos, fixas };
 }
 function arranjoGuardado(){
   try{
@@ -2224,6 +2279,7 @@ function arranjoGuardado(){
       if (['painel', 'g1', 'g2'].includes(g.local[k])) a.local[k] = g.local[k];
       if (g.pesos && g.pesos[k] > 0) a.pesos[k] = g.pesos[k];
     });
+    Object.keys(COLUNAS).forEach(col => { if (g.fixas && g.fixas[col] === true) a.fixas[col] = true; });
     normalizarLocais(a.local);
     return a;
   }catch(e){ return null; }
@@ -2417,11 +2473,77 @@ if (!modoCampoAtivo){
     div.addEventListener('pointerup', soltar);
     div.addEventListener('pointercancel', soltar);
   });
-  // Duplo clique numa divisória: a coluna volta a dividir igual
+  // Duplo clique numa divisória: a coluna volta a dividir igual. Na altura fixa,
+  // "igual" é a média das alturas atuais — apagar os pesos ali deixaria os
+  // módulos sem altura definida.
   document.querySelector('main').addEventListener('dblclick', ev => {
     const div = ev.target.closest('.divisor-guia');
     if (!div) return;
-    [...div.parentElement.children].forEach(el => { if (el.dataset.modulo) delete arranjo.pesos[el.dataset.modulo]; });
+    const coluna = div.parentElement;
+    if (coluna.classList.contains('alturas-fixas')){
+      const elasticos = elasticosVisiveis(coluna);
+      const media = elasticos.reduce((s, v) => s + v.getBoundingClientRect().height, 0) / elasticos.length;
+      elasticos.forEach(v => arranjo.pesos[v.dataset.modulo] = media);
+    }else{
+      [...coluna.children].forEach(el => { if (el.dataset.modulo) delete arranjo.pesos[el.dataset.modulo]; });
+    }
+    atualizarModulosNasColunas();
+    atualizarBotaoArranjo();
+  });
+
+  // Puxador na borda de baixo do último módulo com lista (v5.9). O primeiro
+  // arraste passa a coluna para altura fixa: cada módulo com lista fica com a
+  // altura que tem agora, e só o que está acima do puxador muda. Embaixo sobra
+  // espaço, ou a coluna rola se passar da tela.
+  document.querySelector('main').addEventListener('pointerdown', ev => {
+    const pux = ev.target.closest('.puxador-guia');
+    if (!pux || ev.button !== 0) return;
+    ev.preventDefault();
+    try{ pux.setPointerCapture(ev.pointerId); }catch(e){}
+    document.body.classList.add('altura-arrastando');
+
+    const coluna = pux.parentElement;
+    const col = Object.keys(COLUNAS).find(c => COLUNAS[c].el === coluna.id);
+    if (!arranjo.fixas[col]){
+      // Sem remontar a coluna: o puxador sob o ponteiro precisa continuar vivo.
+      // Mede TODOS antes de aplicar qualquer um: aplicar o peso do primeiro já
+      // redistribui a coluna, e o segundo seria medido encolhido.
+      const elasticos = elasticosVisiveis(coluna);
+      const alturas = elasticos.map(v => v.getBoundingClientRect().height);
+      elasticos.forEach((v, i) => {
+        arranjo.pesos[v.dataset.modulo] = alturas[i];
+        v.style.setProperty('--peso', String(alturas[i]));
+      });
+      arranjo.fixas[col] = true;
+      coluna.classList.add('alturas-fixas');
+      pux.title = 'Arraste para aumentar ou diminuir o módulo (duplo clique volta a ocupar a coluna)';
+    }
+    const chave = pux.dataset.modulo;
+    const inicial = arranjo.pesos[chave];
+    const inicioY = ev.clientY;
+
+    const mover = e => {
+      const h = Math.max(inicial + (e.clientY - inicioY), ALTURA_MODULO_GUIA_MIN);
+      arranjo.pesos[chave] = h;
+      vagaDoModulo(chave).style.setProperty('--peso', String(h));
+    };
+    const soltar = () => {
+      pux.removeEventListener('pointermove', mover);
+      pux.removeEventListener('pointerup', soltar);
+      pux.removeEventListener('pointercancel', soltar);
+      document.body.classList.remove('altura-arrastando');
+      atualizarBotaoArranjo();
+    };
+    pux.addEventListener('pointermove', mover);
+    pux.addEventListener('pointerup', soltar);
+    pux.addEventListener('pointercancel', soltar);
+  });
+  // Duplo clique no puxador: a coluna volta a ser preenchida, na mesma proporção
+  document.querySelector('main').addEventListener('dblclick', ev => {
+    const pux = ev.target.closest('.puxador-guia');
+    if (!pux) return;
+    const col = Object.keys(COLUNAS).find(c => COLUNAS[c].el === pux.parentElement.id);
+    delete arranjo.fixas[col];
     atualizarModulosNasColunas();
     atualizarBotaoArranjo();
   });
