@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 12/09/2026 — v5.6 (limite de largura: nome da parada nunca mais quebra letra a letra)
+> **Última atualização:** 14/09/2026 — v5.7 (terceira coluna e todos os módulos móveis, com salvar arranjo)
 
 ---
 
@@ -92,24 +92,40 @@ sem dependências instaladas. Abre direto no navegador.
   demais.
   Esc cancela o arraste. O arraste começa só pela alça, então no celular o resto
   da linha continua rolando a lista
-- **Módulos 3 e 4 podem ir para a guia lateral** (v4.4–v4.7): a alça ao lado do
-  título leva o módulo para uma coluna **encostada no painel** (ordem na tela: mapa · guia · divisória · painel), para ele ficar ao
-  lado dos outros módulos. Os dois cabem lá ao mesmo tempo, na ordem 3 e depois
-  4, dividindo a coluna. ⚠️ O lugar **não** é guardado entre aberturas (v4.6):
-  os módulos sempre abrem junto dos outros, e mandar para a guia vale só enquanto
-  a página estiver aberta.
-  O mecanismo é **uma tabela de módulos** (v4.7): incluir o 1, o 2 ou o 5 depois
-  é somar uma linha nela, mais a âncora e a alça no HTML
-- **Divisória entre os dois módulos da guia** (v4.9): com os dois na coluna,
-  uma divisória reparte a altura entre eles — o de cima recebe uma altura e o de
-  baixo fica com o resto. Duplo clique volta ao meio a meio. A altura é guardada
-  e reaplicada quando a dupla se forma de novo; quando um deles sai, o estilo é
-  **limpo dos dois**, senão a altura fixa iria junto para o painel, que também é
-  uma coluna flexível
-- **Guia com largura ajustável** (v4.8): a coluna auxiliar tem divisória própria,
-  que aparece junto com ela. Mínimo de 260px, teto calculado para as três colunas
-  caberem (painel + mapa de 380px), duplo clique volta a 360px. A largura **é**
-  guardada no navegador — diferente do lugar dos módulos, que é escolha do momento
+- **Todos os módulos em até três colunas** (v4.4–v4.7; ampliado na v5.7): ordem
+  na tela **mapa · coluna 3 · coluna 2 · painel**. Os sete módulos — 1 Clientes,
+  2 Origem, 3 Selecionar paradas, 4 Ordem da viagem, Rota (botões + status), 5
+  Enviar para o campo e Roteiro — têm alça no título. Arrastar pela alça até uma
+  coluna a contorna em âmbar; soltar sobre o mapa abre a próxima coluna; Esc
+  cancela; duplo clique leva à coluna seguinte (painel → 2 → 3 → painel).
+  Regras: dentro da coluna os módulos ficam **sempre na ordem natural** (escolhe-se
+  a coluna, não a posição); a coluna 3 **só existe junto com a 2** — se a 2
+  esvazia, o conteúdo da 3 passa para ela. Módulo escondido (4 sem paradas, 5 e
+  Roteiro sem rota) aparece na coluna como título + "aparece depois…", com alça
+  própria; no painel continua só escondido.
+  Estrutura: cada módulo é `<section class="modulo-movel" data-modulo="mN">` com um
+  único `.modulo-corpo`. No painel a section é `display:contents` (painel idêntico
+  ao de antes — medido); nas colunas vira a caixa. Mostrar/esconder é detectado
+  por `MutationObserver` no corpo. ⚠️ Módulo 4 se esconde por `hidden`, não por
+  `style.display` — o inline venceria o flex das colunas
+- **Salvar arranjo / voltar ao normal** (v5.7): mover módulos vale só enquanto a
+  página está aberta (regra da v4.6). No cabeçalho, dois ícones em SVG (pedido do
+  usuário: ícones, não texto nem emoji): o **disquete** salva o arranjo e faz o
+  site abrir assim (`hg_arranjo_modulos`) — acende em âmbar com bolinha quando a
+  tela difere do salvo e vira ✓ por 1,8 s ao salvar; a **lixeira** volta ao
+  normal: tudo no painel e **apaga** o salvo (confirma se havia um). Escolha do
+  usuário: botão, e não gravação automática
+- **Altura dentro das colunas** (v4.9, generalizado na v5.7): os módulos com lista
+  (3, 4, Roteiro) dividem a sobra da coluna na proporção de `--peso`; os outros
+  ocupam o que precisam. Entre dois módulos com lista na mesma coluna o JS cria
+  uma divisória. Os pesos viram as alturas em pixels ao arrastar (proporção se
+  mantém se a janela muda), são zerados na coluna quando um módulo entra ou sai, e
+  fazem parte do arranjo salvo. Duplo clique divide igual
+- **Colunas com largura ajustável** (v4.8): cada coluna auxiliar tem divisória
+  própria. Mínimo de 320px, teto calculado para tudo caber (painel + outra coluna
+  + mapa de 380px), duplo clique volta a 360px. A largura **é** guardada na hora
+  (`hg_largura_guia`, `hg_largura_guia2`), fora do arranjo. A largura máxima do
+  painel também desconta as colunas abertas
 - **Cada módulo redimensionável** (v4.6): no painel o módulo 4 tem puxador
   próprio na borda de baixo (cresce sem tirar do 3, empurrando o que vem depois)
   **e** a divisória 3↔4 (cresce tirando do 3) — escolha do usuário entre os dois
@@ -484,7 +500,8 @@ repositório é público (ver `.gitignore`).
   brasileiros (Google, Mapbox), com cadastro e chave de acesso.
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
   origem padrão, a lista de tipos de serviço, a preferência de formato do link,
-  a largura do painel, o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
+  a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
+  botão), o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
   recarregar a página zera essa parte, de propósito (é o roteiro do dia, não
   configuração). Nada disso sai da máquina de quem usa.
@@ -585,6 +602,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 48 | **v5.4** — Módulo 3 ajustável desde a abertura, antes de escolher paradas; corrigidas as linhas fantasmas da lista de paradas ao trocar de base |
 | 49 | **v5.5** — Correção do aperto na lista de paradas: botões deixam de encolher e a alça acompanha a largura da coluna |
 | 50 | **v5.6** — Limite de largura das colunas (320px) e mínimo para o nome da parada: fim da quebra letra a letra |
+| 51 | **v5.7** — Terceira coluna; todos os módulos móveis entre painel e duas colunas; salvar arranjo e voltar ao normal |
 
 ---
 
@@ -651,7 +669,7 @@ Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
 nova e zerar o contador.
 
 ```
-Leves acumuladas desde a v5.6:  0 / 5
+Leves acumuladas desde a v5.7:  1 / 5
 ```
 
 ### Onde o número aparece
@@ -725,3 +743,4 @@ os backups locais são conveniência, não garantia.
 | 5.4 | 12/09/2026 | Módulo 3 ajustável desde a abertura; linhas fantasmas corrigidas |
 | 5.5 | 12/09/2026 | Alça acompanha a largura da coluna; botões não encolhem mais |
 | 5.6 | 12/09/2026 | Piso de 320px nas colunas e mínimo de 120px para o nome da parada |
+| 5.7 | 14/09/2026 | Terceira coluna, os 7 módulos móveis e botões de salvar/voltar ao normal o arranjo |

@@ -134,35 +134,46 @@
   main{position:relative;flex:1;display:flex;min-height:0;}
   #map{flex:1;min-height:0;background:var(--map-bg);}
 
-  /* Guia lateral (v4.4): coluna à esquerda do mapa que recebe um módulo puxado
-     para fora do painel. Hoje só o módulo 4 usa; a ideia é o mesmo mecanismo
-     servir para os outros depois. */
-  /* A guia fica ENTRE o mapa e o painel: assim o módulo puxado para fora
-     continua ao lado dos outros módulos, que é o que o usuário pediu depois de
-     ver a primeira versão, que jogava a coluna para a borda esquerda da tela. */
+  /* Colunas auxiliares (v4.4; duas desde a v5.7). Ficam ENTRE o mapa e o
+     painel: assim o módulo puxado para fora continua ao lado dos outros, que é
+     o que o usuário pediu depois de ver a primeira versão, que jogava a coluna
+     para a borda esquerda da tela. Ordem: mapa · coluna 3 · coluna 2 · painel. */
   .guia{container-type:inline-size;width:var(--guia-w, 360px); background:var(--panel); border-left:1px solid var(--line);
         padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:none;}
-  /* Na guia o módulo ocupa a coluna inteira: a lista cresce até o fim da tela em
-     vez de obedecer à altura do painel, que só faz sentido lá. Vale para
-     qualquer módulo movido para cá. */
-  .guia .modulo-movel{flex:1; min-height:0; display:flex !important; flex-direction:column;}
-  /* Dentro da guia o módulo é uma coluna flexível, e aí a regra geral
-     input[type=text]{flex:1} passa a valer: o campo de busca esticava na
-     VERTICAL e ficava desproporcional (relatado em 12/09/2026). No painel isso
-     não acontecia porque lá o módulo é um bloco comum, não um flex.
-     Regra: na guia nada estica, exceto as listas logo abaixo. */
-  .guia .modulo-movel > *{flex:none;}
-  .guia .stops, .guia .checklist{max-height:none; flex:1 1 auto; min-height:0;}
-  /* Controles de altura não fazem sentido dentro da guia. !important porque as
-     regras do painel abaixo usam id e ganhariam por especificidade. */
-  .guia .divisor-modulos, .guia .puxador-modulo{display:none !important;}
+  #guiaExtra{width:var(--guia2-w, 360px);}
+
+  /* MÓDULOS (v5.7). No painel a section não gera caixa (display:contents): o
+     conteúdo participa do painel como sempre participou, com o mesmo espaçamento.
+     O aviso de "aparece depois" só existe nas colunas. */
+  .console > .modulo-movel{display:contents;}
+  .modulo-espera{display:none;}
   .guia-vazia{font-size:12px; color:var(--muted); font-style:italic;}
-  /* Divisória ENTRE os dois módulos dentro da guia (v4.9). Classe própria, e não
-     .divisor-modulos, porque aquela é escondida dentro da guia — esta é a única
-     que deve viver lá. */
+
+  /* Nas colunas a section vira caixa. Módulos de tamanho natural (1, 2, Rota, 5)
+     ocupam só o que precisam; os que têm lista (3, 4, Roteiro) são "elásticos"
+     e dividem a sobra da coluna na proporção de --peso, que as divisórias de
+     altura ajustam. Com peso igual, dividem meio a meio. */
+  .guia .modulo-movel{display:flex; flex-direction:column; flex:none; min-height:0;}
+  .guia .modulo-movel.elastico:not(.esperando){flex:var(--peso, 1) 1 0px; min-height:120px;}
+  .guia .modulo-movel.esperando > .modulo-espera{display:block;}
+  .guia .modulo-movel.elastico > .modulo-corpo{display:flex; flex-direction:column; flex:1 1 auto; min-height:0;}
+  /* O Roteiro se esconde por classe (.show), não por hidden: a regra acima o
+     tornaria visível sem rota nenhuma. */
+  .guia .modulo-movel > .readout:not(.show){display:none;}
+  /* Dentro da coluna o módulo é uma coluna flexível, e aí a regra geral
+     input[type=text]{flex:1} passa a valer: o campo de busca esticava na
+     VERTICAL e ficava desproporcional (relatado em 12/09/2026).
+     Regra: na coluna nada estica, exceto as listas. */
+  .guia .modulo-corpo > *{flex:none;}
+  .guia .stops, .guia .checklist, .guia .steps{max-height:none; flex:1 1 auto; min-height:0;}
+  /* Controles de altura do painel não fazem sentido nas colunas. !important
+     porque as regras do painel abaixo usam id e ganhariam por especificidade. */
+  .guia .divisor-modulos, .guia .puxador-modulo{display:none !important;}
+  /* Divisória de altura entre dois módulos elásticos da mesma coluna (v4.9,
+     generalizada na v5.7). Criada pelo JS antes do módulo de baixo. */
   .divisor-guia{
     height:16px; flex:none; display:flex; align-items:center; justify-content:center;
-    cursor:ns-resize; touch-action:none; user-select:none; -webkit-user-select:none;
+    margin:-7px 0; cursor:ns-resize; touch-action:none; user-select:none; -webkit-user-select:none;
   }
   .divisor-guia::before{
     content:''; width:46px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
@@ -170,24 +181,56 @@
   .divisor-guia:hover::before{background:var(--amber-dim);}
   body.altura-arrastando .divisor-guia::before{background:var(--amber);}
 
-  /* Alça do módulo: arrasta para o lado para levar o módulo à guia, ou de volta
-     ao painel. Duplo clique faz a mesma troca, para quem preferir um clique. */
+  /* Alça do módulo: arrasta até outra coluna. Duplo clique leva à coluna
+     seguinte (painel → coluna 2 → coluna 3 → painel). */
   .modulo-alca{flex:none; display:flex; align-items:center; padding:0 6px 0 0; margin-left:-2px;
                cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none;}
   .modulo-alca::before{content:''; width:9px; height:13px; opacity:.65;
                background-image:radial-gradient(circle, var(--amber-dim) 1.3px, transparent 1.6px);
                background-size:4.5px 5px;}
   .modulo-alca:hover::before{opacity:1;}
-  body.movendo-modulo{cursor:grabbing; user-select:none;}
-  #stopsSection.movendo{opacity:.9; box-shadow:0 8px 24px var(--sombra); border-radius:8px;}
-  /* Faixa que acende no destino enquanto o módulo é arrastado */
-  .alvo-modulo{position:absolute; top:0; bottom:0; width:10px; z-index:500; pointer-events:none;
-               background:var(--amber); opacity:0; transition:opacity .15s;}
-  .alvo-modulo.aceso{opacity:.85;}
-  /* Destino "guia": faixa colada na borda esquerda do painel, que é onde a
-     coluna vai aparecer. Destino "painel": faixa na borda direita da tela. */
-  .alvo-modulo.esquerda{right:calc(var(--painel-w, 340px) + 7px);}
-  .alvo-modulo.direita{right:0;}
+  body.movendo-modulo, body.movendo-modulo *{cursor:grabbing !important;}
+  body.movendo-modulo{user-select:none; -webkit-user-select:none;}
+  body.movendo-modulo #map{pointer-events:none;}
+  /* A section não tem caixa no painel, por isso a transparência vai nos filhos */
+  .modulo-movel.movendo > *{opacity:.4;}
+  /* Etiqueta com o nome do módulo, que acompanha o ponteiro */
+  .modulo-fantasma{position:fixed; z-index:1001; pointer-events:none; white-space:nowrap;
+                   background:var(--panel-2); border:1px solid var(--amber); border-radius:6px;
+                   box-shadow:0 6px 18px var(--sombra); padding:5px 10px;
+                   font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.2px;
+                   text-transform:uppercase; color:var(--amber);}
+  /* Coluna que vai receber o módulo: contorno sobre ela, ou sobre o lugar onde
+     a coluna nova vai aparecer */
+  .alvo-coluna{position:fixed; z-index:1000; pointer-events:none; border:2px solid var(--amber);
+               border-radius:6px; background:color-mix(in srgb, var(--amber) 12%, transparent);
+               display:flex; align-items:flex-start; justify-content:center; padding-top:14px;
+               font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.2px;
+               text-transform:uppercase; color:var(--amber);}
+
+  /* Botões do arranjo, no cabeçalho */
+  /* Disquete = salvar arranjo, lixeira = voltar ao normal (ícones desde a v5.7,
+     a pedido do usuário; as funções são as mesmas dos antigos links de texto) */
+  .arranjo-acoes{margin-left:auto; display:flex; gap:6px; align-self:center;}
+  .arranjo-acoes + .interruptor{margin-left:14px;}
+  .icone-btn{position:relative; width:32px; height:32px; padding:0; border-radius:6px;
+             display:flex; align-items:center; justify-content:center;
+             background:none; color:var(--muted); transition:color .15s, background .15s;}
+  .icone-btn svg{width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.8;
+                 stroke-linecap:round; stroke-linejoin:round;}
+  .icone-btn:hover{color:var(--text); background:var(--hover);}
+  #arranjoNormalBtn:hover{color:var(--danger);}
+  .icone-btn:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
+  /* Confirmação rápida depois de salvar: o disquete vira um ✓ */
+  .icone-check{display:none;}
+  #salvarArranjoBtn.salvo .icone-disquete{display:none;}
+  #salvarArranjoBtn.salvo .icone-check{display:block;}
+  #salvarArranjoBtn.salvo{color:var(--teal);}
+  /* Arranjo na tela diferente do que abre o site: o disquete acende em âmbar,
+     com uma bolinha no canto */
+  #salvarArranjoBtn.pendente{color:var(--amber);}
+  #salvarArranjoBtn.pendente::after{content:''; position:absolute; top:4px; right:4px;
+             width:6px; height:6px; border-radius:50%; background:var(--amber);}
 
   /* Painel lateral ("console") com os controles: upload, origem, checklist, paradas, botões */
   /* A largura vem de uma variável para a divisória poder alterá-la sem estilo
@@ -495,6 +538,8 @@
 
   /* Mensagem de status/erro exibida abaixo dos botões */
   .status{font-size:12.5px;color:var(--danger);font-family:'JetBrains Mono',monospace;min-height:16px;}
+  /* Desde a v5.7 botões e status moram no mesmo módulo, fora do gap do painel */
+  .btn-row + .status{margin-top:14px;}
 
   /* Painel de resultado: distância, tempo e roteiro passo a passo (escondido até haver uma rota) */
   .readout{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--panel-2);display:none;}
@@ -535,6 +580,8 @@
        lateral — em tela estreita o módulo volta para o painel. */
     .divisor{display:none;}
     .guia{display:none;}
+    .arranjo-acoes{display:none;}
+    .arranjo-acoes + .interruptor{margin-left:auto;}
     .console{width:auto;max-height:56%;border-left:none;border-top:1px solid var(--line);}
     /* Em tela estreita o painel inteiro tem pouca altura: um checklist de 320px
        sobraria quase nada para os outros passos. Todos continuam rolando. */
@@ -678,6 +725,26 @@
 <div class="app">
   <header>
     <div class="mark">hagamorfis<span>/</span>rotas<span class="versao" id="versaoEscritorio"></span></div>
+    <!-- Arranjo dos módulos nas colunas (v5.7). Mover um módulo vale só enquanto
+         a página está aberta; "salvar" faz o site abrir sempre assim, e "voltar
+         ao normal" põe tudo de volta no painel e apaga o que foi salvo. -->
+    <div class="arranjo-acoes" id="arranjoAcoes">
+      <!-- Ícones desenhados em SVG, e não emoji: 💾 e 🗑 mudam de cara (e de
+           cor) conforme o sistema, e não acompanhariam o tema. -->
+      <button class="icone-btn" id="salvarArranjoBtn" type="button" aria-label="Salvar arranjo"
+              title="Salvar arranjo — o site passa a abrir com os módulos nas colunas em que estão agora">
+        <svg class="icone-disquete" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 4h12.5L20 7.5V20H4z"/><path d="M8 4v5h7V4"/><path d="M7 20v-6h10v6"/>
+        </svg>
+        <svg class="icone-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </button>
+      <button class="icone-btn" id="arranjoNormalBtn" type="button" aria-label="Voltar ao normal"
+              title="Voltar ao normal — todos os módulos voltam para o painel, e o arranjo salvo é apagado">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16"/><path d="M9.5 7V4.5h5V7"/><path d="M6.5 7l1 13h9l1-13"/><path d="M10.5 11v5.5M13.5 11v5.5"/>
+        </svg>
+      </button>
+    </div>
     <button class="interruptor" type="button" role="switch" aria-checked="true" data-tema-btn>
       <span class="interruptor-texto">Modo noturno</span>
       <span class="interruptor-trilho"><span class="interruptor-bolinha"></span></span>
@@ -686,20 +753,18 @@
 
   <main>
     <div id="map"></div>
-    <!-- Divisória da guia: ajusta a largura da coluna auxiliar. Aparece junto
-         com ela. -->
+    <!-- Colunas auxiliares (v4.4; duas desde a v5.7). Ordem na tela:
+         mapa · coluna 3 · coluna 2 · painel. Cada uma só aparece quando tem
+         algum módulo dentro, e a coluna 3 só existe junto com a 2: se a 2
+         esvazia, o conteúdo da 3 passa para ela. Cada coluna tem a sua
+         divisória de largura, à esquerda. As divisórias de ALTURA entre os
+         módulos de uma coluna são criadas pelo JS. -->
+    <div class="divisor" id="divisorGuia2" role="separator" aria-orientation="vertical" hidden
+         title="Arraste para ajustar a largura da coluna (duplo clique volta ao padrão)"></div>
+    <aside class="guia" id="guiaExtra" hidden></aside>
     <div class="divisor" id="divisorGuia" role="separator" aria-orientation="vertical" hidden
          title="Arraste para ajustar a largura da coluna (duplo clique volta ao padrão)"></div>
-    <!-- Guia lateral: coluna extra encostada no painel, para o módulo puxado
-         para fora ficar ao lado dos outros módulos, e não na borda da tela.
-         Fica vazia (e escondida) até alguém puxar um módulo para cá. -->
-    <aside class="guia" id="guiaLateral" hidden>
-      <div class="guia-vazia" id="guiaVazia" hidden>Sem paradas selecionadas ainda.</div>
-      <!-- Divisória entre os dois módulos da coluna. Só aparece quando os dois
-           estão aqui; o JS a coloca entre eles. -->
-      <div class="divisor-guia" id="divisorGuiaModulos" role="separator" aria-orientation="horizontal" hidden
-           title="Arraste para dividir a altura entre os dois módulos (duplo clique volta ao meio a meio)"></div>
-    </aside>
+    <aside class="guia" id="guiaLateral" hidden></aside>
     <!-- Divisória arrastável: ajusta a largura do painel. Existe porque os nomes
          de cliente da base real chegam a 58 caracteres e não cabiam nos 340px
          fixos; em monitor Full HD dá para alargar até o nome caber numa linha,
@@ -707,11 +772,25 @@
     <div class="divisor" id="divisor" role="separator" aria-orientation="vertical"
          title="Arraste para ajustar a largura do painel (duplo clique volta ao padrão)"></div>
     <div class="console">
+      <!-- Aparece só quando todos os módulos foram para as colunas -->
+      <div class="guia-vazia" id="painelVazio" hidden>
+        Todos os módulos estão nas colunas. Arraste um de volta para cá pela alça.
+      </div>
+
+      <!-- MÓDULOS (v5.7). Cada bloco do painel é uma <section class="modulo-movel">
+           com um único filho .modulo-corpo, que é o conteúdo de sempre. No painel a
+           section é display:contents — não gera caixa, então o painel fica
+           exatamente como era. Nas colunas ela vira a caixa que recebe a altura.
+           O aviso "aparece depois…" de módulos ainda escondidos é criado pelo JS. -->
 
       <!-- Passo 1: upload do .geojson (clique abre o seletor de arquivo; também aceita arrastar-e-soltar) -->
-      <div>
+      <section class="modulo-movel" data-modulo="m1">
+      <div class="modulo-corpo">
         <div class="field-label">
-          <span>1 · Clientes <small id="countLabel"></small></span>
+          <span style="display:flex;align-items:center;">
+            <span class="modulo-alca" data-alca></span>
+            <span>1 · Clientes <small id="countLabel"></small></span>
+          </span>
           <!-- Só aparece quando existe base guardada — ver atualizarBotaoEsquecer() -->
           <button class="link-btn" id="esquecerBaseBtn" style="display:none;">esquecer base</button>
         </div>
@@ -721,11 +800,13 @@
         <input type="file" id="fileInput" accept=".umap,.json,application/json" style="display:none">
         <div class="file-status" id="fileStatus"></div>
       </div>
+      </section>
 
       <!-- Passo 2: ponto de partida da viagem (endereço digitado ou geolocalização do navegador) -->
-      <div>
+      <section class="modulo-movel" data-modulo="m2">
+      <div class="modulo-corpo">
         <div class="field-label">
-          <span>2 · Origem</span>
+          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>2 · Origem</span>
           <!-- Rótulo muda conforme o estado; escondido enquanto não há origem definida -->
           <button class="link-btn" id="origemPadraoBtn" style="display:none;"></button>
         </div>
@@ -737,16 +818,14 @@
         <!-- Aparece só quando a busca devolve mais de um endereço possível -->
         <div class="origem-opcoes" id="origemOpcoes" style="display:none;"></div>
       </div>
+      </section>
 
       <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
-      <!-- Âncora: guarda o lugar do módulo 3 no painel, para ele voltar exatamente
-           daqui quando sair da guia -->
-      <div id="ancoraModulo3" hidden></div>
-      <div id="modulo3" class="modulo-movel">
+      <section class="modulo-movel" data-modulo="m3">
+      <div id="modulo3" class="modulo-corpo">
         <div class="field-label">
           <span class="field-label-titulo">
-            <span class="modulo-alca" id="alcaModulo3"
-                  title="Arraste para o lado para abrir como guia ao lado do mapa (duplo clique faz o mesmo)"></span>
+            <span class="modulo-alca" data-alca></span>
             3 ·<span class="titulo-palavras"><span>Selecionar</span><span>paradas</span></span></span>
           <span class="field-label-acoes">
             <button class="link-btn" id="tiposBtn">tipos de serviço</button>
@@ -784,20 +863,20 @@
         <div class="puxador-modulo" id="puxadorChecklist" role="separator" aria-orientation="horizontal"
              title="Arraste para aumentar ou diminuir a lista de clientes (duplo clique volta ao padrão)"></div>
       </div>
+      </section>
 
       <!-- Passo 4: lista reordenável das paradas escolhidas (só aparece quando há paradas) -->
-      <!-- Âncora: marca o lugar do módulo 4 no painel, para ele voltar exatamente
-           daqui quando sair da guia -->
-      <div id="ancoraModulo4" hidden></div>
-      <div id="stopsSection" class="modulo-movel" style="display:none;">
+      <!-- hidden, e não style="display:none": nas colunas o CSS dá display:flex ao
+           módulo, e um display:block inline venceria essa regra -->
+      <section class="modulo-movel" data-modulo="m4">
+      <div id="stopsSection" class="modulo-corpo" hidden>
         <!-- Divisória 3 <-> 4: puxar para cima aumenta a Ordem da viagem e
              diminui o Selecionar paradas, sem mexer no resto do painel. -->
         <div class="divisor-modulos" id="divisorModulos" role="separator" aria-orientation="horizontal"
              title="Arraste para cima ou para baixo para dividir o espaço entre os itens 3 e 4 (duplo clique volta ao padrão)"></div>
         <div class="field-label">
           <span style="display:flex;align-items:center;">
-            <span class="modulo-alca" id="alcaModulo4"
-                  title="Arraste para o lado para abrir como guia ao lado do mapa (duplo clique faz o mesmo)"></span>
+            <span class="modulo-alca" data-alca></span>
             4 · Ordem da viagem
           </span>
         </div>
@@ -808,18 +887,30 @@
         <div class="puxador-modulo" id="puxadorParadas" role="separator" aria-orientation="horizontal"
              title="Arraste para aumentar ou diminuir a lista de paradas (duplo clique volta ao padrão)"></div>
       </div>
+      </section>
 
-      <!-- Ações: calcular rota respeitando a ordem atual, ou deixar o OSRM otimizar a ordem -->
-      <div class="btn-row">
-        <button class="go-btn" id="routeBtn">Traçar nesta ordem</button>
-        <button class="go-btn secondary" id="optimizeBtn">Otimizar ordem</button>
+      <!-- Ações: calcular rota respeitando a ordem atual, ou deixar o OSRM otimizar a ordem.
+           Ganhou título na v5.7, porque virou módulo e precisava de onde pegar. -->
+      <section class="modulo-movel" data-modulo="m5">
+      <div class="modulo-corpo">
+        <div class="field-label">
+          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Rota</span>
+        </div>
+        <div class="btn-row">
+          <button class="go-btn" id="routeBtn">Traçar nesta ordem</button>
+          <button class="go-btn secondary" id="optimizeBtn">Otimizar ordem</button>
+        </div>
+        <div class="status" id="status"></div>
       </div>
-      <div class="status" id="status"></div>
+      </section>
 
       <!-- Passo 5: gerar o link do roteiro para mandar a quem vai a campo.
            Só aparece depois que uma rota foi traçada com sucesso. -->
-      <div id="envioSection" style="display:none;">
-        <div class="field-label">5 · Enviar para o campo</div>
+      <section class="modulo-movel" data-modulo="m6">
+      <div id="envioSection" class="modulo-corpo" style="display:none;">
+        <div class="field-label">
+          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>5 · Enviar para o campo</span>
+        </div>
         <button class="go-btn" id="gerarLinkBtn">Gerar link do roteiro</button>
         <div id="linkPronto" style="display:none;margin-top:10px;">
           <input type="text" id="linkCampo" readonly>
@@ -845,15 +936,20 @@
           </label>
         </div>
       </div>
+      </section>
 
       <!-- Resultado: distância/tempo totais + instruções passo a passo por parada -->
-      <div class="readout" id="readout">
+      <section class="modulo-movel" data-modulo="m7">
+      <div class="readout modulo-corpo" id="readout">
         <div class="row"><span id="distVal">--</span><span id="timeVal">--</span></div>
         <div class="row"><span>distância total</span><span>tempo estimado</span></div>
         <hr>
-        <div class="field-label" style="margin-bottom:10px;">Roteiro</div>
+        <div class="field-label" style="margin-bottom:10px;">
+          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Roteiro</span>
+        </div>
         <ul class="steps" id="steps"></ul>
       </div>
+      </section>
     </div>
   </main>
   <!-- Sem rodapé desde 10/09/2026, a pedido do usuário. O crédito obrigatório
@@ -899,7 +995,7 @@
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
 // sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
 // acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '5.6';
+const VERSAO = '5.7';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -994,8 +1090,14 @@ const LARGURA_MIN = 320;
 const MAPA_MIN = 380;         // o mapa nunca fica menor que isso, por mais que se arraste
 
 // Máximo depende da tela: em 1366 sobra pouco, em 1920 dá para abrir bem mais.
+// Desde a v5.7 desconta também as colunas auxiliares visíveis (e as divisórias
+// delas): com três colunas abertas, o painel sozinho não pode tomar o mapa.
+// Consulta a tela direto, e não as funções das colunas, porque isto roda antes
+// de aquela parte do script existir.
 function larguraMaxPainel(){
-  return Math.max(LARGURA_MIN, document.documentElement.clientWidth - MAPA_MIN);
+  let colunas = 0;
+  document.querySelectorAll('main > .guia:not([hidden])').forEach(g => colunas += g.getBoundingClientRect().width + 7);
+  return Math.max(LARGURA_MIN, document.documentElement.clientWidth - MAPA_MIN - colunas);
 }
 function aplicarLarguraPainel(px, salvar){
   const v = Math.round(Math.min(Math.max(px, LARGURA_MIN), larguraMaxPainel()));
@@ -1708,12 +1810,10 @@ function reordenarPorPrioridade(){
 function renderStopsList(){
   const section = document.getElementById('stopsSection');
   const list = document.getElementById('stopsList');
-  section.style.display = stops.length ? 'block' : 'none';
+  section.hidden = !stops.length;
   // Sem parada nenhuma o módulo 4 não aparece, e com ele some a divisória 3<->4.
   // A marca abaixo é o que faz o puxador do módulo 3 entrar no lugar dela.
   document.body.classList.toggle('modulo4-oculto', !stops.length);
-  // Na guia, mostra/esconde o aviso de coluna vazia
-  if (typeof atualizarGuiaVazia === 'function') atualizarGuiaVazia();
   list.innerHTML = '';
 
   const temPrioritaria = stops.some(s => s.prioritaria);
@@ -1921,285 +2021,476 @@ if (!modoCampoAtivo){
   puxador4.addEventListener('dblclick', () => aplicarAlturas(alturasGuardadas().c, ALTURA_PARADAS_PADRAO, true));
 }
 
-/* ---------------- Módulos na guia lateral (v4.4, generalizado na v4.7) ----------------
-   O usuário pediu o mesmo efeito do módulo 4 para o módulo 3: poder jogar para
-   a coluna auxiliar. Em vez de repetir o código, ele virou uma tabela de
-   módulos — acrescentar o 1, o 2 ou o 5 depois é só somar uma linha aqui, a
-   âncora e a alça no HTML.
+/* ---------------- Módulos nas colunas (v4.4; generalizado na v4.7 e na v5.7) ----------------
+   Pedido do usuário em 14/09/2026: a coluna auxiliar foi tão útil que uma
+   terceira coluna seria melhor ainda, e TODOS os módulos devem poder sair do
+   painel. Ordem na tela: mapa · coluna 3 (g2) · coluna 2 (g1) · painel.
 
-   O módulo é o MESMO elemento nos dois lugares: é movido no HTML, não
-   duplicado. Por isso tudo que já existia continua valendo dentro da guia
+   O módulo é o MESMO elemento em qualquer lugar: é movido no HTML, não
+   duplicado. Por isso tudo que já existia continua valendo dentro das colunas
    (arrastar paradas, estrela, setas, remover, busca, seleção) sem código
-   repetido. Uma âncora invisível guarda o lugar dele no painel.
+   repetido.
 
-   O lugar NÃO é guardado entre aberturas, de propósito: os módulos sempre
-   abrem no painel, junto dos outros, e mandar para a guia vale enquanto a
-   página estiver aberta.
-
-   Em tela estreita (layout empilhado) a guia não existe: os módulos ficam no
-   painel e a escolha da sessão espera a tela alargar de novo. */
-try{ localStorage.removeItem('hg_modulo4_local'); }catch(e){}   // resquício da v4.4
+   Regras:
+   - Dentro de cada coluna os módulos ficam sempre na ordem natural (1, 2, 3, 4,
+     Rota, 5, Roteiro). O que se escolhe é a coluna, não a posição nela.
+   - A coluna 3 só existe junto com a 2. Se a 2 esvazia, o que estava na 3 passa
+     para ela — não fica um buraco entre a coluna 3 e o painel.
+   - Mover um módulo vale enquanto a página está aberta. O botão "salvar arranjo"
+     faz o site abrir assim; "voltar ao normal" põe tudo no painel e apaga o
+     salvo. (Antes da v5.7 o lugar nunca era guardado — decisão da v4.6, revista
+     a pedido do usuário, agora com botão em vez de gravação automática.)
+   - Em tela estreita (layout empilhado) as colunas não existem: os módulos
+     ficam no painel e o arranjo espera a tela alargar de novo. */
+try{
+  localStorage.removeItem('hg_modulo4_local');      // resquício da v4.4
+  localStorage.removeItem('hg_altura_guia_topo');   // resquício da v4.9, substituído pelos pesos
+}catch(e){}
 
 const MODULOS = {
-  m3: { sec:'modulo3',      ancora:'ancoraModulo3', alca:'alcaModulo3', classe:'modulo3-na-guia' },
-  m4: { sec:'stopsSection', ancora:'ancoraModulo4', alca:'alcaModulo4', classe:'modulo4-na-guia' }
+  m1: { titulo:'1 · Clientes' },
+  m2: { titulo:'2 · Origem' },
+  m3: { titulo:'3 · Selecionar paradas', elastico:true },
+  m4: { titulo:'4 · Ordem da viagem',    elastico:true, espera:'Aparece quando houver paradas selecionadas.' },
+  m5: { titulo:'Rota' },
+  m6: { titulo:'5 · Enviar para o campo', espera:'Aparece depois de traçar a rota.' },
+  m7: { titulo:'Roteiro',                 elastico:true, espera:'Aparece depois de traçar a rota.' }
 };
-const localDoModulo = { m3:'painel', m4:'painel' };   // só em memória, nesta sessão
+const ORDEM_MODULOS = Object.keys(MODULOS);
 
-/* Largura da coluna auxiliar. Ao contrário do LUGAR dos módulos, ela É guardada:
-   é preferência de layout, como a largura do painel. */
-const CHAVE_LARGURA_GUIA = 'hg_largura_guia';
+const COLUNAS = {
+  g1: { el:'guiaLateral', divisor:'divisorGuia',  chave:'hg_largura_guia',  css:'--guia-w',  nome:'coluna 2' },
+  g2: { el:'guiaExtra',   divisor:'divisorGuia2', chave:'hg_largura_guia2', css:'--guia2-w', nome:'coluna 3' }
+};
+
+function arranjoNormal(){
+  const local = {};
+  ORDEM_MODULOS.forEach(k => local[k] = 'painel');
+  return { local, pesos:{} };
+}
+let arranjo = arranjoNormal();   // o que está na tela agora
+
+const vagaDoModulo = chave => document.querySelector(`.modulo-movel[data-modulo="${chave}"]`);
+const corpoDoModulo = chave => vagaDoModulo(chave).querySelector(':scope > .modulo-corpo');
+function containerDe(local){
+  return local === 'painel' ? document.querySelector('.console') : document.getElementById(COLUNAS[local].el);
+}
+
+/* A coluna 3 não fica sozinha: sem nada na 2, o conteúdo da 3 desce para ela */
+function normalizarLocais(local){
+  const temNaG1 = ORDEM_MODULOS.some(k => local[k] === 'g1');
+  if (!temNaG1) ORDEM_MODULOS.forEach(k => { if (local[k] === 'g2') local[k] = 'g1'; });
+  return local;
+}
+
+/* ---- Largura das colunas. Ao contrário do lugar dos módulos, ela é guardada
+   sempre, na hora: é preferência de tela, como a largura do painel. ---- */
 const LARGURA_GUIA_PADRAO = 360;
 const LARGURA_GUIA_MIN = 320;   // mesmo piso do painel, pelo mesmo motivo
 
-function larguraGuiaGuardada(){
-  try{ const g = parseInt(localStorage.getItem(CHAVE_LARGURA_GUIA), 10); if (g > 0) return g; }catch(e){}
+function larguraGuiaGuardada(col){
+  try{ const g = parseInt(localStorage.getItem(COLUNAS[col].chave), 10); if (g > 0) return g; }catch(e){}
   return LARGURA_GUIA_PADRAO;
 }
-// O teto considera o painel e o mínimo do mapa: as três colunas precisam caber
-function larguraMaxGuia(){
-  const painel = document.querySelector('.console').getBoundingClientRect().width || LARGURA_PADRAO;
-  return Math.max(LARGURA_GUIA_MIN, document.documentElement.clientWidth - painel - MAPA_MIN - 14);
+// Soma das larguras das colunas visíveis (com as divisórias), menos a informada
+function larguraDasOutrasColunas(excluir){
+  let soma = 0;
+  Object.keys(COLUNAS).forEach(col => {
+    const el = document.getElementById(COLUNAS[col].el);
+    if (col !== excluir && !el.hidden) soma += el.getBoundingClientRect().width + 7;
+  });
+  return soma;
 }
-function aplicarLarguraGuia(px, salvar){
-  const v = Math.round(Math.min(Math.max(px, LARGURA_GUIA_MIN), larguraMaxGuia()));
-  document.documentElement.style.setProperty('--guia-w', v + 'px');
-  if (salvar){ try{ localStorage.setItem(CHAVE_LARGURA_GUIA, String(v)); }catch(e){ /* segue sem persistir */ } }
+// O teto considera o painel, a outra coluna e o mínimo do mapa: tudo precisa caber
+function larguraMaxGuia(col){
+  const painel = document.querySelector('.console').getBoundingClientRect().width || LARGURA_PADRAO;
+  return Math.max(LARGURA_GUIA_MIN,
+    document.documentElement.clientWidth - painel - 7 - larguraDasOutrasColunas(col) - 7 - MAPA_MIN);
+}
+function aplicarLarguraGuia(col, px, salvar){
+  const v = Math.round(Math.min(Math.max(px, LARGURA_GUIA_MIN), larguraMaxGuia(col)));
+  document.documentElement.style.setProperty(COLUNAS[col].css, v + 'px');
+  if (salvar){ try{ localStorage.setItem(COLUNAS[col].chave, String(v)); }catch(e){ /* segue sem persistir */ } }
   return v;
 }
 const LARGURA_MINIMA_GUIA = 761;   // abaixo disso o layout é empilhado (ver media query)
 
 function telaComportaGuia(){ return document.documentElement.clientWidth >= LARGURA_MINIMA_GUIA; }
 
-function moduloEstaNaGuia(chave){
-  return document.getElementById(MODULOS[chave].sec).parentElement === document.getElementById('guiaLateral');
+/* ---- Pôr os módulos onde o arranjo manda ---- */
+
+// Coloca os módulos da lista no container, nessa ordem, mexendo só no que está
+// fora do lugar: tirar um elemento do HTML zera a rolagem das listas e tira o
+// foco de um campo sendo digitado.
+function ordenarModulos(container, lista){
+  lista.forEach((vaga, i) => {
+    const atuais = [...container.children].filter(el => el.classList.contains('modulo-movel'));
+    if (atuais[i] !== vaga) container.insertBefore(vaga, atuais[i] || null);
+  });
 }
 
-function colocarModulo(chave, local){
-  const cfg = MODULOS[chave];
-  const sec = document.getElementById(cfg.sec);
-  const guia = document.getElementById('guiaLateral');
-  const naGuia = local === 'guia' && telaComportaGuia();
-  localDoModulo[chave] = local === 'guia' ? 'guia' : 'painel';
+function aplicarArranjo(){
+  const largo = telaComportaGuia();
+  const listas = { painel:[], g1:[], g2:[] };
+  ORDEM_MODULOS.forEach(k => listas[largo ? arranjo.local[k] : 'painel'].push(vagaDoModulo(k)));
+  Object.keys(listas).forEach(local => ordenarModulos(containerDe(local), listas[local]));
 
-  if (naGuia){
-    if (sec.parentElement !== guia) guia.appendChild(sec);
-  }else{
-    const ancora = document.getElementById(cfg.ancora);
-    if (sec.previousElementSibling !== ancora) ancora.after(sec);
-  }
-  document.body.classList.toggle(cfg.classe, naGuia);
+  Object.keys(COLUNAS).forEach(col => {
+    const vazia = !listas[col].length;
+    document.getElementById(COLUNAS[col].el).hidden = vazia;
+    document.getElementById(COLUNAS[col].divisor).hidden = vazia;
+  });
+  document.getElementById('painelVazio').hidden = listas.painel.length > 0;
 
-  // Com os dois na guia, mantém a ordem natural: 3 em cima, 4 embaixo
-  const m3 = document.getElementById(MODULOS.m3.sec), m4 = document.getElementById(MODULOS.m4.sec);
-  if (m3.parentElement === guia && m4.parentElement === guia) guia.insertBefore(m3, m4);
+  // Marcas usadas pelos controles de altura do painel (divisória 3<->4 e puxadores)
+  document.body.classList.toggle('modulo3-na-guia', largo && arranjo.local.m3 !== 'painel');
+  document.body.classList.toggle('modulo4-na-guia', largo && arranjo.local.m4 !== 'painel');
 
-  // A guia só existe enquanto tiver algum módulo dentro — e a divisória dela
-  // aparece e some junto
-  guia.hidden = !guia.querySelector('.modulo-movel');
-  document.getElementById('divisorGuia').hidden = guia.hidden;
-  repartirAlturaDaGuia();
-  atualizarGuiaVazia();
+  // A coluna que apareceu pode não caber com a largura guardada
+  Object.keys(COLUNAS).forEach(col => aplicarLarguraGuia(col, larguraGuiaGuardada(col), false));
+  atualizarModulosNasColunas();
+  atualizarBotaoArranjo();
   // A largura do mapa mudou: sem isto o Leaflet segue desenhando no tamanho antigo
   if (map) map.invalidateSize({ animate:false });
 }
 
-/* Reparte a altura da coluna entre os dois módulos (v4.9).
-   Com um módulo só, ele ocupa tudo (regra do CSS). Com os dois, o de cima
-   recebe uma altura fixa e o de baixo fica com o resto — é o que permite a
-   divisória mover a fronteira, igual à do painel.
-
-   ATENÇÃO: o estilo inline precisa ser limpo quando o módulo sai da guia. O
-   painel também é um flex em coluna, e um flex:0 0 300px esquecido no elemento
-   iria junto com ele e prenderia a altura lá. */
-const CHAVE_ALTURA_TOPO_GUIA = 'hg_altura_guia_topo';
-const ALTURA_TOPO_GUIA_PADRAO = 0;   // 0 = meio a meio, deixando o CSS decidir
-const ALTURA_MODULO_GUIA_MIN = 120;
-
-function alturaTopoGuiaGuardada(){
-  try{ const g = parseInt(localStorage.getItem(CHAVE_ALTURA_TOPO_GUIA), 10); if (g > 0) return g; }catch(e){}
-  return ALTURA_TOPO_GUIA_PADRAO;
+/* Módulo escondido (4 sem paradas, 5 e Roteiro sem rota) numa coluna vira um
+   aviso com o título e a alça — senão ficaria impossível ver onde ele está ou
+   tirá-lo de lá. No painel continua simplesmente escondido, como sempre foi.
+   Também remonta as divisórias de altura e aplica os pesos. */
+function atualizarModulosNasColunas(){
+  ORDEM_MODULOS.forEach(k => {
+    const vaga = vagaDoModulo(k);
+    vaga.classList.toggle('esperando', getComputedStyle(corpoDoModulo(k)).display === 'none');
+  });
+  Object.keys(COLUNAS).forEach(col => {
+    const coluna = document.getElementById(COLUNAS[col].el);
+    coluna.querySelectorAll(':scope > .divisor-guia').forEach(d => d.remove());
+    const elasticos = elasticosVisiveis(coluna);
+    // Módulo sem peso numa coluna em que os outros têm (ex.: o 4 que acabou de
+    // ganhar paradas) entra com a média, e não com 1 ao lado de 400
+    const definidos = elasticos.map(v => arranjo.pesos[v.dataset.modulo]).filter(p => p > 0);
+    const media = definidos.length ? definidos.reduce((a, b) => a + b, 0) / definidos.length : 1;
+    elasticos.forEach((vaga, i) => {
+      vaga.style.setProperty('--peso', String(arranjo.pesos[vaga.dataset.modulo] || media));
+      if (i === 0) return;
+      const div = document.createElement('div');
+      div.className = 'divisor-guia';
+      div.setAttribute('role', 'separator');
+      div.setAttribute('aria-orientation', 'horizontal');
+      div.title = 'Arraste para dividir a altura entre os módulos (duplo clique divide igual)';
+      div.dataset.acima = elasticos[i - 1].dataset.modulo;
+      div.dataset.abaixo = vaga.dataset.modulo;
+      coluna.insertBefore(div, vaga);
+    });
+  });
+}
+function elasticosVisiveis(coluna){
+  return [...coluna.children].filter(el =>
+    el.classList.contains('modulo-movel') && MODULOS[el.dataset.modulo].elastico && !el.classList.contains('esperando'));
 }
 
-function repartirAlturaDaGuia(){
-  const guia = document.getElementById('guiaLateral');
-  const divisor = document.getElementById('divisorGuiaModulos');
-  const m3 = document.getElementById(MODULOS.m3.sec), m4 = document.getElementById(MODULOS.m4.sec);
-  const ambos = m3.parentElement === guia && m4.parentElement === guia;
+// Pesos só valem dentro de uma coluna. Quando um módulo entra ou sai, a coluna
+// volta a dividir igual — misturar pesos de arranjos diferentes dá proporções
+// sem sentido.
+function moverModulo(chave, local){
+  const antes = { ...arranjo.local };
+  arranjo.local[chave] = local;
+  normalizarLocais(arranjo.local);
+  const mudou = new Set();
+  ORDEM_MODULOS.forEach(k => { if (antes[k] !== arranjo.local[k]){ mudou.add(antes[k]); mudou.add(arranjo.local[k]); } });
+  ORDEM_MODULOS.forEach(k => { if (mudou.has(arranjo.local[k]) || mudou.has(antes[k])) delete arranjo.pesos[k]; });
+  aplicarArranjo();
+}
 
-  // Fora da guia, nenhum resquício de altura
-  [m3, m4].forEach(el => { if (el.parentElement !== guia) el.style.flex = ''; });
+/* ---- Salvar / voltar ao normal ---- */
+const CHAVE_ARRANJO = 'hg_arranjo_modulos';
 
-  if (!ambos){
-    divisor.hidden = true;
-    [m3, m4].forEach(el => { if (el.parentElement === guia) el.style.flex = ''; });
-    return;
+// Forma comparável do arranjo: pesos só de módulos nas colunas, arredondados
+function descreverArranjo(a){
+  const local = {}, pesos = {};
+  ORDEM_MODULOS.forEach(k => {
+    local[k] = a.local[k] || 'painel';
+    if (local[k] !== 'painel' && a.pesos[k] > 0) pesos[k] = Math.round(a.pesos[k]);
+  });
+  return { local, pesos };
+}
+function arranjoGuardado(){
+  try{
+    const g = JSON.parse(localStorage.getItem(CHAVE_ARRANJO));
+    if (!g || typeof g.local !== 'object') return null;
+    const a = arranjoNormal();
+    ORDEM_MODULOS.forEach(k => {
+      if (['painel', 'g1', 'g2'].includes(g.local[k])) a.local[k] = g.local[k];
+      if (g.pesos && g.pesos[k] > 0) a.pesos[k] = g.pesos[k];
+    });
+    normalizarLocais(a.local);
+    return a;
+  }catch(e){ return null; }
+}
+function atualizarBotaoArranjo(){
+  const btn = document.getElementById('salvarArranjoBtn');
+  if (!btn || btn.dataset.confirmando) return;
+  const referencia = arranjoGuardado() || arranjoNormal();
+  const diferente = JSON.stringify(descreverArranjo(arranjo)) !== JSON.stringify(descreverArranjo(referencia));
+  btn.classList.toggle('pendente', diferente);
+  btn.title = diferente
+    ? 'Salvar arranjo — o arranjo na tela ainda não foi salvo. Salvar faz o site abrir assim.'
+    : 'Salvar arranjo — o site passa a abrir com os módulos nas colunas em que estão agora';
+}
+
+/* ---- Arrastar um módulo pela alça até outra coluna ---- */
+
+// Onde o módulo cairia com o ponteiro neste X. Devolve null quando soltar ali
+// não mudaria nada.
+function destinoDoModulo(chave, x){
+  const colunas = [['painel', document.querySelector('.console')],
+                   ['g1', document.getElementById('guiaLateral')],
+                   ['g2', document.getElementById('guiaExtra')]]
+    .filter(([, el]) => !el.hidden);
+  let local = null, rect = null;
+  for (const [id, el] of colunas){
+    const r = el.getBoundingClientRect();
+    // A divisória à esquerda conta como parte da coluna
+    if (x >= r.left - 7 && x <= r.right){ local = id; rect = r; break; }
   }
-  guia.insertBefore(divisor, m4);   // sempre entre os dois
-  divisor.hidden = false;
-  const h = alturaTopoGuiaGuardada();
-  if (h > 0){
-    m3.style.flex = `0 0 ${h}px`;
-    m4.style.flex = '1 1 auto';
-  }else{
-    m3.style.flex = '';   // meio a meio
-    m4.style.flex = '';
+  if (!local){
+    // Sobre o mapa: abre a próxima coluna, se ainda houver uma
+    const maisEsquerda = colunas[colunas.length - 1][1].getBoundingClientRect();
+    if (x >= maisEsquerda.left - 7) return null;
+    const nova = document.getElementById('guiaLateral').hidden ? 'g1'
+               : document.getElementById('guiaExtra').hidden ? 'g2' : null;
+    if (!nova) return null;
+    const largura = larguraGuiaGuardada(nova);
+    const main = document.querySelector('main').getBoundingClientRect();
+    local = nova;
+    rect = { left: maisEsquerda.left - 7 - largura, top: main.top, width: largura, height: main.height };
+    rect.nova = true;
   }
+  const simulado = normalizarLocais({ ...arranjo.local, [chave]: local });
+  if (JSON.stringify(simulado) === JSON.stringify(arranjo.local)) return null;
+  return { local, rect };
 }
 
-function aplicarAlturaTopoGuia(px, salvar){
-  const guia = document.getElementById('guiaLateral');
-  const m3 = document.getElementById(MODULOS.m3.sec), m4 = document.getElementById(MODULOS.m4.sec);
-  const disponivel = guia.getBoundingClientRect().height - 16;   // menos a divisória
-  const teto = Math.max(ALTURA_MODULO_GUIA_MIN, disponivel - ALTURA_MODULO_GUIA_MIN);
-  const v = Math.round(Math.min(Math.max(px, ALTURA_MODULO_GUIA_MIN), teto));
-  m3.style.flex = `0 0 ${v}px`;
-  m4.style.flex = '1 1 auto';
-  if (salvar){ try{ localStorage.setItem(CHAVE_ALTURA_TOPO_GUIA, String(v)); }catch(e){ /* segue sem persistir */ } }
-  return v;
+function iniciarMoverModulo(ev, chave, alca){
+  if (ev.button !== 0 || !telaComportaGuia()) return;
+  ev.preventDefault();
+  try{ alca.setPointerCapture(ev.pointerId); }catch(e){}
+
+  const vaga = vagaDoModulo(chave);
+  const inicioX = ev.clientX, inicioY = ev.clientY;
+  let ativo = false, destino = null, fantasma = null, alvo = null;
+
+  const comecar = () => {
+    ativo = true;
+    document.body.classList.add('movendo-modulo');
+    vaga.classList.add('movendo');
+    fantasma = document.createElement('div');
+    fantasma.className = 'modulo-fantasma';
+    fantasma.textContent = MODULOS[chave].titulo;
+    alvo = document.createElement('div');
+    alvo.className = 'alvo-coluna';
+    alvo.hidden = true;
+    document.body.append(fantasma, alvo);
+  };
+  const mover = e => {
+    // Só vira arraste depois de andar um pouco: um clique ou duplo clique na
+    // alça não deve acender nada
+    if (!ativo){
+      if (Math.hypot(e.clientX - inicioX, e.clientY - inicioY) < 6) return;
+      comecar();
+    }
+    fantasma.style.left = (e.clientX + 14) + 'px';
+    fantasma.style.top = (e.clientY + 12) + 'px';
+    destino = destinoDoModulo(chave, e.clientX);
+    alvo.hidden = !destino;
+    if (destino){
+      const r = destino.rect;
+      Object.assign(alvo.style, { left:r.left + 'px', top:r.top + 'px', width:r.width + 'px', height:r.height + 'px' });
+      alvo.textContent = destino.rect.nova ? 'nova coluna' : '';
+    }
+  };
+  const terminar = aplicar => {
+    alca.removeEventListener('pointermove', mover);
+    alca.removeEventListener('pointerup', soltar);
+    alca.removeEventListener('pointercancel', cancelar);
+    document.removeEventListener('keydown', teclar);
+    if (!ativo) return;
+    document.body.classList.remove('movendo-modulo');
+    vaga.classList.remove('movendo');
+    fantasma.remove();
+    alvo.remove();
+    if (aplicar && destino) moverModulo(chave, destino.local);
+  };
+  const soltar = () => terminar(true);
+  const cancelar = () => terminar(false);
+  const teclar = e => { if (e.key === 'Escape') cancelar(); };
+  alca.addEventListener('pointermove', mover);
+  alca.addEventListener('pointerup', soltar);
+  alca.addEventListener('pointercancel', cancelar);
+  document.addEventListener('keydown', teclar);
 }
 
-// Sem paradas o módulo 4 se esconde sozinho (renderStopsList). Na guia isso
-// deixaria uma coluna sem explicação — daí a linha de aviso.
-function atualizarGuiaVazia(){
-  const aviso = document.getElementById('guiaVazia');
-  if (!aviso) return;
-  aviso.hidden = !(moduloEstaNaGuia('m4') && !stops.length);
+// Duplo clique: vai para a coluna seguinte (painel → 2 → 3 → painel), pulando
+// o que não mudaria nada — ex.: o único módulo da coluna 2 não tem como ir
+// sozinho para a 3.
+function avancarModulo(chave){
+  if (!telaComportaGuia()) return;
+  const ciclo = ['painel', 'g1', 'g2'];
+  const atual = ciclo.indexOf(arranjo.local[chave]);
+  for (let passo = 1; passo < ciclo.length; passo++){
+    const local = ciclo[(atual + passo) % ciclo.length];
+    const simulado = normalizarLocais({ ...arranjo.local, [chave]: local });
+    if (JSON.stringify(simulado) !== JSON.stringify(arranjo.local)){ moverModulo(chave, local); return; }
+  }
 }
 
 if (!modoCampoAtivo){
-  Object.keys(MODULOS).forEach(chave => {
-    const cfg = MODULOS[chave];
-    const alca = document.getElementById(cfg.alca);
-    const sec = document.getElementById(cfg.sec);
+  // Aviso de "aparece depois" de cada módulo que pode estar escondido, com a
+  // própria alça, e a marca de elástico
+  ORDEM_MODULOS.forEach(k => {
+    const cfg = MODULOS[k];
+    const vaga = vagaDoModulo(k);
+    vaga.classList.toggle('elastico', !!cfg.elastico);
+    vaga.querySelectorAll('[data-alca]').forEach(a => a.title = 'Arraste para outra coluna (duplo clique leva para a coluna seguinte)');
+    if (!cfg.espera) return;
+    const aviso = document.createElement('div');
+    aviso.className = 'modulo-espera';
+    aviso.innerHTML = `<div class="field-label"><span style="display:flex;align-items:center;">
+        <span class="modulo-alca" data-alca title="Arraste para outra coluna (duplo clique leva para a coluna seguinte)"></span>${escaparHtml(cfg.titulo)}</span></div>
+      <div class="guia-vazia">${escaparHtml(cfg.espera)}</div>`;
+    vaga.prepend(aviso);
 
-    // Duplo clique: caminho rápido, sem arrastar
-    alca.addEventListener('dblclick', () => {
-      if (!telaComportaGuia()) return;
-      colocarModulo(chave, moduloEstaNaGuia(chave) ? 'painel' : 'guia');
-    });
+    // O módulo aparece e some por vários caminhos (hidden, style, classe .show).
+    // Em vez de avisar em cada um, observa o próprio elemento. O observador já
+    // junta as mudanças seguidas numa chamada só; e atualizarModulosNasColunas
+    // não mexe nesses atributos do corpo, então não há laço.
+    new MutationObserver(atualizarModulosNasColunas)
+      .observe(corpoDoModulo(k), { attributes:true, attributeFilter:['hidden', 'style', 'class'] });
+  });
 
-    alca.addEventListener('pointerdown', ev => {
-      if (ev.button !== 0 || !telaComportaGuia()) return;
+  // Uma escuta só para todas as alças, inclusive as dos avisos
+  document.querySelector('main').addEventListener('pointerdown', ev => {
+    const alca = ev.target.closest('[data-alca]');
+    if (!alca) return;
+    iniciarMoverModulo(ev, alca.closest('.modulo-movel').dataset.modulo, alca);
+  });
+  document.querySelector('main').addEventListener('dblclick', ev => {
+    const alca = ev.target.closest('[data-alca]');
+    if (alca) avancarModulo(alca.closest('.modulo-movel').dataset.modulo);
+  });
+
+  // Divisórias de altura entre módulos da mesma coluna (criadas em
+  // atualizarModulosNasColunas). O de cima cresce e o de baixo encolhe na mesma
+  // medida; os pesos passam a ser as alturas em pixels, o que mantém a
+  // proporção quando a janela muda de tamanho.
+  const ALTURA_MODULO_GUIA_MIN = 120;
+  document.querySelector('main').addEventListener('pointerdown', ev => {
+    const div = ev.target.closest('.divisor-guia');
+    if (!div || ev.button !== 0) return;
+    ev.preventDefault();
+    try{ div.setPointerCapture(ev.pointerId); }catch(e){}
+    document.body.classList.add('altura-arrastando');
+
+    const coluna = div.parentElement;
+    elasticosVisiveis(coluna).forEach(v => arranjo.pesos[v.dataset.modulo] = v.getBoundingClientRect().height);
+    const acima = div.dataset.acima, abaixo = div.dataset.abaixo;
+    const hAcima = arranjo.pesos[acima], hAbaixo = arranjo.pesos[abaixo];
+    const total = hAcima + hAbaixo;
+    const inicioY = ev.clientY;
+
+    const mover = e => {
+      const a = Math.min(Math.max(hAcima + (e.clientY - inicioY), ALTURA_MODULO_GUIA_MIN), total - ALTURA_MODULO_GUIA_MIN);
+      arranjo.pesos[acima] = a;
+      arranjo.pesos[abaixo] = total - a;
+      vagaDoModulo(acima).style.setProperty('--peso', String(a));
+      vagaDoModulo(abaixo).style.setProperty('--peso', String(total - a));
+    };
+    const soltar = () => {
+      div.removeEventListener('pointermove', mover);
+      div.removeEventListener('pointerup', soltar);
+      div.removeEventListener('pointercancel', soltar);
+      document.body.classList.remove('altura-arrastando');
+      atualizarBotaoArranjo();
+    };
+    div.addEventListener('pointermove', mover);
+    div.addEventListener('pointerup', soltar);
+    div.addEventListener('pointercancel', soltar);
+  });
+  // Duplo clique numa divisória: a coluna volta a dividir igual
+  document.querySelector('main').addEventListener('dblclick', ev => {
+    const div = ev.target.closest('.divisor-guia');
+    if (!div) return;
+    [...div.parentElement.children].forEach(el => { if (el.dataset.modulo) delete arranjo.pesos[el.dataset.modulo]; });
+    atualizarModulosNasColunas();
+    atualizarBotaoArranjo();
+  });
+
+  // Largura de cada coluna (v4.8): mesma mecânica da divisória do painel
+  Object.keys(COLUNAS).forEach(col => {
+    const cfg = COLUNAS[col];
+    const divisor = document.getElementById(cfg.divisor);
+    const coluna = document.getElementById(cfg.el);
+
+    divisor.addEventListener('pointerdown', ev => {
+      if (ev.button !== 0) return;
       ev.preventDefault();
-      try{ alca.setPointerCapture(ev.pointerId); }catch(e){}
+      try{ divisor.setPointerCapture(ev.pointerId); }catch(e){}
+      document.body.classList.add('redimensionando');
 
-      const naGuia = moduloEstaNaGuia(chave);
-      const inicioX = ev.clientX;
-      const LIMITE = 80;   // quanto precisa andar para a troca valer
-
-      document.body.classList.add('movendo-modulo');
-      sec.classList.add('movendo');
-      // Faixa acesa no destino: esquerda (virar guia) ou direita (voltar ao painel)
-      const alvo = document.createElement('div');
-      alvo.className = 'alvo-modulo ' + (naGuia ? 'direita' : 'esquerda');
-      document.querySelector('main').appendChild(alvo);
-
-      let dx = 0;
       const mover = e => {
-        dx = e.clientX - inicioX;
-        // Só deixa arrastar para o lado que faz sentido
-        const util = naGuia ? Math.max(0, dx) : Math.min(0, dx);
-        sec.style.transform = `translateX(${util}px)`;
-        alvo.classList.toggle('aceso', Math.abs(util) >= LIMITE);
+        // A coluna fica à direita da divisória: a largura vai do cursor até a
+        // borda direita dela
+        aplicarLarguraGuia(col, coluna.getBoundingClientRect().right - e.clientX, false);
+        if (map) map.invalidateSize({ animate:false });
       };
       const soltar = () => {
-        alca.removeEventListener('pointermove', mover);
-        alca.removeEventListener('pointerup', soltar);
-        alca.removeEventListener('pointercancel', soltar);
-        document.body.classList.remove('movendo-modulo');
-        sec.classList.remove('movendo');
-        sec.style.transform = '';
-        alvo.remove();
-        const trocou = naGuia ? dx >= LIMITE : dx <= -LIMITE;
-        if (trocou) colocarModulo(chave, naGuia ? 'painel' : 'guia');
+        divisor.removeEventListener('pointermove', mover);
+        divisor.removeEventListener('pointerup', soltar);
+        divisor.removeEventListener('pointercancel', soltar);
+        document.body.classList.remove('redimensionando');
+        aplicarLarguraGuia(col, coluna.getBoundingClientRect().width, true);
+        if (map) map.invalidateSize({ animate:false });
       };
-      alca.addEventListener('pointermove', mover);
-      alca.addEventListener('pointerup', soltar);
-      alca.addEventListener('pointercancel', soltar);
+      divisor.addEventListener('pointermove', mover);
+      divisor.addEventListener('pointerup', soltar);
+      divisor.addEventListener('pointercancel', soltar);
     });
+
+    divisor.addEventListener('dblclick', () => {
+      aplicarLarguraGuia(col, LARGURA_GUIA_PADRAO, true);
+      if (map) map.invalidateSize({ animate:false });
+    });
+  });
+
+  // Botões do cabeçalho
+  const salvarBtn = document.getElementById('salvarArranjoBtn');
+  salvarBtn.addEventListener('click', () => {
+    try{ localStorage.setItem(CHAVE_ARRANJO, JSON.stringify(descreverArranjo(arranjo))); }
+    catch(e){ alert('Não foi possível salvar o arranjo neste navegador.'); return; }
+    salvarBtn.classList.remove('pendente');
+    salvarBtn.dataset.confirmando = '1';
+    salvarBtn.classList.add('salvo');
+    setTimeout(() => {
+      delete salvarBtn.dataset.confirmando;
+      salvarBtn.classList.remove('salvo');
+      atualizarBotaoArranjo();
+    }, 1800);
+  });
+  document.getElementById('arranjoNormalBtn').addEventListener('click', () => {
+    if (arranjoGuardado() &&
+        !confirm('Voltar ao arranjo normal?\n\nTodos os módulos voltam para o painel e o arranjo salvo é apagado — o site passa a abrir com tudo no painel.')) return;
+    try{ localStorage.removeItem(CHAVE_ARRANJO); }catch(e){}
+    arranjo = arranjoNormal();
+    aplicarArranjo();
   });
 
   // Janela estreita demais: os módulos voltam para o painel. Alargando de novo
-  // eles retornam, porque a escolha da sessão continua em memória.
-  window.addEventListener('resize', () => {
-    Object.keys(MODULOS).forEach(chave => colocarModulo(chave, localDoModulo[chave]));
-    aplicarLarguraGuia(larguraGuiaGuardada(), false);
-  });
+  // eles retornam, porque o arranjo continua em memória.
+  window.addEventListener('resize', aplicarArranjo);
 
-  /* Largura da guia (v4.8), a pedido do usuário: a coluna também precisa poder
-     ser esticada para o lado. Mesma mecânica da divisória do painel; a largura
-     é guardada no navegador — diferente do LUGAR do módulo, que é escolha do
-     momento e não sobrevive a recarregar. */
-  const divisorGuia = document.getElementById('divisorGuia');
-
-  divisorGuia.addEventListener('pointerdown', ev => {
-    if (ev.button !== 0) return;
-    ev.preventDefault();
-    try{ divisorGuia.setPointerCapture(ev.pointerId); }catch(e){}
-    document.body.classList.add('redimensionando');
-
-    const mover = e => {
-      // A guia fica à esquerda do painel: a largura é do cursor até a borda
-      // direita dela.
-      const direita = document.getElementById('guiaLateral').getBoundingClientRect().right;
-      aplicarLarguraGuia(direita - e.clientX, false);
-      if (map) map.invalidateSize({ animate:false });
-    };
-    const soltar = () => {
-      divisorGuia.removeEventListener('pointermove', mover);
-      divisorGuia.removeEventListener('pointerup', soltar);
-      divisorGuia.removeEventListener('pointercancel', soltar);
-      document.body.classList.remove('redimensionando');
-      aplicarLarguraGuia(document.getElementById('guiaLateral').getBoundingClientRect().width, true);
-      if (map) map.invalidateSize({ animate:false });
-    };
-    divisorGuia.addEventListener('pointermove', mover);
-    divisorGuia.addEventListener('pointerup', soltar);
-    divisorGuia.addEventListener('pointercancel', soltar);
-  });
-
-  divisorGuia.addEventListener('dblclick', () => {
-    aplicarLarguraGuia(LARGURA_GUIA_PADRAO, true);
-    if (map) map.invalidateSize({ animate:false });
-  });
-
-  aplicarLarguraGuia(larguraGuiaGuardada(), false);
-
-  /* Divisória entre os dois módulos da guia (v4.9), a pedido do usuário: com os
-     dois na coluna, poder dar mais altura a um deles. Mesma ideia da divisória
-     3<->4 do painel — o de cima recebe uma altura e o de baixo fica com o
-     resto —, e o duplo clique volta ao meio a meio. */
-  const divisorGuiaMods = document.getElementById('divisorGuiaModulos');
-
-  divisorGuiaMods.addEventListener('pointerdown', ev => {
-    if (ev.button !== 0) return;
-    ev.preventDefault();
-    try{ divisorGuiaMods.setPointerCapture(ev.pointerId); }catch(e){}
-    document.body.classList.add('altura-arrastando');
-
-    const topo = document.getElementById(MODULOS.m3.sec);
-    const inicioY = ev.clientY;
-    const alturaInicial = topo.getBoundingClientRect().height;
-
-    const mover = e => aplicarAlturaTopoGuia(alturaInicial + (e.clientY - inicioY), false);
-    const soltar = () => {
-      divisorGuiaMods.removeEventListener('pointermove', mover);
-      divisorGuiaMods.removeEventListener('pointerup', soltar);
-      divisorGuiaMods.removeEventListener('pointercancel', soltar);
-      document.body.classList.remove('altura-arrastando');
-      aplicarAlturaTopoGuia(topo.getBoundingClientRect().height, true);
-    };
-    divisorGuiaMods.addEventListener('pointermove', mover);
-    divisorGuiaMods.addEventListener('pointerup', soltar);
-    divisorGuiaMods.addEventListener('pointercancel', soltar);
-  });
-
-  // Duplo clique: volta ao meio a meio (sem altura fixa, o CSS divide igual)
-  divisorGuiaMods.addEventListener('dblclick', () => {
-    try{ localStorage.removeItem(CHAVE_ALTURA_TOPO_GUIA); }catch(e){}
-    repartirAlturaDaGuia();
-  });
+  arranjo = arranjoGuardado() || arranjoNormal();
+  aplicarArranjo();
 }
 
 /* ---------------- Arrastar para reordenar (v3.8) ----------------

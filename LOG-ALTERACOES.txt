@@ -3913,3 +3913,104 @@ TESTES (janela 1920, três paradas)
   continua funcionando na coluna estreita.
 
 VERSÃO: fecha a v5.6.
+
+--------------------------------------------------------
+[14/09/2026] v5.7 — Terceira coluna e todos os módulos móveis
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "A possibilidade de aba auxiliar realmente foi muito boa, tão boa que
+  acredito que uma terceira coluna pode ser melhor ainda."
+  Nas perguntas de escopo: a coluna nova serve para levar outros módulos
+  para fora do painel; todos os módulos devem ser customizáveis; e, em vez
+  de o arranjo ser lembrado sozinho, um botão para salvar e outro para
+  voltar ao normal.
+
+O QUE FOI FEITO
+  1. Segunda coluna auxiliar. Ordem na tela: mapa · coluna 3 · coluna 2 ·
+     painel. Cada coluna tem a sua divisória de largura (a nova é guardada
+     em hg_largura_guia2). A coluna 3 só existe junto com a 2: se a 2
+     esvazia, o conteúdo da 3 passa para ela.
+  2. Todos os blocos do painel viraram módulos com alça: 1 Clientes,
+     2 Origem, 3 Selecionar paradas, 4 Ordem da viagem, Rota (botões
+     Traçar/Otimizar e a mensagem de status — ganhou o título "Rota" para
+     ter onde pegar), 5 Enviar para o campo e Roteiro.
+  3. Arrastar pela alça até a coluna desejada: a coluna de destino fica
+     contornada em âmbar e uma etiqueta com o nome do módulo acompanha o
+     ponteiro. Soltar sobre o mapa abre a próxima coluna ("nova coluna").
+     Esc cancela. Duplo clique na alça leva para a coluna seguinte
+     (painel → 2 → 3 → painel).
+  4. Dentro de cada coluna os módulos ficam sempre na ordem natural. O que
+     se escolhe é a coluna, não a posição dentro dela.
+  5. Altura nas colunas: os módulos com lista (3, 4 e Roteiro) dividem a
+     sobra da coluna; os demais ocupam só o que precisam. Entre dois
+     módulos com lista na mesma coluna aparece uma divisória (generaliza a
+     da v4.9). Duplo clique divide igual.
+  6. Módulo escondido numa coluna (4 sem paradas, 5 e Roteiro sem rota)
+     aparece como título + "aparece depois…", com a própria alça. No painel
+     continua simplesmente escondido, como antes.
+  7. Cabeçalho: "salvar arranjo" (acende em âmbar com • quando o arranjo da
+     tela difere do que abre o site) e "voltar ao normal" (tudo para o
+     painel e apaga o salvo; pede confirmação se havia arranjo salvo).
+     Chave nova: hg_arranjo_modulos. Resquício removido: hg_altura_guia_topo.
+  8. Largura máxima do painel passou a descontar as colunas abertas.
+
+COMO FOI FEITO
+  Cada módulo é uma <section class="modulo-movel"> com um único filho
+  .modulo-corpo (o conteúdo de sempre). No painel a section é
+  display:contents, que não gera caixa: o painel fica idêntico. Nas colunas
+  ela vira a caixa que recebe altura (flex com --peso).
+  O módulo 4 passou a se esconder por hidden em vez de style.display,
+  porque o display:block inline venceria o display:flex das colunas.
+  Quem aparece e some é observado por MutationObserver, em vez de avisar
+  em cada ponto do código que mostra/esconde os módulos.
+
+ERRO NO MEIO DO CAMINHO
+  A primeira versão do observador esperava um requestAnimationFrame. Com a
+  aba em segundo plano o navegador pausa esse relógio, e o módulo 4 ficou
+  marcado como "esperando" com 5 paradas na lista. O observador já junta as
+  mudanças sozinho: passou a chamar a função direto.
+
+TESTES (janela 1920x1080, base BASETESTEGRUPO)
+  - Painel no arranjo normal comparado com a v5.6, elemento por elemento
+    (dropzone, origem, busca, checklist, lista de paradas): mesma posição,
+    altura e largura. Única diferença: o título "Rota", 22px acima dos
+    botões. O espaço entre botões e status foi devolvido (14px).
+  - 4 → coluna 2 e 3 → nova coluna 3: mapa 839, colunas 360 + 360, painel 340.
+  - 5 e Roteiro na coluna 2 com rota: 4 e Roteiro dividiram 440/440, com a
+    divisória entre eles. Desfazendo a rota, os dois viraram aviso (37px) e
+    o 4 ficou com a coluna. Divisória arrastada 200px: 240/640.
+  - Salvar → recarregar: arranjo e alturas voltaram iguais, sem •.
+  - Duplo clique em sequência, incluindo a coluna 2 esvaziando (conteúdo da
+    3 desceu para ela) — todos os passos conferidos.
+  - Soltar sobre o mapa com as duas colunas abertas: nada acende, nada muda.
+    Esc limpa contorno e etiqueta.
+  - Tela de 700px: tudo no painel, botões do arranjo escondidos; voltando a
+    1920 o arranjo retorna.
+  - "Voltar ao normal": tudo no painel, colunas escondidas, salvo apagado.
+
+VERSÃO: fecha a v5.7.
+
+--------------------------------------------------------
+[14/09/2026] Leve 1/5 desde a v5.7 — Botões do arranjo viram ícones
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Trocar "SALVAR ARRANJO" pelo ícone clássico de disquete (como no Word e
+  no Excel) e "VOLTAR AO NORMAL" por uma lixeira. As funções continuam as
+  mesmas.
+
+O QUE FOI FEITO
+  - Dois botões de ícone (32x32) no cabeçalho, desenhados em SVG com a cor
+    do texto — acompanham o tema. Emoji (💾 🗑) foi descartado: muda de
+    desenho e de cor conforme o sistema.
+  - O nome de cada botão continua no title (dica ao passar o mouse) e no
+    aria-label (leitor de tela).
+  - Estados preservados: disquete âmbar com bolinha no canto quando o
+    arranjo na tela não está salvo; vira ✓ teal por 1,8 s ao salvar. A
+    lixeira fica vermelha ao passar o mouse.
+
+TESTES
+  Mover módulo -> disquete pendente; clicar -> salvo gravado e ✓; 2 s
+  depois volta ao disquete sem bolinha. Lixeira -> tudo no painel e salvo
+  apagado. Ícones conferidos ampliados nos três estados.
