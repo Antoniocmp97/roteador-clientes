@@ -4104,3 +4104,153 @@ TESTES (1920x1080)
     marca de pendente.
 
 VERSÃO: fecha a v5.9.
+
+--------------------------------------------------------
+[14/09/2026] v6.0 — Posição livre dos módulos
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Poder trocar a ordem dos módulos, como já se troca a ordem das paradas —
+  "por exemplo, conseguir jogar o módulo 4 para a posição do módulo 1".
+
+O QUE FOI FEITO
+  1. Ao arrastar pela alça escolhe-se a coluna E a posição: o módulo entra
+     acima do primeiro módulo cuja metade fica abaixo do ponteiro, ou no fim
+     da coluna. Vale no painel e nas duas colunas.
+  2. Pré-visualização: continua o contorno da coluna e entra uma linha âmbar
+     no ponto em que o módulo vai entrar (mesmo âmbar do indicador da lista
+     de paradas). Soltar no mesmo lugar não acende nada. Esc cancela.
+  3. Rolagem automática: com o ponteiro a 50px do topo ou do fim de uma
+     coluna que rola, ela anda sozinha.
+  4. O arranjo passou a guardar a ordem (campo "ordem"), junto de "local".
+     A ordem é mantida sempre agrupada por coluna, para que dois arranjos
+     iguais na tela tenham o mesmo JSON (o disquete compara assim).
+     Arranjo salvo antes da v6.0 abre na ordem da numeração.
+  5. Duplo clique continua só trocando de coluna, e põe o módulo na posição
+     da numeração dentro dela.
+  6. Divisória 3<->4 do painel: aparece só com o 4 logo abaixo do 3. Com o 4
+     acima, com outro módulo entre os dois ou com um deles numa coluna, some
+     e entra o puxador do 3 (classe sem-divisoria-34, que substitui
+     modulo3-na-guia e modulo4-na-guia).
+  A lixeira volta à ordem 1, 2, 3, 4, Rota, 5, Roteiro.
+
+TESTES (1920x1080)
+  - 4 arrastado para cima do 1 no painel: ordem 4,1,2,3,Rota,5,Roteiro;
+    linha desenhada em 73 (esperado 74); divisória 3<->4 some.
+  - Arraste segurado sobre o espaço entre 1 e 2 (print): contorno no painel,
+    linha entre Clientes e Origem, etiqueta "ROTA". Esc: nada mudou, nenhum
+    resto na tela.
+  - 4 de volta acima da Rota: ordem natural e divisória 3<->4 visível.
+  - Coluna 2 com 3 e Rota: Rota acima do 3; soltar a Rota no próprio lugar
+    não acende nada; 1 do painel para o meio da coluna (Rota,1,3).
+  - Duplo clique no 2: foi para a coluna 2, na posição da numeração.
+  - Salvar, recarregar: mesma ordem nas duas colunas, disquete sem pendência.
+  - Arranjo no formato da v5.9: lido com a ordem da numeração.
+  - Painel rolado até o fim (489px): ponteiro no topo rolou até 0 e a Rota
+    entrou no topo.
+  - Lixeira: tudo no painel, na ordem natural, salvo apagado.
+
+VERSÃO: fecha a v6.0.
+
+--------------------------------------------------------
+[14/09/2026] v6.1 — Vão de encaixe ao mover módulos
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Ao tentar alterar a posição, faça uma pré-visualização de encaixe, mas
+  sendo proporcional à alteração." Na pergunta de escopo, escolheu "abrir
+  espaço real": os módulos se afastam e abrem um vão do tamanho do módulo
+  arrastado.
+
+O QUE FOI FEITO
+  1. Ao começar o arraste, o módulo sai da tela e no lugar dele fica um vão
+     tracejado âmbar, com a altura dele e o nome dele.
+  2. O vão vai para onde o módulo cairia; os módulos do destino se afastam
+     de verdade para abri-lo (animação de abertura de 0,14 s). Substitui a
+     linha âmbar da v6.0. O contorno da coluna continua.
+  3. Sem destino (mesmo lugar, ou sobre o mapa sem coluna nova possível) o
+     vão volta à origem. Sobre o mapa com coluna nova possível: contorno
+     "nova coluna" e vão na origem.
+  4. Módulo muito alto (ex.: ocupando uma coluna) abre no destino um vão de
+     no máximo 60% da altura visível dele, e no mínimo 48px.
+  5. Numa coluna, o vão entra antes da divisória de altura do módulo de
+     baixo, para não separar a divisória do módulo dela.
+  6. Os eventos do arraste passaram a ser escutados na janela, não na alça:
+     com o módulo fora da tela, a alça some junto.
+
+ESTABILIDADE
+  A posição é calculada com o vão aberto na tela. É estável: quando o vão
+  pula para o outro lado de um módulo, o ponteiro cai dentro do vão (que
+  mantém o destino) ou continua na mesma metade do módulo.
+
+TESTES (1920x1080; animação desligada só no teste, porque a aba de teste
+fica em segundo plano e o navegador pausa animações)
+  - Módulo 4 (336px) arrastado: vão de 336px no lugar dele; sobre o 1, o
+    vão foi para o topo e o 1 desceu 350px (vão + espaçamento).
+  - Descendo o painel de 4 em 4 px: 1, 2, 3, origem, fim — uma troca por
+    fronteira. Subindo: mesmas trocas na ordem inversa.
+  - Ponteiro indo e voltando 2px na fronteira do 2, 40 vezes: estabilizou
+    depois da primeira acomodação.
+  - Print no meio do arraste: vão "4 · ORDEM DA VIAGEM" no topo do painel,
+    módulos empurrados para baixo.
+  - Esc: nada mudou, nenhum resto na tela.
+  - 1 (107px) para entre o 3 e o 4 da coluna 2: vão de 107px antes da
+    divisória; ao soltar, ordem 3, 1, divisória, 4.
+  - 3 (408px) para o painel: vão de 408px (limite 609).
+  - Sobre o mapa: contorno "nova coluna" e vão na origem; ao soltar, o 3
+    abriu a coluna 3.
+
+VERSÃO: fecha a v6.1.
+
+--------------------------------------------------------
+[14/09/2026] v6.1.1 — Contorno só ao mudar de coluna
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  O contorno âmbar da coluna deve aparecer só quando o módulo muda de
+  coluna. Dentro da mesma coluna, fica só o vão de encaixe.
+
+O QUE FOI FEITO
+  O contorno some quando o destino é a coluna em que o módulo já está.
+  Continua aparecendo ao ir para outra coluna e sobre o mapa ("nova coluna").
+
+TESTES
+  - 4 sobre o 1 no painel: vão no topo, sem contorno.
+  - O mesmo arraste sobre o mapa: contorno "nova coluna"; de volta ao
+    painel: contorno some.
+  - 1 sobre o 3 dentro da coluna 2: vão, sem contorno. Levado ao painel:
+    contorno no painel e vão antes do 2.
+
+--------------------------------------------------------
+[14/09/2026] Nova regra de versionamento
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "A partir de agora cada alteração leve será acrescentado mais um número
+  na versão, como 6.1.1. A próxima alteração será 6.1.2."
+
+O QUE MUDOU
+  - Formato MAIOR.MENOR.AJUSTE. Cada alteração leve soma 1 no terceiro
+    número, na hora. Mediana/grande sobe o do meio e zera o terceiro.
+  - Acabou o contador de "5 leves fecham uma versão".
+  - O ajuste anterior (contorno só ao mudar de coluna) passou a ser a
+    v6.1.1. Ajustes leves também ganham backup.
+  Registrado na seção 11 do CLAUDE.md e no comentário da constante VERSAO.
+
+--------------------------------------------------------
+[14/09/2026] v6.1.2 — Contorno da coluna sem preenchimento
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  A pré-visualização não deve ficar "totalmente pintada": só a borda
+  externa destacada, mais o vão de encaixe mostrando onde o módulo entra.
+
+O QUE FOI FEITO
+  O contorno âmbar da coluna de destino perdeu o fundo âmbar translúcido
+  (12%) que cobria a coluna inteira. Fica só a borda de 2px. O vão de
+  encaixe não mudou.
+
+TESTES (1920x1080)
+  Módulo 1 arrastado do painel para a coluna 2: contorno visível, fundo
+  transparente (rgba 0,0,0,0), borda âmbar; vão no topo da coluna com o
+  fundo suave de sempre. Selo do cabeçalho: v6.1.2. Esc limpou tudo.

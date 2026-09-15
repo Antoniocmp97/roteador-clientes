@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 14/09/2026 — v5.9 (puxador de altura para módulo sozinho na coluna)
+> **Última atualização:** 14/09/2026 — v6.1.2 (contorno da coluna só com a borda; nova regra de versão MAIOR.MENOR.AJUSTE)
 
 ---
 
@@ -98,8 +98,23 @@ sem dependências instaladas. Abre direto no navegador.
   Enviar para o campo e Roteiro — têm alça no título. Arrastar pela alça até uma
   coluna a contorna em âmbar; soltar sobre o mapa abre a próxima coluna; Esc
   cancela; duplo clique leva à coluna seguinte (painel → 2 → 3 → painel).
-  Regras: dentro da coluna os módulos ficam **sempre na ordem natural** (escolhe-se
-  a coluna, não a posição); a coluna 3 **só existe junto com a 2** — se a 2
+  **Posição livre** (v6.0): soltar entre dois módulos põe ali — vale no painel e
+  nas colunas (ex.: o 4 no topo, acima do 1). Durante o arraste, além do contorno
+  da coluna, o módulo sai da tela e um **vão de encaixe** tracejado do tamanho dele
+  (v6.1, escolha do usuário: "abrir espaço real") vai para onde ele cairia — os
+  módulos em volta se afastam de verdade. O contorno âmbar da coluna só aparece
+  quando o módulo **muda de coluna** (ou abre uma nova); na mesma coluna, só o vão
+  (v6.1.1). O contorno é **só a borda**, sem preenchimento (v6.1.2). Vão limitado a 60% da altura visível do
+  destino; sem destino, volta à origem. Posição calculada com o vão aberto (é
+  estável). Eventos do arraste escutados na **janela**, porque a alça some junto
+  com o módulo. Perto do topo ou do fim de uma coluna que rola, ela rola sozinha. O arranjo guarda `local` (coluna) e
+  `ordem` (lista única, sempre agrupada por coluna — `canonizarArranjo`, para dois
+  arranjos iguais terem o mesmo JSON). Duplo clique só troca de coluna e põe o
+  módulo na posição da numeração. Arranjo salvo antes da v6.0 (sem `ordem`) abre
+  na ordem da numeração. A divisória 3↔4 do painel só aparece com o 4 **logo
+  abaixo** do 3 (classe `sem-divisoria-34` no body); fora disso vale o puxador de
+  cada um.
+  Regras: a coluna 3 **só existe junto com a 2** — se a 2
   esvazia, o conteúdo da 3 passa para ela. Módulo escondido (4 sem paradas, 5 e
   Roteiro sem rota) aparece na coluna como título + "aparece depois…", com alça
   própria; no painel continua só escondido.
@@ -619,6 +634,10 @@ de arquitetura, para retomar quando fizer sentido):
 | 51 | **v5.7** — Terceira coluna; todos os módulos móveis entre painel e duas colunas; salvar arranjo e voltar ao normal |
 | 52 | **v5.8** — Correção: divisória e puxadores dos módulos 3 e 4 travavam durante uma busca de poucos resultados |
 | 53 | **v5.9** — Correção: módulo com lista sozinho numa coluna não tinha controle de altura; puxador e modo de altura fixa |
+| 54 | **v6.0** — Posição livre dos módulos: soltar entre dois módulos, com linha âmbar de destino e rolagem automática |
+| 55 | **v6.1** — Vão de encaixe do tamanho do módulo arrastado, abrindo espaço real no destino (substitui a linha âmbar) |
+| 56 | **v6.1.1** — Contorno da coluna só ao mudar de coluna. Adotada a regra MAIOR.MENOR.AJUSTE |
+| 57 | **v6.1.2** — Contorno da coluna só com a borda, sem preenchimento |
 
 ---
 
@@ -662,15 +681,16 @@ Adotado em 29/08/2026, a pedido do usuário.
 
 ### Como o número é contado
 
-Formato `MAIOR.MENOR`, subindo de 0.1 em 0.1 (1.0 → 1.1 → 1.2 … → 1.9 → 2.0).
+**Regra atual (desde 14/09/2026, a pedido do usuário):** formato
+`MAIOR.MENOR.AJUSTE`.
 
-Uma versão nova é fechada quando acontece **um** destes dois gatilhos:
+1. **Cada alteração leve** acrescenta 1 no terceiro número, na hora:
+   6.1 → 6.1.1 → 6.1.2 → …
+2. **Uma alteração mediana ou grande** sobe o número do meio e zera o terceiro:
+   6.1.3 → 6.2 (e 6.9.x → 7.0, como antes).
 
-1. **Uma alteração mediana ou grande** — sobe a versão na hora.
-2. **Cinco alterações leves acumuladas** — sobem a versão juntas.
-
-O objetivo do segundo gatilho é não gerar uma versão nova a cada ajuste de
-texto ou de cor, o que encheria a pasta de backups sem necessidade.
+A regra anterior ("cinco leves acumuladas fecham uma versão") foi **substituída**
+— não há mais contador de leves. Versões até a 6.1 seguem a regra antiga.
 
 **O que é alteração leve:** não muda o comportamento do app. Texto, cor,
 espaçamento, comentário no código, documentação, renomear variável.
@@ -679,13 +699,10 @@ espaçamento, comentário no código, documentação, renomear variável.
 Funcionalidade nova, troca de serviço externo, mudança de fluxo, correção de
 bug que atrapalhava o uso.
 
-### Contador de alterações leves
-
-Quando houver alteração leve, incrementar aqui. Ao chegar em 5, fechar versão
-nova e zerar o contador.
+### Versão atual
 
 ```
-Leves acumuladas desde a v5.9:  0 / 5
+6.1.2
 ```
 
 ### Onde o número aparece
@@ -700,7 +717,8 @@ Ao fechar versão nova, atualizar a constante `VERSAO` junto com o resto.
 
 Cada versão fechada ganha uma cópia em `backups/vX.Y_AAAA-MM-DD_apelido/`,
 com o `index.html` daquela versão e um `LEIA-ME.txt` explicando o que mudou e
-por quê.
+por quê. Ajustes leves (`X.Y.Z`) também ganham backup, na mesma forma
+(`backups/vX.Y.Z_AAAA-MM-DD_apelido/`).
 
 ⚠️ **A pasta `backups/` não é versionada** (bloqueada no `.gitignore`), então
 essas cópias existem **apenas nesta máquina**. Numa próxima troca de computador
@@ -762,3 +780,7 @@ os backups locais são conveniência, não garantia.
 | 5.7 | 14/09/2026 | Terceira coluna, os 7 módulos móveis e botões de salvar/voltar ao normal o arranjo |
 | 5.8 | 14/09/2026 | Listas dos módulos 3 e 4 com altura fixa: controles de altura não travam mais na busca |
 | 5.9 | 14/09/2026 | Puxador de altura nas colunas para módulo com lista sozinho (modo de altura fixa) |
+| 6.0 | 14/09/2026 | Posição livre dos módulos (ex.: o 4 acima do 1), com a ordem no arranjo salvo |
+| 6.1 | 14/09/2026 | Vão de encaixe proporcional ao módulo arrastado |
+| 6.1.1 | 14/09/2026 | Contorno da coluna só quando o módulo muda de coluna (primeira versão na regra de três números) |
+| 6.1.2 | 14/09/2026 | Contorno da coluna só com a borda, sem preenchimento |

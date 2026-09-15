@@ -197,8 +197,19 @@
   body.movendo-modulo, body.movendo-modulo *{cursor:grabbing !important;}
   body.movendo-modulo{user-select:none; -webkit-user-select:none;}
   body.movendo-modulo #map{pointer-events:none;}
-  /* A section não tem caixa no painel, por isso a transparência vai nos filhos */
-  .modulo-movel.movendo > *{opacity:.4;}
+  /* Durante o arraste o módulo sai da tela; quem ocupa o lugar é o vão de
+     encaixe abaixo (v6.1). !important: nas colunas a section tem display:flex. */
+  .modulo-movel.movendo{display:none !important;}
+  /* Vão de encaixe: tracejado âmbar, do tamanho do módulo arrastado, com o nome
+     dele. Abre com uma animação curta a cada lugar novo, para os módulos em
+     volta "se afastarem" em vez de pularem. */
+  .modulo-encaixe{flex:none; box-sizing:border-box; border:2px dashed var(--amber); border-radius:8px;
+                  background:color-mix(in srgb, var(--amber) 9%, transparent);
+                  display:flex; align-items:center; justify-content:center; overflow:hidden;
+                  font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.2px;
+                  text-transform:uppercase; color:var(--amber-dim); pointer-events:none;
+                  animation:encaixe-abrir .14s ease-out;}
+  @keyframes encaixe-abrir{from{height:0; opacity:.2;}}
   /* Etiqueta com o nome do módulo, que acompanha o ponteiro */
   .modulo-fantasma{position:fixed; z-index:1001; pointer-events:none; white-space:nowrap;
                    background:var(--panel-2); border:1px solid var(--amber); border-radius:6px;
@@ -206,9 +217,11 @@
                    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.2px;
                    text-transform:uppercase; color:var(--amber);}
   /* Coluna que vai receber o módulo: contorno sobre ela, ou sobre o lugar onde
-     a coluna nova vai aparecer */
+     a coluna nova vai aparecer. Só a borda, sem preenchimento (v6.1.2, pedido do
+     usuário): o fundo âmbar cobria a coluna inteira e disputava atenção com o vão
+     de encaixe, que é quem mostra onde o módulo entra. */
   .alvo-coluna{position:fixed; z-index:1000; pointer-events:none; border:2px solid var(--amber);
-               border-radius:6px; background:color-mix(in srgb, var(--amber) 12%, transparent);
+               border-radius:6px; background:none;
                display:flex; align-items:flex-start; justify-content:center; padding-top:14px;
                font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.2px;
                text-transform:uppercase; color:var(--amber);}
@@ -451,12 +464,14 @@
      dentro dele e vai junto) ou ainda não há parada selecionada, quando o módulo
      4 nem aparece — foi o caso relatado pelo usuário em 12/09/2026, que deixava
      o módulo 3 sem como ser ajustado logo ao abrir o site. */
+  /* Desde a v6.0 os módulos mudam de posição, então a regra é uma só: sem o 4
+     logo abaixo do 3 no painel (sem-divisoria-34, calculada no JS), a divisória
+     some e o 3 ganha o puxador próprio. Vale para 3 ou 4 numa coluna, para o 4
+     acima do 3 e para qualquer módulo entre os dois. */
   #puxadorChecklist{display:none;}
-  body.modulo4-na-guia #puxadorChecklist,
+  body.sem-divisoria-34 #puxadorChecklist,
   body.modulo4-oculto #puxadorChecklist{display:flex;}
-  /* A divisória 3<->4 mora dentro do módulo 4 e só faz sentido com os DOIS no
-     painel, um embaixo do outro. Se o 3 foi para a guia, ela some. */
-  body.modulo3-na-guia #divisorModulos{display:none;}
+  body.sem-divisoria-34 #divisorModulos{display:none;}
   .divisor-modulos::before{
     content:''; width:46px; height:4px; border-radius:2px; background:var(--line); transition:background .15s;
   }
@@ -1007,10 +1022,11 @@
 // Detecta se o app foi aberto por um link de roteiro (ex.: .../index.html#r=eyJ...).
 // Nesse caso entramos no MODO CAMPO (ver seção no fim do script) e nem inicializamos
 // o mapa do modo escritório — ele fica escondido e não é usado.
-// Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md):
-// sobe 0.1 a cada alteração mediana/grande, ou a cada 5 alterações leves
-// acumuladas. O número aparece nas duas telas, escritório e campo.
-const VERSAO = '5.9';
+// Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md), desde
+// 14/09/2026: MAIOR.MENOR.AJUSTE — cada alteração leve soma 1 no terceiro número
+// (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2).
+// O número aparece nas duas telas, escritório e campo.
+const VERSAO = '6.1.2';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2058,8 +2074,11 @@ if (!modoCampoAtivo){
    repetido.
 
    Regras:
-   - Dentro de cada coluna os módulos ficam sempre na ordem natural (1, 2, 3, 4,
-     Rota, 5, Roteiro). O que se escolhe é a coluna, não a posição nela.
+   - Escolhe-se a coluna E a posição (v6.0, pedido do usuário: "jogar o módulo 4
+     para a posição do módulo 1"). Soltar entre dois módulos põe ali; o vão de
+     encaixe (v6.1) mostra onde, abrindo espaço do tamanho do módulo. O arranjo guarda `local` (coluna de cada módulo) e
+     `ordem` (lista única, sempre agrupada por coluna: painel, 2, 3). O duplo
+     clique, que só troca de coluna, põe o módulo na posição da numeração.
    - A coluna 3 só existe junto com a 2. Se a 2 esvazia, o que estava na 3 passa
      para ela — não fica um buraco entre a coluna 3 e o painel.
    - Mover um módulo vale enquanto a página está aberta. O botão "salvar arranjo"
@@ -2092,7 +2111,7 @@ const COLUNAS = {
 function arranjoNormal(){
   const local = {};
   ORDEM_MODULOS.forEach(k => local[k] = 'painel');
-  return { local, pesos:{}, fixas:{} };
+  return { local, ordem:[...ORDEM_MODULOS], pesos:{}, fixas:{} };
 }
 let arranjo = arranjoNormal();   // o que está na tela agora
 
@@ -2107,6 +2126,40 @@ function normalizarLocais(local){
   const temNaG1 = ORDEM_MODULOS.some(k => local[k] === 'g1');
   if (!temNaG1) ORDEM_MODULOS.forEach(k => { if (local[k] === 'g2') local[k] = 'g1'; });
   return local;
+}
+
+// Módulos de cada coluna, na ordem em que aparecem
+function listasDoArranjo(a){
+  const listas = { painel:[], g1:[], g2:[] };
+  a.ordem.forEach(k => listas[a.local[k]].push(k));
+  return listas;
+}
+// Forma única do arranjo: coluna 3 nunca sozinha, e a ordem agrupada por coluna.
+// Com isso dois arranjos iguais na tela têm sempre o mesmo JSON.
+function canonizarArranjo(a){
+  normalizarLocais(a.local);
+  const l = listasDoArranjo(a);
+  a.ordem = [...l.painel, ...l.g1, ...l.g2];
+  return a;
+}
+const mesmoLugar = (a, b) =>
+  JSON.stringify([a.local, a.ordem]) === JSON.stringify([b.local, b.ordem]);
+
+/* Resultado de pôr o módulo na coluna `local`:
+   - antesDe = chave de outro módulo: entra logo acima dele;
+   - antesDe = null: entra no fim da coluna;
+   - antesDe = undefined (duplo clique): entra na posição da numeração, acima
+     do primeiro módulo da coluna com número maior. */
+function simularMovimento(a, chave, local, antesDe){
+  const b = { local:{ ...a.local, [chave]: local }, ordem: a.ordem.filter(k => k !== chave) };
+  let ref = antesDe;
+  if (antesDe === undefined){
+    const n = ORDEM_MODULOS.indexOf(chave);
+    ref = b.ordem.find(k => b.local[k] === local && ORDEM_MODULOS.indexOf(k) > n) || null;
+  }
+  const i = ref ? b.ordem.indexOf(ref) : -1;
+  if (i >= 0) b.ordem.splice(i, 0, chave); else b.ordem.push(chave);
+  return canonizarArranjo(b);
 }
 
 /* ---- Largura das colunas. Ao contrário do lugar dos módulos, ela é guardada
@@ -2157,8 +2210,10 @@ function ordenarModulos(container, lista){
 
 function aplicarArranjo(){
   const largo = telaComportaGuia();
-  const listas = { painel:[], g1:[], g2:[] };
-  ORDEM_MODULOS.forEach(k => listas[largo ? arranjo.local[k] : 'painel'].push(vagaDoModulo(k)));
+  // Em tela estreita tudo vai para o painel, mantendo a ordem
+  const chaves = largo ? listasDoArranjo(arranjo) : { painel:[...arranjo.ordem], g1:[], g2:[] };
+  const listas = {};
+  Object.keys(chaves).forEach(local => listas[local] = chaves[local].map(vagaDoModulo));
   Object.keys(listas).forEach(local => ordenarModulos(containerDe(local), listas[local]));
 
   Object.keys(COLUNAS).forEach(col => {
@@ -2168,9 +2223,11 @@ function aplicarArranjo(){
   });
   document.getElementById('painelVazio').hidden = listas.painel.length > 0;
 
-  // Marcas usadas pelos controles de altura do painel (divisória 3<->4 e puxadores)
-  document.body.classList.toggle('modulo3-na-guia', largo && arranjo.local.m3 !== 'painel');
-  document.body.classList.toggle('modulo4-na-guia', largo && arranjo.local.m4 !== 'painel');
+  // A divisória 3<->4 do painel mora no topo do módulo 4 e reparte a altura com
+  // o 3: só faz sentido com o 4 logo abaixo do 3. Fora disso, cada um usa o
+  // puxador próprio (a marca abaixo é o que faz o do 3 aparecer).
+  const i3 = chaves.painel.indexOf('m3');
+  document.body.classList.toggle('sem-divisoria-34', !(i3 >= 0 && chaves.painel[i3 + 1] === 'm4'));
 
   // A coluna que apareceu pode não caber com a largura guardada
   Object.keys(COLUNAS).forEach(col => aplicarLarguraGuia(col, larguraGuiaGuardada(col), false));
@@ -2244,10 +2301,11 @@ function elasticosVisiveis(coluna){
 // Pesos só valem dentro de uma coluna. Quando um módulo entra ou sai, a coluna
 // volta a dividir igual — misturar pesos de arranjos diferentes dá proporções
 // sem sentido.
-function moverModulo(chave, local){
+function moverModulo(chave, local, antesDe){
   const antes = { ...arranjo.local };
-  arranjo.local[chave] = local;
-  normalizarLocais(arranjo.local);
+  const novo = simularMovimento(arranjo, chave, local, antesDe);
+  arranjo.local = novo.local;
+  arranjo.ordem = novo.ordem;
   const mudou = new Set();
   ORDEM_MODULOS.forEach(k => { if (antes[k] !== arranjo.local[k]){ mudou.add(antes[k]); mudou.add(arranjo.local[k]); } });
   ORDEM_MODULOS.forEach(k => { if (mudou.has(arranjo.local[k]) || mudou.has(antes[k])) delete arranjo.pesos[k]; });
@@ -2268,7 +2326,7 @@ function descreverArranjo(a){
   Object.keys(COLUNAS).forEach(col => {
     if (a.fixas && a.fixas[col] && ORDEM_MODULOS.some(k => local[k] === col)) fixas[col] = true;
   });
-  return { local, pesos, fixas };
+  return { local, ordem:[...a.ordem], pesos, fixas };
 }
 function arranjoGuardado(){
   try{
@@ -2280,7 +2338,12 @@ function arranjoGuardado(){
       if (g.pesos && g.pesos[k] > 0) a.pesos[k] = g.pesos[k];
     });
     Object.keys(COLUNAS).forEach(col => { if (g.fixas && g.fixas[col] === true) a.fixas[col] = true; });
-    normalizarLocais(a.local);
+    // Arranjo salvo antes da v6.0 não tem ordem: fica a da numeração
+    if (Array.isArray(g.ordem)){
+      const validas = g.ordem.filter((k, i) => ORDEM_MODULOS.includes(k) && g.ordem.indexOf(k) === i);
+      a.ordem = [...validas, ...ORDEM_MODULOS.filter(k => !validas.includes(k))];
+    }
+    canonizarArranjo(a);
     return a;
   }catch(e){ return null; }
 }
@@ -2297,9 +2360,22 @@ function atualizarBotaoArranjo(){
 
 /* ---- Arrastar um módulo pela alça até outra coluna ---- */
 
-// Onde o módulo cairia com o ponteiro neste X. Devolve null quando soltar ali
-// não mudaria nada.
-function destinoDoModulo(chave, x){
+// Caixa desenhada de um módulo, ou null se ele está escondido. No painel a
+// section não tem caixa (display:contents), então vale a do filho visível.
+function caixaDoModulo(k){
+  const vaga = vagaDoModulo(k);
+  const el = getComputedStyle(vaga).display === 'contents'
+    ? [...vaga.children].find(c => getComputedStyle(c).display !== 'none')
+    : vaga;
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return r.height > 0 ? r : null;
+}
+
+// Onde o módulo cairia com o ponteiro em (x, y): a coluna pelo X, a posição
+// pelo Y — acima do primeiro módulo cuja metade fica abaixo do ponteiro.
+// Devolve null quando soltar ali não mudaria nada.
+function destinoDoModulo(chave, x, y){
   const colunas = [['painel', document.querySelector('.console')],
                    ['g1', document.getElementById('guiaLateral')],
                    ['g2', document.getElementById('guiaExtra')]]
@@ -2323,9 +2399,24 @@ function destinoDoModulo(chave, x){
     rect = { left: maisEsquerda.left - 7 - largura, top: main.top, width: largura, height: main.height };
     rect.nova = true;
   }
-  const simulado = normalizarLocais({ ...arranjo.local, [chave]: local });
-  if (JSON.stringify(simulado) === JSON.stringify(arranjo.local)) return null;
-  return { local, rect };
+
+  // Posição dentro da coluna. Módulos escondidos não têm caixa e são pulados:
+  // soltar abaixo do último visível põe no fim da coluna. As posições são as
+  // da tela como está, com o vão de encaixe aberto — e isso é estável: quando o
+  // vão pula para o outro lado de um módulo, o ponteiro cai dentro do vão (que
+  // mantém o destino) ou continua na mesma metade do módulo.
+  let antesDe = null;
+  if (!rect.nova){
+    for (const k of listasDoArranjo(arranjo)[local]){
+      if (k === chave) continue;
+      const caixa = caixaDoModulo(k);
+      if (caixa && y < caixa.top + caixa.height / 2){ antesDe = k; break; }
+    }
+  }
+
+  const simulado = simularMovimento(arranjo, chave, local, antesDe);
+  if (mesmoLugar(simulado, arranjo)) return null;
+  return { local, antesDe, rect };
 }
 
 function iniciarMoverModulo(ev, chave, alca){
@@ -2336,9 +2427,58 @@ function iniciarMoverModulo(ev, chave, alca){
   const vaga = vagaDoModulo(chave);
   const inicioX = ev.clientX, inicioY = ev.clientY;
   let ativo = false, destino = null, fantasma = null, alvo = null;
+  let encaixe = null, alturaOriginal = 0;
+  let ultimoX = inicioX, ultimoY = inicioY, rolagem = null;
 
+  /* Vão de encaixe (v6.1, pedido do usuário: "pré-visualização de encaixe,
+     proporcional à alteração"). O módulo sai da tela e no lugar dele fica um
+     vão tracejado do tamanho dele; o vão vai para onde o módulo cairia, e os
+     módulos em volta se afastam de verdade para abri-lo. Sem destino (mesmo
+     lugar, ou sobre o mapa com as duas colunas abertas) o vão volta à origem. */
+  const posicionarEncaixe = () => {
+    let container, ref, altura;
+    if (destino && !destino.rect.nova){
+      container = containerDe(destino.local);
+      ref = destino.antesDe ? vagaDoModulo(destino.antesDe) : null;
+      // Numa coluna, a divisória de altura fica logo acima do módulo: o vão
+      // entra antes dela, para não separar a divisória do módulo dela
+      if (ref && ref.previousElementSibling && ref.previousElementSibling.classList.contains('divisor-guia')) ref = ref.previousElementSibling;
+      // Módulo muito alto (ex.: ocupando uma coluna inteira) abriria um vão maior
+      // que a tela; fica limitado a 60% da altura visível do destino
+      altura = Math.max(48, Math.min(alturaOriginal, container.clientHeight * 0.6));
+    }else{
+      container = vaga.parentElement;
+      ref = vaga;
+      altura = alturaOriginal;
+    }
+    if (encaixe.parentElement !== container || encaixe.nextElementSibling !== ref) container.insertBefore(encaixe, ref);
+    encaixe.style.height = altura + 'px';
+  };
+  const atualizarDestino = () => {
+    // Ponteiro dentro do vão: o destino é o mesmo, nada a recalcular
+    const q = encaixe.getBoundingClientRect();
+    if (q.height && ultimoX >= q.left && ultimoX <= q.right && ultimoY >= q.top && ultimoY <= q.bottom) return;
+    destino = destinoDoModulo(chave, ultimoX, ultimoY);
+    // O contorno da coluna só aparece quando o módulo vai MUDAR de coluna (ou
+    // abrir uma nova). Dentro da mesma coluna, quem mostra o destino é só o vão
+    // de encaixe — pedido do usuário depois de testar a v6.1.
+    alvo.hidden = !destino || destino.local === arranjo.local[chave];
+    if (!alvo.hidden){
+      const r = destino.rect;
+      Object.assign(alvo.style, { left:r.left + 'px', top:r.top + 'px', width:r.width + 'px', height:r.height + 'px' });
+      alvo.textContent = r.nova ? 'nova coluna' : '';
+    }
+    posicionarEncaixe();
+  };
   const comecar = () => {
     ativo = true;
+    const caixa = caixaDoModulo(chave);
+    alturaOriginal = caixa ? caixa.height : 60;
+    encaixe = document.createElement('div');
+    encaixe.className = 'modulo-encaixe';
+    encaixe.textContent = MODULOS[chave].titulo;
+    vaga.parentElement.insertBefore(encaixe, vaga);
+    encaixe.style.height = alturaOriginal + 'px';
     document.body.classList.add('movendo-modulo');
     vaga.classList.add('movendo');
     fantasma = document.createElement('div');
@@ -2348,42 +2488,54 @@ function iniciarMoverModulo(ev, chave, alca){
     alvo.className = 'alvo-coluna';
     alvo.hidden = true;
     document.body.append(fantasma, alvo);
+    // Rolagem automática: com o ponteiro perto do topo ou do fim de uma coluna
+    // que rola, ela anda — senão não daria para levar um módulo lá de baixo
+    // para o topo de um painel rolado
+    rolagem = setInterval(() => {
+      const coluna = [document.querySelector('.console'), ...Object.values(COLUNAS).map(c => document.getElementById(c.el))]
+        .find(el => { if (el.hidden) return false; const q = el.getBoundingClientRect(); return ultimoX >= q.left && ultimoX <= q.right; });
+      if (!coluna || coluna.scrollHeight <= coluna.clientHeight) return;
+      const q = coluna.getBoundingClientRect();
+      const passo = ultimoY < q.top + 50 ? -14 : ultimoY > q.bottom - 50 ? 14 : 0;
+      if (!passo) return;
+      coluna.scrollTop += passo;
+      atualizarDestino();
+    }, 30);
   };
   const mover = e => {
     // Só vira arraste depois de andar um pouco: um clique ou duplo clique na
     // alça não deve acender nada
+    ultimoX = e.clientX; ultimoY = e.clientY;
     if (!ativo){
       if (Math.hypot(e.clientX - inicioX, e.clientY - inicioY) < 6) return;
       comecar();
     }
     fantasma.style.left = (e.clientX + 14) + 'px';
     fantasma.style.top = (e.clientY + 12) + 'px';
-    destino = destinoDoModulo(chave, e.clientX);
-    alvo.hidden = !destino;
-    if (destino){
-      const r = destino.rect;
-      Object.assign(alvo.style, { left:r.left + 'px', top:r.top + 'px', width:r.width + 'px', height:r.height + 'px' });
-      alvo.textContent = destino.rect.nova ? 'nova coluna' : '';
-    }
+    atualizarDestino();
   };
+  // Escuta na janela, e não na alça: durante o arraste o módulo (e a alça
+  // junto) sai da tela, e o navegador pode deixar de entregar eventos a ela
   const terminar = aplicar => {
-    alca.removeEventListener('pointermove', mover);
-    alca.removeEventListener('pointerup', soltar);
-    alca.removeEventListener('pointercancel', cancelar);
+    window.removeEventListener('pointermove', mover);
+    window.removeEventListener('pointerup', soltar);
+    window.removeEventListener('pointercancel', cancelar);
     document.removeEventListener('keydown', teclar);
     if (!ativo) return;
+    clearInterval(rolagem);
     document.body.classList.remove('movendo-modulo');
     vaga.classList.remove('movendo');
+    encaixe.remove();
     fantasma.remove();
     alvo.remove();
-    if (aplicar && destino) moverModulo(chave, destino.local);
+    if (aplicar && destino) moverModulo(chave, destino.local, destino.antesDe);
   };
   const soltar = () => terminar(true);
   const cancelar = () => terminar(false);
   const teclar = e => { if (e.key === 'Escape') cancelar(); };
-  alca.addEventListener('pointermove', mover);
-  alca.addEventListener('pointerup', soltar);
-  alca.addEventListener('pointercancel', cancelar);
+  window.addEventListener('pointermove', mover);
+  window.addEventListener('pointerup', soltar);
+  window.addEventListener('pointercancel', cancelar);
   document.addEventListener('keydown', teclar);
 }
 
@@ -2396,8 +2548,9 @@ function avancarModulo(chave){
   const atual = ciclo.indexOf(arranjo.local[chave]);
   for (let passo = 1; passo < ciclo.length; passo++){
     const local = ciclo[(atual + passo) % ciclo.length];
-    const simulado = normalizarLocais({ ...arranjo.local, [chave]: local });
-    if (JSON.stringify(simulado) !== JSON.stringify(arranjo.local)){ moverModulo(chave, local); return; }
+    if (local === arranjo.local[chave]) continue;
+    const simulado = simularMovimento(arranjo, chave, local, undefined);
+    if (!mesmoLugar(simulado, arranjo)){ moverModulo(chave, local, undefined); return; }
   }
 }
 
@@ -2408,12 +2561,12 @@ if (!modoCampoAtivo){
     const cfg = MODULOS[k];
     const vaga = vagaDoModulo(k);
     vaga.classList.toggle('elastico', !!cfg.elastico);
-    vaga.querySelectorAll('[data-alca]').forEach(a => a.title = 'Arraste para outra coluna (duplo clique leva para a coluna seguinte)');
+    vaga.querySelectorAll('[data-alca]').forEach(a => a.title = 'Arraste para mudar o módulo de posição ou de coluna (duplo clique leva para a coluna seguinte)');
     if (!cfg.espera) return;
     const aviso = document.createElement('div');
     aviso.className = 'modulo-espera';
     aviso.innerHTML = `<div class="field-label"><span style="display:flex;align-items:center;">
-        <span class="modulo-alca" data-alca title="Arraste para outra coluna (duplo clique leva para a coluna seguinte)"></span>${escaparHtml(cfg.titulo)}</span></div>
+        <span class="modulo-alca" data-alca title="Arraste para mudar o módulo de posição ou de coluna (duplo clique leva para a coluna seguinte)"></span>${escaparHtml(cfg.titulo)}</span></div>
       <div class="guia-vazia">${escaparHtml(cfg.espera)}</div>`;
     vaga.prepend(aviso);
 
