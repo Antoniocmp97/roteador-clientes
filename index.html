@@ -617,6 +617,38 @@
   .status{font-size:12.5px;color:var(--danger);font-family:'JetBrains Mono',monospace;min-height:16px;}
   /* Desde a v5.7 botões e status moram no mesmo módulo, fora do gap do painel */
   #status{margin-top:14px;}
+  /* Módulo Rota grudado na base (v6.5, sugestão de layout 5): "Traçar nesta
+     ordem" e "Otimizar ordem" são a ação principal e ficavam abaixo da dobra
+     com a base carregada. Agora o módulo fica colado no fim da coluna em que
+     estiver — painel ou coluna auxiliar —, e o resto rola por baixo.
+     No painel o módulo é filho direto da coluna rolável (a section é
+     display:contents), então quem gruda é o .modulo-corpo; nas colunas quem
+     gruda é a própria section. O fundo e o padding negativo cobrem os 16px de
+     respiro da coluna, senão o conteúdo apareceria por baixo. */
+  /* ⚠️ display:contents não muda a árvore do HTML: o seletor tem que descer
+     pela section (.console > section > .modulo-corpo), e não direto no corpo. */
+  .console > .modulo-movel[data-modulo="m5"] > .modulo-corpo,
+  .guia > .modulo-movel[data-modulo="m5"]{
+    /* top E bottom: gruda na base enquanto o lugar natural dele está abaixo, e
+       no topo depois de passar por ele — assim os botões ficam visíveis com o
+       módulo em qualquer posição da coluna. */
+    position:sticky; top:0; bottom:0; z-index:3; background:var(--panel);
+    padding:16px 0; margin:-16px 0;
+    box-shadow:0 -10px 14px -12px var(--sombra), 0 10px 14px -12px var(--sombra);
+  }
+
+  /* Enquanto está grudado o módulo fica compacto: título, botões e resultado.
+     A opção de retorno e o status voltam quando ele chega ao lugar dele — senão
+     um bloco de 235px ficaria flutuando por cima da lista de paradas.
+     ⚠️ O título FICA: é nele que mora a alça, e sem ela não daria para tirar o
+     módulo do lugar enquanto estivesse grudado. */
+  #moduloRota.grudado > .opcao-rota,
+  #moduloRota.grudado > #status{display:none;}
+  #moduloRota.grudado > .field-label{margin-bottom:6px;}
+  #moduloRota.grudado > .resumo-rota{margin-top:10px; padding:8px 14px;}
+  #moduloRota.grudado > .resumo-rota .row{font-size:16px;}
+  #moduloRota.grudado > .resumo-rota .row + .row{font-size:11.5px;}
+
   /* Opção "voltar para a origem" (v6.3), no módulo Rota */
   .opcao-rota{display:flex; align-items:center; gap:7px; margin-top:10px; cursor:pointer;
               font-size:12px; color:var(--muted); line-height:1.35;}
@@ -982,7 +1014,7 @@
       <!-- Ações: calcular rota respeitando a ordem atual, ou deixar o OSRM otimizar a ordem.
            Ganhou título na v5.7, porque virou módulo e precisava de onde pegar. -->
       <section class="modulo-movel" data-modulo="m5">
-      <div class="modulo-corpo">
+      <div class="modulo-corpo" id="moduloRota">
         <div class="field-label">
           <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Rota</span>
         </div>
@@ -1002,6 +1034,9 @@
         </div>
         <div class="status" id="status"></div>
       </div>
+      <!-- Sentinela: marca o lugar natural do módulo. Quando ela fica abaixo da
+           área visível, é porque o módulo está grudado na base (v6.5). -->
+      <div id="sentinelaRota" aria-hidden="true"></div>
       </section>
 
       <!-- Passo 5: gerar o link do roteiro para mandar a quem vai a campo.
@@ -1092,9 +1127,10 @@
 // o mapa do modo escritório — ele fica escondido e não é usado.
 // Versão do app. Regra de numeração (ver seção 11 do CLAUDE.md), desde
 // 14/09/2026: MAIOR.MENOR.AJUSTE — cada alteração leve soma 1 no terceiro número
-// (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2).
+// (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
+// O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '6.3';
+const VERSAO = '6.5.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -3380,6 +3416,36 @@ if (!modoCampoAtivo){
     // A rota traçada deixa de valer: km, tempo e ordem mudam com o retorno
     if (invalidarRota()) setStatus('Trace a rota de novo para atualizar o retorno.', true);
   };
+}
+
+/* Módulo Rota grudado na base (v6.5, sugestão de layout 5). A marca "grudado"
+   deixa o módulo compacto enquanto ele está flutuando; some quando ele chega ao
+   lugar natural. Vale em qualquer coluna: o container é descoberto na hora. */
+function atualizarRotaGrudada(){
+  const corpo = document.getElementById('moduloRota');
+  const sentinela = document.getElementById('sentinelaRota');
+  if (!corpo || !sentinela) return;
+  const cont = corpo.closest('.console, .guia');
+  // Grudado = o lugar natural do módulo (a sentinela) está fora da parte
+  // visível da coluna: abaixo do fim dela (módulo preso na base) ou acima do
+  // começo (preso no topo, depois de rolar por ele)
+  const c = cont && cont.getBoundingClientRect();
+  const sy = sentinela.getBoundingClientRect().top;
+  const grudado = !!cont && (sy > c.bottom - 1 || sy < c.top + corpo.getBoundingClientRect().height);
+  corpo.classList.toggle('grudado', grudado);
+}
+if (!modoCampoAtivo){
+  // Sem requestAnimationFrame de propósito: o navegador o pausa quando a aba não
+  // está desenhando, e a marca ficava presa (mesmo tropeço da v5.7). São duas
+  // medidas por chamada, barato o bastante para rodar direto.
+  const agendar = () => atualizarRotaGrudada();
+  // Rolagem de qualquer coluna, mudança de tamanho da janela e qualquer mexida
+  // no painel (lista redesenhada, módulo movido) mudam o estado
+  document.querySelector('main').addEventListener('scroll', agendar, true);
+  window.addEventListener('resize', agendar);
+  new ResizeObserver(agendar).observe(document.querySelector('.console'));
+  new MutationObserver(agendar).observe(document.querySelector('main'), { childList:true, subtree:true });
+  atualizarRotaGrudada();
 }
 
 // Botão "Traçar nesta ordem": chama a OSRM Route API respeitando a ordem atual de `stops`.

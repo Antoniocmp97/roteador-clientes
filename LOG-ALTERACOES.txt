@@ -4529,3 +4529,129 @@ OBSERVAÇÃO
   de trocar o servidor público (Fase 4).
 
 VERSÃO: fecha a v6.3. Não publicada — aguardando teste do usuário.
+
+--------------------------------------------------------
+[15/09/2026] v6.4 — Painel funciona como as colunas (sugestão de layout 4)
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Sugestão 4 da lista de layout: acabar com as rolagens dentro de rolagem.
+  Escolheu "painel como as colunas".
+
+O QUE ESTAVA ACONTECENDO
+  No painel rolavam quatro coisas: o painel inteiro, o checklist (3), a lista
+  de paradas (4) e o Roteiro. Nas colunas isso já não acontecia, porque lá os
+  módulos dividem a altura disponível.
+
+O QUE FOI FEITO
+  1. O painel virou coluna: os módulos deixaram de ser display:contents e
+     passaram a ser caixas flexíveis, como nas colunas. Os módulos com lista
+     (3, 4 e Roteiro) dividem a altura na proporção de --peso; os demais ficam
+     do tamanho do conteúdo. O painel só rola quando a janela é baixa demais
+     para os mínimos de 120px.
+  2. Os controles de altura próprios do painel saíram: divisória 3<->4
+     (v4.3), puxador do módulo 3 (v4.5) e puxador do módulo 4 (v4.6). No lugar
+     deles vale o MESMO mecanismo das colunas — divisória entre módulos com
+     lista e puxador no último, criados pelo JS —, que já tem modo de altura
+     fixa e duplo clique para dividir igual.
+  3. Chave hg_alturas_modulos aposentada (removida ao abrir); as alturas do
+     painel agora entram no arranjo salvo, como pesos, junto com o modo fixo.
+  4. Módulo escondido no painel continua sem ocupar lugar (sem o aviso
+     "aparece depois…", que é coisa das colunas).
+  5. Em tela estreita nada muda: o painel volta a rolar, com teto por lista
+     (200/170/220px).
+  Saldo no arquivo: 248 linhas removidas, 55 acrescentadas.
+
+TESTES (janela 1600x1000 e 1100x1000, base de teste, 5 paradas, rota simulada)
+  - Painel não rola mais, com e sem rota. Barras: só as das listas.
+  - Sem rota: módulos 3 e 4 com 290px cada. Com rota: 3, 4 e Roteiro
+    dividindo a altura (131px cada na janela de 1000px de altura).
+  - Divisória do painel +60: 148/125/120. Puxador +150: passa para altura
+    fixa (270px no Roteiro) e o painel volta a rolar; duplo clique volta a
+    preencher. Divisória -80 depois disso: 120/120/152.
+  - Salvar arranjo guarda os pesos do painel; ao recarregar, a proporção
+    volta (146/146/185). Lixeira devolve tudo igual (159/159/159).
+  - Módulo 3 mandado para a coluna 2 (ocupa 887px lá) e trazido de volta
+    para o painel: divisórias remontadas, alturas iguais.
+  - Tela de 700px: painel rola, checklist 200, paradas 170, roteiro 220.
+  - Print conferido em 1100x1000: painel inteiro visível, sem rolagem própria.
+
+VERSÃO: fecha a v6.4. Não publicada — aguardando teste do usuário.
+
+--------------------------------------------------------
+[15/09/2026] v6.4.1 — v6.4 desfeita; versão passa a mostrar sempre 3 números
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Não gostei, deixe da maneira que está atual. E senti falta do último
+  número da versão. Exemplo 6.4.1."
+
+O QUE FOI FEITO
+  1. A v6.4 (painel funcionando como as colunas) foi DESFEITA: o index.html
+     voltou ao estado da v6.3, publicada. Volta o painel que rola por baixo
+     das listas, com a divisória 3<->4, os puxadores do 3 e do 4 e a chave
+     hg_alturas_modulos. Nada do que estava publicado mudou.
+  2. Regra de versão: o terceiro número passa a aparecer SEMPRE. Uma
+     alteração mediana/grande fecha X.Y.0 (e não mais X.Y). Registrado na
+     seção 11 do CLAUDE.md e no comentário da constante VERSAO.
+  3. Esta versão é 6.4.1 — o número não volta atrás, mesmo desfazendo: o
+     selo na tela precisa distinguir este arquivo da v6.4 que o usuário
+     testou.
+
+POR QUE A v6.4 NÃO SERVIU (para não repetir)
+  Com a rota traçada, os três módulos com lista (3, 4 e Roteiro) passavam a
+  dividir a altura da tela: numa janela de 1000px cada um ficava com ~131px,
+  contra os 320/240 fixos do checklist e das paradas no painel de hoje.
+  Trocar 4 barras de rolagem por listas curtas não compensou.
+  A sugestão de layout 4 fica marcada como TENTADA E REVERTIDA — se voltar
+  ao assunto, o caminho é outro (ex.: mexer só no Roteiro, que era a opção
+  intermediária oferecida).
+
+BACKUP
+  A v6.4 continua em backups/v6.4_2026-09-15_painel-como-coluna/, caso algum
+  dia se queira reaproveitar o código.
+
+--------------------------------------------------------
+[15/09/2026] v6.5.0 — Módulo Rota sempre visível (sugestão de layout 5)
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Sugestão 5: "Traçar nesta ordem" e "Otimizar ordem" sempre visíveis. O
+  módulo continua móvel, e o grudar precisa valer também quando ele estiver
+  em outra coluna.
+
+O QUE FOI FEITO
+  1. O módulo Rota gruda na coluna em que estiver (position:sticky com top:0
+     E bottom:0): fica preso na base enquanto o lugar natural dele está
+     abaixo, e no topo depois de rolar por ele. Assim os botões aparecem com
+     o módulo em qualquer posição.
+  2. Enquanto grudado o módulo fica compacto (marca "grudado"): título,
+     botões e o resumo km/min. A opção "voltar para a origem" e a mensagem de
+     status voltam quando ele chega ao lugar dele. Sem isso, um bloco de
+     235px ficava flutuando por cima da lista de paradas.
+     ⚠️ O título FICA visível de propósito: a alça mora nele, e sem ela não
+     daria para mover o módulo enquanto estivesse grudado (encontrado no
+     teste, quando o arraste parou de funcionar).
+  3. Fundo e padding compensando os 16px de respiro da coluna, com sombra nas
+     duas bordas, para o conteúdo não aparecer por baixo.
+
+DOIS TROPEÇOS NO CAMINHO (registrados para não repetir)
+  - O primeiro seletor era `.console > #moduloRota`. Não pega: display:contents
+    não muda a árvore do HTML, então o caminho é `.console > section > corpo`.
+  - A marca "grudado" era atualizada dentro de requestAnimationFrame, que o
+    navegador pausa quando a aba não está desenhando — a marca nunca mudava no
+    teste. Passou a ser chamada direto (duas medidas, barato).
+
+TESTES (janela 1100x900, painel de 360px, base de teste, 5 paradas)
+  - Rolando o painel de 0% a 100%, em três arranjos (Rota na posição normal,
+    no topo do painel e no meio): os botões ficaram visíveis em todos os
+    pontos. Grudado: 158px; solto: 238px.
+  - Com o módulo grudado, a alça continua clicável e o arraste funciona: a
+    Rota foi levada para o topo do painel, com vão de encaixe e etiqueta.
+  - Na coluna 2, com 1 e 3 juntos: a section fica sticky e, como a coluna não
+    rola, os botões já estavam sempre visíveis. De volta ao painel, o
+    position volta a static.
+  - Sem erros no console.
+
+VERSÃO: fecha a v6.5.0 (primeira com o terceiro número desde o início).
+Não publicada — aguardando teste do usuário. Vai junto com a v6.4.1.

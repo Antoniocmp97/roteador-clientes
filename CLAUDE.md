@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/09/2026 — v6.3 (retorno para a origem no fim da viagem)
+> **Última atualização:** 15/09/2026 — v6.5.0 (módulo Rota sempre visível, grudado na coluna em que estiver)
 
 ---
 
@@ -145,7 +145,8 @@ sem dependências instaladas. Abre direto no navegador.
   tela difere do salvo e vira ✓ por 1,8 s ao salvar; a **lixeira** volta ao
   normal: tudo no painel e **apaga** o salvo (confirma se havia um). Escolha do
   usuário: botão, e não gravação automática
-- **Altura dentro das colunas** (v4.9, generalizado na v5.7): os módulos com lista
+- **Altura dentro das colunas — e no painel** (v4.9, generalizado na v5.7 e, para
+  o painel, na v6.4): os módulos com lista
   (3, 4, Roteiro) dividem a sobra da coluna na proporção de `--peso`; os outros
   ocupam o que precisam. Entre dois módulos com lista na mesma coluna o JS cria
   uma divisória. Os pesos viram as alturas em pixels ao arrastar (proporção se
@@ -159,40 +160,27 @@ sem dependências instaladas. Abre direto no navegador.
   altura fixa o duplo clique na divisória iguala pela média. O modo é salvo no
   arranjo e zerado quando a coluna muda de módulos. ⚠️ Ao entrar no modo, medir
   **todos** antes de aplicar — aplicar um redistribui a coluna e o próximo é
-  medido encolhido. Módulos 1, 2, Rota e 5 não têm puxador (sem lista)
+  medido encolhido. Módulos 1, 2, Rota e 5 não têm puxador (sem lista).
+  **O painel usa exatamente este mecanismo desde a v6.4** (`LOCAIS = painel, g1,
+  g2`): ele deixou de rolar por baixo das listas — eram até 4 barras empilhadas —
+  e os módulos com lista dividem a altura da tela. Só rola quando a janela é baixa
+  demais para os mínimos de 120px. Em tela estreita (layout empilhado) volta o
+  comportamento antigo: painel rolando, com teto por lista (200/170/220px)
 - **Colunas com largura ajustável** (v4.8): cada coluna auxiliar tem divisória
   própria. Mínimo de 320px, teto calculado para tudo caber (painel + outra coluna
   + mapa de 380px), duplo clique volta a 360px. A largura **é** guardada na hora
   (`hg_largura_guia`, `hg_largura_guia2`), fora do arranjo. A largura máxima do
   painel também desconta as colunas abertas
-- **Cada módulo redimensionável** (v4.6): no painel o módulo 4 tem puxador
-  próprio na borda de baixo (cresce sem tirar do 3, empurrando o que vem depois)
-  **e** a divisória 3↔4 (cresce tirando do 3) — escolha do usuário entre os dois
-  modelos. Na guia esses dois somem e entra o puxador do módulo 3 — arrastando para o
-  lado ou com duplo clique. De lá volta do mesmo jeito. É o **mesmo elemento**
-  movido no HTML, não uma cópia: arrastar paradas, ★, setas e remover continuam
-  funcionando dentro da guia, sem código repetido. Uma âncora invisível guarda o
-  lugar dele no painel. Na guia a lista ocupa a coluna inteira e a divisória 3↔4
-  some, porque ali ela não faz sentido. Em tela estreita o módulo fica no painel
-  e a preferência é ignorada sem ser apagada
-- **Módulo 3 com puxador próprio** (v4.5, ampliado na v5.4): aparece sempre que
-  **não há divisória 3↔4 disponível** — ou seja, quando o módulo 4 está na guia
-  (a divisória mora dentro dele e vai junto) ou quando ainda não há parada
-  selecionada, caso em que o módulo 4 nem aparece. Com os dois no painel e uma
-  parada escolhida, vale a divisória, para não haver dois controles lado a lado
-- **Espaço dividido entre os módulos 3 e 4** (v4.3): uma divisória entre
-  "Selecionar paradas" e "Ordem da viagem". Puxar para cima faz o 4 crescer e o 3
-  encolher na mesma medida; para baixo, o contrário. A **soma das duas alturas não
-  muda**, então o resto do painel (itens 5 e Roteiro) fica parado. Piso de 120px
-  por módulo, escolha guardada no navegador, duplo clique volta ao padrão
-  (320/240). Primeiro passo do pedido de deixar o site customizável por módulos.
-  ⚠️ v5.8: as listas dos módulos 3 e 4 têm **altura fixa** (`height`), não
-  `max-height`, e os controles partem de `alturasAtuais()` (as variáveis CSS),
-  nunca da medida da tela. Com `max-height` uma busca de poucos resultados
-  encolhia a caixa até o conteúdo e travava divisória e puxadores — além de
-  gravar o valor estragado. Única exceção: sem base carregada (`.sem-base`)
-  ⚠️ A v4.2 tinha um puxador na borda de BAIXO do módulo 4: ele crescia para
-  baixo e empurrava o resto do painel, que não era o pedido — foi substituído
+- **Controles de altura antigos do painel, aposentados na v6.4** — ficam
+  registrados porque explicam decisões que voltam a aparecer: divisória 3↔4
+  (v4.3, soma constante), puxador do módulo 3 (v4.5/v5.4), puxador do módulo 4
+  (v4.6, crescia empurrando o resto; a v4.2 fazia isso e foi substituída), e a
+  chave `hg_alturas_modulos` com as alturas em pixels. Tudo isso saiu quando o
+  painel passou a repartir altura como as colunas: hoje o ajuste é a **divisória
+  entre módulos com lista** e o **puxador do último**, iguais nos três lugares.
+  ⚠️ Lição da v5.8 que continua valendo: altura de lista nunca sai de
+  `max-height` nem de medida da tela — com `max-height` uma busca de poucos
+  resultados encolhia a caixa e travava os controles
 - **Área de pegada da alça de arrastar** (v5.2 a v5.5): os seis pontinhos que
   movem a parada têm área de 54×altura-da-linha **quando a coluna é larga** e
   27 quando ela aperta — a troca é automática, por `@container`, e vale tanto no
@@ -207,6 +195,17 @@ sem dependências instaladas. Abre direto no navegador.
 - **Traçar nesta ordem** — rota respeitando a ordem escolhida (OSRM Route API)
 - **Otimizar ordem** — OSRM Trip API recalcula a melhor sequência e reordena a
   lista automaticamente (`source=first`, `roundtrip=false`)
+- **Módulo Rota sempre visível** (v6.5.0, sugestão de layout 5): o módulo gruda na
+  coluna em que estiver — `position:sticky` com **top:0 e bottom:0**, então fica
+  preso na base enquanto o lugar natural dele está abaixo e no topo depois de
+  rolar por ele. Vale no painel e nas colunas, com o módulo em qualquer posição.
+  Enquanto grudado fica compacto (classe `grudado`, calculada por uma sentinela
+  logo depois do corpo): título, botões e o resumo km/min; a opção de retorno e o
+  status voltam no lugar natural. ⚠️ O título **fica**: a alça mora nele, e sem ela
+  não dá para mover o módulo grudado. ⚠️ Dois tropeços registrados: `display:contents`
+  não muda a árvore do HTML (o seletor precisa descer pela `section`), e a marca
+  não pode ser atualizada dentro de `requestAnimationFrame` — o navegador pausa o
+  relógio quando a aba não está desenhando
 - **Voltar para a origem no fim** (v6.3): interruptor no módulo Rota, guardado no
   navegador (`hg_voltar_origem`), **ligado por padrão**. A origem entra como último
   ponto do traçado, o otimizador fecha o círculo (`destination=last`, com a origem
@@ -599,17 +598,16 @@ Na sessão de 14–15/09 o usuário pediu sugestões de layout olhando o app com
 todo (medido em Full HD: painel de 340px, mapa de 1.573px, conteúdo do painel com
 1.468px para 1.015px visíveis). Foram feitas 7 sugestões; as **1, 2 e 3** viraram a
 v6.2 (parada em uma linha, distância/tempo junto dos botões, módulo 1 compacto).
-**Ficaram pendentes, sem decisão do usuário — retomar perguntando quais liberar:**
+**Ficaram pendentes — retomar perguntando quais liberar:**
 
-4. **Rolagens dentro de rolagem.** No painel, o próprio painel rola e dentro dele
-   rolam o checklist (3), as paradas (4) e o Roteiro — até 4 barras empilhadas, e a
-   roda do mouse fica "presa" na lista interna. Ideia: no painel, deixar só o
-   checklist com rolagem própria (nas colunas já funciona bem, cada módulo ocupa a
-   altura). Mexe no comportamento do painel e nas alturas fixas da v5.8.
-5. **Botões de rota sempre visíveis.** "Traçar nesta ordem" e "Otimizar ordem"
-   grudados na base do painel enquanto o resto rola. Cuidado: o módulo Rota é
-   móvel (pode estar em outra posição ou coluna) — definir o que acontece nesses
-   casos antes de implementar.
+4. ⚠️ **Rolagens dentro de rolagem — TENTADA E REVERTIDA.** A v6.4 fez o painel
+   funcionar como as colunas; o usuário testou e não gostou: com rota traçada os
+   três módulos com lista dividiam a tela (~131px cada numa janela de 1000px),
+   contra 320/240 fixos de hoje. Desfeita na v6.4.1. Se o assunto voltar, o
+   caminho é o outro que foi oferecido: mexer só no Roteiro, que deixaria de
+   rolar sozinho, de 4 barras para 3.
+5. ~~Botões de rota sempre visíveis.~~ ✅ Feito na v6.5.0: o módulo gruda na
+   coluna em que estiver, em qualquer posição, e fica compacto enquanto flutua.
 6. **Cabeçalho do módulo 3 apertado.** Em 340px, "TIPOS DE SERVIÇO" e "MARCAR
    TODOS" quebram em duas linhas cada. Ideia: descer para a linha da busca, ou
    virar ícones.
@@ -704,6 +702,9 @@ de arquitetura, para retomar quando fizer sentido):
 | 64 | **v6.2.2** — Fonte do "✓ Base carregada" 4px maior (15,5px) |
 | 65 | **v6.2.3** — Fonte do "✓ Base carregada" 1px menor (14,5px) |
 | 66 | **v6.3** — Retorno para a origem: no traçado, na otimização, no Roteiro e no link do campo (formato v7) |
+| 67 | **v6.4** — Painel funciona como as colunas: sem rolagem própria, com os mesmos controles de altura (sugestão de layout 4) |
+| 68 | **v6.4.1** — v6.4 desfeita (o usuário preferiu o painel de antes); versão passa a mostrar sempre três números |
+| 69 | **v6.5.0** — Módulo Rota grudado na coluna em que estiver, compacto enquanto flutua (sugestão de layout 5) |
 
 ---
 
@@ -751,9 +752,11 @@ Adotado em 29/08/2026, a pedido do usuário.
 `MAIOR.MENOR.AJUSTE`.
 
 1. **Cada alteração leve** acrescenta 1 no terceiro número, na hora:
-   6.1 → 6.1.1 → 6.1.2 → …
+   6.1.0 → 6.1.1 → 6.1.2 → …
 2. **Uma alteração mediana ou grande** sobe o número do meio e zera o terceiro:
-   6.1.3 → 6.2 (e 6.9.x → 7.0, como antes).
+   6.1.3 → **6.2.0** (e 6.9.x → 7.0.0).
+3. O terceiro número **aparece sempre** (pedido do usuário em 15/09/2026, que
+   sentiu falta dele no selo da v6.4).
 
 A regra anterior ("cinco leves acumuladas fecham uma versão") foi **substituída**
 — não há mais contador de leves. Versões até a 6.1 seguem a regra antiga.
@@ -768,7 +771,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-6.3
+6.5.0
 ```
 
 ### Onde o número aparece
@@ -859,3 +862,6 @@ os backups locais são conveniência, não garantia.
 | 6.2.2 | 15/09/2026 | Fonte maior no "✓ Base carregada" |
 | 6.2.3 | 15/09/2026 | Fonte do "✓ Base carregada" em 14,5px |
 | 6.3 | 15/09/2026 | Retorno para a origem (interruptor ligado por padrão; link v7) |
+| 6.4 | 15/09/2026 | Painel como as colunas: fim das rolagens empilhadas — **desfeita na v6.4.1** |
+| 6.4.1 | 15/09/2026 | Volta ao painel da v6.3; três números no selo de versão |
+| 6.5.0 | 15/09/2026 | Módulo Rota sempre visível (grudado, compacto enquanto flutua) |
