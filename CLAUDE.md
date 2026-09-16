@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/09/2026 — v6.9.0 (clicar na parada leva o mapa até ela)
+> **Última atualização:** 15/09/2026 — v7.1.0 (correção do painel piscando no módulo Rota grudado)
 
 ---
 
@@ -55,6 +55,16 @@ sem dependências instaladas. Abre direto no navegador.
   aparecem só com base carregada. Saíram do cabeçalho porque no painel de 340px
   os três itens pediam ~430px numa linha de 307 e cada um quebrava em duas — com
   isso o título voltou a caber inteiro (cabeçalho de 28px para 14px)
+- **Parada avulsa** (v7.0.0): ícone de alfinete na linha da busca abre um painel
+  com nome + coordenada colada e o 🎯 para marcar no mapa. Aceita o formato do
+  Google Maps, espaço ou ponto-e-vírgula, vírgula decimal e URL de mapa colada;
+  recusa texto sem números e coordenada fora de faixa. A parada entra em
+  `clientPoints` e num grupo próprio do checklist ("PARADAS AVULSAS"), então vale
+  em tudo: seleção, ★, tipo, rota, link e tela do campo. O 🎯 da origem e o da
+  avulsa dividem o mesmo mecanismo, agora com **modo** (`'origem' | 'avulsa'`) —
+  um desarma o outro. Sem nome digitado, o rótulo vem do endereço de volta
+  (Nominatim). ⚠️ Vive só na sessão: recarregar limpa, como a seleção do dia; para
+  recuperar, retoma-se pelo link
 - **A cascata fecha ao selecionar** (v5.0): marcar uma filial fecha a cascata do
   cliente, para a lista não ficar poluída. O contador no cabeçalho (ex.: "1/9")
   e a bolinha âmbar continuam mostrando que há seleção ali dentro. Desmarcar
@@ -206,7 +216,11 @@ sem dependências instaladas. Abre direto no navegador.
   rolar por ele. Vale no painel e nas colunas, com o módulo em qualquer posição.
   Enquanto grudado fica compacto (classe `grudado`, calculada por uma sentinela
   logo depois do corpo): título, botões e o resumo km/min; a opção de retorno e o
-  status voltam no lugar natural. ⚠️ O título **fica**: a alça mora nele, e sem ela
+  status voltam no lugar natural. ⚠️ **Folga de 120px para soltar** (v7.1.0): sem
+  ela isto oscilava — compacto encolhe ~80px, a sentinela reaparece, solta, cresce
+  e gruda de novo, e o painel ficava piscando (relatado pelo usuário). O
+  observador de mudanças olha só painel e colunas; em `main` os ladrilhos do mapa
+  disparavam verificações à toa. ⚠️ O título **fica**: a alça mora nele, e sem ela
   não dá para mover o módulo grudado. ⚠️ Dois tropeços registrados: `display:contents`
   não muda a árvore do HTML (o seletor precisa descer pela `section`), e a marca
   não pode ser atualizada dentro de `requestAnimationFrame` — o navegador pausa o
@@ -256,8 +270,9 @@ sem dependências instaladas. Abre direto no navegador.
   tela estreita; guarda o link e recarrega sem o `#`, retomando depois da base
   carregada). Volta ordem, ★, tipo, origem e o interruptor de retorno; o **id do
   roteiro é mantido**, e a rota é desfeita porque a lista mudou. Parada que não
-  está na base é avisada pelo nome. **Sem base carregada o link espera**: fica
-  guardado e a retomada acontece sozinha quando a base entra (v6.8.1)
+  está na base **entra como avulsa** (v7.0.0), com aviso de quantas e quais — é o
+  que faz um roteiro com avulsas voltar inteiro. **Sem base carregada o link
+  espera**: fica guardado e a retomada acontece sozinha quando a base entra (v6.8.1)
 - **Progresso do campo por parada e por roteiro** (v6.8.0): a chave é o id do
   roteiro (`hg_prog_r_<rid>`) e as marcas são a **coordenada** da parada
   ("retorno" para a volta). Antes era o código do link com **índices**: link novo
@@ -748,6 +763,8 @@ de arquitetura, para retomar quando fizer sentido):
 | 72 | **v6.8.0** — Retomar roteiro pelo link (formato v8 com id do roteiro e origem) e progresso do campo por parada |
 | 73 | **v6.8.1** — Campo de retomar também no módulo 1, com o link esperando a base |
 | 74 | **v6.9.0** — Clicar no nome ou no número da parada centraliza o mapa nela |
+| 75 | **v7.0.0** — Parada avulsa: ponto fora da base por coordenada colada ou clique no mapa; retomada traz avulsas de volta |
+| 76 | **v7.1.0** — Correção: módulo Rota grudado alternava entre compacto e inteiro, fazendo o painel piscar |
 
 ---
 
@@ -814,7 +831,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-6.9.0
+7.1.0
 ```
 
 ### Onde o número aparece
@@ -913,3 +930,5 @@ os backups locais são conveniência, não garantia.
 | 6.8.0 | 15/09/2026 | Retomar roteiro pelo link; progresso do campo sobrevive ao link atualizado |
 | 6.8.1 | 15/09/2026 | Campo de retomar no módulo 1, sempre visível |
 | 6.9.0 | 15/09/2026 | Clicar na parada leva o mapa até ela |
+| 7.0.0 | 15/09/2026 | Parada avulsa (coordenada colada ou clique no mapa) |
+| 7.1.0 | 15/09/2026 | Fim do painel piscando (folga na decisão do módulo grudado) |

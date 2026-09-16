@@ -4848,3 +4848,87 @@ TESTES (janela 1100x900, base de teste, 5 paradas)
   setView ANIMADO do Leaflet não chega a ser aplicado — o mapa fica onde
   estava. Não é defeito do app: com a janela à vista funciona. Para medir,
   os testes forçaram animate:false.
+
+--------------------------------------------------------
+[15/09/2026] v7.0.0 — Parada avulsa (ponto fora da base)
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Existe a possibilidade de adicionar uma parada manualmente? Somente com
+  as coordenadas e/ou endereço?" Nas perguntas de escopo escolheu
+  coordenada colada + botão para marcar no mapa, com nome digitado.
+  (Busca por endereço digitado ficou de fora, a pedido dele.)
+
+O QUE FOI FEITO
+  1. Ícone de alfinete na linha da busca do módulo 3 abre o painel "parada
+     avulsa": campo de nome, campo de coordenada, 🎯 para marcar no mapa e
+     botão Adicionar. Acende em âmbar como os outros ícones.
+  2. Coordenada colada aceita o formato do Google Maps ("-28.67750,
+     -49.36970"), separada por espaço ou ponto-e-vírgula, com vírgula
+     decimal, e também um endereço de mapa colado inteiro (pega os dois
+     primeiros números). Fora da faixa de lat/lng ou texto sem números é
+     recusado com mensagem.
+  3. 🎯 arma o mapa e o próximo clique cria a parada ali. O mesmo mecanismo
+     da origem passou a ter MODO ('origem' | 'avulsa'), então um botão
+     desarma o outro. Sem nome digitado, o app busca o endereço de volta
+     (Nominatim) só para dar um rótulo — a coordenada é que manda.
+  4. A parada avulsa entra em clientPoints e num grupo próprio do checklist
+     ("PARADAS AVULSAS"), então aparece na lista, pode ser desmarcada,
+     priorizada, recebe tipo de serviço, entra na rota, no link e na tela do
+     campo como qualquer outra.
+  5. Retomar um link: parada que não está na base agora ENTRA COMO AVULSA em
+     vez de ser descartada — é o que faz um roteiro com avulsas voltar
+     inteiro. A mensagem diz quantas e quais.
+  ⚠️ A parada avulsa vive só na sessão: recarregar a página limpa, como a
+  seleção do dia. Para voltar depois, retoma-se pelo link.
+
+TESTES (janela 1100x900, base de teste)
+  - Leitura de coordenadas: "-28.67750, -49.36970", "-28.6775 -49.3697",
+    "-28,67750; -49,36970" e URL do Google Maps → todos deram o mesmo ponto.
+    "rua das flores, 123" e "-928.6, -49.3" recusados.
+  - Adicionar pelo campo: parada criada com o nome digitado, marcador no
+    mapa, grupo "PARADAS AVULSAS" no checklist, e mapa centralizado nela.
+  - 🎯: armou com aviso, o clique no mapa criou a parada no ponto e
+    desarmou. O 🎯 da origem continua funcionando e desarma o da avulsa.
+  - Link gerado com duas avulsas (328 caracteres) e retomado depois de
+    recarregar a base: as duas voltaram como avulsas, com o aviso certo.
+    Concordância conferida no singular e no plural.
+  - Sem erros no console. Print conferido.
+
+VERSÃO: fecha a v7.0.0 (primeira do 7). Não publicada — aguardando teste.
+
+--------------------------------------------------------
+[15/09/2026] v7.1.0 — Correção: painel piscando (módulo Rota expandindo e voltando)
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Ao clicar no botão na base de teste, acabou bugando a imagem, como se
+  tivesse tentando expandir e voltar."
+
+CAUSA (reproduzida e medida)
+  Laço de realimentação no módulo Rota grudado (v6.5.0): ao grudar, ele fica
+  COMPACTO e encolhe ~80px; a sentinela que marca o lugar natural dele sobe
+  junto e volta a aparecer na área visível, o que o SOLTA; solto ele cresce,
+  empurra a sentinela para fora de novo e gruda — e assim sem parar.
+  Medido no painel: em duas posições de rolagem (610 e 620px), oito
+  verificações seguidas alternavam grudado/solto a cada chamada.
+  Abrir o painel da parada avulsa (v7.0.0) mudou as alturas e deixou o painel
+  justamente nessa faixa — por isso apareceu agora.
+
+O QUE FOI FEITO
+  1. FOLGA de 120px na decisão: para SOLTAR, a sentinela precisa entrar bem
+     na área visível — mais do que a diferença de altura entre os dois
+     estados (~80px). Grudar continua imediato.
+  2. O observador de mudanças passou a olhar só o painel e as colunas. Antes
+     olhava "main" inteiro, que inclui o mapa: cada ladrilho trocado pelo
+     Leaflet disparava uma verificação à toa.
+
+TESTES (base de teste)
+  - Varredura de 5 em 5 px por toda a rolagem, oito verificações por posição:
+    ZERO oscilações no painel, com o painel da parada avulsa aberto e com o
+    módulo Rota dentro de uma coluna. Antes: 2 posições oscilando.
+  - Janela de 950px com rota traçada: grudado e compacto (158px) em 0%, 30%
+    e 60% da rolagem; solto e inteiro (238px) em 90% e 100%; botões visíveis
+    em todos os pontos.
+
+VERSÃO: fecha a v7.1.0. Vai junto com a v7.0.0, ainda não publicada.

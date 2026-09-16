@@ -308,6 +308,8 @@
                 padding:10px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;}
   .tipos-lista{display:flex; flex-wrap:wrap; gap:6px;}
   .tipos-vazio{font-size:12px; color:var(--muted); font-style:italic;}
+  /* Painel da parada avulsa (v7.0.0) — mesma caixa do painel de tipos */
+  .avulsa-painel input[type="text"]{width:100%; font-size:12.5px;}
   .tipo-chip{display:inline-flex; align-items:center; gap:3px; background:var(--panel);
              border:1px solid var(--line); border-radius:14px; padding:3px 4px 3px 10px;
              font-size:12px; color:var(--text);}
@@ -1023,6 +1025,28 @@
               <path d="M7.5 12.3l3.2 3.2 6-6.4"/>
             </svg>
           </button>
+          <!-- Parada avulsa (v7.0.0): ponto que não está na base -->
+          <button class="btn-lista" id="avulsaBtn" type="button" aria-label="Parada avulsa"
+                  title="Parada avulsa — um ponto que não está na base">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/>
+              <path d="M12 7.2v5.6M9.2 10h5.6"/>
+            </svg>
+          </button>
+        </div>
+        <!-- Painel da parada avulsa: fechado até o ícone ser clicado, como o de
+             tipos de serviço -->
+        <div class="tipos-painel avulsa-painel" id="avulsaPainel" style="display:none;">
+          <input type="text" id="avulsaNome" placeholder="Nome da parada (ex.: Cliente novo — Angélica)">
+          <div class="tipos-add">
+            <input type="text" id="avulsaCoord" placeholder="-28.67750, -49.36970">
+            <button class="btn-icon" id="avulsaMapaBtn" type="button" title="Escolher o ponto no mapa">🎯</button>
+            <div class="tipo-add-btn" id="avulsaAddBtn" role="button" tabindex="0">Adicionar</div>
+          </div>
+          <div class="envio-dica" style="margin-top:0;">
+            Cole a coordenada (o formato que o Google Maps copia) ou use o 🎯 para
+            marcar no mapa. A parada entra na viagem, no link e na tela do campo.
+          </div>
         </div>
         <div class="checklist sem-base" id="checklist">
           <div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>
@@ -1187,7 +1211,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '6.9.0';
+const VERSAO = '7.1.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2100,6 +2124,77 @@ function renderStopsList(){
     };
     list.appendChild(li);
   });
+}
+
+/* ---------------- Parada avulsa (v7.0.0) ----------------
+   Pedido do usuário: às vezes a visita é num ponto que não está na base (um
+   cliente novo, um endereço de uma vez só). A parada avulsa entra na lista, no
+   mapa, na rota, no link e na tela do campo como qualquer outra — a diferença é
+   que ela nasce aqui, não do arquivo do uMap, e só vale enquanto a página está
+   aberta (recarregar limpa, como a seleção do dia).
+
+   Duas formas, escolhidas pelo usuário: coordenada colada ou clique no mapa. */
+const CLIENTE_AVULSO = 'PARADAS AVULSAS';
+
+/* Aceita o que o Google Maps copia ("-28.67750, -49.36970"), com espaço,
+   ponto-e-vírgula ou vírgula decimal, e também um endereço de mapa colado
+   inteiro — nesse caso valem os dois primeiros números com casas decimais. */
+function lerCoordenadas(texto){
+  const t = String(texto || '').trim();
+  if (!t) return null;
+  // Vírgula como separador decimal ("-28,67750; -49,36970")
+  const decimalVirgula = t.match(/^(-?\d+),(\d+)\s*[;\s]\s*(-?\d+),(\d+)$/);
+  const alvo = decimalVirgula ? `${decimalVirgula[1]}.${decimalVirgula[2]}, ${decimalVirgula[3]}.${decimalVirgula[4]}` : t;
+  const nums = alvo.match(/-?\d+\.\d+/g);
+  if (!nums || nums.length < 2) return null;
+  const lat = Number(nums[0]), lng = Number(nums[1]);
+  if (!isFinite(lat) || !isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng };
+}
+
+// Cria o ponto: mapa + base em memória (para aparecer no checklist). Não mexe
+// na viagem — quem faz isso é criarParadaAvulsa ou a retomada de um link.
+function novoPontoAvulso(lat, lng, nome){
+  const pt = {
+    id: 'avulsa-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+    name: (nome || '').trim() || `Ponto (${lat.toFixed(5)}, ${lng.toFixed(5)})`,
+    lat, lng, cliente: CLIENTE_AVULSO
+  };
+  const marker = L.marker([lat, lng], { icon: dot('#2FB6A6') }).addTo(map)
+    .bindPopup(`<b>${escaparHtml(pt.name)}</b><br><small>${escaparHtml(CLIENTE_AVULSO)}</small><br><button onclick="toggleStop('${pt.id}')" style="margin-top:6px;cursor:pointer;">Adicionar/remover parada</button>`);
+  marker.on('mouseover', () => realcarPeloMarcador(pt, true));
+  marker.on('mouseout',  () => realcarPeloMarcador(pt, false));
+  const ponto = { ...pt, marker };
+  clientPoints.push(ponto);
+
+  // No checklist ela aparece junto das outras, num grupo próprio
+  let grupo = gruposClientes.find(g => g.cliente === CLIENTE_AVULSO);
+  if (!grupo){ grupo = { cliente: CLIENTE_AVULSO, pontos: [] }; gruposClientes.push(grupo); }
+  grupo.pontos.push(pt);
+
+  return ponto;
+}
+
+// Cria e já põe na viagem
+function criarParadaAvulsa(lat, lng, nome){
+  const ponto = novoPontoAvulso(lat, lng, nome);
+  stops.push(ponto);
+  reordenarPorPrioridade();
+  renderChecklist(); renderStopsList();
+  paradasMudaram();   // a rota traçada deixa de valer
+  return ponto;
+}
+
+function adicionarAvulsaPeloCampo(){
+  const campoNome = document.getElementById('avulsaNome');
+  const campoCoord = document.getElementById('avulsaCoord');
+  const c = lerCoordenadas(campoCoord.value);
+  if (!c) return setStatus('Não entendi a coordenada. Cole algo como "-28.67750, -49.36970".');
+  const ponto = criarParadaAvulsa(c.lat, c.lng, campoNome.value);
+  campoNome.value = ''; campoCoord.value = '';
+  setStatus(`Parada avulsa "${ponto.name}" adicionada.`, true);
+  verParadaNoMapa(stops.indexOf(ponto));
 }
 
 /* ---------------- Realce mapa <-> lista (v6.7) ----------------
@@ -3262,16 +3357,38 @@ document.getElementById('origemPadraoBtn').onclick = () => {
 //
 // O modo é ARMADO por botão, não sempre ligado — clique solto no mapa mudaria a
 // origem sem querer.
-let escolhendoNoMapa = false;
+// Desde a v7.0.0 o clique no mapa serve para duas coisas: marcar a ORIGEM ou
+// criar uma PARADA AVULSA. Por isso guarda-se o modo, não um sim/não.
+let escolhendoNoMapa = null;   // null | 'origem' | 'avulsa'
 
-function armarEscolhaNoMapa(ligar){
-  escolhendoNoMapa = ligar;
-  document.getElementById('mapPickBtn').classList.toggle('armado', ligar);
-  document.getElementById('map').classList.toggle('escolhendo', ligar);
-  if (ligar) setStatus('Clique no mapa para marcar o ponto exato da origem.', true);
+function armarEscolhaNoMapa(modo){
+  escolhendoNoMapa = modo;
+  document.getElementById('mapPickBtn').classList.toggle('armado', modo === 'origem');
+  document.getElementById('avulsaMapaBtn').classList.toggle('armado', modo === 'avulsa');
+  document.getElementById('map').classList.toggle('escolhendo', !!modo);
+  if (modo === 'origem') setStatus('Clique no mapa para marcar o ponto exato da origem.', true);
+  if (modo === 'avulsa') setStatus('Clique no mapa para criar a parada avulsa nesse ponto.', true);
 }
 
-document.getElementById('mapPickBtn').onclick = () => armarEscolhaNoMapa(!escolhendoNoMapa);
+document.getElementById('mapPickBtn').onclick = () => armarEscolhaNoMapa(escolhendoNoMapa === 'origem' ? null : 'origem');
+document.getElementById('avulsaMapaBtn').onclick = () => armarEscolhaNoMapa(escolhendoNoMapa === 'avulsa' ? null : 'avulsa');
+
+// Ícone da parada avulsa: abre e fecha o painel, como o de tipos de serviço
+document.getElementById('avulsaBtn').onclick = () => {
+  const painel = document.getElementById('avulsaPainel');
+  const abrindo = painel.style.display === 'none';
+  painel.style.display = abrindo ? 'flex' : 'none';
+  document.getElementById('avulsaBtn').classList.toggle('ativo', abrindo);
+  if (abrindo) document.getElementById('avulsaNome').focus();
+  else if (escolhendoNoMapa === 'avulsa') armarEscolhaNoMapa(null);   // fechou o painel, desarma o mapa
+};
+document.getElementById('avulsaAddBtn').onclick = adicionarAvulsaPeloCampo;
+document.getElementById('avulsaAddBtn').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); adicionarAvulsaPeloCampo(); }
+});
+document.getElementById('avulsaCoord').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ e.preventDefault(); adicionarAvulsaPeloCampo(); }
+});
 
 // Descobre o nome do lugar a partir das coordenadas, só para o ponto ficar
 // identificável na tela. Se falhar, a origem continua valendo — o que importa
@@ -3287,7 +3404,31 @@ if (map){
   map.on('click', async e => {
     if (!escolhendoNoMapa) return;
     const { lat, lng } = e.latlng;
-    armarEscolhaNoMapa(false);
+
+    // Parada avulsa (v7.0.0): cria no ponto clicado, com o nome do campo
+    if (escolhendoNoMapa === 'avulsa'){
+      armarEscolhaNoMapa(null);
+      const campoNome = document.getElementById('avulsaNome');
+      const ponto = criarParadaAvulsa(lat, lng, campoNome.value);
+      campoNome.value = '';
+      setStatus(`Parada avulsa "${ponto.name}" criada no ponto clicado.`, true);
+      // Sem nome digitado, tenta o endereço de volta — é só um rótulo, a
+      // coordenada é que manda
+      if (ponto.name.startsWith('Ponto (')){
+        const nome = await nomeDoPonto(lat, lng);
+        if (nome && clientPoints.includes(ponto)){
+          ponto.name = nome;
+          const naBase = gruposClientes.find(g => g.cliente === CLIENTE_AVULSO);
+          const original = naBase && naBase.pontos.find(x => x.id === ponto.id);
+          if (original) original.name = nome;
+          if (ponto.marker) ponto.marker.setPopupContent(`<b>${escaparHtml(nome)}</b><br><small>${escaparHtml(CLIENTE_AVULSO)}</small>`);
+          renderChecklist(); renderStopsList();
+        }
+      }
+      return;
+    }
+
+    armarEscolhaNoMapa(null);
     // Define já com as coordenadas: funciona mesmo sem rede
     setOrigin(lat, lng, `Ponto no mapa (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
     setStatus('Origem marcada no mapa.', true);
@@ -3567,13 +3708,25 @@ function atualizarRotaGrudada(){
   const sentinela = document.getElementById('sentinelaRota');
   if (!corpo || !sentinela) return;
   const cont = corpo.closest('.console, .guia');
+  if (!cont) return;
   // Grudado = o lugar natural do módulo (a sentinela) está fora da parte
   // visível da coluna: abaixo do fim dela (módulo preso na base) ou acima do
-  // começo (preso no topo, depois de rolar por ele)
-  const c = cont && cont.getBoundingClientRect();
+  // começo (preso no topo, depois de rolar por ele).
+  //
+  // ⚠️ FOLGA (v7.1.0). Sem ela isto oscilava: ao grudar, o módulo fica compacto
+  // e encolhe ~80px; a sentinela sobe junto e volta a aparecer, o que "solta" o
+  // módulo, que cresce e empurra a sentinela para fora de novo — o painel ficava
+  // piscando (relatado pelo usuário em 15/09/2026). Para SOLTAR, agora, a
+  // sentinela precisa entrar bem na área visível: mais do que a diferença de
+  // altura entre os dois estados.
+  const FOLGA = 120;
+  const c = cont.getBoundingClientRect();
   const sy = sentinela.getBoundingClientRect().top;
-  const grudado = !!cont && (sy > c.bottom - 1 || sy < c.top + corpo.getBoundingClientRect().height);
-  corpo.classList.toggle('grudado', grudado);
+  const h = corpo.getBoundingClientRect().height;
+  const jaGrudado = corpo.classList.contains('grudado');
+  const margem = jaGrudado ? FOLGA : 0;
+  const dentro = sy < c.bottom - 1 - margem && sy > c.top + h + margem;
+  corpo.classList.toggle('grudado', !dentro);
 }
 if (!modoCampoAtivo){
   // Sem requestAnimationFrame de propósito: o navegador o pausa quando a aba não
@@ -3585,7 +3738,12 @@ if (!modoCampoAtivo){
   document.querySelector('main').addEventListener('scroll', agendar, true);
   window.addEventListener('resize', agendar);
   new ResizeObserver(agendar).observe(document.querySelector('.console'));
-  new MutationObserver(agendar).observe(document.querySelector('main'), { childList:true, subtree:true });
+  // Observa só o painel e as colunas: em main entrariam também os ladrilhos do
+  // mapa, que o Leaflet troca o tempo todo — era chamada à toa a cada arraste
+  ['.console', '#guiaLateral', '#guiaExtra'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) new MutationObserver(agendar).observe(el, { childList:true, subtree:true });
+  });
   atualizarRotaGrudada();
 }
 
@@ -3749,16 +3907,18 @@ function retomarRoteiro(texto){
     }
 
     const porCoord = new Map(clientPoints.map(c => [chaveCoord(c.lat, c.lng), c]));
-    const achadas = [], perdidas = [];
+    const achadas = [], avulsas = [];
     roteiro.s.forEach(([nome, lat, lng, cliente, tipo, prio, retorno]) => {
       if (retorno) return;   // o retorno não é parada: volta pelo interruptor
-      const c = porCoord.get(chaveCoord(lat, lng));
-      if (!c) return perdidas.push(nome);
+      // Parada que não está na base entra como avulsa (v7.0.0), em vez de sumir
+      // do roteiro retomado — é o caso de um roteiro que já tinha avulsas
+      let c = porCoord.get(chaveCoord(lat, lng));
+      if (!c){ c = novoPontoAvulso(lat, lng, nome); avulsas.push(nome); }
       c.prioritaria = !!prio;
       if (tipo) c.tipo = tipo;
       achadas.push(c);
     });
-    if (!achadas.length) return falhar('Nenhuma parada desse link está na base carregada. É a base certa?');
+    if (!achadas.length) return falhar('Esse link não trouxe nenhuma parada.');
 
     stops = achadas;
     if (roteiro.origem) setOrigin(roteiro.origem.lat, roteiro.origem.lng, roteiro.origem.nome, false);
@@ -3767,11 +3927,13 @@ function retomarRoteiro(texto){
     renderStopsList(); renderChecklist();
     invalidarRota();   // a rota precisa ser traçada de novo, com a lista nova
 
-    const aviso = perdidas.length
-      ? ` ${perdidas.length} parada${perdidas.length === 1 ? '' : 's'} do link não está${perdidas.length === 1 ? '' : 'ão'} na base: ${perdidas.slice(0,3).join(', ')}${perdidas.length > 3 ? '…' : ''}.`
+    const aviso = avulsas.length
+      ? (avulsas.length === 1
+          ? ` 1 parada não está na base e entrou como avulsa: ${avulsas[0]}.`
+          : ` ${avulsas.length} paradas não estão na base e entraram como avulsas: ${avulsas.slice(0,3).join(', ')}${avulsas.length > 3 ? '…' : ''}.`)
       : '';
     const continua = roteiro.rid ? ' Quem já está na rua continua de onde parou.' : '';
-    setStatus(`Roteiro retomado: ${achadas.length} parada${achadas.length === 1 ? '' : 's'}.${aviso} Acrescente o que faltar e trace a rota de novo.${continua}`, !perdidas.length);
+    setStatus(`Roteiro retomado: ${achadas.length} parada${achadas.length === 1 ? '' : 's'}.${aviso} Acrescente o que faltar e trace a rota de novo.${continua}`, true);
     return true;
   };
 
