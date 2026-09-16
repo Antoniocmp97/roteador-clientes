@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/09/2026 — v6.8.1 (campo de retomar também no módulo 1, sempre visível)
+> **Última atualização:** 15/09/2026 — v6.9.0 (clicar na parada leva o mapa até ela)
 
 ---
 
@@ -220,6 +220,12 @@ sem dependências instaladas. Abre direto no navegador.
   teste: 16,2 km sem volta, 27,1 km com volta na mesma ordem, e 24,1 km quando o
   otimizador trabalha sabendo que precisa voltar
 - Marcadores numerados conforme a ordem final de visita
+- **Clicar na parada leva o mapa até ela** (v6.9.0): clique no nome ou no número
+  centraliza o mapa na parada com zoom 16, abre o balão e acende o marcador. O
+  zoom **nunca afasta** (se já estiver mais perto, só centraliza). Alça e botões
+  mantêm a função deles. ⚠️ Em aba de segundo plano o `setView` animado do Leaflet
+  não chega a ser aplicado (relógio de quadros pausado) — é artefato de teste,
+  não do app
 - **Realce mapa ↔ lista** (v6.7.0, sugestão de layout 7): o mouse numa parada da
   lista acende o marcador dela (1,6x, anel âmbar, à frente dos vizinhos); o mouse
   num marcador acende a linha e rola a lista até ela (só nesse sentido, senão a
@@ -741,6 +747,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 71 | **v6.7.0** — Realce entre mapa e lista de paradas, nos dois sentidos (sugestão de layout 7) |
 | 72 | **v6.8.0** — Retomar roteiro pelo link (formato v8 com id do roteiro e origem) e progresso do campo por parada |
 | 73 | **v6.8.1** — Campo de retomar também no módulo 1, com o link esperando a base |
+| 74 | **v6.9.0** — Clicar no nome ou no número da parada centraliza o mapa nela |
 
 ---
 
@@ -807,7 +814,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-6.8.1
+6.9.0
 ```
 
 ### Onde o número aparece
@@ -905,3 +912,4 @@ os backups locais são conveniência, não garantia.
 | 6.7.0 | 15/09/2026 | Realce entre mapa e lista de paradas |
 | 6.8.0 | 15/09/2026 | Retomar roteiro pelo link; progresso do campo sobrevive ao link atualizado |
 | 6.8.1 | 15/09/2026 | Campo de retomar no módulo 1, sempre visível |
+| 6.9.0 | 15/09/2026 | Clicar na parada leva o mapa até ela |

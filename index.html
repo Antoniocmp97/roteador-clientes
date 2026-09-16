@@ -584,6 +584,9 @@
      de quebrar letra a letra. Com o piso de 320px das colunas sobram ~110px, então
      este limite não deve ser alcançado — ele existe para o caso de a linha ganhar
      mais algum elemento no futuro. */
+  /* Clicar no corpo da parada leva o mapa até ela (v6.9.0). A alça e os botões
+     seguem com o cursor próprio — só o nome e o número ganham a mãozinha. */
+  .stop-row .nm, .stop-row .n{cursor:pointer;}
   .stop-row .nm{flex:1;min-width:88px;white-space:normal;line-height:1.3;overflow-wrap:anywhere;}
   /* Os botões ★ ▲ ▼ ✕ voltaram ao tamanho original na v5.2: a v5.1 os aumentou
      por engano — o pedido era a área de PEGADA da alça de arrastar.
@@ -1184,7 +1187,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '6.8.1';
+const VERSAO = '6.9.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2068,7 +2071,7 @@ function renderStopsList(){
     // podem se chamar "CENTRAL" ou "MATRIZ", e a lista precisa ficar sem ambiguidade
     const sub = s.cliente ? `<span class="nm-cli">${escaparHtml(s.cliente)}</span>` : '';
     const tag = s.tipo ? `<span class="nm-tipo">${escaparHtml(s.tipo)}</span>` : '';
-    li.innerHTML = `<span class="alca" title="Arraste para mudar a ordem" aria-hidden="true"></span><span class="n">${i+1}</span><span class="nm">${escaparHtml(s.name)}${sub}${tag}</span>
+    li.innerHTML = `<span class="alca" title="Arraste para mudar a ordem" aria-hidden="true"></span><span class="n" title="Clique para ver esta parada no mapa">${i+1}</span><span class="nm" title="Clique para ver esta parada no mapa">${escaparHtml(s.name)}${sub}${tag}</span>
       <button data-act="fixar" class="btn-fixar" title="${s.prioritaria ? 'Tirar da prioridade' : 'Marcar como prioritária'}">${s.prioritaria ? '★' : '☆'}</button>
       <button data-act="up" title="Mover para cima">▲</button>
       <button data-act="down" title="Mover para baixo">▼</button>
@@ -2131,7 +2134,29 @@ function realcarPeloMarcador(ponto, ligado){
   if (i >= 0) realcarParada(i, ligado, true);
 }
 
+/* Clicar no corpo da parada leva o mapa até ela (v6.9.0, pedido do usuário a
+   partir do realce da v6.7.0). O clique vale no nome e no número; alça e botões
+   continuam fazendo o que já faziam. O zoom nunca AFASTA: se o mapa já está mais
+   perto do que 16, mantém o que está. */
+const ZOOM_DA_PARADA = 16;
+
+function verParadaNoMapa(i){
+  const s = stops[i];
+  if (!s || !map) return;
+  map.setView([s.lat, s.lng], Math.max(map.getZoom(), ZOOM_DA_PARADA), { animate:true });
+  const m = marcadorDaParada(i);
+  if (m && m.openPopup) m.openPopup();   // diz qual é, quando há vários por perto
+  realcarParada(i, true, false);
+}
+
 if (!modoCampoAtivo){
+  document.querySelector('main').addEventListener('click', ev => {
+    const li = ev.target.closest('#stopsList .stop-row');
+    // Alça e botões da linha têm função própria
+    if (!li || ev.target.closest('button') || ev.target.closest('.alca')) return;
+    verParadaNoMapa(Number(li.dataset.i));
+  });
+
   // Uma escuta só, na lista: vale no painel e nas colunas, e sobrevive aos
   // redesenhos da lista (as linhas são recriadas a cada mudança)
   document.querySelector('main').addEventListener('mouseover', ev => {

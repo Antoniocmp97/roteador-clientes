@@ -4813,3 +4813,38 @@ TESTES
   - Carregando a base em seguida: roteiro retomado sozinho, com a ★, a
     origem e o id do roteiro; campo limpo.
   - Print conferido: campo logo abaixo de "Base carregada".
+
+--------------------------------------------------------
+[15/09/2026] v6.9.0 — Clicar na parada leva o mapa até ela
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Ideia a partir do realce da v6.7.0: "ao apertar no corpo da parada, dá um
+  zoom para a parada no mapa".
+
+O QUE FOI FEITO
+  - Clicar no nome ou no número de uma parada centraliza o mapa nela, com
+    zoom 16, abre o balão com o nome e acende o marcador.
+  - O zoom nunca AFASTA: se o mapa já está mais perto que 16, fica como
+    está — só centraliza.
+  - Alça de arrastar e botões (★ ▲ ▼ ✕) continuam com a função deles; só o
+    nome e o número ganham a mãozinha do cursor e a dica "Clique para ver
+    esta parada no mapa".
+  - Vale no painel e nas colunas (a escuta é única, delegada), e antes ou
+    depois de traçar: o balão é o do marcador que existir (bolinha do
+    cliente ou numerada).
+
+TESTES (janela 1100x900, base de teste, 5 paradas)
+  - Clique no nome: mapa foi de zoom 12 para 16, centralizado na parada,
+    balão aberto e marcador realçado.
+  - Clique no número: mesmo resultado.
+  - Mapa já em zoom 18: continuou em 18, só centralizou.
+  - Clique na alça: mapa parado. Clique no ✕: removeu a parada e o mapa não
+    se mexeu.
+  - Sem erros no console. Print conferido.
+
+⚠️ NOTA DE TESTE (terceira vez que isso aparece)
+  Com a aba em segundo plano, o navegador pausa o relógio de quadros, e o
+  setView ANIMADO do Leaflet não chega a ser aplicado — o mapa fica onde
+  estava. Não é defeito do app: com a janela à vista funciona. Para medir,
+  os testes forçaram animate:false.
