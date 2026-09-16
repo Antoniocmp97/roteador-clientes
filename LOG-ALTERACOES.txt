@@ -4655,3 +4655,41 @@ TESTES (janela 1100x900, painel de 360px, base de teste, 5 paradas)
 
 VERSÃO: fecha a v6.5.0 (primeira com o terceiro número desde o início).
 Não publicada — aguardando teste do usuário. Vai junto com a v6.4.1.
+
+--------------------------------------------------------
+[15/09/2026] v6.6.0 — Cabeçalho do módulo 3: ações viram ícones (sugestão 6)
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Sugestão 6. Entre as três saídas oferecidas, escolheu "ícones na linha da
+  busca".
+
+MEDIDO ANTES
+  Painel de 340px: cabeçalho com 307px úteis, e os três itens pediam ~430px
+  numa linha — título 178, "TIPOS DE SERVIÇO" 130, "MARCAR TODOS" 97, mais
+  os espaços. Resultado: cada um quebrava em duas linhas, e o cabeçalho
+  ficava com 28px de altura.
+
+O QUE FOI FEITO
+  1. "tipos de serviço" e "marcar todos" saíram do cabeçalho e viraram dois
+     botões de ícone ao lado do campo de busca: engrenagem (tipos) e caixa
+     marcada (marcar todos), ambos com nome na dica e aria-label.
+  2. O cabeçalho ficou só com o título, que voltou a caber numa linha: 28px
+     -> 14px de altura. A quebra forçada "Selecionar / paradas" saiu junto,
+     com o CSS que existia só para ela.
+  3. Os ícones acendem em âmbar quando estão "ligados": painel de tipos
+     aberto, ou base inteira marcada.
+  4. A linha da busca inteira (campo + ícones) aparece só com base
+     carregada, como o campo de busca já fazia sozinho.
+
+TESTES (janela 1100x900, painel de 340px, base de teste com 39 pontos)
+  - Sem base: linha escondida. Com base: campo de 215px e dois botões de
+    38px, todos com a mesma altura (36px).
+  - Título em uma linha só; cabeçalho de 14px.
+  - Engrenagem abre e fecha o painel de tipos, acendendo junto.
+  - Caixa marcada seleciona os 39 clientes e acende; clicando de novo,
+    desmarca e apaga.
+  - Busca continua filtrando (1 resultado para "acuo").
+  - Sem erros no console. Ícones conferidos ampliados, inclusive aceso.
+
+VERSÃO: fecha a v6.6.0. Não publicada — aguardando teste do usuário.

@@ -298,15 +298,10 @@
 
   .field-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;color:var(--amber-dim);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
   .field-label small{color:var(--muted);letter-spacing:0;text-transform:none;font-size:10.5px;}
-  .field-label-acoes{display:flex; gap:12px;}
-  /* "3 · Selecionar" precisa ficar junto numa linha só, mesmo com pouco espaço
-     sobrando ao lado de "tipos de serviço"/"marcar todos" — só "paradas" (via
-     <br> no HTML) desce para a linha de baixo, de propósito. */
-  /* "3 ·" fica ao lado, "Selecionar"/"paradas" numa coluna própria — assim
-     "paradas" cai exatamente embaixo de "Selecionar", não embaixo do "3"
-     (que teria acontecido com um <br> simples dentro do mesmo texto corrido). */
+  /* Até a v6.5 o título do módulo 3 era quebrado à força em duas linhas
+     ("Selecionar" / "paradas"), porque dividia a linha com dois links. Com eles
+     virando ícones na busca (v6.6) o título voltou a caber inteiro. */
   .field-label-titulo{white-space:nowrap; display:flex; gap:5px;}
-  .field-label-titulo .titulo-palavras{display:flex; flex-direction:column;}
 
   /* Painel de configuração dos tipos de serviço (Fase 2) */
   .tipos-painel{background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
@@ -417,7 +412,18 @@
      senao o flexbox os ESPREME para caber no lugar de gerar barra de rolagem —
      era o bug relatado em 29/08/2026: com os grupos, a lista comprimia os
      ultimos clientes e nao rolava. Vale para .checklist, .stops e .steps. */
-  .busca-clientes{width:100%; margin-bottom:8px;}
+  /* Linha da busca com os dois ícones do módulo 3 (v6.6) */
+  .busca-linha{display:flex; align-items:stretch; gap:8px; margin-bottom:8px;}
+  .busca-clientes{width:100%; min-width:0;}
+  .btn-lista{flex:none; width:38px; display:flex; align-items:center; justify-content:center;
+             background:var(--panel-2); border:1px solid var(--line); border-radius:6px;
+             color:var(--muted); transition:color .15s, border-color .15s;}
+  .btn-lista svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.7;
+                 stroke-linecap:round; stroke-linejoin:round;}
+  .btn-lista:hover{color:var(--text); border-color:var(--teal);}
+  .btn-lista:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
+  /* Ligado = painel de tipos aberto, ou todos os clientes marcados */
+  .btn-lista.ativo{color:var(--amber); border-color:var(--amber-dim); background:var(--amber-fraco);}
   /* height, e não max-height (v5.7): com max-height a caixa encolhia até o
      conteúdo durante uma busca de poucos resultados (89px com "acuo"), e aí a
      divisória 3<->4 e os puxadores ficavam travados — a lista não tinha como
@@ -945,14 +951,14 @@
       <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
       <section class="modulo-movel" data-modulo="m3">
       <div id="modulo3" class="modulo-corpo">
+        <!-- v6.6: "tipos de serviço" e "marcar todos" saíram do cabeçalho e
+             viraram ícones na linha da busca. No painel de 340px os três itens
+             pediam ~430px numa linha de 307, e cada um quebrava em duas. Sem
+             eles o título cabe inteiro numa linha só. -->
         <div class="field-label">
           <span class="field-label-titulo">
             <span class="modulo-alca" data-alca></span>
-            3 ·<span class="titulo-palavras"><span>Selecionar</span><span>paradas</span></span></span>
-          <span class="field-label-acoes">
-            <button class="link-btn" id="tiposBtn">tipos de serviço</button>
-            <button class="link-btn" id="selectAllBtn">marcar todos</button>
-          </span>
+            3 · Selecionar paradas</span>
         </div>
         <!-- Painel de configuração da LISTA de tipos de serviço (ex.: "Manutenção",
              "Entrega de toner"). Fica escondido até o link "tipos de serviço" ser
@@ -975,8 +981,24 @@
         <!-- Busca (Fase 3): filtra os grupos por nome do cliente ou da filial.
              Escondida até haver clientes carregados — não faz sentido buscar
              numa lista vazia. -->
-        <input type="text" id="buscaClientes" class="busca-clientes"
-               placeholder="Buscar cliente ou filial..." style="display:none;">
+        <div class="busca-linha" id="linhaBusca" hidden>
+          <input type="text" id="buscaClientes" class="busca-clientes"
+                 placeholder="Buscar cliente ou filial...">
+          <button class="btn-lista" id="tiposBtn" type="button" aria-label="Tipos de serviço"
+                  title="Tipos de serviço — abre a lista configurável">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3.2"/>
+              <path d="M19.4 14.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1.03z"/>
+            </svg>
+          </button>
+          <button class="btn-lista" id="selectAllBtn" type="button" aria-label="Marcar todos"
+                  title="Marcar todos os clientes (clicando de novo, desmarca)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20.5 5.5v13a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/>
+              <path d="M7.5 12.3l3.2 3.2 6-6.4"/>
+            </svg>
+          </button>
+        </div>
         <div class="checklist sem-base" id="checklist">
           <div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>
         </div>
@@ -1130,7 +1152,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '6.5.0';
+const VERSAO = '6.6.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1707,11 +1729,14 @@ function renderChecklist(){
   el.innerHTML = '';
   el.classList.toggle('sem-base', !clientPoints.length);
   if (!clientPoints.length){
-    buscaInput.style.display = 'none';
+    document.getElementById('linhaBusca').hidden = true;
     el.innerHTML = '<div class="empty-hint">Carregue o backup completo do uMap para ver os clientes aqui.</div>';
     return;
   }
-  buscaInput.style.display = 'block';
+  document.getElementById('linhaBusca').hidden = false;
+  // O ícone de marcar todos acende quando a base inteira está selecionada
+  document.getElementById('selectAllBtn').classList.toggle('ativo',
+    clientPoints.length > 0 && stops.length === clientPoints.length);
 
   // Busca (Fase 3): filtra por nome do cliente OU da filial. Se o cliente
   // bate, mostra todas as filiais dele; se só alguma filial bate, mostra só
@@ -1912,6 +1937,7 @@ document.getElementById('tiposBtn').onclick = () => {
   const painel = document.getElementById('tiposPainel');
   const abrindo = painel.style.display === 'none';
   painel.style.display = abrindo ? 'flex' : 'none';
+  document.getElementById('tiposBtn').classList.toggle('ativo', abrindo);
   if (abrindo) renderTiposPainel();
 };
 

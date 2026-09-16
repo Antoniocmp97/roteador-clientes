@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/09/2026 — v6.5.0 (módulo Rota sempre visível, grudado na coluna em que estiver)
+> **Última atualização:** 15/09/2026 — v6.6.0 (ações do módulo 3 viram ícones ao lado da busca)
 
 ---
 
@@ -49,7 +49,12 @@ sem dependências instaladas. Abre direto no navegador.
   painel está estreito, em vez de terminar em "…" (o final do nome é justamente
   o que distingue uma unidade da outra)
 - **Busca no checklist** (Fase 3): filtra por nome do cliente ou da filial;
-  grupos com resultado abrem sozinhos durante a busca
+  grupos com resultado abrem sozinhos durante a busca. Ao lado do campo, dois
+  ícones (v6.6.0, sugestão de layout 6): **engrenagem** = tipos de serviço,
+  **caixa marcada** = marcar/desmarcar todos; acendem em âmbar quando ligados e
+  aparecem só com base carregada. Saíram do cabeçalho porque no painel de 340px
+  os três itens pediam ~430px numa linha de 307 e cada um quebrava em duas — com
+  isso o título voltou a caber inteiro (cabeçalho de 28px para 14px)
 - **A cascata fecha ao selecionar** (v5.0): marcar uma filial fecha a cascata do
   cliente, para a lista não ficar poluída. O contador no cabeçalho (ex.: "1/9")
   e a bolinha âmbar continuam mostrando que há seleção ali dentro. Desmarcar
@@ -608,9 +613,8 @@ v6.2 (parada em uma linha, distância/tempo junto dos botões, módulo 1 compact
    rolar sozinho, de 4 barras para 3.
 5. ~~Botões de rota sempre visíveis.~~ ✅ Feito na v6.5.0: o módulo gruda na
    coluna em que estiver, em qualquer posição, e fica compacto enquanto flutua.
-6. **Cabeçalho do módulo 3 apertado.** Em 340px, "TIPOS DE SERVIÇO" e "MARCAR
-   TODOS" quebram em duas linhas cada. Ideia: descer para a linha da busca, ou
-   virar ícones.
+6. ~~Cabeçalho do módulo 3 apertado.~~ ✅ Feito na v6.6.0: os dois viraram ícones
+   ao lado da busca (escolha do usuário entre três opções).
 7. **Mapa e lista conversando.** No centro de Criciúma os marcadores 1, 2 e 3 se
    sobrepõem. Ideia: passar o mouse numa parada da lista acende o marcador dela
    no mapa, e vice-versa. É mais funcionalidade do que layout.
@@ -705,6 +709,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 67 | **v6.4** — Painel funciona como as colunas: sem rolagem própria, com os mesmos controles de altura (sugestão de layout 4) |
 | 68 | **v6.4.1** — v6.4 desfeita (o usuário preferiu o painel de antes); versão passa a mostrar sempre três números |
 | 69 | **v6.5.0** — Módulo Rota grudado na coluna em que estiver, compacto enquanto flutua (sugestão de layout 5) |
+| 70 | **v6.6.0** — Ações do módulo 3 viram ícones ao lado da busca; título volta a caber em uma linha (sugestão de layout 6) |
 
 ---
 
@@ -771,7 +776,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-6.5.0
+6.6.0
 ```
 
 ### Onde o número aparece
@@ -865,3 +870,4 @@ os backups locais são conveniência, não garantia.
 | 6.4 | 15/09/2026 | Painel como as colunas: fim das rolagens empilhadas — **desfeita na v6.4.1** |
 | 6.4.1 | 15/09/2026 | Volta ao painel da v6.3; três números no selo de versão |
 | 6.5.0 | 15/09/2026 | Módulo Rota sempre visível (grudado, compacto enquanto flutua) |
+| 6.6.0 | 15/09/2026 | Ícones de tipos de serviço e marcar todos na linha da busca |
