@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/09/2026 — v6.2.3 (fonte do "✓ Base carregada" em 14,5px)
+> **Última atualização:** 15/09/2026 — v6.3 (retorno para a origem no fim da viagem)
 
 ---
 
@@ -207,6 +207,14 @@ sem dependências instaladas. Abre direto no navegador.
 - **Traçar nesta ordem** — rota respeitando a ordem escolhida (OSRM Route API)
 - **Otimizar ordem** — OSRM Trip API recalcula a melhor sequência e reordena a
   lista automaticamente (`source=first`, `roundtrip=false`)
+- **Voltar para a origem no fim** (v6.3): interruptor no módulo Rota, guardado no
+  navegador (`hg_voltar_origem`), **ligado por padrão**. A origem entra como último
+  ponto do traçado, o otimizador fecha o círculo (`destination=last`, com a origem
+  nas coordenadas e o waypoint dela descartado ao remontar as paradas), o Roteiro
+  ganha "Retorno · <origem>" e o link leva o retorno (formato v7). Trocar o
+  interruptor desfaz a rota traçada — km, tempo e ordem mudam. Medido na base de
+  teste: 16,2 km sem volta, 27,1 km com volta na mesma ordem, e 24,1 km quando o
+  otimizador trabalha sabendo que precisa voltar
 - Marcadores numerados conforme a ordem final de visita
 - Distância total e tempo estimado **logo abaixo de Traçar/Otimizar**, no módulo
   Rota (v6.2; antes ficavam no topo do Roteiro, no fim do painel). Instruções passo
@@ -219,6 +227,10 @@ sem dependências instaladas. Abre direto no navegador.
   abriu (sobrevive a fechar o navegador) e nenhum dado de cliente passa pelo
   servidor — o roteiro trafega inteiro dentro do link, no trecho depois do
   `#` (ver ADR-01 no documento de arquitetura).
+  Desde a v6.3 o **retorno à origem** vai no link (formato v7: 7º grupo
+  "lat*lng*rótulo") e aparece como último cartão, com ↩ no lugar do número,
+  etiqueta RETORNO, navegação e marcação próprias; o cabeçalho conta
+  "N paradas · + retorno". Links v5/v6 continuam abrindo, sem retorno.
 
 ---
 
@@ -581,6 +593,34 @@ Ainda em aberto:
 - Troca do OSRM público antes do uso diário sério (Fase 4)
 - Revisar a decisão de manter arquivo único (Fase 3, ponto de decisão, não iniciado)
 
+### Pendências para a próxima sessão (registradas em 15/09/2026)
+
+Na sessão de 14–15/09 o usuário pediu sugestões de layout olhando o app como um
+todo (medido em Full HD: painel de 340px, mapa de 1.573px, conteúdo do painel com
+1.468px para 1.015px visíveis). Foram feitas 7 sugestões; as **1, 2 e 3** viraram a
+v6.2 (parada em uma linha, distância/tempo junto dos botões, módulo 1 compacto).
+**Ficaram pendentes, sem decisão do usuário — retomar perguntando quais liberar:**
+
+4. **Rolagens dentro de rolagem.** No painel, o próprio painel rola e dentro dele
+   rolam o checklist (3), as paradas (4) e o Roteiro — até 4 barras empilhadas, e a
+   roda do mouse fica "presa" na lista interna. Ideia: no painel, deixar só o
+   checklist com rolagem própria (nas colunas já funciona bem, cada módulo ocupa a
+   altura). Mexe no comportamento do painel e nas alturas fixas da v5.8.
+5. **Botões de rota sempre visíveis.** "Traçar nesta ordem" e "Otimizar ordem"
+   grudados na base do painel enquanto o resto rola. Cuidado: o módulo Rota é
+   móvel (pode estar em outra posição ou coluna) — definir o que acontece nesses
+   casos antes de implementar.
+6. **Cabeçalho do módulo 3 apertado.** Em 340px, "TIPOS DE SERVIÇO" e "MARCAR
+   TODOS" quebram em duas linhas cada. Ideia: descer para a linha da busca, ou
+   virar ícones.
+7. **Mapa e lista conversando.** No centro de Criciúma os marcadores 1, 2 e 3 se
+   sobrepõem. Ideia: passar o mouse numa parada da lista acende o marcador dela
+   no mapa, e vice-versa. É mais funcionalidade do que layout.
+
+Também em aberto desde antes: as duas direções acima (trocar o OSRM, arquivo
+único). Regra de trabalho vigente: implementar e testar, mas **perguntar antes de
+fazer commit/push** — o usuário testa antes de publicar.
+
 Concluído:
 - Tipo de serviço por parada — ✅ implementado na v1.9
 - Busca/filtro no checklist — ✅ implementado na v2.1
@@ -663,6 +703,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 63 | **v6.2.1** — Módulo 1 compacto diz "✓ Base carregada", com espaçamento |
 | 64 | **v6.2.2** — Fonte do "✓ Base carregada" 4px maior (15,5px) |
 | 65 | **v6.2.3** — Fonte do "✓ Base carregada" 1px menor (14,5px) |
+| 66 | **v6.3** — Retorno para a origem: no traçado, na otimização, no Roteiro e no link do campo (formato v7) |
 
 ---
 
@@ -727,7 +768,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-6.2.3
+6.3
 ```
 
 ### Onde o número aparece
@@ -817,3 +858,4 @@ os backups locais são conveniência, não garantia.
 | 6.2.1 | 15/09/2026 | "✓ Base carregada" no módulo 1 compacto |
 | 6.2.2 | 15/09/2026 | Fonte maior no "✓ Base carregada" |
 | 6.2.3 | 15/09/2026 | Fonte do "✓ Base carregada" em 14,5px |
+| 6.3 | 15/09/2026 | Retorno para a origem (interruptor ligado por padrão; link v7) |

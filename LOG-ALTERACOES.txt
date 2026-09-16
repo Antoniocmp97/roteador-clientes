@@ -4465,3 +4465,67 @@ O QUE FOI FEITO
 TESTES
   Fonte 14,5px, teal, "trocar base" na mesma linha, selo v6.2.3. Print
   conferido.
+
+--------------------------------------------------------
+[15/09/2026] Pendências registradas para a próxima sessão
+--------------------------------------------------------
+
+- Acrescentada ao CLAUDE.md (seção 8) a lista do que ficou pendente: as
+  sugestões de layout 4 a 7 (rolagens dentro de rolagem, botões de rota
+  fixos, cabeçalho do módulo 3 apertado, mapa e lista acendendo juntos),
+  além das direções já em aberto (trocar o OSRM, arquivo único).
+- Só documentação: o index.html não mudou, a versão do app continua 6.2.3.
+- Sem commit: entra no próximo que o usuário autorizar.
+
+--------------------------------------------------------
+[15/09/2026] v6.3 — Retorno para a origem
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Não estava levando em consideração o retorno para o local de partida
+  (empresa)." Nas perguntas de escopo: o retorno deve aparecer também na
+  tela do campo, como último item, e o interruptor vem ligado por padrão.
+
+CAUSA
+  A rota terminava na última parada: o Route API recebia origem + paradas, e
+  o Trip API usava roundtrip=false sem destino. Resultado: km e tempo sem a
+  volta, e uma ordem "ótima" de quem não volta (termina no ponto mais longe).
+
+O QUE FOI FEITO
+  1. Interruptor "Voltar para a origem no fim" no módulo Rota, guardado no
+     navegador (hg_voltar_origem), ligado por padrão. Trocá-lo desfaz a rota
+     traçada, porque km, tempo e ordem mudam.
+  2. Traçar nesta ordem: a origem entra também como último ponto.
+  3. Otimizar ordem: o trecho otimizado passa a terminar na origem
+     (destination=last, com a origem incluída nas coordenadas). O waypoint do
+     retorno é descartado ao remontar a lista de paradas, junto com o de
+     partida.
+  4. Roteiro: trecho final "Retorno · <rótulo da origem>".
+  5. Link do campo — FORMATO v7: um 7º grupo "lat*lng*rótulo" com a origem,
+     vazio quando o retorno está desligado. Na leitura ele vira o último item
+     da lista, com marca no 7º campo da parada; links v5/v6 continuam abrindo
+     (testado) e seguem sem retorno.
+  6. Tela do campo: o retorno usa o mesmo cartão das paradas — navega pelo
+     Waze/Maps e é marcado como feito —, com ↩ no lugar do número, a etiqueta
+     RETORNO e o texto "Marcar retorno como feito". O cabeçalho mostra
+     "5 paradas · + retorno" e o progresso conta 0/6.
+
+MEDIDO (base de teste, 5 paradas, origem no centro de Criciúma)
+  - Mesma ordem manual: 16,2 km / 24 min sem retorno; 27,1 km / 39 min com.
+  - Otimizar sem retorno: 13,7 km, terminando em COCAL DO SUL (o ponto mais
+    distante). Otimizar com retorno: ordem diferente (CLINIGASTRO, COCAL DO
+    SUL, ACUO, CENTRO CRICIUMA, ANGELONI) e 24,1 km — 3 km a menos que os
+    27,1 da ordem manual com volta.
+  - Roteiro com 6 trechos, o último "Retorno · Centro, Criciúma".
+  - Link: 7 grupos, retorno "-2867750*-4936970*Centro, Criciúma", 281
+    caracteres no formato legível.
+  - Tela do campo conferida em print: cartão do retorno no fim, com ↩,
+    endereço, Waze/Maps e botão próprio.
+  - Link v6 antigo lido sem retorno, com distância preservada.
+
+OBSERVAÇÃO
+  O OSRM público estava lento hoje (~24s por chamada). Não é do app: as
+  mesmas chamadas respondem em segundos em dias normais. Reforça a pendência
+  de trocar o servidor público (Fase 4).
+
+VERSÃO: fecha a v6.3. Não publicada — aguardando teste do usuário.

@@ -617,6 +617,11 @@
   .status{font-size:12.5px;color:var(--danger);font-family:'JetBrains Mono',monospace;min-height:16px;}
   /* Desde a v5.7 botões e status moram no mesmo módulo, fora do gap do painel */
   #status{margin-top:14px;}
+  /* Opção "voltar para a origem" (v6.3), no módulo Rota */
+  .opcao-rota{display:flex; align-items:center; gap:7px; margin-top:10px; cursor:pointer;
+              font-size:12px; color:var(--muted); line-height:1.35;}
+  .opcao-rota input{accent-color:var(--teal); flex:none;}
+  .opcao-rota:hover{color:var(--text);}
 
   /* Resumo da rota (v6.2): distância e tempo logo abaixo de Traçar/Otimizar,
      onde a pessoa acabou de clicar. Antes ficava no topo do Roteiro, no fim do
@@ -985,6 +990,11 @@
           <button class="go-btn" id="routeBtn">Traçar nesta ordem</button>
           <button class="go-btn secondary" id="optimizeBtn">Otimizar ordem</button>
         </div>
+        <!-- Voltar para a origem (v6.3): entra como último ponto da viagem -->
+        <label class="opcao-rota" title="A volta entra na distância, no tempo, no mapa e no roteiro do campo">
+          <input type="checkbox" id="voltarOrigem">
+          <span>Voltar para a origem no fim</span>
+        </label>
         <!-- Resumo da rota (v6.2): veio do topo do Roteiro para junto dos botões -->
         <div class="resumo-rota" id="resumoRota" hidden>
           <div class="row"><span id="distVal">--</span><span id="timeVal">--</span></div>
@@ -1084,7 +1094,7 @@
 // 14/09/2026: MAIOR.MENOR.AJUSTE — cada alteração leve soma 1 no terceiro número
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '6.2.3';
+const VERSAO = '6.3';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -3323,7 +3333,10 @@ function drawResult(distance, duration, geometry, legs){
   legs.forEach((leg, i) => {
     const header = document.createElement('li');
     header.className = 'leg-header';
-    header.textContent = `Parada ${i+1} · ${stops[i].name}`;
+    // Com o retorno ligado vem um trecho a mais que o número de paradas: é a volta
+    header.textContent = i < stops.length
+      ? `Parada ${i+1} · ${stops[i].name}`
+      : `Retorno · ${rotuloOrigem()}`;
     stepsEl.appendChild(header);
     leg.steps.forEach(s => {
       const li = document.createElement('li');
@@ -3336,6 +3349,39 @@ function drawResult(distance, duration, geometry, legs){
   document.getElementById('resumoRota').hidden = false;
 }
 
+/* ---------------- Voltar para a origem (v6.3) ----------------
+   Pedido do usuário em 15/09/2026: a viagem terminava na última parada, então o
+   caminho de volta para a empresa não entrava no km nem no tempo — e a ordem
+   "ótima" era a de quem não volta.
+
+   Ligado (padrão), o retorno vale para tudo: a origem entra como último ponto do
+   traçado, o otimizador passa a fechar o círculo (destination=last), o Roteiro
+   ganha o trecho final e o link do campo leva o retorno como último item.
+   Fica guardado no navegador, como as outras preferências de uso. */
+const CHAVE_VOLTAR = 'hg_voltar_origem';
+
+function voltarParaOrigem(){
+  const chk = document.getElementById('voltarOrigem');
+  return chk ? chk.checked : true;
+}
+// Rótulo da origem como está no campo (ex.: "Centro, Criciúma"), para nomear o
+// retorno no Roteiro e na tela do campo
+function rotuloOrigem(){
+  const v = (document.getElementById('originInput').value || '').trim();
+  return v || 'Origem';
+}
+if (!modoCampoAtivo){
+  const chkVoltar = document.getElementById('voltarOrigem');
+  let guardado = null;
+  try{ guardado = localStorage.getItem(CHAVE_VOLTAR); }catch(e){}
+  chkVoltar.checked = guardado === null ? true : guardado === '1';   // padrão: ligado
+  chkVoltar.onchange = () => {
+    try{ localStorage.setItem(CHAVE_VOLTAR, chkVoltar.checked ? '1' : '0'); }catch(e){}
+    // A rota traçada deixa de valer: km, tempo e ordem mudam com o retorno
+    if (invalidarRota()) setStatus('Trace a rota de novo para atualizar o retorno.', true);
+  };
+}
+
 // Botão "Traçar nesta ordem": chama a OSRM Route API respeitando a ordem atual de `stops`.
 // Monta a string de coordenadas "lng,lat;lng,lat;..." (origem primeiro, depois cada parada,
 // nessa ordem) e pede a rota com geometria completa + instruções passo a passo
@@ -3344,7 +3390,11 @@ function drawResult(distance, duration, geometry, legs){
 // depois chama isto) — assim as duas rotas saem do mesmo jeito, com as mesmas
 // instruções passo a passo.
 async function tracarNaOrdemAtual(mensagemOk){
-  const coordsStr = [[originLatLng[1], originLatLng[0]], ...stops.map(s=>[s.lng,s.lat])].map(c=>c.join(',')).join(';');
+  const origem = [originLatLng[1], originLatLng[0]];
+  // Com o retorno ligado a origem entra duas vezes: no começo e no fim
+  const pontos = [origem, ...stops.map(s=>[s.lng,s.lat])];
+  if (voltarParaOrigem()) pontos.push(origem);
+  const coordsStr = pontos.map(c=>c.join(',')).join(';');
   const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson&steps=true`;
   const data = await safeFetchJSON(url);
   if (data.code !== 'Ok') throw new Error('Não foi possível calcular a rota.');
@@ -3395,14 +3445,22 @@ document.getElementById('optimizeBtn').onclick = async () => {
   const partida = fixas.length
     ? [fixas[fixas.length - 1].lng, fixas[fixas.length - 1].lat]
     : [originLatLng[1], originLatLng[0]];
-  const coordsStr = [partida, ...resto.map(s=>[s.lng,s.lat])].map(c=>c.join(',')).join(';');
-  const url = `https://router.project-osrm.org/trip/v1/driving/${coordsStr}?source=first&roundtrip=false&geometries=geojson&steps=true`;
+  // Com o retorno ligado, o trecho otimizado precisa TERMINAR na origem
+  // (destination=last): senão o otimizador resolve o problema de quem não volta e
+  // deixa como última parada a mais distante, que é justamente a pior para fechar.
+  const comRetorno = voltarParaOrigem();
+  const pontos = [partida, ...resto.map(s=>[s.lng,s.lat])];
+  if (comRetorno) pontos.push([originLatLng[1], originLatLng[0]]);
+  const coordsStr = pontos.map(c=>c.join(',')).join(';');
+  const destino = comRetorno ? '&destination=last' : '';
+  const url = `https://router.project-osrm.org/trip/v1/driving/${coordsStr}?source=first${destino}&roundtrip=false&geometries=geojson&steps=true`;
   try{
     const data = await safeFetchJSON(url);
     if (data.code !== 'Ok') throw new Error('Não foi possível otimizar a rota.');
+    const ultimo = pontos.length - 1;   // a origem, quando o retorno está ligado
     const ordenado = data.waypoints
       .map((wp, idx) => ({ idx, wo: wp.waypoint_index }))
-      .filter(w => w.idx !== 0)   // índice 0 é o ponto de partida do trecho, não é parada
+      .filter(w => w.idx !== 0 && !(comRetorno && w.idx === ultimo))   // partida e retorno não são paradas
       .sort((a,b) => a.wo - b.wo)
       .map(w => resto[w.idx - 1]);
     stops = [...fixas, ...ordenado];
@@ -3483,8 +3541,14 @@ function montarRoteiro(){
     if (s.prioritaria) campos.push('1');
     return campos.join('*');
   });
-  return ['6', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
-          ultimoResumo ? ultimoResumo.d : '', ultimoResumo ? ultimoResumo.t : ''].join('~');
+  // FORMATO v7 (v6.3): um 7º grupo com o retorno — "lat*lng*rótulo" em inteiros
+  // de 1e5, como as paradas. Vazio quando o retorno está desligado; links v5/v6
+  // continuam sendo lidos.
+  const retorno = (voltarParaOrigem() && originLatLng)
+    ? [Math.round(originLatLng[0] * 1e5), Math.round(originLatLng[1] * 1e5), escSep(rotuloOrigem())].join('*')
+    : '';
+  return ['7', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
+          ultimoResumo ? ultimoResumo.d : '', ultimoResumo ? ultimoResumo.t : '', retorno].join('~');
 }
 
 /* ---------------- Compressão do link (v2.7) ---------------- */
@@ -3548,10 +3612,11 @@ function lerRoteiroJson(json){
 }
 
 function lerRoteiroCompacto(texto){
-  const [ver, clientesRaw, tiposRaw, paradasRaw, d, t] = texto.split('~');
-  // v6 acrescentou a marcação de prioridade como 6º campo opcional da parada.
-  // A leitura é a mesma para os dois: em links v5 o campo simplesmente não vem.
-  if (ver !== '5' && ver !== '6') return null; // formato desconhecido: link inválido
+  const [ver, clientesRaw, tiposRaw, paradasRaw, d, t, retornoRaw] = texto.split('~');
+  // v6 acrescentou a marcação de prioridade como 6º campo opcional da parada;
+  // v7 acrescentou o retorno à origem como 7º grupo. A leitura é a mesma para os
+  // três: em links antigos os campos simplesmente não vêm.
+  if (ver !== '5' && ver !== '6' && ver !== '7') return null; // formato desconhecido: link inválido
   const clientes = clientesRaw ? clientesRaw.split('|').map(unescSep) : [];
   const tipos    = tiposRaw    ? tiposRaw.split('|').map(unescSep)    : [];
   let la = 0, ln = 0;
@@ -3565,6 +3630,13 @@ function lerRoteiroCompacto(texto){
             prio === '1']; // ausente em links v5: vira false, sem quebrar nada
   });
   if (!s.length || s.some(p => !isFinite(p[1]) || !isFinite(p[2]))) return null;
+  // O retorno entra como último item da lista, com a marca no 7º campo: assim a
+  // tela do campo o mostra, navega e marca como concluído sem código separado
+  if (retornoRaw){
+    const [rLa, rLn, rNome] = retornoRaw.split('*');
+    const lat = Number(rLa) / 1e5, lng = Number(rLn) / 1e5;
+    if (isFinite(lat) && isFinite(lng)) s.push([unescSep(rNome || 'Origem'), lat, lng, 'RETORNO', '', false, true]);
+  }
   return { v: 5, s, d: d ? Number(d) : null, t: t ? Number(t) : null };
 }
 
@@ -3761,8 +3833,11 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
   const total = roteiro.s.length;
   const feitas = feitos.size;
 
+  // O retorno à origem conta no progresso, mas não é "parada" na contagem (v6.3)
+  const nParadas = roteiro.s.filter(p => !p[6]).length;
   // Resumo no cabeçalho: nº de paradas + distância/tempo previstos, se vieram no link
-  const partes = [`${total} parada${total === 1 ? '' : 's'}`];
+  const partes = [`${nParadas} parada${nParadas === 1 ? '' : 's'}`];
+  if (nParadas !== total) partes.push('+ retorno');
   const dist = formatarDistancia(roteiro.d);
   const tempo = formatarTempo(roteiro.t);
   if (dist) partes.push(dist);
@@ -3778,12 +3853,12 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
 
   const lista = document.getElementById('campoLista');
   const banner = feitas === total
-    ? `<div class="campo-banner">🎉 Roteiro concluído — todas as ${total} paradas foram marcadas.</div>`
+    ? `<div class="campo-banner">🎉 Roteiro concluído — todas as ${nParadas} paradas foram marcadas.</div>`
     : '';
   lista.innerHTML = banner + listaHtmlParadas();
 
   function listaHtmlParadas(){
-    return roteiro.s.map(([nome, lat, lng, cliente, tipo, prioritaria], i) => {
+    return roteiro.s.map(([nome, lat, lng, cliente, tipo, prioritaria, retorno], i) => {
       const done = feitos.has(i);
       const proxima = i === indiceProximo;
       // cliente, tipo e prioridade vêm vazios em links antigos (v1/v2/v5, gerados
@@ -3801,6 +3876,8 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
       // concluída E reabrir uma parada já concluída (ex.: o técnico precisa
       // voltar lá) passam pela mesma confirmação, para nenhum toque errado
       // desfazer uma parada por engano nem reabrir uma à toa.
+      // O retorno à origem (v6.3) usa o mesmo cartão das paradas — navega e é
+      // marcado igual —, só troca o número pela seta e o texto do botão
       const botaoConcluir = confirmando.has(i)
         ? `<div class="confirmar-linha">
              ${done ? `<div class="confirmar-legenda">Reabrir esta parada? Os botões de navegação voltam a aparecer.</div>` : ''}
@@ -3809,7 +3886,9 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
                <button class="btn-cancelar-conf" data-i="${i}">Cancelar</button>
              </div>
            </div>`
-        : `<button class="btn-feito" data-i="${i}">${done ? '✓ Parada concluída' : 'Marcar como concluída'}</button>`;
+        : `<button class="btn-feito" data-i="${i}">${done
+              ? (retorno ? '✓ Retorno concluído' : '✓ Parada concluída')
+              : (retorno ? 'Marcar retorno como feito' : 'Marcar como concluída')}</button>`;
 
       // Parada concluída trava a navegação: some com os botões Waze/Maps, então
       // não dá mais para reabrir a navegação para um lugar onde já se esteve.
@@ -3824,7 +3903,7 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
       return `
         <div class="parada ${done ? 'feita' : ''} ${proxima ? 'proxima' : ''}">
           <div class="parada-topo">
-            <div class="parada-n">${i+1}</div>
+            <div class="parada-n">${retorno ? '↩' : i+1}</div>
             <div class="parada-info">
               ${rotuloPrioridade}
               ${rotuloCliente}
