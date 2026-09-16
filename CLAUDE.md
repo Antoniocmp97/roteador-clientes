@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/09/2026 — v6.7.0 (realce entre mapa e lista de paradas)
+> **Última atualização:** 15/09/2026 — v6.8.1 (campo de retomar também no módulo 1, sempre visível)
 
 ---
 
@@ -237,10 +237,29 @@ sem dependências instaladas. Abre direto no navegador.
   abriu (sobrevive a fechar o navegador) e nenhum dado de cliente passa pelo
   servidor — o roteiro trafega inteiro dentro do link, no trecho depois do
   `#` (ver ADR-01 no documento de arquitetura).
-  Desde a v6.3 o **retorno à origem** vai no link (formato v7: 7º grupo
-  "lat*lng*rótulo") e aparece como último cartão, com ↩ no lugar do número,
-  etiqueta RETORNO, navegação e marcação próprias; o cabeçalho conta
-  "N paradas · + retorno". Links v5/v6 continuam abrindo, sem retorno.
+  Desde a v6.3 o **retorno à origem** vai no link e aparece como último cartão,
+  com ↩ no lugar do número, etiqueta RETORNO, navegação e marcação próprias; o
+  cabeçalho conta "N paradas · + retorno".
+  **Formato v8** (v6.8.0): 7º grupo = retorno ("1"/vazio), 8º = **id do roteiro**
+  (rid), 9º = **origem** "lat*lng*rótulo". No v7 a coordenada do retorno vinha no
+  7º grupo; a leitura entende os dois, e links v5/v6/v7 continuam abrindo.
+- **Retomar um roteiro pelo link** (v6.8.0, pedido do usuário: "meia hora depois
+  surge mais uma parada"): colar o link no **módulo 1** (v6.8.1, sempre visível —
+  o campo do módulo 5 só existe depois de uma rota traçada), no módulo 5 ou
+  clicar em **"editar no escritório"** no rodapé da tela do roteiro (escondido em
+  tela estreita; guarda o link e recarrega sem o `#`, retomando depois da base
+  carregada). Volta ordem, ★, tipo, origem e o interruptor de retorno; o **id do
+  roteiro é mantido**, e a rota é desfeita porque a lista mudou. Parada que não
+  está na base é avisada pelo nome. **Sem base carregada o link espera**: fica
+  guardado e a retomada acontece sozinha quando a base entra (v6.8.1)
+- **Progresso do campo por parada e por roteiro** (v6.8.0): a chave é o id do
+  roteiro (`hg_prog_r_<rid>`) e as marcas são a **coordenada** da parada
+  ("retorno" para a volta). Antes era o código do link com **índices**: link novo
+  zerava tudo e inserir no meio deslocava as marcas. Índices de links antigos são
+  convertidos na primeira abertura; a contagem só considera paradas do roteiro
+  atual. Medido: com 2 de 5 marcadas, o escritório inseriu uma parada na 2ª
+  posição e regerou o link — as duas seguiram marcadas (uma delas já na 3ª
+  posição) e a contagem virou 2/6
 
 ---
 
@@ -568,6 +587,7 @@ repositório é público (ver `.gitignore`).
   brasileiros (Google, Mapbox), com cadastro e chave de acesso.
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
   origem padrão, a lista de tipos de serviço, a preferência de formato do link,
+  a opção de voltar para a origem,
   a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
   botão), o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
@@ -719,6 +739,8 @@ de arquitetura, para retomar quando fizer sentido):
 | 69 | **v6.5.0** — Módulo Rota grudado na coluna em que estiver, compacto enquanto flutua (sugestão de layout 5) |
 | 70 | **v6.6.0** — Ações do módulo 3 viram ícones ao lado da busca; título volta a caber em uma linha (sugestão de layout 6) |
 | 71 | **v6.7.0** — Realce entre mapa e lista de paradas, nos dois sentidos (sugestão de layout 7) |
+| 72 | **v6.8.0** — Retomar roteiro pelo link (formato v8 com id do roteiro e origem) e progresso do campo por parada |
+| 73 | **v6.8.1** — Campo de retomar também no módulo 1, com o link esperando a base |
 
 ---
 
@@ -785,7 +807,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-6.7.0
+6.8.1
 ```
 
 ### Onde o número aparece
@@ -881,3 +903,5 @@ os backups locais são conveniência, não garantia.
 | 6.5.0 | 15/09/2026 | Módulo Rota sempre visível (grudado, compacto enquanto flutua) |
 | 6.6.0 | 15/09/2026 | Ícones de tipos de serviço e marcar todos na linha da busca |
 | 6.7.0 | 15/09/2026 | Realce entre mapa e lista de paradas |
+| 6.8.0 | 15/09/2026 | Retomar roteiro pelo link; progresso do campo sobrevive ao link atualizado |
+| 6.8.1 | 15/09/2026 | Campo de retomar no módulo 1, sempre visível |

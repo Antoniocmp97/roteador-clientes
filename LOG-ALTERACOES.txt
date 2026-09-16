@@ -4726,3 +4726,90 @@ TESTES (janela 1100x900, base de teste, 5 paradas)
   - Sem erros no console. Print conferido com o realce ligado.
 
 VERSÃO: fecha a v6.7.0. Não publicada — aguardando teste do usuário.
+
+--------------------------------------------------------
+[15/09/2026] v6.8.0 — Retomar roteiro pelo link e progresso que sobrevive
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Gero o roteiro e, meia hora depois, surge a necessidade de adicionar mais
+  uma parada." Ideia dele: mandar o link de volta para o site, que abre o
+  roteiro e deixa editar. Nas perguntas de escopo escolheu manter o
+  progresso do técnico e ter os dois caminhos de retomada.
+
+A ARMADILHA (encontrada antes de implementar)
+  O progresso do campo era guardado pelo CÓDIGO do link e as marcas eram
+  ÍNDICES. Link novo = código novo = tudo zerado; e inserir uma parada no
+  meio deslocaria as marcas das seguintes.
+
+O QUE FOI FEITO
+  1. FORMATO v8 do link: dois grupos a mais.
+     - 8º: id do roteiro (rid), curto, criado na primeira geração do dia e
+       preservado quando o roteiro é retomado de um link;
+     - 9º: origem "lat*lng*rótulo", sempre que houver — é o que permite
+       remontar o roteiro no escritório.
+     O 7º grupo (retorno) virou só "1"/vazio; no v7 ele trazia a coordenada,
+     e a leitura entende os dois. Links v5, v6 e v7 continuam abrindo
+     (testados), e formato desconhecido continua sendo recusado.
+  2. Retomar no escritório, por dois caminhos:
+     - campo "Cole aqui um link já enviado" no módulo 5, com botão Retomar
+       (Enter também vale);
+     - botão "editar no escritório" no rodapé da tela do roteiro, escondido
+       em tela estreita: guarda o link e recarrega sem o "#", e a retomada
+       acontece depois da base carregada.
+     A retomada devolve ordem, ★, tipo de serviço, origem e o interruptor de
+     retorno, mantém o id do roteiro e desfaz a rota (a lista mudou).
+     Parada do link que não estiver na base é avisada pelo nome, não
+     inventada. Sem base guardada, o link fica no campo "Retomar" em vez de
+     se perder.
+  3. Progresso do campo por PARADA e por ROTEIRO: chave = id do roteiro,
+     marcas = coordenada da parada ("retorno" para a volta). Índices já
+     salvos em links antigos são convertidos na primeira abertura. A
+     contagem do cabeçalho só considera paradas deste roteiro — uma parada
+     removida do link novo não conta mais.
+
+TESTES (janela 1100x900, base de teste)
+  - Link gerado: formato 8, 9 grupos, retorno "1", rid "mu3gnl5grixt",
+    origem "-2867750*-4936970*Centro, Criciúma", 284 caracteres.
+  - Retomada com a viagem zerada: voltaram as 4 paradas na ordem, a ★, o
+    tipo "Entrega de toner", a origem, o interruptor de retorno e o id.
+  - Campo: marcadas ANGELONI e ACUO (2/5), gravadas em hg_prog_r_<rid> como
+    coordenadas.
+  - Escritório acrescentou COCAL DO SUL na 2ª posição e gerou o link de novo
+    (mesmo rid). Abrindo o link novo: ANGELONI e ACUO seguem concluídas —
+    ACUO agora na 3ª posição —, COCAL DO SUL é a próxima, contagem 2/6.
+  - "editar no escritório" levou o roteiro de volta à tela de planejamento.
+  - Leitura de links v6, v7 e v8 conferida; "v4" recusado.
+
+VERSÃO: fecha a v6.8.0. Não publicada — aguardando teste do usuário.
+
+--------------------------------------------------------
+[15/09/2026] v6.8.1 — Campo de retomar também no módulo 1
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Implemente também aquele campo de colar o link no painel principal, até
+  mesmo antes de ter a base carregada."
+
+O QUE ESTAVA FALTANDO
+  O campo da v6.8.0 vivia dentro do módulo 5, que só aparece depois de uma
+  rota traçada — ou seja, ao abrir o app ele não existia.
+
+O QUE FOI FEITO
+  1. Um segundo campo "Retomar um roteiro: cole o link aqui" no módulo 1,
+     logo abaixo da linha da base. Sempre visível, com ou sem base.
+  2. Sem base carregada o link não é descartado: fica guardado e a retomada
+     acontece SOZINHA assim que a base entrar (por upload ou pela base
+     guardada no navegador). A mensagem explica isso.
+  3. Os dois campos (módulo 1 e módulo 5) usam o mesmo caminho; o campo só é
+     limpo quando a retomada dá certo.
+
+TESTES
+  - Link gerado com 3 paradas (uma ★) e origem; página recarregada sem base
+    guardada.
+  - Colando no campo do módulo 1 sem base: aviso "Carregue a base de
+    clientes — o roteiro deste link entra sozinho assim que ela abrir", e o
+    link permanece no campo.
+  - Carregando a base em seguida: roteiro retomado sozinho, com a ★, a
+    origem e o id do roteiro; campo limpo.
+  - Print conferido: campo logo abaixo de "Base carregada".

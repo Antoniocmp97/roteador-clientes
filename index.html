@@ -723,6 +723,10 @@
 
   /* Campo "5 · Enviar para o campo": o input do link e a dica de uso */
   #linkCampo{width:100%;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);}
+  /* Retomar um roteiro já enviado (v6.8.0) */
+  .retomar-linha{display:flex; gap:8px; align-items:stretch; margin-top:10px;}
+  .retomar-linha input{min-width:0; font-size:12px;}
+  .retomar-linha .go-btn{flex:none; padding:8px 12px; font-size:12.5px;}
   .envio-dica{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:8px;}
 
   /* ==========================================================
@@ -831,6 +835,8 @@
     border-radius:10px; padding:14px 16px; font-size:14px; font-weight:600; text-align:center;
   }
 
+  #editarNoEscritorioBtn{display:block; margin:10px auto 0;}
+  @media (max-width:760px){ #editarNoEscritorioBtn{display:none;} }
   .campo-pe{
     padding:12px 18px; text-align:center; font-size:10.5px; color:var(--muted);
     font-family:'JetBrains Mono',monospace; border-top:1px solid var(--line);
@@ -934,6 +940,14 @@
           <div class="file-status" id="fileStatus"></div>
           <!-- Só aparece com base carregada, quando a caixa de upload some (v6.2) -->
           <button class="link-btn" id="trocarBaseBtn" type="button" hidden>trocar base</button>
+        </div>
+        <!-- Retomar (v6.8.1): o campo do módulo 5 só aparece depois de traçar a
+             rota, então ficava fora de alcance ao abrir o app. Este fica sempre
+             à mão. Sem base carregada, o link espera: assim que a base entra, a
+             retomada acontece sozinha. -->
+        <div class="retomar-linha">
+          <input type="text" id="retomarLinkTopo" placeholder="Retomar um roteiro: cole o link aqui">
+          <button class="go-btn secondary" id="retomarTopoBtn" type="button">Retomar</button>
         </div>
       </div>
       </section>
@@ -1077,6 +1091,12 @@
           <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>5 · Enviar para o campo</span>
         </div>
         <button class="go-btn" id="gerarLinkBtn">Gerar link do roteiro</button>
+        <!-- Retomar (v6.8.0): cola-se aqui o link já enviado para acrescentar
+             paradas sem o técnico perder o que já marcou -->
+        <div class="retomar-linha">
+          <input type="text" id="retomarLink" placeholder="Cole aqui um link já enviado para editá-lo">
+          <button class="go-btn secondary" id="retomarBtn" type="button">Retomar</button>
+        </div>
         <div id="linkPronto" style="display:none;margin-top:10px;">
           <input type="text" id="linkCampo" readonly>
           <div class="btn-row" style="margin-top:8px;">
@@ -1147,6 +1167,10 @@
 
   <footer class="campo-pe">
     Roteiro recebido por link · nada é enviado para servidor
+    <!-- Atalho para quem abre o link no computador do escritório (v6.8.0):
+         leva o roteiro para a tela de planejamento, já carregado. Escondido em
+         tela estreita, onde a tela do escritório não é o lugar de trabalhar. -->
+    <button class="link-btn" id="editarNoEscritorioBtn" type="button">editar no escritório</button>
   </footer>
 </div>
 
@@ -1160,7 +1184,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '6.7.0';
+const VERSAO = '6.8.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1696,6 +1720,12 @@ function importClients(grupos, filename, salvoEm){
   document.getElementById('trocarBaseBtn').hidden = false;
   document.getElementById('countLabel').textContent = `(${clientPoints.length})`;
   renderChecklist();
+  zerarIdRoteiro();   // base nova = roteiro novo (v6.8.0)
+  // Link colado antes da base (v6.8.1): agora dá para casar as paradas
+  if (linkPendente){
+    const link = linkPendente; linkPendente = null;
+    setTimeout(() => { if (retomarRoteiro(link)){ document.getElementById('retomarLinkTopo').value = ''; document.getElementById('retomarLink').value = ''; } }, 0);
+  }
   // A viagem foi zerada acima (stops = []), mas a lista da seção 4 continuava
   // desenhada com as paradas da base anterior — linhas fantasmas, ainda
   // clicáveis (achado em 12/09/2026). Redesenhar também acerta a marca
@@ -3644,6 +3674,93 @@ document.getElementById('originInput').addEventListener('keydown', e => {
 // Guarda o resumo (distância/tempo) da última rota traçada, para ir junto no link
 let ultimoResumo = null;
 
+/* ---------------- Identificador do roteiro (v6.8.0) ----------------
+   Pedido do usuário: meia hora depois de mandar o link, aparece mais uma parada.
+   O escritório acrescenta e gera o link de novo — e o técnico precisa continuar
+   de onde parou, não recomeçar.
+
+   Por isso o roteiro do dia ganha um id curto que viaja no link e NÃO muda
+   quando o link é regerado (nem quando o roteiro é retomado a partir de um link
+   recebido). No campo, o progresso é guardado por esse id, e por PARADA, não
+   por posição — inserir uma parada no meio não desloca as marcas. */
+let idRoteiro = null;
+// Onde o botão "editar no escritório" deixa o link antes de recarregar
+const CHAVE_RETOMAR = 'hg_retomar_roteiro';
+
+function idDoRoteiro(){
+  if (!idRoteiro) idRoteiro = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  return idRoteiro;
+}
+// Roteiro novo: carregar outra base ou esvaziar a lista começa um dia novo
+function zerarIdRoteiro(){ idRoteiro = null; }
+
+/* ---------------- Retomar um roteiro a partir do link (v6.8.0) ----------------
+   Cola-se o link gerado (ou clica-se em "editar no escritório" na tela do
+   roteiro): o app remonta a lista de paradas na ordem, com ★ e tipo de serviço,
+   devolve a origem e mantém o id do roteiro — então o link atualizado continua
+   valendo para quem já está na rua.
+
+   As paradas são reconhecidas pela coordenada (5 casas, ~1 m), que é como elas
+   foram gravadas no link a partir da própria base. Parada que não estiver na
+   base carregada é avisada, não inventada. */
+function chaveCoord(lat, lng){ return `${Math.round(lat * 1e5)},${Math.round(lng * 1e5)}`; }
+
+// Link colado antes de existir base: fica esperando a base ser carregada
+let linkPendente = null;
+
+// Devolve false quando não deu para retomar, para quem chamou decidir o que fazer
+function retomarRoteiro(texto){
+  const falhar = msg => { setStatus(msg); return false; };
+  const bruto = String(texto || '').trim();
+  if (!bruto) return falhar('Cole o link do roteiro para retomar.');
+  const m = bruto.match(/#(r|z)=(.+)$/);
+  if (!m) return falhar('Isso não parece um link de roteiro — ele tem um "#r=" ou "#z=" no fim.');
+
+  const seguir = roteiro => {
+    if (!roteiro || !roteiro.s.length) return falhar('Não consegui ler esse link — pode estar cortado.');
+    if (!clientPoints.length){
+      linkPendente = bruto;   // a retomada acontece sozinha quando a base entrar
+      return falhar('Carregue a base de clientes — o roteiro deste link entra sozinho assim que ela abrir.');
+    }
+
+    const porCoord = new Map(clientPoints.map(c => [chaveCoord(c.lat, c.lng), c]));
+    const achadas = [], perdidas = [];
+    roteiro.s.forEach(([nome, lat, lng, cliente, tipo, prio, retorno]) => {
+      if (retorno) return;   // o retorno não é parada: volta pelo interruptor
+      const c = porCoord.get(chaveCoord(lat, lng));
+      if (!c) return perdidas.push(nome);
+      c.prioritaria = !!prio;
+      if (tipo) c.tipo = tipo;
+      achadas.push(c);
+    });
+    if (!achadas.length) return falhar('Nenhuma parada desse link está na base carregada. É a base certa?');
+
+    stops = achadas;
+    if (roteiro.origem) setOrigin(roteiro.origem.lat, roteiro.origem.lng, roteiro.origem.nome, false);
+    document.getElementById('voltarOrigem').checked = !!roteiro.retorno;
+    idRoteiro = roteiro.rid || null;   // link antigo (sem id): o próximo gerado ganha um
+    renderStopsList(); renderChecklist();
+    invalidarRota();   // a rota precisa ser traçada de novo, com a lista nova
+
+    const aviso = perdidas.length
+      ? ` ${perdidas.length} parada${perdidas.length === 1 ? '' : 's'} do link não está${perdidas.length === 1 ? '' : 'ão'} na base: ${perdidas.slice(0,3).join(', ')}${perdidas.length > 3 ? '…' : ''}.`
+      : '';
+    const continua = roteiro.rid ? ' Quem já está na rua continua de onde parou.' : '';
+    setStatus(`Roteiro retomado: ${achadas.length} parada${achadas.length === 1 ? '' : 's'}.${aviso} Acrescente o que faltar e trace a rota de novo.${continua}`, !perdidas.length);
+    return true;
+  };
+
+  if (m[1] === 'z'){
+    if (!temCompressao) return falhar('Este navegador não abre o link compacto. Peça o link compatível.');
+    // Link comprimido: a leitura é assíncrona. Devolve true na hora e, se falhar
+    // lá dentro, a mensagem de erro aparece do mesmo jeito.
+    descomprimirDoLink(m[2]).then(txt => seguir(lerRoteiroCompacto(txt)))
+                            .catch(() => setStatus('Não consegui ler esse link — pode estar cortado.'));
+    return true;
+  }
+  return seguir(decodificarRoteiro(m[2]));
+}
+
 // Chamada depois de uma rota traçada com sucesso (routeBtn ou optimizeBtn):
 // guarda o resumo e revela a seção "5 · Enviar para o campo"
 function prepararEnvio(distance, duration){
@@ -3693,14 +3810,20 @@ function montarRoteiro(){
     if (s.prioritaria) campos.push('1');
     return campos.join('*');
   });
-  // FORMATO v7 (v6.3): um 7º grupo com o retorno — "lat*lng*rótulo" em inteiros
-  // de 1e5, como as paradas. Vazio quando o retorno está desligado; links v5/v6
-  // continuam sendo lidos.
-  const retorno = (voltarParaOrigem() && originLatLng)
+  // FORMATO v8 (v6.8.0): dois grupos a mais.
+  //   7º retorno: agora só "1" (ligado) ou vazio — a coordenada vem da origem
+  //   8º identificador do roteiro (rid): o mesmo em todas as versões do link do
+  //      dia, é o que faz o técnico continuar de onde parou quando o escritório
+  //      acrescenta uma parada e manda o link de novo
+  //   9º origem: "lat*lng*rótulo", sempre que houver — é o que permite retomar
+  //      o roteiro no escritório a partir do próprio link
+  // O v7 guardava a coordenada do retorno no 7º grupo; a leitura entende os dois.
+  const origem = originLatLng
     ? [Math.round(originLatLng[0] * 1e5), Math.round(originLatLng[1] * 1e5), escSep(rotuloOrigem())].join('*')
     : '';
-  return ['7', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
-          ultimoResumo ? ultimoResumo.d : '', ultimoResumo ? ultimoResumo.t : '', retorno].join('~');
+  return ['8', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
+          ultimoResumo ? ultimoResumo.d : '', ultimoResumo ? ultimoResumo.t : '',
+          (voltarParaOrigem() && originLatLng) ? '1' : '', idDoRoteiro(), origem].join('~');
 }
 
 /* ---------------- Compressão do link (v2.7) ---------------- */
@@ -3764,11 +3887,11 @@ function lerRoteiroJson(json){
 }
 
 function lerRoteiroCompacto(texto){
-  const [ver, clientesRaw, tiposRaw, paradasRaw, d, t, retornoRaw] = texto.split('~');
-  // v6 acrescentou a marcação de prioridade como 6º campo opcional da parada;
-  // v7 acrescentou o retorno à origem como 7º grupo. A leitura é a mesma para os
-  // três: em links antigos os campos simplesmente não vêm.
-  if (ver !== '5' && ver !== '6' && ver !== '7') return null; // formato desconhecido: link inválido
+  const [ver, clientesRaw, tiposRaw, paradasRaw, d, t, retornoRaw, ridRaw, origemRaw] = texto.split('~');
+  // v6 acrescentou a prioridade como 6º campo da parada; v7, o retorno como 7º
+  // grupo (com a coordenada dentro); v8, o identificador do roteiro e a origem
+  // em grupos próprios. Em links antigos os campos simplesmente não vêm.
+  if (!['5','6','7','8'].includes(ver)) return null; // formato desconhecido: link inválido
   const clientes = clientesRaw ? clientesRaw.split('|').map(unescSep) : [];
   const tipos    = tiposRaw    ? tiposRaw.split('|').map(unescSep)    : [];
   let la = 0, ln = 0;
@@ -3782,14 +3905,24 @@ function lerRoteiroCompacto(texto){
             prio === '1']; // ausente em links v5: vira false, sem quebrar nada
   });
   if (!s.length || s.some(p => !isFinite(p[1]) || !isFinite(p[2]))) return null;
+
+  // Origem: grupo próprio no v8; no v7 ela vinha dentro do grupo do retorno
+  let origem = null;
+  const lerPonto = raw => {
+    const [la, ln, nome] = String(raw).split('*');
+    const lat = Number(la) / 1e5, lng = Number(ln) / 1e5;
+    return (isFinite(lat) && isFinite(lng)) ? { lat, lng, nome: unescSep(nome || 'Origem') } : null;
+  };
+  if (ver === '8' && origemRaw) origem = lerPonto(origemRaw);
+  else if (ver === '7' && retornoRaw) origem = lerPonto(retornoRaw);
+
+  const temRetorno = ver === '8' ? retornoRaw === '1' : !!(ver === '7' && retornoRaw);
   // O retorno entra como último item da lista, com a marca no 7º campo: assim a
   // tela do campo o mostra, navega e marca como concluído sem código separado
-  if (retornoRaw){
-    const [rLa, rLn, rNome] = retornoRaw.split('*');
-    const lat = Number(rLa) / 1e5, lng = Number(rLn) / 1e5;
-    if (isFinite(lat) && isFinite(lng)) s.push([unescSep(rNome || 'Origem'), lat, lng, 'RETORNO', '', false, true]);
-  }
-  return { v: 5, s, d: d ? Number(d) : null, t: t ? Number(t) : null };
+  if (temRetorno && origem) s.push([origem.nome, origem.lat, origem.lng, 'RETORNO', '', false, true]);
+
+  return { v: Number(ver), s, d: d ? Number(d) : null, t: t ? Number(t) : null,
+           rid: (ver === '8' && ridRaw) ? ridRaw : null, origem, retorno: temRetorno };
 }
 
 // Botão "Gerar link do roteiro": monta o link completo (URL atual + #r=...) e mostra
@@ -3823,6 +3956,14 @@ document.getElementById('gerarLinkBtn').onclick = () => {
   if (!stops.length){ setStatus('Trace uma rota antes de gerar o link.'); return; }
   gerarLinkDoRoteiro(false);
 };
+
+// Os dois campos de retomar (módulo 1 e módulo 5) fazem o mesmo: o do módulo 1
+// está sempre à mão; o do módulo 5 fica junto do link recém-gerado.
+[['retomarBtn', 'retomarLink'], ['retomarTopoBtn', 'retomarLinkTopo']].forEach(([botao, campo]) => {
+  const b = document.getElementById(botao), c = document.getElementById(campo);
+  b.onclick = () => { if (retomarRoteiro(c.value)) c.value = ''; };
+  c.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); b.click(); } });
+});
 
 document.getElementById('linkCompativelBtn').onclick = async () => {
   await gerarLinkDoRoteiro(true);
@@ -3893,20 +4034,32 @@ async function copiarLink(url){
    ou o navegador (requisito C-04).
    ========================================================== */
 
-// Devolve o conjunto de índices já marcados como concluídos para este roteiro
-// específico. A chave do localStorage inclui o próprio código do link, então
-// roteiros diferentes nunca se misturam.
-function progressoChave(codigo){ return 'hg_progresso_' + codigo; }
+/* Progresso do dia (v6.8.0: por PARADA e por ROTEIRO).
+   Antes a chave era o código do link e as marcas eram índices — então um link
+   atualizado (uma parada a mais) zerava tudo, e inserir no meio deslocava as
+   marcas. Agora:
+     - a chave é o id do roteiro (rid), que não muda quando o link é regerado;
+     - as marcas são a coordenada da parada ("retorno" para a volta).
+   Link antigo (sem rid) continua pelo código, e os índices já salvos são
+   convertidos na primeira abertura. */
+function progressoChave(codigo, rid){ return rid ? 'hg_prog_r_' + rid : 'hg_progresso_' + codigo; }
 
-function lerProgresso(codigo){
+// A parada é reconhecida pela coordenada, como no escritório
+function chaveDaParada(p){ return p[6] ? 'retorno' : `${Math.round(p[1] * 1e5)},${Math.round(p[2] * 1e5)}`; }
+
+function lerProgresso(codigo, rid, roteiro){
   try{
-    const bruto = localStorage.getItem(progressoChave(codigo));
-    return bruto ? new Set(JSON.parse(bruto)) : new Set();
+    const bruto = localStorage.getItem(progressoChave(codigo, rid));
+    const lista = bruto ? JSON.parse(bruto) : [];
+    // Formato antigo: índices. Converte para chave de parada usando este roteiro.
+    return new Set(lista.map(v => typeof v === 'number'
+      ? (roteiro.s[v] ? chaveDaParada(roteiro.s[v]) : null)
+      : v).filter(Boolean));
   }catch(e){ return new Set(); }
 }
 
-function salvarProgresso(codigo, feitos){
-  try{ localStorage.setItem(progressoChave(codigo), JSON.stringify([...feitos])); }
+function salvarProgresso(codigo, rid, feitos){
+  try{ localStorage.setItem(progressoChave(codigo, rid), JSON.stringify([...feitos])); }
   catch(e){ /* armazenamento indisponível (ex.: modo privado) — segue sem persistir */ }
 }
 
@@ -3972,7 +4125,7 @@ async function ativarModoCampo(){
     return;
   }
 
-  const feitos = lerProgresso(codigo);
+  const feitos = lerProgresso(codigo, roteiro.rid, roteiro);
   // Índices com o toque de "marcar como concluída" pendente de confirmação —
   // só existe na tela (não é salvo), some se a página recarregar
   const confirmando = new Set();
@@ -3983,7 +4136,9 @@ async function ativarModoCampo(){
 // (roteiro fixo, vindo do link; feitos e confirmando mudam conforme o uso)
 function desenharCampo(roteiro, codigo, feitos, confirmando){
   const total = roteiro.s.length;
-  const feitas = feitos.size;
+  // Conta só o que está NESTE roteiro: uma parada marcada pode ter saído da
+  // versão nova do link, e aí ela não entra no "3/6" (v6.8.0)
+  const feitas = roteiro.s.filter(p => feitos.has(chaveDaParada(p))).length;
 
   // O retorno à origem conta no progresso, mas não é "parada" na contagem (v6.3)
   const nParadas = roteiro.s.filter(p => !p[6]).length;
@@ -4001,7 +4156,7 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
 
   // O "próximo" é a primeira parada ainda não concluída, na ordem do roteiro —
   // é ela que ganha o destaque visual (borda âmbar)
-  const indiceProximo = roteiro.s.findIndex((_, i) => !feitos.has(i));
+  const indiceProximo = roteiro.s.findIndex(p => !feitos.has(chaveDaParada(p)));
 
   const lista = document.getElementById('campoLista');
   const banner = feitas === total
@@ -4011,7 +4166,7 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
 
   function listaHtmlParadas(){
     return roteiro.s.map(([nome, lat, lng, cliente, tipo, prioritaria, retorno], i) => {
-      const done = feitos.has(i);
+      const done = feitos.has(chaveDaParada(roteiro.s[i]));
       const proxima = i === indiceProximo;
       // cliente, tipo e prioridade vêm vazios em links antigos (v1/v2/v5, gerados
       // antes de existirem) — nesse caso simplesmente não mostra a linha
@@ -4094,8 +4249,9 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
       const i = Number(confirmarBtn.dataset.i);
       confirmando.delete(i);
       // alterna o estado que o botão pedia: concluída -> reabre, pendente -> conclui
-      if (feitos.has(i)) feitos.delete(i); else feitos.add(i);
-      salvarProgresso(codigo, feitos);
+      const chave = chaveDaParada(roteiro.s[i]);
+      if (feitos.has(chave)) feitos.delete(chave); else feitos.add(chave);
+      salvarProgresso(codigo, roteiro.rid, feitos);
       desenharCampo(roteiro, codigo, feitos, confirmando);
       return;
     }
@@ -4147,12 +4303,33 @@ if (!modoCampoAtivo){
   const origem = lerOrigemPadrao();
   if (origem) setOrigin(origem.lat, origem.lng, origem.label, false);
   atualizarBotaoOrigemPadrao();
+
+  // Veio de "editar no escritório" (v6.8.0): retoma o roteiro daquele link.
+  // Depois do importClients acima, senão não haveria base para casar as paradas.
+  try{
+    const guardado = sessionStorage.getItem(CHAVE_RETOMAR);
+    if (guardado){
+      sessionStorage.removeItem(CHAVE_RETOMAR);
+      // Se não der para retomar agora (ex.: sem base guardada neste navegador),
+      // o link fica no campo "Retomar", para não se perder
+      if (!retomarRoteiro(guardado)) document.getElementById('retomarLink').value = guardado;
+    }
+  }catch(e){ /* sessionStorage bloqueado: segue sem retomar */ }
 }
 
 // Primeira pintura da seção 4: sem isso a marca "modulo4-oculto" só apareceria
 // depois da primeira seleção, e o puxador do módulo 3 ficaria indisponível
 // justamente ao abrir o site, que é quando ele mais serve.
 if (!modoCampoAtivo) renderStopsList();
+
+// "Editar no escritório" (v6.8.0): guarda o link e recarrega sem o #, o que faz
+// a página abrir no modo escritório. Lá, a retomada acontece depois da base
+// carregada — ver o bloco de abertura do escritório.
+const btnEditar = document.getElementById('editarNoEscritorioBtn');
+if (btnEditar) btnEditar.onclick = () => {
+  try{ sessionStorage.setItem(CHAVE_RETOMAR, location.href); }catch(e){}
+  location.href = location.origin + location.pathname;
+};
 
 // Só entra no modo campo se o link realmente trouxer um roteiro
 if (modoCampoAtivo) ativarModoCampo();
