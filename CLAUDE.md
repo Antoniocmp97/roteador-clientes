@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/09/2026 — v7.1.0 (correção do painel piscando no módulo Rota grudado)
+> **Última atualização:** 15/09/2026 — v7.2.0 (parada avulsa excluída sai do mapa)
 
 ---
 
@@ -60,7 +60,11 @@ sem dependências instaladas. Abre direto no navegador.
   Google Maps, espaço ou ponto-e-vírgula, vírgula decimal e URL de mapa colada;
   recusa texto sem números e coordenada fora de faixa. A parada entra em
   `clientPoints` e num grupo próprio do checklist ("PARADAS AVULSAS"), então vale
-  em tudo: seleção, ★, tipo, rota, link e tela do campo. O 🎯 da origem e o da
+  em tudo: seleção, ★, tipo, rota, link e tela do campo. ⚠️ **Removida da viagem,
+  ela é apagada** (v7.2.0): sai do mapa, de `clientPoints` e do checklist, e o
+  grupo vazio some. Diferente da parada da base, que continua no mapa quando
+  desmarcada — a avulsa só existe por causa daquela viagem, e antes ficava uma
+  bolinha órfã (relatado pelo usuário). O 🎯 da origem e o da
   avulsa dividem o mesmo mecanismo, agora com **modo** (`'origem' | 'avulsa'`) —
   um desarma o outro. Sem nome digitado, o rótulo vem do endereço de volta
   (Nominatim). ⚠️ Vive só na sessão: recarregar limpa, como a seleção do dia; para
@@ -765,6 +769,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 74 | **v6.9.0** — Clicar no nome ou no número da parada centraliza o mapa nela |
 | 75 | **v7.0.0** — Parada avulsa: ponto fora da base por coordenada colada ou clique no mapa; retomada traz avulsas de volta |
 | 76 | **v7.1.0** — Correção: módulo Rota grudado alternava entre compacto e inteiro, fazendo o painel piscar |
+| 77 | **v7.2.0** — Correção: bolinha da parada avulsa continuava no mapa depois de excluída |
 
 ---
 
@@ -831,7 +836,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.1.0
+7.2.0
 ```
 
 ### Onde o número aparece
@@ -932,3 +937,4 @@ os backups locais são conveniência, não garantia.
 | 6.9.0 | 15/09/2026 | Clicar na parada leva o mapa até ela |
 | 7.0.0 | 15/09/2026 | Parada avulsa (coordenada colada ou clique no mapa) |
 | 7.1.0 | 15/09/2026 | Fim do painel piscando (folga na decisão do módulo grudado) |
+| 7.2.0 | 15/09/2026 | Parada avulsa excluída sai do mapa |

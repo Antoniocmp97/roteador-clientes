@@ -1211,7 +1211,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '7.1.0';
+const VERSAO = '7.2.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2063,6 +2063,8 @@ function reordenarPorPrioridade(){
 }
 
 function renderStopsList(){
+  // Avulsa removida da viagem sai do mapa e da base em memória (v7.2.0)
+  if (typeof limparAvulsasSoltas === 'function' && limparAvulsasSoltas()) renderChecklist();
   const section = document.getElementById('stopsSection');
   const list = document.getElementById('stopsList');
   section.hidden = !stops.length;
@@ -2174,6 +2176,27 @@ function novoPontoAvulso(lat, lng, nome){
   grupo.pontos.push(pt);
 
   return ponto;
+}
+
+/* Avulsa fora da viagem não existe (v7.2.0). Diferente das paradas da base — que
+   continuam no mapa e no checklist quando são desmarcadas —, a avulsa só nasceu
+   para aquela viagem: tirando ela da lista, o marcador tem que sair do mapa
+   junto, senão fica uma bolinha órfã (relatado pelo usuário em 15/09/2026).
+   Roda a cada redesenho da lista de paradas, que é por onde toda remoção passa. */
+function limparAvulsasSoltas(){
+  const sobrando = clientPoints.filter(c => c.cliente === CLIENTE_AVULSO && !stops.includes(c));
+  if (!sobrando.length) return false;
+  sobrando.forEach(c => {
+    if (c.marker) map.removeLayer(c.marker);
+    clientPoints = clientPoints.filter(x => x !== c);
+    const grupo = gruposClientes.find(g => g.cliente === CLIENTE_AVULSO);
+    if (grupo){
+      grupo.pontos = grupo.pontos.filter(x => x.id !== c.id);
+      // Grupo vazio sai do checklist — senão ficaria um cabeçalho sem nada
+      if (!grupo.pontos.length) gruposClientes = gruposClientes.filter(g => g !== grupo);
+    }
+  });
+  return true;
 }
 
 // Cria e já põe na viagem

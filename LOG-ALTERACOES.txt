@@ -4932,3 +4932,35 @@ TESTES (base de teste)
     em todos os pontos.
 
 VERSÃO: fecha a v7.1.0. Vai junto com a v7.0.0, ainda não publicada.
+
+--------------------------------------------------------
+[15/09/2026] v7.2.0 — Correção: bolinha da parada avulsa ficava no mapa depois de excluída
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Caso eu adicione o ponto pela coordenada ou marcando, ele vai para a rota
+  e está certo, porém caso eu erre e exclua, fica a bolinha no mapa marcando
+  mesmo após a exclusão."
+
+CAUSA
+  A parada avulsa entra em clientPoints para aparecer no checklist, como as
+  da base. Só que a parada da base, quando desmarcada, CONTINUA no mapa de
+  propósito (ela existe independentemente da viagem) — e a avulsa herdou
+  esse comportamento, apesar de só existir por causa daquela viagem.
+
+O QUE FOI FEITO
+  Faxina a cada redesenho da lista de paradas: avulsa que não está mais na
+  viagem sai do mapa, de clientPoints e do grupo "PARADAS AVULSAS" do
+  checklist; grupo vazio some junto. Paradas da base seguem intocadas.
+
+TESTES (base de teste com 39 pontos)
+  - 39 marcadores; duas avulsas -> 41.
+  - Removendo uma pelo ✕ da lista: 40 marcadores, ponto fora da base, grupo
+    ainda existe (sobrou uma).
+  - Removendo a outra pelo checklist: 39 marcadores e o grupo sumiu.
+  - Parada da BASE desmarcada: continua no mapa e na base (39).
+  - "Marcar todos" e depois "desmarcar todos" com avulsa na lista: avulsa
+    removida, mapa de volta a 39.
+  - Retomar um link com duas avulsas tendo uma avulsa órfã na tela: a órfã
+    saiu e as duas do link entraram (39 + 2 + pino da origem = 42).
+  - Sem erros no console.
