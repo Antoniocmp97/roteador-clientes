@@ -4693,3 +4693,36 @@ TESTES (janela 1100x900, painel de 340px, base de teste com 39 pontos)
   - Sem erros no console. Ícones conferidos ampliados, inclusive aceso.
 
 VERSÃO: fecha a v6.6.0. Não publicada — aguardando teste do usuário.
+
+--------------------------------------------------------
+[15/09/2026] v6.7.0 — Realce entre mapa e lista (sugestão de layout 7)
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Sugestão 7, a última da lista de layout: no centro de Criciúma os
+  marcadores 1, 2 e 3 se sobrepõem e fica difícil saber qual parada é qual.
+
+O QUE FOI FEITO
+  1. Passar o mouse numa parada da lista acende o marcador dela no mapa:
+     bolinha 1,6x maior, anel e brilho âmbar, e o marcador sobe para a
+     frente dos vizinhos (setZIndexOffset).
+  2. Passar o mouse num marcador acende a linha da parada (borda âmbar e
+     fundo destacado). Se a linha estiver fora de vista, a lista rola até
+     ela — só nesse sentido, senão a lista se mexeria debaixo do ponteiro de
+     quem está passando o mouse nela.
+  3. Vale antes e depois de traçar: sem rota o marcador da parada é a
+     bolinha teal do cliente; com rota, a bolinha numerada.
+  4. Marcador de cliente que não está na viagem não acende nada.
+  ⚠️ O transform vai no ícone de DENTRO do marcador: o elemento de fora é do
+  Leaflet e carrega a posição: escalar ali tiraria o marcador do lugar.
+
+TESTES (janela 1100x900, base de teste, 5 paradas)
+  - Antes da rota: lista -> mapa e mapa -> lista acendem e apagam nos dois
+    sentidos; cliente fora da viagem não acende nada.
+  - Depois de traçar (16,2 km): mesmos testes com os marcadores numerados;
+    escala medida em 1,6 e anel âmbar; z-index do marcador sobe para 1406.
+  - Lista rolada no topo: passar o mouse no marcador da 5ª parada rolou a
+    lista até ela.
+  - Sem erros no console. Print conferido com o realce ligado.
+
+VERSÃO: fecha a v6.7.0. Não publicada — aguardando teste do usuário.

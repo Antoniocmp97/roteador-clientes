@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/09/2026 — v6.6.0 (ações do módulo 3 viram ícones ao lado da busca)
+> **Última atualização:** 15/09/2026 — v6.7.0 (realce entre mapa e lista de paradas)
 
 ---
 
@@ -220,6 +220,12 @@ sem dependências instaladas. Abre direto no navegador.
   teste: 16,2 km sem volta, 27,1 km com volta na mesma ordem, e 24,1 km quando o
   otimizador trabalha sabendo que precisa voltar
 - Marcadores numerados conforme a ordem final de visita
+- **Realce mapa ↔ lista** (v6.7.0, sugestão de layout 7): o mouse numa parada da
+  lista acende o marcador dela (1,6x, anel âmbar, à frente dos vizinhos); o mouse
+  num marcador acende a linha e rola a lista até ela (só nesse sentido, senão a
+  lista se mexeria sob o ponteiro). Vale com a bolinha teal do cliente antes da
+  rota e com a numerada depois. ⚠️ O `transform` vai no ícone **de dentro**: o
+  elemento de fora é do Leaflet e carrega a posição do marcador
 - Distância total e tempo estimado **logo abaixo de Traçar/Otimizar**, no módulo
   Rota (v6.2; antes ficavam no topo do Roteiro, no fim do painel). Instruções passo
   a passo agrupadas por parada no módulo Roteiro
@@ -615,9 +621,11 @@ v6.2 (parada em uma linha, distância/tempo junto dos botões, módulo 1 compact
    coluna em que estiver, em qualquer posição, e fica compacto enquanto flutua.
 6. ~~Cabeçalho do módulo 3 apertado.~~ ✅ Feito na v6.6.0: os dois viraram ícones
    ao lado da busca (escolha do usuário entre três opções).
-7. **Mapa e lista conversando.** No centro de Criciúma os marcadores 1, 2 e 3 se
-   sobrepõem. Ideia: passar o mouse numa parada da lista acende o marcador dela
-   no mapa, e vice-versa. É mais funcionalidade do que layout.
+7. ~~Mapa e lista conversando.~~ ✅ Feito na v6.7.0: realce nos dois sentidos,
+   com a lista rolando até a parada quando o gatilho é o mapa.
+
+**A lista de sugestões de layout acabou** — só a 4 ficou pendente, como tentada e
+revertida.
 
 Também em aberto desde antes: as duas direções acima (trocar o OSRM, arquivo
 único). Regra de trabalho vigente: implementar e testar, mas **perguntar antes de
@@ -710,6 +718,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 68 | **v6.4.1** — v6.4 desfeita (o usuário preferiu o painel de antes); versão passa a mostrar sempre três números |
 | 69 | **v6.5.0** — Módulo Rota grudado na coluna em que estiver, compacto enquanto flutua (sugestão de layout 5) |
 | 70 | **v6.6.0** — Ações do módulo 3 viram ícones ao lado da busca; título volta a caber em uma linha (sugestão de layout 6) |
+| 71 | **v6.7.0** — Realce entre mapa e lista de paradas, nos dois sentidos (sugestão de layout 7) |
 
 ---
 
@@ -776,7 +785,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-6.6.0
+6.7.0
 ```
 
 ### Onde o número aparece
@@ -871,3 +880,4 @@ os backups locais são conveniência, não garantia.
 | 6.4.1 | 15/09/2026 | Volta ao painel da v6.3; três números no selo de versão |
 | 6.5.0 | 15/09/2026 | Módulo Rota sempre visível (grudado, compacto enquanto flutua) |
 | 6.6.0 | 15/09/2026 | Ícones de tipos de serviço e marcar todos na linha da busca |
+| 6.7.0 | 15/09/2026 | Realce entre mapa e lista de paradas |

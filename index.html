@@ -693,7 +693,15 @@
   /* O tratamento do tema escuro está junto da paleta, mais acima. No tema
      claro não há filtro nenhum — o mapa troca para a versão clara do Esri. */
   /* Ícones customizados dos marcadores: bolinha simples (cliente/origem) e bolinha numerada (parada na rota) */
-  .brand-icon{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);}
+  .brand-icon{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);
+              transition:transform .12s, box-shadow .12s;}
+  /* Realce mapa <-> lista (v6.7, sugestão de layout 7): no centro de Criciúma os
+     marcadores se sobrepõem, e ficava difícil saber qual parada é qual. Passar o
+     mouse numa ponta acende a outra. O transform vai no ícone de DENTRO: o
+     elemento de fora é do Leaflet e carrega a posição do marcador. */
+  .marcador-destacado .brand-icon{transform:scale(1.6);
+              box-shadow:0 0 0 3px var(--amber-fraco), 0 0 12px var(--amber);}
+  .stop-row.realcada{border-color:var(--amber); background:var(--hover);}
   .brand-icon.num{width:20px;height:20px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-family:'JetBrains Mono',monospace;}
 
   /* Layout empilhado (mapa em cima, painel embaixo) em telas estreitas */
@@ -1152,7 +1160,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '6.6.0';
+const VERSAO = '6.7.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1661,6 +1669,9 @@ function importClients(grupos, filename, salvoEm){
     g.pontos.forEach(pt => {
       const marker = L.marker([pt.lat, pt.lng], { icon: dot('#2FB6A6') }).addTo(map)
         .bindPopup(`<b>${escaparHtml(pt.name)}</b><br><small>${escaparHtml(pt.cliente)}</small><br><button onclick="toggleStop('${pt.id}')" style="margin-top:6px;cursor:pointer;">Adicionar/remover parada</button>`);
+      // Realce mapa -> lista (v6.7)
+      marker.on('mouseover', () => realcarPeloMarcador(pt, true));
+      marker.on('mouseout',  () => realcarPeloMarcador(pt, false));
       clientPoints.push({ ...pt, marker });
     });
   });
@@ -2022,6 +2033,7 @@ function renderStopsList(){
 
     const li = document.createElement('li');
     li.className = 'stop-row' + (s.prioritaria ? ' prioritaria' : '');
+    li.dataset.i = i;   // usado pelo realce mapa <-> lista (v6.7)
     // Nome da filial + cliente em letra menor: duas filiais de clientes diferentes
     // podem se chamar "CENTRAL" ou "MATRIZ", e a lista precisa ficar sem ambiguidade
     const sub = s.cliente ? `<span class="nm-cli">${escaparHtml(s.cliente)}</span>` : '';
@@ -2054,6 +2066,51 @@ function renderStopsList(){
       paradasMudaram();
     };
     list.appendChild(li);
+  });
+}
+
+/* ---------------- Realce mapa <-> lista (v6.7) ----------------
+   Pedido do usuário (sugestão de layout 7): no centro de Criciúma os marcadores
+   1, 2 e 3 se sobrepõem. Passar o mouse numa parada da lista acende o marcador
+   dela; passar no marcador acende a linha e, se ela estiver fora de vista,
+   traz a lista até ela.
+
+   Antes da rota traçada o marcador da parada é a bolinha teal do cliente;
+   depois, a bolinha numerada. A função abaixo pega a que existir. */
+function marcadorDaParada(i){
+  return stopMarkers[i] || (stops[i] && stops[i].marker) || null;
+}
+
+function realcarParada(i, ligado, vindoDoMapa){
+  const li = document.querySelector(`#stopsList .stop-row[data-i="${i}"]`);
+  if (li){
+    li.classList.toggle('realcada', ligado);
+    // Só rola a lista quando o gatilho foi o mapa — senão a lista se mexeria
+    // debaixo do ponteiro de quem está passando o mouse nela
+    if (ligado && vindoDoMapa) li.scrollIntoView({ block:'nearest' });
+  }
+  const m = marcadorDaParada(i);
+  const el = m && m.getElement && m.getElement();
+  if (el) el.classList.toggle('marcador-destacado', ligado);
+  if (m && m.setZIndexOffset) m.setZIndexOffset(ligado ? 1000 : 0);   // sai de baixo dos vizinhos
+}
+
+// Um marcador pode ser de um cliente que não está na viagem: aí não há o que acender
+function realcarPeloMarcador(ponto, ligado){
+  const i = stops.findIndex(s => s.id === ponto.id);
+  if (i >= 0) realcarParada(i, ligado, true);
+}
+
+if (!modoCampoAtivo){
+  // Uma escuta só, na lista: vale no painel e nas colunas, e sobrevive aos
+  // redesenhos da lista (as linhas são recriadas a cada mudança)
+  document.querySelector('main').addEventListener('mouseover', ev => {
+    const li = ev.target.closest('#stopsList .stop-row');
+    if (li) realcarParada(Number(li.dataset.i), true, false);
+  });
+  document.querySelector('main').addEventListener('mouseout', ev => {
+    const li = ev.target.closest('#stopsList .stop-row');
+    if (li) realcarParada(Number(li.dataset.i), false, false);
   });
 }
 
@@ -3382,6 +3439,9 @@ function drawResult(distance, duration, geometry, legs){
 
   stops.forEach((s, i) => {
     const m = L.marker([s.lat, s.lng], { icon: numIcon(i+1) }).addTo(map).bindPopup(`${i+1}. ${escaparHtml(s.name)}`);
+    // Realce mapa -> lista (v6.7). O índice é o da ordem de visita, o mesmo da lista.
+    m.on('mouseover', () => realcarParada(i, true, true));
+    m.on('mouseout',  () => realcarParada(i, false, true));
     stopMarkers.push(m);
   });
 
