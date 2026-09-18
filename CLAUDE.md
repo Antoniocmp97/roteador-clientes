@@ -733,33 +733,64 @@ Ainda em aberto:
 - Troca do OSRM público antes do uso diário sério (Fase 4)
 - Revisar a decisão de manter arquivo único (Fase 3, ponto de decisão, não iniciado)
 
-### Pendências para a próxima sessão (registradas em 15/09/2026)
+### Pendências para a próxima sessão (atualizadas em 18/09/2026)
 
-Na sessão de 14–15/09 o usuário pediu sugestões de layout olhando o app como um
-todo (medido em Full HD: painel de 340px, mapa de 1.573px, conteúdo do painel com
-1.468px para 1.015px visíveis). Foram feitas 7 sugestões; as **1, 2 e 3** viraram a
-v6.2 (parada em uma linha, distância/tempo junto dos botões, módulo 1 compacto).
-**Ficaram pendentes — retomar perguntando quais liberar:**
+**Revisão de design (17–18/09/2026).** O usuário pediu que eu olhasse o app como
+designer e comparasse versões: "me sugira e compare as versões". Saíram **7
+pontos**, montados lado a lado (hoje × proposta, no CSS e nas cores reais) na
+página `COMPARACAO-DESIGN.html`, que fica fora do repositório.
 
-4. ⚠️ **Rolagens dentro de rolagem — TENTADA E REVERTIDA.** A v6.4 fez o painel
-   funcionar como as colunas; o usuário testou e não gostou: com rota traçada os
-   três módulos com lista dividiam a tela (~131px cada numa janela de 1000px),
-   contra 320/240 fixos de hoje. Desfeita na v6.4.1. Se o assunto voltar, o
-   caminho é o outro que foi oferecido: mexer só no Roteiro, que deixaria de
-   rolar sozinho, de 4 barras para 3.
-5. ~~Botões de rota sempre visíveis.~~ ✅ Feito na v6.5.0: o módulo gruda na
-   coluna em que estiver, em qualquer posição, e fica compacto enquanto flutua.
-6. ~~Cabeçalho do módulo 3 apertado.~~ ✅ Feito na v6.6.0: os dois viraram ícones
-   ao lado da busca (escolha do usuário entre três opções).
-7. ~~Mapa e lista conversando.~~ ✅ Feito na v6.7.0: realce nos dois sentidos,
-   com a lista rolando até a parada quando o gatilho é o mapa.
+Já feitos:
+- **1 · Barra de progresso do campo invisível** → v7.5.0 (era defeito, não gosto;
+  ver seção 5).
+- **2 · Parada da vez em destaque no campo** → v7.7.0.
+- **6 · Numeração dos módulos** → v7.5.1, variante "tirar os números".
+- **7 · Cabeçalho** → v7.6.0, ações agrupadas e tema como ícone.
 
-**A lista de sugestões de layout acabou** — só a 4 ficou pendente, como tentada e
-revertida.
+**Em aberto — retomar perguntando quais liberar:**
 
-Também em aberto desde antes: as duas direções acima (trocar o OSRM, arquivo
-único). Regra de trabalho vigente: implementar e testar, mas **perguntar antes de
-fazer commit/push** — o usuário testa antes de publicar.
+- **3 · Hierarquia dos botões da parada (tela do campo).** Hoje o âmbar — a cor
+  da origem e da rota — está nos **dois** botões de navegação, que fazem a mesma
+  coisa por caminhos diferentes, e "Marcar como concluída", que é o que muda o
+  estado do roteiro, é o mais apagado (contorno). Duas variantes na página de
+  comparação, **falta o usuário escolher**: **A** = um botão âmbar "Navegar" com
+  o app preferido (guardado no aparelho) e o outro app menor ao lado; **B** =
+  Waze e Maps em contorno e "Marcar como concluída" em teal cheio.
+- **4 · Módulo Rota: dois botões disputando.** "Traçar nesta ordem" e "Otimizar
+  ordem" têm a mesma largura e pesos parecidos, mas o uso normal é otimizar.
+  Proposta: **"Otimizar e traçar"** como principal (o botão diz o resultado, não
+  a mecânica) e "Nesta ordem" como alternativa estreita.
+- **5 · Um só idioma de ícones.** O app mistura emoji (🎯 📍 ★ ✕ ▲ ▼) com ícones
+  de traço em SVG. Emoji muda de desenho entre o Windows do escritório e o
+  Android da equipe, não acompanha o tema e tem peso visual diferente. Proposta:
+  tudo em traço, 1,8px de espessura, 15–17px. É barato e aparece em todas as
+  telas — seria o próximo que eu levaria.
+
+**Sugestões de layout (14–15/09/2026), lista à parte e já encerrada.** Das 7, a
+única que sobrou foi a **4 · rolagens dentro de rolagem**, ⚠️ **TENTADA E
+REVERTIDA**: a v6.4 fez o painel funcionar como as colunas; o usuário testou e
+não gostou (com rota traçada os três módulos com lista dividiam a tela, ~131px
+cada numa janela de 1000px, contra 320/240 fixos). Desfeita na v6.4.1. Se o
+assunto voltar, o caminho é o outro que foi oferecido: mexer só no Roteiro, que
+deixaria de rolar sozinho, de 4 barras para 3.
+
+**Também em aberto, de antes:**
+- **Trocar o OSRM público** (Fase 4) — o usuário ficou de decidir onde hospedar.
+- **Arquivo único** (Fase 3, ponto de decisão, não iniciado).
+- **Nome do programa.** Em 17/09 ele pediu sugestões; foram dadas (Haga Rotas,
+  Parada Certa, Percurso, Rota Viva, Farol, entre outras) e **nenhuma foi
+  escolhida** — a marca segue `hagamorfis/rotas`. ⚠️ Se um dia trocar, mudar só o
+  nome que aparece: **renomear o repositório muda o endereço do GitHub Pages e
+  quebra todos os links de roteiro já enviados à equipe**.
+
+**Material de trabalho na pasta, fora do repositório** (padrão `COMPARACAO-*.html`
+no `.gitignore`), para apagar quando não servirem mais:
+`COMPARACAO-MODULO1.html` (as 5 propostas do módulo 1; a v7.4.0 saiu da "D") e
+`COMPARACAO-DESIGN.html` (os 7 pontos acima).
+
+Regra de trabalho vigente: implementar e testar, mas **perguntar antes de fazer
+commit/push** — o usuário testa antes de publicar; `.haga` dele significa "pode
+commitar e publicar agora".
 
 Concluído:
 - Tipo de serviço por parada — ✅ implementado na v1.9
