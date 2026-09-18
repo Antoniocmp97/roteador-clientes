@@ -426,6 +426,20 @@
   .btn-lista:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
   /* Ligado = painel de tipos aberto, ou todos os clientes marcados */
   .btn-lista.ativo{color:var(--amber); border-color:var(--amber-dim); background:var(--amber-fraco);}
+  /* Interruptor no título do módulo (v7.3.0): menor e sem caixa, para caber na
+     linha de 11px do título sem empurrar a lista. Hoje só o do zoom usa. */
+  .btn-titulo{flex:none; width:24px; height:18px; display:flex; align-items:center; justify-content:center;
+              background:none; border:1px solid transparent; border-radius:5px; padding:0;
+              color:var(--amber-dim); transition:color .15s, border-color .15s, background .15s;}
+  .btn-titulo svg{width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.9;
+                  stroke-linecap:round; stroke-linejoin:round;}
+  .btn-titulo:hover{color:var(--text); border-color:var(--teal);}
+  .btn-titulo:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
+  /* Bloqueado é o estado escolhido de propósito: acende, como os ícones do módulo 3 */
+  .btn-titulo .risco{display:none;}
+  .btn-titulo.bloqueado{color:var(--amber); border-color:var(--amber-dim); background:var(--amber-fraco);}
+  .btn-titulo.bloqueado .risco{display:inline;}
+  .btn-titulo.bloqueado .mais{display:none;}
   /* height, e não max-height (v5.7): com max-height a caixa encolhia até o
      conteúdo durante uma busca de poucos resultados (89px com "acuo"), e aí a
      divisória 3<->4 e os puxadores ficavam travados — a lista não tinha como
@@ -1072,6 +1086,17 @@
             <span class="modulo-alca" data-alca></span>
             4 · Ordem da viagem
           </span>
+          <!-- Bloqueia/libera o zoom ao clicar na parada (v7.3.0). Fica aqui, no
+               título do módulo em que o clique acontece. -->
+          <button class="btn-titulo" id="zoomParadaBtn" type="button"
+                  aria-label="Zoom ao clicar na parada" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5"/>
+              <path d="M15.4 15.4L21 21"/>
+              <path class="mais" d="M10.5 7.8v5.4M7.8 10.5h5.4"/>
+              <path class="risco" d="M4.5 16.5L16.5 4.5"/>
+            </svg>
+          </button>
         </div>
         <ul class="stops" id="stopsList"></ul>
         <!-- Puxador do módulo 4: cresce/encolhe só ele, empurrando o que vem
@@ -1211,7 +1236,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '7.2.0';
+const VERSAO = '7.3.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2217,7 +2242,7 @@ function adicionarAvulsaPeloCampo(){
   const ponto = criarParadaAvulsa(c.lat, c.lng, campoNome.value);
   campoNome.value = ''; campoCoord.value = '';
   setStatus(`Parada avulsa "${ponto.name}" adicionada.`, true);
-  verParadaNoMapa(stops.indexOf(ponto));
+  verParadaNoMapa(stops.indexOf(ponto), true);   // recém-criada: vai até ela mesmo com o zoom bloqueado
 }
 
 /* ---------------- Realce mapa <-> lista (v6.7) ----------------
@@ -2258,16 +2283,45 @@ function realcarPeloMarcador(ponto, ligado){
    perto do que 16, mantém o que está. */
 const ZOOM_DA_PARADA = 16;
 
-function verParadaNoMapa(i){
+/* Bloquear/liberar esse zoom (v7.3.0, pedido do usuário: "muito importante").
+   Conferindo a lista com o mapa enquadrado num bairro, cada clique jogava o mapa
+   para outro canto e era preciso reenquadrar. Bloqueado, o clique continua
+   dizendo QUAL é a parada — acende o marcador e abre o balão — só não mexe no
+   mapa. A escolha fica guardada no navegador, como as outras preferências.
+   O botão não vale para a parada avulsa recém-criada: ali o ponto acabou de
+   nascer e pode estar fora da vista, então o mapa vai até ele de qualquer jeito. */
+const CHAVE_ZOOM_PARADA = 'hg_zoom_parada';
+let zoomAoClicar = true;
+
+function aplicarBotaoZoom(){
+  const b = document.getElementById('zoomParadaBtn');
+  if (!b) return;
+  b.classList.toggle('bloqueado', !zoomAoClicar);
+  b.setAttribute('aria-pressed', zoomAoClicar ? 'false' : 'true');
+  b.title = zoomAoClicar
+    ? 'Zoom liberado: clicar na parada leva o mapa até ela. Clique para bloquear.'
+    : 'Zoom bloqueado: clicar na parada só acende o marcador. Clique para liberar.';
+}
+
+function verParadaNoMapa(i, forcar){
   const s = stops[i];
   if (!s || !map) return;
-  map.setView([s.lat, s.lng], Math.max(map.getZoom(), ZOOM_DA_PARADA), { animate:true });
+  if (zoomAoClicar || forcar)
+    map.setView([s.lat, s.lng], Math.max(map.getZoom(), ZOOM_DA_PARADA), { animate:true });
   const m = marcadorDaParada(i);
   if (m && m.openPopup) m.openPopup();   // diz qual é, quando há vários por perto
   realcarParada(i, true, false);
 }
 
 if (!modoCampoAtivo){
+  try{ zoomAoClicar = localStorage.getItem(CHAVE_ZOOM_PARADA) !== '0'; }catch(e){}   // padrão: liberado
+  aplicarBotaoZoom();
+  document.getElementById('zoomParadaBtn').onclick = () => {
+    zoomAoClicar = !zoomAoClicar;
+    try{ localStorage.setItem(CHAVE_ZOOM_PARADA, zoomAoClicar ? '1' : '0'); }catch(e){}
+    aplicarBotaoZoom();
+  };
+
   document.querySelector('main').addEventListener('click', ev => {
     const li = ev.target.closest('#stopsList .stop-row');
     // Alça e botões da linha têm função própria

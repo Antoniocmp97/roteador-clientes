@@ -4964,3 +4964,45 @@ TESTES (base de teste com 39 pontos)
   - Retomar um link com duas avulsas tendo uma avulsa órfã na tela: a órfã
     saiu e as duas do link entraram (39 + 2 + pino da origem = 42).
   - Sem erros no console.
+
+--------------------------------------------------------
+[17/09/2026] v7.3.0 — Botão que bloqueia e libera o zoom ao clicar na parada
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Criar um botão toggle que bloqueia e libera o zoom ao clicar nas paradas"
+  (registrado em 15/09/2026 como "muito importante"); nesta sessão:
+  "Vamos la, implemente o botao que libera e bloqueia o zoom".
+
+O QUE FOI FEITO
+  Botão de lupa no título do módulo 4 (Ordem da viagem), à direita — é o
+  título do módulo onde o clique acontece, então ele viaja junto quando o
+  módulo muda de coluna.
+    · Liberado (padrão): lupa com "+", discreta. Clicar na parada continua
+      centralizando o mapa nela com zoom 16, como na v6.9.0.
+    · Bloqueado: lupa riscada, acesa em âmbar (mesmo destaque dos ícones do
+      módulo 3). O clique na parada AINDA acende o marcador e abre o balão —
+      só não mexe no mapa. Era o ponto em aberto: bloqueado, o clique
+      continua dizendo QUAL é a parada.
+  A escolha fica guardada no navegador (hg_zoom_parada), como as outras
+  preferências de uso.
+  Exceção de propósito: a parada avulsa recém-criada leva o mapa até ela
+  mesmo com o zoom bloqueado (verParadaNoMapa(i, true)) — o ponto acabou de
+  nascer e pode estar fora da vista.
+
+DECISÕES QUE ESTAVAM EM ABERTO (CLAUDE.md §8)
+  Onde fica o botão          -> título do módulo 4
+  Guardado no navegador      -> sim, hg_zoom_parada
+  Bloqueado, acende o marca. -> sim, com balão; só o mapa não se move
+
+TESTES (base Exemplos/exemplo.umap, 6 pontos, 4 paradas)
+  Liberado: mapa em (-28,60; -49,50) no zoom 11, clique na 3ª parada ->
+    mapa foi para (-28,665; -49,385), zoom 16, balão aberto, linha realçada.
+  Bloqueado: mesma preparação, clique na 1ª parada -> nenhum movimento
+    (movestart 0, centro e zoom intactos), balão aberto e linha realçada.
+  Guardado: localStorage vira "0"; recarregando a página o botão volta
+    bloqueado (aria-pressed=true, classe "bloqueado").
+  Avulsa com zoom bloqueado: coordenada -28,72/-49,44 adicionada com o mapa
+    longe -> mapa foi até ela no zoom 16, como esperado.
+  Layout: a linha do título continua com 18px de altura (o botão tem 24x18),
+    a lista não desceu. Sem erro no console.

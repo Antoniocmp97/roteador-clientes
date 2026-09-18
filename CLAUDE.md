@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/09/2026 — v7.2.0 (parada avulsa excluída sai do mapa)
+> **Última atualização:** 17/09/2026 — v7.3.0 (botão que bloqueia e libera o zoom da parada)
 
 ---
 
@@ -244,6 +244,17 @@ sem dependências instaladas. Abre direto no navegador.
   mantêm a função deles. ⚠️ Em aba de segundo plano o `setView` animado do Leaflet
   não chega a ser aplicado (relógio de quadros pausado) — é artefato de teste,
   não do app
+- **Botão que bloqueia e libera esse zoom** (v7.3.0, pedido do usuário): lupa no
+  **título do módulo 4**, à direita — no módulo em que o clique acontece, então
+  ela acompanha o módulo quando ele muda de coluna. Liberado (padrão) é a lupa
+  com "+", discreta; bloqueado é a lupa riscada, acesa em âmbar como os ícones do
+  módulo 3. **Bloqueado, o clique ainda acende o marcador e abre o balão** — só o
+  mapa fica parado, que era o ponto em aberto: conferindo a lista com o mapa
+  enquadrado num bairro, cada clique jogava a vista para outro canto. A escolha é
+  guardada no navegador (`hg_zoom_parada`). ⚠️ Exceção de propósito: a **parada
+  avulsa recém-criada** leva o mapa até ela mesmo bloqueado
+  (`verParadaNoMapa(i, true)`) — o ponto acabou de nascer e pode estar fora da
+  vista
 - **Realce mapa ↔ lista** (v6.7.0, sugestão de layout 7): o mouse numa parada da
   lista acende o marcador dela (1,6x, anel âmbar, à frente dos vizinhos); o mouse
   num marcador acende a linha e rola a lista até ela (só nesse sentido, senão a
@@ -612,7 +623,7 @@ repositório é público (ver `.gitignore`).
   brasileiros (Google, Mapbox), com cadastro e chave de acesso.
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
   origem padrão, a lista de tipos de serviço, a preferência de formato do link,
-  a opção de voltar para a origem,
+  a opção de voltar para a origem, o zoom ao clicar na parada,
   a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
   botão), o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
@@ -770,6 +781,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 75 | **v7.0.0** — Parada avulsa: ponto fora da base por coordenada colada ou clique no mapa; retomada traz avulsas de volta |
 | 76 | **v7.1.0** — Correção: módulo Rota grudado alternava entre compacto e inteiro, fazendo o painel piscar |
 | 77 | **v7.2.0** — Correção: bolinha da parada avulsa continuava no mapa depois de excluída |
+| 78 | **v7.3.0** — Botão que bloqueia e libera o zoom ao clicar na parada |
 
 ---
 
@@ -836,7 +848,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.2.0
+7.3.0
 ```
 
 ### Onde o número aparece
@@ -938,3 +950,4 @@ os backups locais são conveniência, não garantia.
 | 7.0.0 | 15/09/2026 | Parada avulsa (coordenada colada ou clique no mapa) |
 | 7.1.0 | 15/09/2026 | Fim do painel piscando (folga na decisão do módulo grudado) |
 | 7.2.0 | 15/09/2026 | Parada avulsa excluída sai do mapa |
+| 7.3.0 | 17/09/2026 | Botão que bloqueia e libera o zoom ao clicar na parada |
