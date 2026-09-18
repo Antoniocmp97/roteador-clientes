@@ -76,31 +76,14 @@
           color:var(--muted);border:1px solid var(--line);border-radius:4px;
           padding:1px 5px;margin-left:8px;vertical-align:middle;letter-spacing:.02em;}
 
-  /* Interruptor de modo noturno (v3.3), no padrão dos aparelhos: trilho +
-     bolinha que desliza. É um <button role="switch"> de verdade, e não uma
-     caixa de seleção maquiada, para funcionar por teclado e ser anunciado
-     corretamente por leitor de tela. */
-  .interruptor{
-    display:inline-flex; align-items:center; gap:9px; margin-left:auto;
-    background:none; border:none; padding:4px; cursor:pointer;
-    color:var(--muted); font-family:'JetBrains Mono',monospace;
-    font-size:11px; letter-spacing:1.4px; text-transform:uppercase;
-  }
-  .interruptor:hover{color:var(--text);}
-  .interruptor-trilho{
-    position:relative; width:42px; height:24px; border-radius:12px; flex:none;
-    background:var(--line); transition:background .2s;
-  }
-  .interruptor-bolinha{
-    position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%;
-    background:var(--panel); box-shadow:0 1px 3px var(--sombra); transition:transform .2s;
-  }
-  /* Ligado = modo noturno. Trilho âmbar, bolinha à direita. */
-  .interruptor[aria-checked="true"] .interruptor-trilho{background:var(--amber-dim);}
-  .interruptor[aria-checked="true"] .interruptor-bolinha{transform:translateX(18px);}
-  .interruptor:focus-visible{outline:2px solid var(--teal); outline-offset:3px; border-radius:6px;}
-  /* Em tela estreita fica só o interruptor, sem a palavra */
-  @media (max-width:520px){ .interruptor-texto{display:none;} }
+  /* Botão do tema (v3.3 como interruptor de trilho; ícone desde a v7.6.0).
+     Mostra o estado atual — lua no escuro, sol no claro. Continua sendo um
+     <button role="switch"> de verdade, com aria-checked, para funcionar por
+     teclado e ser anunciado corretamente por leitor de tela; o que saiu foi o
+     trilho com a bolinha e o rótulo "MODO NOTURNO" escrito ao lado. A dica do
+     mouse diz para onde o clique leva (ver aplicarTema). */
+  .tema-btn[aria-checked="true"] .icone-sol{display:none;}
+  .tema-btn[aria-checked="false"] .icone-lua{display:none;}
 
   /* Tema escuro do mapa (v3.4) — três operações em sequência, e a ORDEM é
      o ponto:
@@ -207,10 +190,13 @@
   /* Fundo translúcido: a caixa fica por cima do número, que precisa continuar legível */
   .modulo-alca:hover{background:color-mix(in srgb, var(--amber) 16%, transparent);}
   /* Rota e Roteiro não têm número: a caixa fica só nos pontinhos (marcado no JS) */
+  /* Desde a v7.5.1 nenhum título tem número, então esta é a forma normal da alça */
   .modulo-alca.sem-numero{width:24px; margin-right:0;}
-  /* No título do 3 a alça fica num contêiner com gap de 5px, que empurrava o
-     "3 ·" para a direita dos outros títulos (alinhado na v6.1.4) */
+  /* No título de "Selecionar paradas" a alça fica num contêiner com gap de 5px,
+     que empurrava o texto para a direita dos outros títulos (alinhado na v6.1.4;
+     o -5px anula o gap agora que a alça é sempre a versão sem número) */
   .field-label-titulo > .modulo-alca{margin-right:-20px;}
+  .field-label-titulo > .modulo-alca.sem-numero{margin-right:-5px;}
   @media (pointer:coarse){
     .modulo-alca{width:47px; height:44px; padding-left:12px; margin:-15px -20px -15px -14px;}
     .modulo-alca.sem-numero{width:27px; margin-right:0;}
@@ -255,8 +241,14 @@
   /* Botões do arranjo, no cabeçalho */
   /* Disquete = salvar arranjo, lixeira = voltar ao normal (ícones desde a v5.7,
      a pedido do usuário; as funções são as mesmas dos antigos links de texto) */
-  .arranjo-acoes{margin-left:auto; display:flex; gap:6px; align-self:center;}
-  .arranjo-acoes + .interruptor{margin-left:14px;}
+  /* Ações do cabeçalho num bloco só, à direita (v7.6.0, ponto 7 da revisão de
+     design): antes o disquete e a lixeira ficavam colados na marca, como se
+     fossem parte dela, e o tema vinha depois com o rótulo "MODO NOTURNO"
+     escrito por extenso (~110px em caixa alta, ao lado de um interruptor que
+     já dizia o que era). */
+  .cabecalho-acoes{margin-left:auto; display:flex; align-items:center; gap:4px; align-self:center;}
+  .arranjo-acoes{display:flex; gap:6px;}
+  .cab-divisor{width:1px; height:20px; background:var(--line); margin:0 5px; flex:none;}
   .icone-btn{position:relative; width:32px; height:32px; padding:0; border-radius:6px;
              display:flex; align-items:center; justify-content:center;
              background:none; color:var(--muted); transition:color .15s, background .15s;}
@@ -414,8 +406,8 @@
   /* Enquanto o modo "escolher no mapa" está armado, o cursor vira mira sobre o mapa */
   #map.escolhendo{cursor:crosshair;}
   #map.escolhendo .leaflet-grab{cursor:crosshair;}
-  /* Mesma tipografia dos títulos de seção (.field-label: "2 · Origem",
-     "3 · Selecionar paradas") — fonte, tamanho, cor e caixa alta iguais,
+  /* Mesma tipografia dos títulos de seção (.field-label: "Origem",
+     "Selecionar paradas") — fonte, tamanho, cor e caixa alta iguais,
      sem sublinhado — para "tipos de serviço" e "marcar todos" lerem como
      parte do mesmo cabeçalho, não como um link solto e diferente. */
   .link-btn{background:none;color:var(--amber-dim);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;padding:0;}
@@ -752,7 +744,7 @@
     .divisor{display:none;}
     .guia{display:none;}
     .arranjo-acoes{display:none;}
-    .arranjo-acoes + .interruptor{margin-left:auto;}
+    .cab-divisor{display:none;}
     .console{width:auto;max-height:56%;border-left:none;border-top:1px solid var(--line);}
     /* Em tela estreita o painel inteiro tem pouca altura: um checklist de 320px
        sobraria quase nada para os outros passos. Todos continuam rolando. */
@@ -760,7 +752,7 @@
     .stops{height:auto;max-height:170px;}
   }
 
-  /* Campo "5 · Enviar para o campo": o input do link e a dica de uso */
+  /* Campo "Enviar para o campo": o input do link e a dica de uso */
   #linkCampo{width:100%;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);}
   /* Retomar um roteiro já enviado (v6.8.0) */
   .retomar-linha{display:flex; gap:8px; align-items:stretch; margin-top:10px;}
@@ -793,6 +785,7 @@
     align-items:stretch;
   }
   .campo-topo{display:flex; align-items:center; gap:12px;}
+  .campo-topo .tema-btn{margin-left:auto;}
   .campo-marca{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;}
   .campo-marca span{color:var(--amber);}
   .campo-saindo{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
@@ -913,6 +906,7 @@
     <!-- Arranjo dos módulos nas colunas (v5.7). Mover um módulo vale só enquanto
          a página está aberta; "salvar" faz o site abrir sempre assim, e "voltar
          ao normal" põe tudo de volta no painel e apaga o que foi salvo. -->
+    <div class="cabecalho-acoes">
     <div class="arranjo-acoes" id="arranjoAcoes">
       <!-- Ícones desenhados em SVG, e não emoji: 💾 e 🗑 mudam de cara (e de
            cor) conforme o sistema, e não acompanhariam o tema. -->
@@ -930,10 +924,18 @@
         </svg>
       </button>
     </div>
-    <button class="interruptor" type="button" role="switch" aria-checked="true" data-tema-btn>
-      <span class="interruptor-texto">Modo noturno</span>
-      <span class="interruptor-trilho"><span class="interruptor-bolinha"></span></span>
-    </button>
+      <span class="cab-divisor" aria-hidden="true"></span>
+      <button class="icone-btn tema-btn" type="button" role="switch" aria-checked="true"
+              data-tema-btn aria-label="Tema claro ou escuro">
+        <svg class="icone-lua" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/>
+        </svg>
+        <svg class="icone-sol" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/>
+        </svg>
+      </button>
+    </div>
   </header>
 
   <main>
@@ -978,7 +980,7 @@
         <div class="field-label" id="tituloClientes">
           <span style="display:flex;align-items:center;">
             <span class="modulo-alca" data-alca></span>
-            <span>1 · Clientes <small id="countLabel"></small><span class="ok-base" id="okBase" hidden>✓</span></span>
+            <span>Clientes <small id="countLabel"></small><span class="ok-base" id="okBase" hidden>✓</span></span>
           </span>
           <span class="titulo-acoes">
             <!-- Retomar (v6.8.1, dobrável na v7.4.0): o campo do módulo 5 só aparece
@@ -1040,7 +1042,7 @@
       <section class="modulo-movel" data-modulo="m2">
       <div class="modulo-corpo">
         <div class="field-label">
-          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>2 · Origem</span>
+          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Origem</span>
           <!-- Rótulo muda conforme o estado; escondido enquanto não há origem definida -->
           <button class="link-btn" id="origemPadraoBtn" style="display:none;"></button>
         </div>
@@ -1064,7 +1066,7 @@
         <div class="field-label">
           <span class="field-label-titulo">
             <span class="modulo-alca" data-alca></span>
-            3 · Selecionar paradas</span>
+            Selecionar paradas</span>
         </div>
         <!-- Painel de configuração da LISTA de tipos de serviço (ex.: "Manutenção",
              "Entrega de toner"). Fica escondido até o link "tipos de serviço" ser
@@ -1149,7 +1151,7 @@
         <div class="field-label">
           <span style="display:flex;align-items:center;">
             <span class="modulo-alca" data-alca></span>
-            4 · Ordem da viagem
+            Ordem da viagem
           </span>
           <!-- Bloqueia/libera o zoom ao clicar na parada (v7.3.0). Fica aqui, no
                título do módulo em que o clique acontece. -->
@@ -1205,7 +1207,7 @@
       <section class="modulo-movel" data-modulo="m6">
       <div id="envioSection" class="modulo-corpo" style="display:none;">
         <div class="field-label">
-          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>5 · Enviar para o campo</span>
+          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Enviar para o campo</span>
         </div>
         <button class="go-btn" id="gerarLinkBtn">Gerar link do roteiro</button>
         <!-- Retomar (v6.8.0): cola-se aqui o link já enviado para acrescentar
@@ -1268,9 +1270,15 @@
   <header class="campo-head">
     <div class="campo-topo">
       <div class="campo-marca">hagamorfis<span>/</span>rotas<span class="versao" id="versaoCampo"></span></div>
-      <button class="interruptor" type="button" role="switch" aria-checked="true" data-tema-btn>
-        <span class="interruptor-texto">Modo noturno</span>
-        <span class="interruptor-trilho"><span class="interruptor-bolinha"></span></span>
+      <button class="icone-btn tema-btn" type="button" role="switch" aria-checked="true"
+              data-tema-btn aria-label="Tema claro ou escuro">
+        <svg class="icone-lua" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/>
+        </svg>
+        <svg class="icone-sol" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2.5v2.4M12 19.1v2.4M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/>
+        </svg>
       </button>
     </div>
     <div class="campo-saindo" id="campoSaindo"></div>
@@ -1301,7 +1309,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '7.5.0';
+const VERSAO = '7.6.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1318,9 +1326,14 @@ function temaAtual(){
 }
 function aplicarTema(tema, salvar){
   document.documentElement.setAttribute('data-tema', tema);
-  // aria-checked é o estado real do interruptor: o CSS desenha a bolinha a
-  // partir dele, e o leitor de tela anuncia a partir dele. Um só lugar.
-  document.querySelectorAll('[data-tema-btn]').forEach(b => b.setAttribute('aria-checked', String(tema === 'escuro')));
+  // aria-checked é o estado real do interruptor: o CSS escolhe o ícone a partir
+  // dele (v7.6.0; antes desenhava a bolinha), e o leitor de tela anuncia a
+  // partir dele. Um só lugar. A dica do mouse diz para onde o clique leva.
+  document.querySelectorAll('[data-tema-btn]').forEach(b => {
+    b.setAttribute('aria-checked', String(tema === 'escuro'));
+    b.title = tema === 'escuro' ? 'Tema escuro — clique para o claro'
+                                : 'Tema claro — clique para o escuro';
+  });
   // O mapa não é só escurecido: ele TROCA para o conjunto de ladrilhos do
   // tema. setUrl refaz o pedido dos ladrilhos visíveis, sem recriar a camada,
   // então a posição, o zoom e a rota traçada continuam onde estavam.
@@ -1481,7 +1494,7 @@ if (!modoCampoAtivo){
 document.querySelectorAll('[data-tema-btn]').forEach(b => {
   b.addEventListener('click', () => aplicarTema(temaAtual() === 'escuro' ? 'claro' : 'escuro', true));
 });
-aplicarTema(temaAtual(), false); // acerta o desenho do interruptor no estado salvo
+aplicarTema(temaAtual(), false); // acerta o ícone do tema no estado salvo
 
 // Ícone de bolinha simples (usado para clientes e para o marcador de origem, cor varia por chamada)
 function dot(color){
@@ -2620,12 +2633,12 @@ try{
 }catch(e){}
 
 const MODULOS = {
-  m1: { titulo:'1 · Clientes' },
-  m2: { titulo:'2 · Origem' },
-  m3: { titulo:'3 · Selecionar paradas', elastico:true },
-  m4: { titulo:'4 · Ordem da viagem',    elastico:true, espera:'Aparece quando houver paradas selecionadas.' },
+  m1: { titulo:'Clientes' },
+  m2: { titulo:'Origem' },
+  m3: { titulo:'Selecionar paradas', elastico:true },
+  m4: { titulo:'Ordem da viagem',    elastico:true, espera:'Aparece quando houver paradas selecionadas.' },
   m5: { titulo:'Rota' },
-  m6: { titulo:'5 · Enviar para o campo', espera:'Aparece depois de traçar a rota.' },
+  m6: { titulo:'Enviar para o campo', espera:'Aparece depois de traçar a rota.' },
   m7: { titulo:'Roteiro',                 elastico:true, espera:'Aparece depois de traçar a rota.' }
 };
 const ORDEM_MODULOS = Object.keys(MODULOS);
@@ -3106,7 +3119,10 @@ if (!modoCampoAtivo){
   });
 
   // A área da alça cobre os pontinhos e o número do título (v6.1.5). Título sem
-  // número (Rota, Roteiro) fica com a caixa só nos pontinhos.
+  // número fica com a caixa só nos pontinhos — desde a v7.5.1 isso vale para
+  // todos, porque os títulos deixaram de ser numerados. A marcação continua
+  // sendo feita pelo texto (e não fixa) para o dia em que algum título voltar a
+  // começar com número.
   document.querySelectorAll('[data-alca]').forEach(alca => {
     let n = alca.nextSibling;
     while (n && !(n.textContent || '').trim()) n = n.nextSibling;
@@ -4114,7 +4130,7 @@ function retomarRoteiro(texto){
 }
 
 // Chamada depois de uma rota traçada com sucesso (routeBtn ou optimizeBtn):
-// guarda o resumo e revela a seção "5 · Enviar para o campo"
+// guarda o resumo e revela a seção "Enviar para o campo"
 function prepararEnvio(distance, duration){
   ultimoResumo = { d: Math.round(distance), t: Math.round(duration) };
   document.getElementById('envioSection').style.display = 'block';

@@ -5111,3 +5111,81 @@ TESTES (celular de 375x812, roteiro de 3 paradas + retorno)
   Em 427px de largura: barra de 344px, cabeçalho de 116px.
   Escritório conferido: header continua com align-items:baseline, 67px de
     altura e o interruptor à direita — a correção é só do .campo-head.
+
+--------------------------------------------------------
+[18/09/2026] v7.5.1 — Títulos dos módulos sem numeração
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Ponto 6 da revisão de design ("Inicie o ajuste 6 e 7 juntos"), variante B
+  entre as duas oferecidas: tirar os números.
+
+POR QUE
+  A sequência na tela era 1, 2, 3, 4, Rota, 5, Roteiro — dois módulos sem
+  número no meio, e o "5" depois de um deles. E desde a v6.0 os módulos são
+  movidos livremente entre painel e colunas, então o número também deixou de
+  indicar a ordem em que aparecem. O nome resolve sozinho.
+
+O QUE FOI FEITO
+  Títulos: "1 · Clientes" -> "Clientes", "2 · Origem" -> "Origem",
+  "3 · Selecionar paradas" -> "Selecionar paradas", "4 · Ordem da viagem" ->
+  "Ordem da viagem", "5 · Enviar para o campo" -> "Enviar para o campo".
+  Rota e Roteiro já eram assim. Mexido no HTML e na tabela MODULOS (que
+  alimenta o aviso "aparece depois..." das colunas e a etiqueta do arraste).
+  A alça passa a ser a versão "sem número" (24px, só os pontinhos) em todos
+  os módulos — a marcação continua sendo feita pelo texto do título, e não
+  fixa no código, para o dia em que algum título volte a começar com número.
+  O título de "Selecionar paradas" mora num contêiner com gap de 5px: ganhou
+  -5px de margem para continuar alinhado com os outros.
+
+O QUE NÃO MUDOU
+  Os apelidos internos (data-modulo m1..m7), o arranjo salvo e o CLAUDE.md
+  continuam falando em "módulo 3", "módulo 4" — é o vocabulário do código e
+  da documentação, e trocá-lo não traria nada.
+
+TESTES (painel de 340px, base de exemplo com 6 pontos)
+  Os sete títulos sem número, todos começando no mesmo x (16px), com a alça
+  de 24px. Arrastar um módulo para a coluna: etiqueta e aviso mostram o nome
+  sem número. Selo v7.5.1. Sem erro no console.
+
+--------------------------------------------------------
+[18/09/2026] v7.6.0 — Cabeçalho: ações agrupadas e tema como ícone
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Ponto 7 da revisão de design ("Inicie o ajuste 6 e 7 juntos").
+
+POR QUE
+  "MODO NOTURNO" ocupava ~110px escrito por extenso, em caixa alta, ao lado
+  de um interruptor de trilho que já dizia o que era; e o disquete e a
+  lixeira do arranjo ficavam colados na marca, como se fizessem parte dela.
+
+O QUE FOI FEITO
+  · As ações viraram um bloco só à direita: [disquete] [lixeira] | [tema],
+    com um divisor de 1px separando o arranjo do tema.
+  · O interruptor de tema virou um ícone de 32px que mostra o ESTADO ATUAL:
+    lua no tema escuro, sol no claro. Continua sendo <button role="switch">
+    com aria-checked — teclado e leitor de tela seguem iguais —, e a dica do
+    mouse passou a dizer para onde o clique leva ("Tema escuro — clique para
+    o claro").
+  · Vale nas DUAS telas: a do campo tinha o mesmo interruptor, e agora tem o
+    mesmo ícone, encostado à direita.
+  · Saiu o CSS do trilho e da bolinha (.interruptor*), junto com a media
+    query que escondia a palavra abaixo de 520px — não há mais palavra.
+
+MEDIDAS
+  Bloco de ações: 121px (70 do arranjo + 1 do divisor + 32 do tema + folgas),
+  encostado na borda direita. Cabeçalho segue com 65px de altura.
+
+TESTES
+  Escritório em 1280px: bloco à direita, divisor visível, lua no escuro.
+  Clique: vira sol, tema claro aplicado, ladrilhos do mapa trocados para o
+    conjunto claro, "hg_tema" guardado, dica atualizada. Clique de novo volta.
+  Em 427px (menos que 760): o arranjo some, como já era, e o divisor some
+    junto — sobra o ícone do tema.
+  Tela do campo em 375px: ícone à direita, barra de progresso intacta (307px,
+    2/4), sem o rótulo escrito.
+  Botões do arranjo conferidos: mover um módulo acende o disquete em âmbar
+    (classe "pendente"), salvar grava hg_arranjo_modulos, e a lixeira segue
+    pedindo confirmação.
+  Foco por teclado mantém o contorno teal. Sem erro no console.

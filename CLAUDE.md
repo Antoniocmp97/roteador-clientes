@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 17/09/2026 — v7.5.0 (barra de progresso do campo volta a aparecer)
+> **Última atualização:** 18/09/2026 — v7.6.0 (cabeçalho: ações agrupadas e tema como ícone)
 
 ---
 
@@ -98,10 +98,21 @@ sem dependências instaladas. Abre direto no navegador.
   "Manutenção"). Cada parada selecionada ganha um seletor para escolher o
   tipo; aparece na lista de paradas do escritório e como etiqueta na tela
   do campo
-- **Modo noturno** (v3.3): interruptor no cabeçalho das **duas telas**
+- **Modo noturno** (v3.3): botão no cabeçalho das **duas telas**
   (escritório e campo) troca o app inteiro entre tema escuro e claro. A escolha
   fica guardada no navegador e é aplicada antes da primeira pintura, para a tela
-  não piscar no tema errado ao abrir. Padrão: escuro
+  não piscar no tema errado ao abrir. Padrão: escuro.
+  **Desde a v7.6.0 é um ícone de 32px** (ponto 7 da revisão de design) que mostra
+  o **estado atual** — lua no escuro, sol no claro —, no lugar do interruptor de
+  trilho com "MODO NOTURNO" escrito ao lado (~110px em caixa alta). Continua
+  sendo `<button role="switch">` com `aria-checked`: o CSS escolhe o ícone a
+  partir dele e o leitor de tela anuncia a partir dele, num lugar só. A dica do
+  mouse diz para onde o clique leva
+- **Ações do cabeçalho num bloco só** (v7.6.0): `[disquete] [lixeira] | [tema]`
+  encostados à direita, com um divisor de 1px entre o arranjo e o tema — 121px no
+  total. Antes o disquete e a lixeira ficavam colados na marca, como se fossem
+  parte dela. Em tela estreita (<760px) o arranjo some, como já era, e o divisor
+  some junto
 - **O mapa acompanha o tema**: no escuro usa o Esri Dark Gray com um tratamento
   de cor que reproduz a referência do usuário (ver seção 5); no claro **troca de
   ladrilhos** para o Esri Light Gray, que é onde ruas e rótulos foram desenhados
@@ -135,9 +146,17 @@ sem dependências instaladas. Abre direto no navegador.
   **Em coluna de até 400px a parada fica em uma linha só** (v6.2): as setas ▲▼ saem
   e ★ ✕ ficam na linha do nome; em coluna mais larga as setas voltam
 - **Todos os módulos em até três colunas** (v4.4–v4.7; ampliado na v5.7): ordem
-  na tela **mapa · coluna 3 · coluna 2 · painel**. Os sete módulos — 1 Clientes,
-  2 Origem, 3 Selecionar paradas, 4 Ordem da viagem, Rota (botões + status), 5
-  Enviar para o campo e Roteiro — têm alça no título. Arrastar pela alça até uma
+  na tela **mapa · coluna 3 · coluna 2 · painel**. Os sete módulos — Clientes,
+  Origem, Selecionar paradas, Ordem da viagem, Rota (botões + status),
+  Enviar para o campo e Roteiro — têm alça no título.
+  ⚠️ **Os títulos deixaram de ser numerados na v7.5.1** (ponto 6 da revisão de
+  design, escolha do usuário entre numerar todos ou tirar): a sequência na tela
+  era "1, 2, 3, 4, Rota, 5, Roteiro" e, com os módulos móveis desde a v6.0, o
+  número não indicava mais a ordem em que eles aparecem. **Os apelidos internos
+  (`m1`..`m7`) e este documento continuam falando em "módulo 3", "módulo 4"** —
+  é o vocabulário do código, não o que aparece na tela. A alça passou a ser a
+  versão "sem número" (24px) em todos; a marcação continua saindo do texto do
+  título, não fixa no código. Arrastar pela alça até uma
   coluna a contorna em âmbar; soltar sobre o mapa abre a próxima coluna; Esc
   cancela; duplo clique leva à coluna seguinte (painel → 2 → 3 → painel).
   **Posição livre** (v6.0): soltar entre dois módulos põe ali — vale no painel e
@@ -824,6 +843,8 @@ de arquitetura, para retomar quando fizer sentido):
 | 78 | **v7.3.0** — Botão que bloqueia e libera o zoom ao clicar na parada |
 | 79 | **v7.4.0** — Módulo 1 enxuto: estado no título, upload em uma linha e retomar dobrável |
 | 80 | **v7.5.0** — Correção: barra de progresso do campo estava com largura zero desde a Fase 1 |
+| 81 | **v7.5.1** — Títulos dos módulos sem numeração |
+| 82 | **v7.6.0** — Cabeçalho: ações agrupadas e tema como ícone sol/lua |
 
 ---
 
@@ -890,7 +911,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.5.0
+7.6.0
 ```
 
 ### Onde o número aparece
@@ -995,3 +1016,5 @@ os backups locais são conveniência, não garantia.
 | 7.3.0 | 17/09/2026 | Botão que bloqueia e libera o zoom ao clicar na parada |
 | 7.4.0 | 17/09/2026 | Módulo 1 enxuto (estado no título, upload em uma linha, retomar dobrável) |
 | 7.5.0 | 17/09/2026 | Barra de progresso do campo volta a aparecer |
+| 7.5.1 | 18/09/2026 | Títulos dos módulos sem numeração |
+| 7.6.0 | 18/09/2026 | Cabeçalho: ações agrupadas e tema como ícone |
