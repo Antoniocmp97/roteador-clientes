@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 17/09/2026 — v7.4.0 (módulo 1 enxuto)
+> **Última atualização:** 17/09/2026 — v7.5.0 (barra de progresso do campo volta a aparecer)
 
 ---
 
@@ -291,6 +291,9 @@ sem dependências instaladas. Abre direto no navegador.
   Desde a v6.3 o **retorno à origem** vai no link e aparece como último cartão,
   com ↩ no lugar do número, etiqueta RETORNO, navegação e marcação próprias; o
   cabeçalho conta "N paradas · + retorno".
+  **A barra de progresso do dia** (teal, no cabeçalho, com "2/4" ao lado) só
+  passou a aparecer na **v7.5.0** — existia desde a Fase 1 com largura zero,
+  ver seção 5.
   **Formato v8** (v6.8.0): 7º grupo = retorno ("1"/vazio), 8º = **id do roteiro**
   (rid), 9º = **origem** "lat*lng*rótulo". No v7 a coordenada do retorno vinha no
   7º grupo; a leitura entende os dois, e links v5/v6/v7 continuam abrindo.
@@ -491,6 +494,25 @@ Medido numa tela de 768 px: a página tinha 1536 px — 768 px sobrando abaixo d
 rodapé. Solução na v4.0: regra global [hidden]{display:none !important}, que
 faz o atributo sempre valer. Com ela, a página tem exatamente 768 px, e o link
 do técnico continua abrindo a tela do campo normalmente (o JS tira o hidden).
+
+**Barra de progresso do campo com largura zero (17/09/2026, v7.5.0).**
+Achado numa revisão de design do app inteiro, a pedido do usuário. A tela do
+campo tem barra de progresso desde a Fase 1 e **nunca apareceu**: o cabeçalho
+dela é um `<header class="campo-head">`, e a regra geral `header{align-items:
+baseline}` chegava nele. Numa **coluna** flex, qualquer `align-items` que não
+seja `stretch` faz os filhos encolherem até o conteúdo — `.campo-progresso`
+ficava com 33px e a barra, que é `flex:1` dentro dele, com **0px**. Restava só
+o "0/4" de 12,5px no canto.
+
+Solução: `.campo-head{align-items:stretch}`. Medido depois: barra de 307px num
+celular de 375px, preenchimento em 50% com duas de quatro paradas marcadas.
+De brinde, o interruptor de tema foi para a direita da tela (a linha do topo
+também vinha encolhida), como no cabeçalho do escritório.
+
+⚠️ **A lição**: regra de elemento (`header{...}`) alcança qualquer bloco que use
+aquela tag, inclusive um com classe própria e layout diferente. A mesma pegadinha
+já tinha aparecido na v4.0, com `[hidden]` perdendo para o `display` do CSS — em
+ambos os casos o culpado foi uma regra genérica vencendo em silêncio, sem erro.
 
 **Revisão de código completa (10/09/2026, v4.1).** A pedido do usuário, o
 index.html inteiro foi revisado atrás de bugs. Seis achados, todos corrigidos e
@@ -801,6 +823,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 77 | **v7.2.0** — Correção: bolinha da parada avulsa continuava no mapa depois de excluída |
 | 78 | **v7.3.0** — Botão que bloqueia e libera o zoom ao clicar na parada |
 | 79 | **v7.4.0** — Módulo 1 enxuto: estado no título, upload em uma linha e retomar dobrável |
+| 80 | **v7.5.0** — Correção: barra de progresso do campo estava com largura zero desde a Fase 1 |
 
 ---
 
@@ -867,7 +890,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.4.0
+7.5.0
 ```
 
 ### Onde o número aparece
@@ -971,3 +994,4 @@ os backups locais são conveniência, não garantia.
 | 7.2.0 | 15/09/2026 | Parada avulsa excluída sai do mapa |
 | 7.3.0 | 17/09/2026 | Botão que bloqueia e libera o zoom ao clicar na parada |
 | 7.4.0 | 17/09/2026 | Módulo 1 enxuto (estado no título, upload em uma linha, retomar dobrável) |
+| 7.5.0 | 17/09/2026 | Barra de progresso do campo volta a aparecer |

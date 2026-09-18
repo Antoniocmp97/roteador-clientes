@@ -5075,3 +5075,39 @@ TESTES (base Exemplos/exemplo.umap)
   Painel de 320px e módulo 1 dentro de uma coluna auxiliar: título e os
     três ícones cabem, sem transbordar (273px de conteúdo em 273px).
   Tema claro conferido. Sem erro no console.
+
+--------------------------------------------------------
+[17/09/2026] v7.5.0 — Correção: a barra de progresso do campo estava
+                      invisível desde que foi criada
+--------------------------------------------------------
+
+DE ONDE VEIO
+  Revisão de design do app inteiro, pedida pelo usuário ("voce é o designer
+  do projeto... me sugira e compare as versoes"). Dos 7 pontos levantados,
+  este era o único que não é gosto, e sim defeito. Ele liberou: "Inicie o 1".
+
+O DEFEITO
+  A tela do campo tem barra de progresso desde a Fase 1, mas ela nunca
+  apareceu. O cabeçalho dela é <header class="campo-head">, e a regra geral
+  do app — header{align-items:baseline} — chegava nele. Numa coluna flex,
+  baseline (como qualquer valor que não seja stretch) faz os filhos
+  encolherem até o conteúdo: .campo-progresso ficava com 33px e a barra,
+  que é flex:1 dentro dele, com LARGURA ZERO.
+  Medido no celular de 375px, antes da correção: barra de 0px, contêiner de
+  33px. Sobrava só o "0/4" em 12,5px, no canto esquerdo.
+
+O QUE FOI FEITO
+  .campo-head ganhou align-items:stretch, com o comentário explicando por
+  que a linha não é enfeite. Uma linha de CSS; nenhum JS mexido.
+  Efeito colateral bem-vindo: o interruptor de tema, que ficava logo depois
+  da marca (a linha do topo também era encolhida), foi para a direita da
+  tela, como no cabeçalho do escritório.
+
+TESTES (celular de 375x812, roteiro de 3 paradas + retorno)
+  Antes: barra 0px. Depois: barra de 307px, 8px de altura.
+  Nenhuma parada marcada: barra vazia, "0/4".
+  Duas marcadas: preenchimento teal em 50% (153px de 307), "2/4" ao lado.
+    A conta considera o retorno, como já fazia.
+  Em 427px de largura: barra de 344px, cabeçalho de 116px.
+  Escritório conferido: header continua com align-items:baseline, 67px de
+    altura e o interruptor à direita — a correção é só do .campo-head.

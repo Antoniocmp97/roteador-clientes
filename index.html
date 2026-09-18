@@ -778,11 +778,19 @@
     background:var(--ink); color:var(--text); font-family:'Inter',system-ui,sans-serif;
   }
 
-  /* Cabeçalho fixo com o nome do app e a barra de progresso do dia */
+  /* Cabeçalho fixo com o nome do app e a barra de progresso do dia.
+     ⚠️ align-items:stretch NÃO é enfeite (v7.5.0): este cabeçalho é um <header>,
+     e a regra geral do app — header{align-items:baseline} — chegava aqui. Numa
+     coluna flex, baseline faz os filhos encolherem até o conteúdo: a barra de
+     progresso, que é flex:1 dentro de .campo-progresso, ficava com LARGURA ZERO.
+     Existia desde que a barra foi criada (Fase 1) e ninguém da equipe chegou a
+     ver o progresso do dia — só o "3/8" ao lado. Achado na revisão de design de
+     17/09/2026, medido no celular de 375px: barra de 0px. */
   .campo-head{
     position:sticky; top:0; z-index:5;
     background:var(--ink); border-bottom:1px solid var(--line);
     padding:16px 18px 14px; display:flex; flex-direction:column; gap:10px;
+    align-items:stretch;
   }
   .campo-topo{display:flex; align-items:center; gap:12px;}
   .campo-marca{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;}
@@ -1293,7 +1301,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '7.4.0';
+const VERSAO = '7.5.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
