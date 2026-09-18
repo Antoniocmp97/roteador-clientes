@@ -5189,3 +5189,59 @@ TESTES
     (classe "pendente"), salvar grava hg_arranjo_modulos, e a lixeira segue
     pedindo confirmação.
   Foco por teclado mantém o contorno teal. Sem erro no console.
+
+--------------------------------------------------------
+[18/09/2026] v7.7.0 — Tela do campo: a parada da vez em destaque, as
+                      outras em linha compacta
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Ponto 2 da revisão de design ("Inicie o 2").
+
+POR QUE
+  Os cartões eram todos iguais, de 204px cada. Com 3 paradas + retorno a
+  página tinha 1077px numa tela de 812: a pergunta "para onde eu vou
+  agora?" exigia rolar, e o cartão grande não significava nada — todos
+  eram grandes.
+
+O QUE FOI FEITO
+  · A parada da vez (primeira não concluída) continua em cartão inteiro,
+    com os botões, e ganhou a etiqueta AGORA em âmbar acima dela.
+  · Parada já concluída vira uma FAIXA de 44px: ✓ teal, "nome · cliente"
+    riscado e a seta de abrir.
+  · Parada pendente que não é a da vez vira uma LINHA de 55px: número,
+    nome, cliente, ★ se for prioritária, e a seta.
+  · As duas abrem ao toque, virando o cartão completo — é assim que se
+    navega para uma parada fora de ordem e que se reabre uma marcada por
+    engano. O topo do cartão aberto fecha de volta (a seta gira); o cartão
+    da parada da vez não fecha, porque é a âncora da tela.
+  · Resolver uma parada (concluir ou reabrir) fecha o cartão dela: a lista
+    volta a mostrar a próxima em destaque.
+  · A parada que está pedindo confirmação fica aberta à força — o par
+    Confirmar/Cancelar mora dentro do cartão.
+
+ESTADO
+  Um Set "abertos" ao lado do "confirmando" que já existia. Os dois vivem
+  só na tela: recarregar volta ao padrão (da vez aberta, resto fechado).
+  O progresso salvo continua sendo só o conjunto de paradas concluídas,
+  por coordenada (v6.8.0) — nada disso mudou.
+
+MEDIDAS (celular de 375x812, roteiro de 3 paradas + retorno)
+  faixa concluída 44px · linha pendente 55px · cartão da vez 204px
+  (247px quando tem etiqueta de tipo de serviço)
+  Página: 1077px -> 812px, ou seja, cabe na tela sem rolar.
+
+TESTES
+  Roteiro novo (0/4): etiqueta AGORA na 1ª, três linhas compactas abaixo,
+    ★ PRIORITÁRIA no cartão da vez.
+  Abrir a linha do retorno: vira cartão com Waze/Maps e "Marcar retorno
+    como feito"; fechar pelo topo volta para linha.
+  Abrir uma concluída: cartão sem os botões de navegação (como já era) e
+    com "✓ Parada concluída" para reabrir.
+  Reabrir (dois toques): volta para 1/4, barra em 25%, e a parada reaberta
+    passa a ser a da vez.
+  Concluir a da vez: 2/4, ela vira faixa e a seguinte assume o destaque.
+  Tudo concluído: banner de fim + quatro faixas, sem cartão aberto.
+  Prioritária que não é a da vez: ★ na linha compacta.
+  Nome comprido: corta com reticências na linha, sem quebrar o layout.
+  Sem erro no console.

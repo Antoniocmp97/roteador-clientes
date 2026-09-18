@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 18/09/2026 — v7.6.0 (cabeçalho: ações agrupadas e tema como ícone)
+> **Última atualização:** 18/09/2026 — v7.7.0 (tela do campo: a parada da vez em destaque)
 
 ---
 
@@ -313,6 +313,21 @@ sem dependências instaladas. Abre direto no navegador.
   **A barra de progresso do dia** (teal, no cabeçalho, com "2/4" ao lado) só
   passou a aparecer na **v7.5.0** — existia desde a Fase 1 com largura zero,
   ver seção 5.
+  **A parada da vez é a única em cartão inteiro** (v7.7.0, ponto 2 da revisão de
+  design): ela ganha a etiqueta **AGORA** em âmbar e a borda âmbar que já tinha;
+  a **já concluída vira uma faixa de 44px** (✓ teal, "nome · cliente" riscado) e
+  a **pendente que não é a da vez, uma linha de 55px** (número, nome, cliente,
+  ★ se prioritária). As duas **abrem ao toque** — é de lá que se navega fora de
+  ordem e que se reabre uma parada marcada por engano —, e o topo do cartão
+  aberto fecha de volta. O cartão da parada da vez **não fecha**: é a âncora da
+  tela. Resolver uma parada (concluir ou reabrir) fecha o cartão dela sozinho, e
+  a que está pedindo confirmação fica aberta à força, porque o par
+  Confirmar/Cancelar mora dentro do cartão. Medido num celular de 375×812 com 3
+  paradas + retorno: a página caiu de **1077px para 812px** — cabe sem rolar,
+  que era o problema (todos os cartões tinham 204px e o grande não significava
+  nada). ⚠️ O que está aberto vive **só na tela** (um `Set` ao lado do
+  `confirmando`): recarregar volta ao padrão. O progresso salvo continua sendo
+  só o conjunto de concluídas, por coordenada
   **Formato v8** (v6.8.0): 7º grupo = retorno ("1"/vazio), 8º = **id do roteiro**
   (rid), 9º = **origem** "lat*lng*rótulo". No v7 a coordenada do retorno vinha no
   7º grupo; a leitura entende os dois, e links v5/v6/v7 continuam abrindo.
@@ -845,6 +860,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 80 | **v7.5.0** — Correção: barra de progresso do campo estava com largura zero desde a Fase 1 |
 | 81 | **v7.5.1** — Títulos dos módulos sem numeração |
 | 82 | **v7.6.0** — Cabeçalho: ações agrupadas e tema como ícone sol/lua |
+| 83 | **v7.7.0** — Tela do campo: parada da vez em cartão, as outras em linha compacta |
 
 ---
 
@@ -911,7 +927,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.6.0
+7.7.0
 ```
 
 ### Onde o número aparece
@@ -1018,3 +1034,4 @@ os backups locais são conveniência, não garantia.
 | 7.5.0 | 17/09/2026 | Barra de progresso do campo volta a aparecer |
 | 7.5.1 | 18/09/2026 | Títulos dos módulos sem numeração |
 | 7.6.0 | 18/09/2026 | Cabeçalho: ações agrupadas e tema como ícone |
+| 7.7.0 | 18/09/2026 | Tela do campo: a parada da vez em destaque |
