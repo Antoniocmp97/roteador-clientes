@@ -5006,3 +5006,72 @@ TESTES (base Exemplos/exemplo.umap, 6 pontos, 4 paradas)
     longe -> mapa foi até ela no zoom 16, como esperado.
   Layout: a linha do título continua com 18px de altura (o botão tem 24x18),
     a lista não desceu. Sem erro no console.
+
+--------------------------------------------------------
+[17/09/2026] v7.4.0 — Módulo 1 enxuto: estado no título, upload em uma
+                      linha e retomar dobrável
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "O modulo 1 esta me incomodando um pouco, nao achei que ficou bom
+  visualmente, quais as opções que posso ter para melhorar?" — foram
+  montadas 5 propostas na página COMPARACAO-MODULO1.html (fora do
+  repositório) e ele escolheu a D: "implemente o D · C + retomar dobrável
+  opção 1 + 2 + 4 para teste".
+
+O QUE ESTAVA ERRADO (medido no painel de 340px)
+  · "✓ Base carregada" tinha 14,5px — a MAIOR fonte do painel (nome de
+    cliente tem 13px, campo de retomar 12px, títulos 11px) para um estado
+    que não pede ação nenhuma;
+  · a mesma linha repetia o que o título já dizia ("1 · Clientes (6)");
+  · com base guardada, dois links iguais em linhas seguidas ("esquecer
+    base" e "trocar base");
+  · o campo de retomar ocupava 35 dos 87px do módulo sendo a ação mais
+    rara do app;
+  · sem base, a caixa tracejada de duas linhas (60px) mais um vão de 20px
+    reservado para a linha de estado vazia.
+
+O QUE FOI FEITO
+  1. Estado sobe para o título: "1 · Clientes (6) ✓", com o ✓ teal. A linha
+     "Base carregada" saiu. Contagem de clientes, nome do arquivo e data
+     agora ficam na dica do TÍTULO (antes na dica da linha de estado).
+  2. "trocar base" e "esquecer base" viram ícones (btn-titulo), no padrão
+     dos ícones do módulo 3. O "esquecer" continua em dois toques: o ícone
+     fica vermelho e o aviso "Clique de novo no ✕..." vai para a linha de
+     avisos, que era onde ficava o "confirmar?" dentro do botão.
+  3. Caixa de upload em uma linha (38px) com ícone, no lugar da caixa de
+     duas linhas — arrastar em qualquer ponto do módulo já funciona desde
+     a v6.2.
+  4. Retomar vira painel dobrável atrás de um ícone de corrente no título,
+     igual aos painéis de "tipos de serviço" e "parada avulsa". Abre com o
+     foco no campo e FECHA SOZINHO quando a retomada dá certo.
+  5. A linha de avisos (fileStatus) agora só aparece quando tem o que
+     dizer (.file-status:empty{display:none}) e o título perde a folga de
+     8px quando não há nada abaixo dele.
+
+MEDIDAS (painel de 340px)
+  sem base:  151px -> 61px
+  com base:   87px -> 18px (uma linha; 128px com o retomar aberto)
+  vão para o módulo 2: 14px, igual ao dos outros módulos
+
+TESTES (base Exemplos/exemplo.umap)
+  Abrir/fechar o painel de retomar: display, classe "ativo", aria-expanded
+    e foco no campo, tudo certo.
+  Base carregada: título "1 · CLIENTES (6) ✓", dica "6 pontos em 4 clientes
+    · arquivo ...", ícones de trocar e esquecer à mostra, caixa de upload
+    escondida, linha de avisos sem ocupar espaço.
+  Base guardada volta sozinha ao recarregar; ícone de esquecer aparece.
+  Erro de arquivo (.geojson achatado): aviso em vermelho volta a aparecer e
+    o módulo cresce para 84px.
+  "Esquecer base", 1º toque: ícone vermelho + aviso na linha; desarma
+    sozinho em 4s.
+  Arrastar arquivo sobre o módulo com base: contorno tracejado teal no
+    módulo inteiro (antes era na linha de estado, que não existe mais).
+  Retomada de ponta a ponta: rota traçada (3 paradas, 12,0 km), link
+    gerado, uma parada removida, link colado no painel -> voltou para 3
+    paradas, campo limpo, painel fechado sozinho, módulo de volta a 18px.
+  Link colado SEM base: avisa que espera a base e, quando ela entra, o
+    roteiro volta sozinho (3 paradas) com o painel fechado.
+  Painel de 320px e módulo 1 dentro de uma coluna auxiliar: título e os
+    três ícones cabem, sem transbordar (273px de conteúdo em 273px).
+  Tema claro conferido. Sem erro no console.

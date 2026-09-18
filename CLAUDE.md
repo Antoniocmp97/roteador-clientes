@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 17/09/2026 — v7.3.0 (botão que bloqueia e libera o zoom da parada)
+> **Última atualização:** 17/09/2026 — v7.4.0 (módulo 1 enxuto)
 
 ---
 
@@ -28,10 +28,26 @@ sem dependências instaladas. Abre direto no navegador.
 ### Funcionalidades implementadas
 
 - Upload do **backup completo do uMap (`.umap`)** por clique ou arrastar-e-soltar.
-  **Módulo 1 compacto** (v6.2): com base carregada a caixa de upload some e fica
-  uma linha "✓ Base carregada" (v6.2.1, 8px entre check e texto; fonte 14,5px —
-  15,5 na v6.2.2, 14,5 na v6.2.3; erros no mesmo lugar ficam em 11,5px) + "trocar base";
-  contagem, nome do arquivo e data ficam na dica. Soltar arquivo em qualquer ponto do módulo carrega. Sem base, a caixa volta
+  **Módulo 1 enxuto** (v7.4.0, escolha do usuário entre 5 propostas montadas numa
+  página de comparação): o **título faz o trabalho do módulo**. Com base
+  carregada ele é uma linha só — `1 · Clientes (6) ✓`, com o ✓ teal —, e as ações
+  ficam em três **ícones** à direita, no padrão dos ícones do módulo 3:
+  **corrente** (retomar), **seta para cima** (trocar base) e **✕ em círculo**
+  (esquecer a base guardada, só quando existe uma). Contagem de clientes, nome do
+  arquivo e data ficam na **dica do título**. Sem base, a caixa de upload é **uma
+  linha de 38px** com ícone; soltar arquivo em qualquer ponto do módulo carrega, e
+  com base carregada é o **módulo inteiro** que se acende ao receber o arquivo.
+  A linha de avisos só aparece quando tem o que dizer (erro de arquivo, confirmação
+  de "esquecer"). Medido no painel de 340px: **151px → 61px** sem base e
+  **87px → 18px** com base.
+  ⚠️ O que isso substituiu (v6.2 a v6.2.3): uma linha "✓ Base carregada" de 14,5px,
+  que era a maior fonte do painel, repetia o título e vinha com dois links iguais
+  em linhas seguidas ("esquecer base" e "trocar base"). O usuário: "não achei que
+  ficou bom visualmente"
+- ⚠️ **Dois toques para esquecer a base, sem texto no botão** (v7.4.0): como o
+  botão virou ícone, o "confirmar?" que ficava dentro dele passou para a linha de
+  avisos ("Clique de novo no ✕...") e o ícone fica vermelho enquanto armado.
+  Desarma sozinho em 4s, como antes
 - Parse das camadas: cada camada é um **cliente**, os pontos dentro dela são as
   **filiais**. Camadas vazias são ignoradas
 - Checklist com **cascata de três níveis** quando o uMap tem grupos:
@@ -279,8 +295,10 @@ sem dependências instaladas. Abre direto no navegador.
   (rid), 9º = **origem** "lat*lng*rótulo". No v7 a coordenada do retorno vinha no
   7º grupo; a leitura entende os dois, e links v5/v6/v7 continuam abrindo.
 - **Retomar um roteiro pelo link** (v6.8.0, pedido do usuário: "meia hora depois
-  surge mais uma parada"): colar o link no **módulo 1** (v6.8.1, sempre visível —
-  o campo do módulo 5 só existe depois de uma rota traçada), no módulo 5 ou
+  surge mais uma parada"): colar o link no **módulo 1** (v6.8.1, sempre à mão — o
+  campo do módulo 5 só existe depois de uma rota traçada; desde a v7.4.0 fica num
+  **painel dobrável**, atrás do ícone de corrente do título, que abre com o foco no
+  campo e fecha sozinho quando a retomada dá certo), no módulo 5 ou
   clicar em **"editar no escritório"** no rodapé da tela do roteiro (escondido em
   tela estreita; guarda o link e recarrega sem o `#`, retomando depois da base
   carregada). Volta ordem, ★, tipo, origem e o interruptor de retorno; o **id do
@@ -782,6 +800,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 76 | **v7.1.0** — Correção: módulo Rota grudado alternava entre compacto e inteiro, fazendo o painel piscar |
 | 77 | **v7.2.0** — Correção: bolinha da parada avulsa continuava no mapa depois de excluída |
 | 78 | **v7.3.0** — Botão que bloqueia e libera o zoom ao clicar na parada |
+| 79 | **v7.4.0** — Módulo 1 enxuto: estado no título, upload em uma linha e retomar dobrável |
 
 ---
 
@@ -848,7 +867,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.3.0
+7.4.0
 ```
 
 ### Onde o número aparece
@@ -951,3 +970,4 @@ os backups locais são conveniência, não garantia.
 | 7.1.0 | 15/09/2026 | Fim do painel piscando (folga na decisão do módulo grudado) |
 | 7.2.0 | 15/09/2026 | Parada avulsa excluída sai do mapa |
 | 7.3.0 | 17/09/2026 | Botão que bloqueia e libera o zoom ao clicar na parada |
+| 7.4.0 | 17/09/2026 | Módulo 1 enxuto (estado no título, upload em uma linha, retomar dobrável) |

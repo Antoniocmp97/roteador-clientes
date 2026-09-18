@@ -346,11 +346,21 @@
                border:1px solid var(--line); border-radius:6px; font-size:11px; padding:4px 6px;
                font-family:'Inter',sans-serif; max-width:130px;}
 
-  /* Área de arrastar-e-soltar (ou clicar) para carregar o .geojson */
-  .dropzone{border:1.5px dashed var(--line);border-radius:8px;padding:16px;text-align:center;font-size:12.5px;color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s;}
+  /* Área de arrastar-e-soltar (ou clicar) para carregar o .umap.
+     Uma linha só desde a v7.4.0: a caixa de duas linhas (16px de padding) ocupava
+     60px para uma ação que acontece uma vez por dia, e arrastar o arquivo em
+     qualquer ponto do módulo já funciona desde a v6.2. */
+  .dropzone{border:1.5px dashed var(--line);border-radius:8px;padding:9px 12px;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s;
+            display:flex; align-items:center; justify-content:center; gap:8px;}
   .dropzone:hover,.dropzone.drag{border-color:var(--teal);background:var(--teal-hover);color:var(--text);}
   .dropzone strong{color:var(--text);}
+  .dropzone svg{flex:none; width:15px; height:15px; fill:none; stroke:currentColor;
+                stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
+  /* Desde a v7.4.0 esta linha serve só para AVISOS (erro de arquivo, confirmação
+     de "esquecer base"). O estado normal — base carregada — virou o ✓ do título,
+     então vazia ela não ocupa espaço nenhum. */
   .file-status{font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--teal);margin-top:6px;min-height:14px;}
+  .file-status:empty{display:none;}
   /* Módulo 1 compacto (v6.2): com base carregada — o caso de todo dia — a caixa
      de upload de 122px some e fica uma linha: resumo à esquerda, "trocar base"
      à direita. Nome do arquivo e data ficam na dica do resumo (title). Sem base,
@@ -361,16 +371,17 @@
   .com-base .dropzone{display:none;}
   /* v6.2.1: "✓ Base carregada" com respiro — 8px entre o check e o texto, e a
      linha um pouco afastada do título do módulo */
-  .com-base .file-linha{margin-top:4px;}
-  .com-base .file-linha .file-status{margin-top:0;}
-  .file-check{display:inline-block; margin-right:8px;}
   /* Fonte maior só no "✓ Base carregada": 15,5px na v6.2.2, 14,5px na v6.2.3
      ("diminua 1"). As mensagens de erro do mesmo lugar continuam em 11,5px. */
-  .file-status.carregada{font-size:14.5px;}
   .file-linha .link-btn{flex:none;}
   .file-linha .link-btn:hover{color:var(--amber);}
   /* Arquivo sendo arrastado sobre o módulo compacto */
-  .com-base.recebendo-arquivo .file-linha{outline:1.5px dashed var(--teal); outline-offset:5px; border-radius:4px;}
+  /* Com base carregada e o painel de retomar fechado não há nada abaixo do
+     título: a folga de 8px dele viraria um degrau entre os módulos 1 e 2 */
+  .com-base > .field-label{margin-bottom:0;}
+  /* Com base carregada o módulo é só o título, então quem se acende ao receber
+     um arquivo arrastado é o módulo inteiro (era a linha de estado, até a v7.3.0) */
+  .com-base.recebendo-arquivo{outline:1.5px dashed var(--teal); outline-offset:6px; border-radius:6px;}
   /* Lista de endereços possíveis, quando a busca de origem é ambígua */
   .origem-opcoes{display:flex; flex-direction:column; gap:4px; margin-top:6px;}
   .origem-opcao{
@@ -435,6 +446,15 @@
                   stroke-linecap:round; stroke-linejoin:round;}
   .btn-titulo:hover{color:var(--text); border-color:var(--teal);}
   .btn-titulo:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
+  /* Ligado (ex.: painel de retomar aberto), como os ícones do módulo 3 */
+  .btn-titulo.ativo{color:var(--amber); border-color:var(--amber-dim); background:var(--amber-fraco);}
+  /* Armado: o segundo toque de "esquecer base" apaga de verdade */
+  .btn-titulo.armado{color:var(--danger); border-color:var(--danger);}
+  .titulo-acoes{display:flex; align-items:center; gap:2px;}
+  /* ✓ da base carregada, no próprio título (v7.4.0) */
+  .ok-base{color:var(--teal); margin-left:6px; font-size:12px;}
+  /* Painel de retomar: mesma caixa dos painéis do módulo 3, mas no fim do módulo */
+  .retomar-painel{margin-bottom:0; margin-top:10px;}
   /* Bloqueado é o estado escolhido de propósito: acende, como os ícones do módulo 3 */
   .btn-titulo .risco{display:none;}
   .btn-titulo.bloqueado{color:var(--amber); border-color:var(--amber-dim); background:var(--amber-fraco);}
@@ -943,30 +963,67 @@
       <!-- Passo 1: upload do .geojson (clique abre o seletor de arquivo; também aceita arrastar-e-soltar) -->
       <section class="modulo-movel" data-modulo="m1">
       <div class="modulo-corpo">
-        <div class="field-label">
+        <!-- Título faz o trabalho do módulo desde a v7.4.0: o ✓ diz que a base
+             entrou (a linha "Base carregada" da v6.2 saiu daqui) e os três ícones
+             à direita guardam as ações, no padrão dos ícones do módulo 3.
+             Contagem de clientes, nome do arquivo e data ficam na dica do título. -->
+        <div class="field-label" id="tituloClientes">
           <span style="display:flex;align-items:center;">
             <span class="modulo-alca" data-alca></span>
-            <span>1 · Clientes <small id="countLabel"></small></span>
+            <span>1 · Clientes <small id="countLabel"></small><span class="ok-base" id="okBase" hidden>✓</span></span>
           </span>
-          <!-- Só aparece quando existe base guardada — ver atualizarBotaoEsquecer() -->
-          <button class="link-btn" id="esquecerBaseBtn" style="display:none;">esquecer base</button>
+          <span class="titulo-acoes">
+            <!-- Retomar (v6.8.1, dobrável na v7.4.0): o campo do módulo 5 só aparece
+                 depois de traçar a rota, então ficava fora de alcance ao abrir o app.
+                 Este fica sempre à mão, atrás de um ícone. Sem base carregada, o link
+                 espera: assim que a base entra, a retomada acontece sozinha. -->
+            <button class="btn-titulo" id="retomarAbrirBtn" type="button" aria-expanded="false"
+                    aria-label="Retomar um roteiro pelo link"
+                    title="Retomar um roteiro pelo link — para acrescentar uma parada depois do link enviado">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 13.8a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 1 0-5.7-5.7l-1.3 1.3"/>
+                <path d="M14 10.2a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 1 0 5.7 5.7l1.3-1.3"/>
+              </svg>
+            </button>
+            <!-- Só aparece com base carregada, quando a caixa de upload some (v6.2) -->
+            <button class="btn-titulo" id="trocarBaseBtn" type="button" hidden
+                    aria-label="Trocar base" title="Trocar base — carregar outro backup do uMap">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 4v9"/><path d="M8.5 7.5L12 4l3.5 3.5"/>
+                <path d="M5 14v3.5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V14"/>
+              </svg>
+            </button>
+            <!-- Só aparece quando existe base guardada — ver atualizarBotaoEsquecer() -->
+            <button class="btn-titulo" id="esquecerBaseBtn" type="button" style="display:none;"
+                    aria-label="Esquecer a base guardada" title="Esquecer a base guardada no navegador">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.2"/><path d="M9.2 9.2l5.6 5.6M14.8 9.2l-5.6 5.6"/>
+              </svg>
+            </button>
+          </span>
         </div>
         <div class="dropzone" id="dropzone">
-          <strong>Clique para carregar</strong> ou arraste o backup<br>completo do uMap (.umap) aqui
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4v10"/><path d="M8 8l4-4 4 4"/>
+            <path d="M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/>
+          </svg>
+          <span><strong>Clique</strong> ou arraste o backup (.umap)</span>
         </div>
         <input type="file" id="fileInput" accept=".umap,.json,application/json" style="display:none">
+        <!-- Linha de avisos: erro de arquivo e a confirmação de "esquecer base".
+             Vazia, não ocupa espaço (.file-status:empty). -->
         <div class="file-linha">
           <div class="file-status" id="fileStatus"></div>
-          <!-- Só aparece com base carregada, quando a caixa de upload some (v6.2) -->
-          <button class="link-btn" id="trocarBaseBtn" type="button" hidden>trocar base</button>
         </div>
-        <!-- Retomar (v6.8.1): o campo do módulo 5 só aparece depois de traçar a
-             rota, então ficava fora de alcance ao abrir o app. Este fica sempre
-             à mão. Sem base carregada, o link espera: assim que a base entra, a
-             retomada acontece sozinha. -->
-        <div class="retomar-linha">
-          <input type="text" id="retomarLinkTopo" placeholder="Retomar um roteiro: cole o link aqui">
-          <button class="go-btn secondary" id="retomarTopoBtn" type="button">Retomar</button>
+        <div class="tipos-painel retomar-painel" id="retomarPainel" style="display:none;">
+          <div class="retomar-linha" style="margin-top:0;">
+            <input type="text" id="retomarLinkTopo" placeholder="Cole aqui o link do roteiro">
+            <button class="go-btn secondary" id="retomarTopoBtn" type="button">Retomar</button>
+          </div>
+          <div class="envio-dica" style="margin-top:0;">
+            Volta a ordem, as ★, os tipos, a origem e o retorno. Quem está no campo
+            não perde o progresso já marcado.
+          </div>
         </div>
       </div>
       </section>
@@ -1236,7 +1293,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '7.3.0';
+const VERSAO = '7.4.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1506,10 +1563,10 @@ function esquecerBaseClientes(){
   atualizarBotaoEsquecer();
 }
 
-// O link "esquecer base" só faz sentido existir quando há uma base guardada
+// O ícone "esquecer base" só faz sentido existir quando há uma base guardada
 function atualizarBotaoEsquecer(){
   const btn = document.getElementById('esquecerBaseBtn');
-  if (btn) btn.style.display = lerBaseClientes() ? 'inline' : 'none';
+  if (btn) btn.style.display = lerBaseClientes() ? 'flex' : 'none';
 }
 let originLatLng = null; // [lat, lng] do ponto de partida, definido por geolocalização ou geocodificação
 let originMarker = null; // marcador do Leaflet para a origem no mapa
@@ -1575,6 +1632,28 @@ dropzone.addEventListener('drop', e=>{
 // value = '' antes: sem isso, escolher de novo o mesmo arquivo (a base
 // atualizada com o mesmo nome) não dispara "change" e nada acontece.
 document.getElementById('trocarBaseBtn').onclick = () => { fileInput.value = ''; fileInput.click(); };
+
+/* Painel de retomar dobrável (v7.4.0): mesmo comportamento dos painéis de
+   "tipos de serviço" e "parada avulsa" do módulo 3 — o ícone abre, acende em
+   âmbar e o campo ganha o foco. Fechado, o módulo 1 com base carregada é só a
+   linha do título. */
+function fecharRetomarTopo(){
+  const painel = document.getElementById('retomarPainel');
+  if (!painel || painel.style.display === 'none') return;
+  painel.style.display = 'none';
+  const b = document.getElementById('retomarAbrirBtn');
+  b.classList.remove('ativo');
+  b.setAttribute('aria-expanded', 'false');
+}
+document.getElementById('retomarAbrirBtn').onclick = () => {
+  const painel = document.getElementById('retomarPainel');
+  const abrindo = painel.style.display === 'none';
+  painel.style.display = abrindo ? 'flex' : 'none';
+  const b = document.getElementById('retomarAbrirBtn');
+  b.classList.toggle('ativo', abrindo);
+  b.setAttribute('aria-expanded', abrindo ? 'true' : 'false');
+  if (abrindo) document.getElementById('retomarLinkTopo').focus();
+};
 const corpoClientes = dropzone.closest('.modulo-corpo');
 ['dragover','dragleave','drop'].forEach(evt=>{
   corpoClientes.addEventListener(evt, e=>{
@@ -1616,7 +1695,6 @@ function loadFile(file){
       document.getElementById('fileStatus').style.color = 'var(--danger)';
       document.getElementById('fileStatus').textContent = 'Erro: ' + err.message;
       document.getElementById('fileStatus').title = '';
-      document.getElementById('fileStatus').classList.remove('carregada');
     }
   };
   reader.readAsText(file);
@@ -1759,24 +1837,26 @@ function importClients(grupos, filename, salvoEm){
   // Data só aparece quando a base foi restaurada do navegador — assim dá para
   // perceber que ela pode estar desatualizada em relação ao uMap.
   const quando = salvoEm ? ` · salva em ${new Date(salvoEm).toLocaleDateString('pt-BR')}` : '';
-  // Módulo 1 compacto (v6.2): uma linha só, ao lado de "trocar base". Desde a
-  // v6.2.1, a pedido do usuário, ela diz só "Base carregada" — a contagem de
-  // pontos já aparece no título "1 · Clientes (39)". Contagem de clientes, nome
-  // do arquivo e data ficam na dica.
+  // Módulo 1 em uma linha (v7.4.0): o estado é o ✓ teal do próprio título, ao
+  // lado da contagem de pontos — a linha "Base carregada" da v6.2 saiu, porque
+  // repetia o título com a maior fonte do painel. Contagem de clientes, nome do
+  // arquivo e data ficam na dica do título.
   const statusEl = document.getElementById('fileStatus');
   statusEl.style.color = 'var(--teal)';
-  statusEl.innerHTML = '<span class="file-check" aria-hidden="true">✓</span>Base carregada';
-  statusEl.classList.add('carregada');
-  statusEl.title = `${clientPoints.length} ${clientPoints.length === 1 ? 'ponto' : 'pontos'} em ${nCli} ${nCli === 1 ? 'cliente' : 'clientes'} · arquivo "${filename}"${quando}`;
+  statusEl.textContent = '';                      // vazia, a linha não ocupa espaço
+  statusEl.title = '';
   statusEl.closest('.modulo-corpo').classList.add('com-base');
+  document.getElementById('okBase').hidden = false;
   document.getElementById('trocarBaseBtn').hidden = false;
   document.getElementById('countLabel').textContent = `(${clientPoints.length})`;
+  document.getElementById('tituloClientes').title =
+    `${clientPoints.length} ${clientPoints.length === 1 ? 'ponto' : 'pontos'} em ${nCli} ${nCli === 1 ? 'cliente' : 'clientes'} · arquivo "${filename}"${quando}`;
   renderChecklist();
   zerarIdRoteiro();   // base nova = roteiro novo (v6.8.0)
   // Link colado antes da base (v6.8.1): agora dá para casar as paradas
   if (linkPendente){
     const link = linkPendente; linkPendente = null;
-    setTimeout(() => { if (retomarRoteiro(link)){ document.getElementById('retomarLinkTopo').value = ''; document.getElementById('retomarLink').value = ''; } }, 0);
+    setTimeout(() => { if (retomarRoteiro(link)){ document.getElementById('retomarLinkTopo').value = ''; document.getElementById('retomarLink').value = ''; fecharRetomarTopo(); } }, 0);
   }
   // A viagem foi zerada acima (stops = []), mas a lista da seção 4 continuava
   // desenhada com as paradas da base anterior — linhas fantasmas, ainda
@@ -4225,7 +4305,7 @@ document.getElementById('gerarLinkBtn').onclick = () => {
 // está sempre à mão; o do módulo 5 fica junto do link recém-gerado.
 [['retomarBtn', 'retomarLink'], ['retomarTopoBtn', 'retomarLinkTopo']].forEach(([botao, campo]) => {
   const b = document.getElementById(botao), c = document.getElementById(campo);
-  b.onclick = () => { if (retomarRoteiro(c.value)) c.value = ''; };
+  b.onclick = () => { if (retomarRoteiro(c.value)){ c.value = ''; fecharRetomarTopo(); } };
   c.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); b.click(); } });
 });
 
@@ -4535,15 +4615,27 @@ function desenharCampo(roteiro, codigo, feitos, confirmando){
 let esquecerConfirmando = false;
 const esquecerBtn = document.getElementById('esquecerBaseBtn');
 if (esquecerBtn){
+  // Desde a v7.4.0 o botão é um ícone: o "confirmar?" que ficava dentro dele vai
+  // para a linha de avisos do módulo, e o ícone fica vermelho enquanto armado
+  const avisoEsquecer = () => {
+    const el = document.getElementById('fileStatus');
+    el.style.color = 'var(--danger)';
+    el.textContent = 'Clique de novo no ✕ para esquecer a base guardada.';
+  };
+  const desarmarEsquecer = () => {
+    esquecerConfirmando = false;
+    esquecerBtn.classList.remove('armado');
+    const el = document.getElementById('fileStatus');
+    if (el.textContent.startsWith('Clique de novo')) el.textContent = '';
+  };
   esquecerBtn.onclick = () => {
     if (!esquecerConfirmando){
       esquecerConfirmando = true;
-      esquecerBtn.textContent = 'confirmar?';
+      esquecerBtn.classList.add('armado');
+      avisoEsquecer();
       // volta sozinho ao normal se o usuário não confirmar — evita deixar o
-      // link "armado" na tela indefinidamente depois de um clique sem querer
-      setTimeout(() => {
-        if (esquecerConfirmando){ esquecerConfirmando = false; esquecerBtn.textContent = 'esquecer base'; }
-      }, 4000);
+      // botão "armado" na tela indefinidamente depois de um clique sem querer
+      setTimeout(() => { if (esquecerConfirmando) desarmarEsquecer(); }, 4000);
       return;
     }
     esquecerBaseClientes();
