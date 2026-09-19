@@ -5245,3 +5245,41 @@ TESTES
   Prioritária que não é a da vez: ★ na linha compacta.
   Nome comprido: corta com reticências na linha, sem quebrar o layout.
   Sem erro no console.
+
+--------------------------------------------------------
+[19/09/2026] v7.8.0 — Botões da parada: navegação em contorno âmbar,
+                      concluir como único botão cheio
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Ponto 3 da revisão de design ("Ponto 3"). Entre as duas variantes
+  oferecidas, ele pediu uma terceira forma: "deixe o botão sem cor, porém
+  o contorno do botão com a cor laranja usada no layout".
+
+POR QUE
+  Até a v7.7.0 o Waze e o Maps eram dois blocos ÂMBAR CHEIOS — a cor mais
+  forte do app, reservada à origem e à rota — para dois botões que fazem a
+  mesma coisa por caminhos diferentes. Sobrava para "Marcar como
+  concluída", o único que muda o estado do roteiro, ser o mais apagado do
+  cartão (contorno teal).
+
+O QUE FOI FEITO
+  · Waze e Maps: fundo transparente, texto e contorno em âmbar
+    (var(--amber)); ao tocar, fundo âmbar fraco. O seletor desce por
+    .parada-acoes porque a regra de lá zera a borda dos botões.
+  · "Marcar como concluída": passou a ser o ÚNICO cheio do cartão (teal),
+    no lugar do contorno.
+  · Parada já concluída: o botão, que ali vira "✓ Parada concluída" (ou
+    seja, REABRIR — ação rara), foi para o contorno. É o inverso de antes,
+    quando ele era o cheio e o de concluir era o vazado.
+  · Confirmar/Cancelar não mudaram: teal cheio e contorno neutro.
+
+TESTES (celular de 375x812, roteiro de 3 paradas + retorno)
+  Escuro: navegação transparente com texto e borda #F2A93C; concluir em
+    #2FB6A6 cheio; reabrir em contorno teal sobre painel-2.
+  Claro: navegação com #C9821A, concluir em #12796E cheio — os dois tons
+    escurecidos do tema claro, como manda a identidade.
+  Fluxo conferido de ponta a ponta: concluir (dois toques) -> 1/4, barra em
+    25%, cartão fecha e a seguinte assume; abrir a concluída -> sem botões
+    de navegação (como já era) e com o de reabrir em contorno.
+  Sem erro no console.

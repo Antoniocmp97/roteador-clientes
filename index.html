@@ -875,20 +875,33 @@
     font-family:'Inter',sans-serif; cursor:pointer; border:none;
     display:flex; align-items:center; justify-content:center; gap:7px;
   }
-  .btn-navegar{background:var(--amber); color:#241705;}
-  .btn-navegar:active{background:var(--amber-claro);}
+  /* Navegação: SEM preenchimento, contorno âmbar (v7.8.0, ponto 3 da revisão de
+     design — escolha do usuário: "deixe o botão sem cor, porém o contorno com a
+     cor laranja usada no layout"). Até a v7.7.0 os dois eram âmbar cheio: a cor
+     mais forte do app, reservada à origem e à rota, estava nos DOIS botões que
+     fazem a mesma coisa por caminhos diferentes, e sobrava para o de concluir —
+     o único que muda o estado do roteiro — ser o mais apagado da tela.
+     O seletor desce por .parada-acoes porque a regra de lá zera a borda. */
+  .parada-acoes .btn-navegar{background:transparent; color:var(--amber);
+                             border:1px solid var(--amber);}
+  .btn-navegar:active{background:var(--amber-fraco);}
   .btn-navegar svg{flex-shrink:0;}
 
   /* Botão principal da parada: "marcar como concluída". Maior que os de navegação —
      é a ação mais importante do card — e some por trás da confirmação em duas etapas
-     (ver .confirmar-linha) para não registrar toque sem querer. */
+     (ver .confirmar-linha) para não registrar toque sem querer.
+     Desde a v7.8.0 é o ÚNICO cheio do cartão: com a navegação em contorno, ele
+     passou a ser o destaque, no lugar de ser o mais apagado. */
   .btn-feito{
-    width:100%; background:var(--panel-2); color:var(--teal); border:1px solid var(--teal) !important;
+    width:100%; background:var(--teal); color:#062420; border:1px solid var(--teal) !important;
     border-radius:9px; padding:16px 10px; font-weight:700; font-size:15.5px;
     font-family:'Inter',sans-serif; cursor:pointer;
   }
-  .btn-feito:active{background:var(--teal-hover);}
-  .parada.feita .btn-feito{background:var(--teal); color:#062420;}
+  .btn-feito:active{background:var(--teal-escuro);}
+  /* Parada já concluída: o botão vira o de REABRIR, que é ação rara — fica em
+     contorno, o oposto de antes (era o cheio, quando o de concluir era o vazado) */
+  .parada.feita .btn-feito{background:var(--panel-2); color:var(--teal);}
+  .parada.feita .btn-feito:active{background:var(--teal-hover);}
 
   /* Confirmação em duas etapas, nos dois sentidos: primeiro toque no botão de
      concluir (ou no botão já concluído, para reabrir) troca o botão único por
@@ -1351,7 +1364,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '7.7.0';
+const VERSAO = '7.8.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 

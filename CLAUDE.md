@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 18/09/2026 — v7.7.0 (tela do campo: a parada da vez em destaque)
+> **Última atualização:** 19/09/2026 — v7.8.0 (botões da parada: navegação em contorno âmbar)
 
 ---
 
@@ -327,7 +327,16 @@ sem dependências instaladas. Abre direto no navegador.
   que era o problema (todos os cartões tinham 204px e o grande não significava
   nada). ⚠️ O que está aberto vive **só na tela** (um `Set` ao lado do
   `confirmando`): recarregar volta ao padrão. O progresso salvo continua sendo
-  só o conjunto de concluídas, por coordenada
+  só o conjunto de concluídas, por coordenada.
+  **Hierarquia dos botões do cartão** (v7.8.0, ponto 3 da revisão de design):
+  Waze e Maps ficam **sem preenchimento, com texto e contorno em âmbar** (forma
+  pedida pelo usuário: "sem cor, porém o contorno com a cor laranja usada no
+  layout"), e **"Marcar como concluída" é o único cheio** (teal). Numa parada já
+  concluída o botão vira "✓ Parada concluída" — que é REABRIR, ação rara — e fica
+  em contorno; é o inverso de antes. ⚠️ Até a v7.7.0 os dois botões de navegação
+  eram âmbar cheio: a cor mais forte do app, reservada à origem e à rota, estava
+  nos dois botões que fazem a mesma coisa por caminhos diferentes, e o único que
+  muda o estado do roteiro era o mais apagado do cartão.
   **Formato v8** (v6.8.0): 7º grupo = retorno ("1"/vazio), 8º = **id do roteiro**
   (rid), 9º = **origem** "lat*lng*rótulo". No v7 a coordenada do retorno vinha no
   7º grupo; a leitura entende os dois, e links v5/v6/v7 continuam abrindo.
@@ -744,18 +753,14 @@ Já feitos:
 - **1 · Barra de progresso do campo invisível** → v7.5.0 (era defeito, não gosto;
   ver seção 5).
 - **2 · Parada da vez em destaque no campo** → v7.7.0.
+- **3 · Botões da parada** → v7.8.0. O usuário não quis nenhuma das duas
+  variantes oferecidas: pediu navegação **sem preenchimento, com contorno
+  âmbar**, e com isso o de concluir virou o único cheio.
 - **6 · Numeração dos módulos** → v7.5.1, variante "tirar os números".
 - **7 · Cabeçalho** → v7.6.0, ações agrupadas e tema como ícone.
 
 **Em aberto — retomar perguntando quais liberar:**
 
-- **3 · Hierarquia dos botões da parada (tela do campo).** Hoje o âmbar — a cor
-  da origem e da rota — está nos **dois** botões de navegação, que fazem a mesma
-  coisa por caminhos diferentes, e "Marcar como concluída", que é o que muda o
-  estado do roteiro, é o mais apagado (contorno). Duas variantes na página de
-  comparação, **falta o usuário escolher**: **A** = um botão âmbar "Navegar" com
-  o app preferido (guardado no aparelho) e o outro app menor ao lado; **B** =
-  Waze e Maps em contorno e "Marcar como concluída" em teal cheio.
 - **4 · Módulo Rota: dois botões disputando.** "Traçar nesta ordem" e "Otimizar
   ordem" têm a mesma largura e pesos parecidos, mas o uso normal é otimizar.
   Proposta: **"Otimizar e traçar"** como principal (o botão diz o resultado, não
@@ -892,6 +897,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 81 | **v7.5.1** — Títulos dos módulos sem numeração |
 | 82 | **v7.6.0** — Cabeçalho: ações agrupadas e tema como ícone sol/lua |
 | 83 | **v7.7.0** — Tela do campo: parada da vez em cartão, as outras em linha compacta |
+| 84 | **v7.8.0** — Botões da parada: navegação em contorno âmbar, concluir como único cheio |
 
 ---
 
@@ -958,7 +964,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.7.0
+7.8.0
 ```
 
 ### Onde o número aparece
@@ -1066,3 +1072,4 @@ os backups locais são conveniência, não garantia.
 | 7.5.1 | 18/09/2026 | Títulos dos módulos sem numeração |
 | 7.6.0 | 18/09/2026 | Cabeçalho: ações agrupadas e tema como ícone |
 | 7.7.0 | 18/09/2026 | Tela do campo: a parada da vez em destaque |
+| 7.8.0 | 19/09/2026 | Botões da parada: navegação em contorno âmbar |
