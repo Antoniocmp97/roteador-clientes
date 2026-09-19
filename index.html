@@ -957,12 +957,10 @@
     border-radius:10px; padding:14px 16px; font-size:14px; font-weight:600; text-align:center;
   }
 
-  #editarNoEscritorioBtn{display:block; margin:10px auto 0;}
-  @media (max-width:760px){ #editarNoEscritorioBtn{display:none;} }
-  .campo-pe{
-    padding:12px 18px; text-align:center; font-size:10.5px; color:var(--muted);
-    font-family:'JetBrains Mono',monospace; border-top:1px solid var(--line);
-  }
+  /* A tela do campo não tem mais rodapé (v7.9.2, a pedido do usuário): saíram a
+     frase "Roteiro recebido por link · nada é enviado para servidor" — explicação
+     de como o app funciona por dentro, que quem está na rua não precisa — e o
+     atalho "editar no escritório". A lista de paradas vai até o fim da tela. */
 
   /* Alvos de toque generosos em qualquer largura de tela no modo campo */
   @media (max-width:480px){
@@ -1377,13 +1375,6 @@
 
   <div class="campo-lista" id="campoLista" role="main"></div>
 
-  <footer class="campo-pe">
-    Roteiro recebido por link · nada é enviado para servidor
-    <!-- Atalho para quem abre o link no computador do escritório (v6.8.0):
-         leva o roteiro para a tela de planejamento, já carregado. Escondido em
-         tela estreita, onde a tela do escritório não é o lugar de trabalhar. -->
-    <button class="link-btn" id="editarNoEscritorioBtn" type="button">editar no escritório</button>
-  </footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -1396,7 +1387,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '7.9.1';
+const VERSAO = '7.9.2';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -4140,9 +4131,6 @@ let ultimoResumo = null;
    recebido). No campo, o progresso é guardado por esse id, e por PARADA, não
    por posição — inserir uma parada no meio não desloca as marcas. */
 let idRoteiro = null;
-// Onde o botão "editar no escritório" deixa o link antes de recarregar
-const CHAVE_RETOMAR = 'hg_retomar_roteiro';
-
 function idDoRoteiro(){
   if (!idRoteiro) idRoteiro = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   return idRoteiro;
@@ -4826,32 +4814,12 @@ if (!modoCampoAtivo){
   if (origem) setOrigin(origem.lat, origem.lng, origem.label, false);
   atualizarBotaoOrigemPadrao();
 
-  // Veio de "editar no escritório" (v6.8.0): retoma o roteiro daquele link.
-  // Depois do importClients acima, senão não haveria base para casar as paradas.
-  try{
-    const guardado = sessionStorage.getItem(CHAVE_RETOMAR);
-    if (guardado){
-      sessionStorage.removeItem(CHAVE_RETOMAR);
-      // Se não der para retomar agora (ex.: sem base guardada neste navegador),
-      // o link fica no campo "Retomar", para não se perder
-      if (!retomarRoteiro(guardado)) document.getElementById('retomarLink').value = guardado;
-    }
-  }catch(e){ /* sessionStorage bloqueado: segue sem retomar */ }
 }
 
 // Primeira pintura da seção 4: sem isso a marca "modulo4-oculto" só apareceria
 // depois da primeira seleção, e o puxador do módulo 3 ficaria indisponível
 // justamente ao abrir o site, que é quando ele mais serve.
 if (!modoCampoAtivo) renderStopsList();
-
-// "Editar no escritório" (v6.8.0): guarda o link e recarrega sem o #, o que faz
-// a página abrir no modo escritório. Lá, a retomada acontece depois da base
-// carregada — ver o bloco de abertura do escritório.
-const btnEditar = document.getElementById('editarNoEscritorioBtn');
-if (btnEditar) btnEditar.onclick = () => {
-  try{ sessionStorage.setItem(CHAVE_RETOMAR, location.href); }catch(e){}
-  location.href = location.origin + location.pathname;
-};
 
 // Só entra no modo campo se o link realmente trouxer um roteiro
 if (modoCampoAtivo) ativarModoCampo();

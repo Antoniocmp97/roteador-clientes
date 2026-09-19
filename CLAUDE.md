@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 19/09/2026 — v7.9.1 (vão de encaixe só com a borda)
+> **Última atualização:** 19/09/2026 — v7.9.2 (frase do rodapé do campo removida)
 
 ---
 
@@ -365,10 +365,14 @@ sem dependências instaladas. Abre direto no navegador.
   surge mais uma parada"): colar o link no **módulo 1** (v6.8.1, sempre à mão — o
   campo do módulo 5 só existe depois de uma rota traçada; desde a v7.4.0 fica num
   **painel dobrável**, atrás do ícone de corrente do título, que abre com o foco no
-  campo e fecha sozinho quando a retomada dá certo), no módulo 5 ou
-  clicar em **"editar no escritório"** no rodapé da tela do roteiro (escondido em
-  tela estreita; guarda o link e recarrega sem o `#`, retomando depois da base
-  carregada). Volta ordem, ★, tipo, origem e o interruptor de retorno; o **id do
+  campo e fecha sozinho quando a retomada dá certo) ou no módulo "Enviar para o
+  campo". Volta ordem, ★, tipo, origem e o interruptor de retorno;
+  ⚠️ Havia um terceiro caminho até a v7.9.2: o atalho **"editar no escritório"**,
+  no rodapé da tela do roteiro, que guardava o link no `sessionStorage`
+  (`hg_retomar_roteiro`) e recarregava sem o `#`. Saiu junto com o rodapé, a
+  pedido do usuário — junto com a chave e com o bloco que a lia na abertura do
+  escritório. A funcionalidade não se perdeu: mudou o caminho, que agora é colar
+  o link. o **id do
   roteiro é mantido**, e a rota é desfeita porque a lista mudou. Parada que não
   está na base **entra como avulsa** (v7.0.0), com aviso de quantas e quais — é o
   que faz um roteiro com avulsas voltar inteiro. **Sem base carregada o link
@@ -425,8 +429,11 @@ selecionados e estados de sucesso.
 O escritório **não tem rodapé** (removido em 10/09/2026, a pedido do usuário).
 O crédito obrigatório ao OpenStreetMap e à Esri fica no canto do próprio mapa,
 no controle de atribuição do Leaflet (opção attribution da camada base) — é
-exigência das licenças dos mapas, não remover. A tela do campo mantém o rodapé
-dela ("Roteiro recebido por link · nada é enviado para servidor").
+exigência das licenças dos mapas, não remover. **A tela do campo também não tem
+rodapé** desde a v7.9.2, a pedido do usuário: saíram a frase "Roteiro recebido
+por link · nada é enviado para servidor" — explicação de como o app funciona por
+dentro, que quem está na rua não precisa — e o atalho "editar no escritório". A
+lista de paradas vai até o fim da tela.
 
 ---
 
@@ -793,8 +800,40 @@ cada numa janela de 1000px, contra 320/240 fixos). Desfeita na v6.4.1. Se o
 assunto voltar, o caminho é o outro que foi oferecido: mexer só no Roteiro, que
 deixaria de rolar sozinho, de 4 barras para 3.
 
+**Conflito entre a ordem do app e o caminho do Waze (medido em 19/09/2026 — o
+usuário decidiu NÃO mexer por enquanto).** Ele relatou: traçou a rota, e o Waze
+levou por outro caminho, que passava perto de um cliente que também estava no
+roteiro — "gerando desconfiança". Mandou o link do roteiro real (10 paradas +
+retorno em Criciúma/Içara, 29,9 km / 44 min) e eu medi, no próprio motor do app:
+
+1. **A ordem do app não é ótima, mas erra pouco.** Rodando o cálculo **exato**
+   (Held-Karp sobre a matriz de tempos do OSRM), a melhor ordem seria
+   `1,10,9,5,6,7,8,4,3,2` — o mesmo laço ao contrário — com **42 min / 29,0 km**.
+   O app entregou 44 min / 29,9 km: **~5% pior**, porque a Trip API resolve o
+   caixeiro-viajante por aproximação.
+2. **O "passei na porta de outro cliente" é geografia, não erro de ordem.**
+   Medindo a distância de cada parada ainda não visitada até o traçado: o trecho
+   2→3 passa a **109 m** da parada 4; o 4→5 a **90 m** da 6; e o 5→6 a **13 m**
+   da 7. Mas os clientes de Içara estão a **179 m (3↔4)**, **235 m (5↔6)** e
+   **251 m (6↔7)** uns dos outros — no mesmo quarteirão. Rodando a mesma análise
+   na ordem **ótima**, os casos **aumentam** (4, um deles a 8 m). Ou seja:
+   **otimizar melhor não resolve a desconfiança**.
+3. **Waze × OSRM vão discordar sempre**: o Waze escolhe o *caminho* com trânsito
+   ao vivo; o app escolhe a *ordem* com tempo livre de trânsito.
+
+Opções levantadas, na ordem que eu recomendaria: **(a)** agrupar paradas a menos
+de ~300 m num "bloco", mostrando no cartão do campo "mais N paradas aqui perto" —
+é o que ataca a desconfiança; **(b)** aviso de "passa perto" no escritório (o
+cálculo de ponto-até-traçado já foi escrito e validado nesta análise);
+**(c)** otimização exata até ~12 paradas (uma chamada a mais, ao `/table` do
+OSRM) e 2-opt acima disso; **(d)** km/min por trecho na tela do campo;
+**(e)** abrir a viagem inteira no Google Maps, que aceita vários pontos numa URL
+(o Waze só aceita um destino). Nada disso foi implementado.
+
 **Também em aberto, de antes:**
 - **Trocar o OSRM público** (Fase 4) — o usuário ficou de decidir onde hospedar.
+  ⚠️ A análise acima reforça: um motor com trânsito aproximaria o plano do que o
+  Waze faz, e o `/table` usado no item (c) também depende desse servidor.
 - **Arquivo único** (Fase 3, ponto de decisão, não iniciado).
 - **Nome do programa.** Em 17/09 ele pediu sugestões; foram dadas (Haga Rotas,
   Parada Certa, Percurso, Rota Viva, Farol, entre outras) e **nenhuma foi
@@ -914,6 +953,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 84 | **v7.8.0** — Botões da parada: navegação em contorno âmbar, concluir como único cheio |
 | 85 | **v7.9.0** — Módulo Rota com um botão principal e um só idioma de ícones |
 | 86 | **v7.9.1** — Vão de encaixe só com a borda, sem preenchimento |
+| 87 | **v7.9.2** — Rodapé da tela do campo removido (frase e atalho do escritório) |
 
 ---
 
@@ -980,7 +1020,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.9.1
+7.9.2
 ```
 
 ### Onde o número aparece
@@ -1091,3 +1131,4 @@ os backups locais são conveniência, não garantia.
 | 7.8.0 | 19/09/2026 | Botões da parada: navegação em contorno âmbar |
 | 7.9.0 | 19/09/2026 | Módulo Rota com um botão principal e ícones de traço |
 | 7.9.1 | 19/09/2026 | Vão de encaixe só com a borda |
+| 7.9.2 | 19/09/2026 | Rodapé da tela do campo removido |

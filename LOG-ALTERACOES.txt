@@ -5358,3 +5358,30 @@ TESTES
   Arraste do módulo Rota para o topo do painel: vão de 292x90px com fundo
   rgba(0,0,0,0) e borda 2px tracejada #F2A93C. Soltar continua funcionando
   (o módulo foi para a primeira posição, arranjo.ordem = m5, m1, m2...).
+
+--------------------------------------------------------
+[19/09/2026] v7.9.2 — Rodape da tela do campo removido
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO (com print, em dois tempos)
+  "Na tela do técnico, no rodapé, tem a frase destacada no print, remova."
+  E, antes de publicar: "retire também o editar no escritório".
+
+O QUE FOI FEITO
+  O rodapé inteiro saiu da tela do campo:
+  · a frase "Roteiro recebido por link · nada é enviado para servidor" era
+    explicação de como o app funciona por dentro — quem está na rua não
+    precisa dela;
+  · o atalho "editar no escritório" (v6.8.0) foi junto, com o mecanismo que
+    ele alimentava: a chave hg_retomar_roteiro no sessionStorage e o bloco
+    que lia essa chave na abertura do escritório.
+  A lista de paradas passa a ir até o fim da tela.
+  ⚠️ Retomar um roteiro NÃO se perdeu: continua sendo colar o link no campo
+  do módulo Clientes (ícone de corrente, v7.4.0) ou no módulo "Enviar para
+  o campo". O que saiu foi o atalho de um clique a partir da tela do campo.
+
+TESTES
+  Tela do campo (375x812 e 1000px): sem rodapé, último elemento da tela é a
+  lista, página sem sobra de altura, sem erro no console.
+  Escritório: abre normal (nada quebrou com a remoção do sessionStorage) e
+  retomar pelo módulo Clientes devolveu as 3 paradas do link de teste.
