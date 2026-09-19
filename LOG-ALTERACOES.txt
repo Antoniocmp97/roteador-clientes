@@ -5334,3 +5334,27 @@ TESTES (painel de 340px + celular de 375x812)
     palavra "★" dentro de uma frase da dica de retomar — os dois de
     propósito.
   Tema claro e escuro conferidos. Sem erro no console.
+
+--------------------------------------------------------
+[19/09/2026] v7.9.1 — Vao de encaixe sem preenchimento
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO (com print)
+  "Ao jogar o módulo para outra aba ou outra posição, que ficasse apenas o
+  contorno em amarelo indicando a posição, e que a textura dentro da
+  marcação saísse."
+
+O QUE FOI FEITO
+  O vão de encaixe (o retângulo tracejado que abre espaço onde o módulo vai
+  cair, v6.1) perdeu o véu âmbar de dentro — background:transparent no
+  lugar de color-mix(in srgb, var(--amber) 9%, transparent). Fica só a borda
+  tracejada de 2px em âmbar. É a mesma decisão já tomada na v6.1.2 para o
+  contorno da COLUNA, agora também para o vão.
+  O nome do módulo continua no meio do vão: é o que diz QUAL módulo está
+  sendo movido quando há mais de um vão possível na tela. Se ele também
+  incomodar, sai em uma linha.
+
+TESTES
+  Arraste do módulo Rota para o topo do painel: vão de 292x90px com fundo
+  rgba(0,0,0,0) e borda 2px tracejada #F2A93C. Soltar continua funcionando
+  (o módulo foi para a primeira posição, arranjo.ordem = m5, m1, m2...).

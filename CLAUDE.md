@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 19/09/2026 — v7.9.0 (módulo Rota com um botão principal e ícones de traço)
+> **Última atualização:** 19/09/2026 — v7.9.1 (vão de encaixe só com a borda)
 
 ---
 
@@ -175,7 +175,11 @@ sem dependências instaladas. Abre direto no navegador.
   (v6.1, escolha do usuário: "abrir espaço real") vai para onde ele cairia — os
   módulos em volta se afastam de verdade. O contorno âmbar da coluna só aparece
   quando o módulo **muda de coluna** (ou abre uma nova); na mesma coluna, só o vão
-  (v6.1.1). O contorno é **só a borda**, sem preenchimento (v6.1.2). A alça do
+  (v6.1.1). O contorno é **só a borda**, sem preenchimento (v6.1.2) — e **o vão
+  também**, desde a v7.9.1 (pedido do usuário, com print: "apenas o contorno em
+  amarelo indicando a posição, e que a textura dentro da marcação saísse"). O
+  nome do módulo continua no meio do vão, que é o que diz qual módulo está sendo
+  movido. A alça do
   módulo é um **retângulo compacto em volta dos pontinhos e do número** do título
   (v6.1.5, pelo print do usuário): 39×30px, 47×44 no toque; Rota e Roteiro, sem
   número, só nos pontinhos (classe `sem-numero`, marcada no JS). Fica acima do
@@ -909,6 +913,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 83 | **v7.7.0** — Tela do campo: parada da vez em cartão, as outras em linha compacta |
 | 84 | **v7.8.0** — Botões da parada: navegação em contorno âmbar, concluir como único cheio |
 | 85 | **v7.9.0** — Módulo Rota com um botão principal e um só idioma de ícones |
+| 86 | **v7.9.1** — Vão de encaixe só com a borda, sem preenchimento |
 
 ---
 
@@ -975,7 +980,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.9.0
+7.9.1
 ```
 
 ### Onde o número aparece
@@ -1085,3 +1090,4 @@ os backups locais são conveniência, não garantia.
 | 7.7.0 | 18/09/2026 | Tela do campo: a parada da vez em destaque |
 | 7.8.0 | 19/09/2026 | Botões da parada: navegação em contorno âmbar |
 | 7.9.0 | 19/09/2026 | Módulo Rota com um botão principal e ícones de traço |
+| 7.9.1 | 19/09/2026 | Vão de encaixe só com a borda |

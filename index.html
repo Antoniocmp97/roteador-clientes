@@ -215,8 +215,11 @@
   /* Vão de encaixe: tracejado âmbar, do tamanho do módulo arrastado, com o nome
      dele. Abre com uma animação curta a cada lugar novo, para os módulos em
      volta "se afastarem" em vez de pularem. */
+  /* Só a borda, sem preenchimento (v7.9.1, pelo print do usuário): o véu âmbar
+     que ficava dentro do vão pintava o espaço todo e competia com o contorno.
+     É a mesma decisão já tomada para o contorno da COLUNA na v6.1.2. */
   .modulo-encaixe{flex:none; box-sizing:border-box; border:2px dashed var(--amber); border-radius:8px;
-                  background:color-mix(in srgb, var(--amber) 9%, transparent);
+                  background:transparent;
                   display:flex; align-items:center; justify-content:center; overflow:hidden;
                   font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.2px;
                   text-transform:uppercase; color:var(--amber-dim); pointer-events:none;
@@ -1393,7 +1396,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '7.9.0';
+const VERSAO = '7.9.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
