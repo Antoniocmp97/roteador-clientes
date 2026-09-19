@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 19/09/2026 — v7.8.0 (botões da parada: navegação em contorno âmbar)
+> **Última atualização:** 19/09/2026 — v7.9.0 (módulo Rota com um botão principal e ícones de traço)
 
 ---
 
@@ -98,6 +98,16 @@ sem dependências instaladas. Abre direto no navegador.
   "Manutenção"). Cada parada selecionada ganha um seletor para escolher o
   tipo; aparece na lista de paradas do escritório e como etiqueta na tela
   do campo
+- **Ícones em traço, não emoji** (v7.9.0, ponto 5 da revisão de design): o alvo
+  de "escolher no mapa" (🎯), o alfinete da localização (📍), a estrela da parada
+  prioritária (★/☆, cheia quando ligada), os chevrons de mover uma casa (▲▼) e o
+  ✕ de remover viraram **SVG de traço** (1,8–1,9px, 13–17px), que acompanham a
+  cor do tema. A estrela da tela do campo também. Motivo: emoji muda de desenho
+  entre o Windows do escritório e o Android da equipe, e ★ ☆ ▲ ▼ ✕ são
+  caracteres, que dependem da fonte do sistema. ⚠️ Ficaram de propósito como
+  texto: o **✓** (base carregada, confirmar, parada concluída), o **↩** do
+  retorno e o **🎉** do fim do roteiro — são glifos dentro de frases e rótulos,
+  não controles
 - **Modo noturno** (v3.3): botão no cabeçalho das **duas telas**
   (escritório e campo) troca o app inteiro entre tema escuro e claro. A escolha
   fica guardada no navegador e é aplicada antes da primeira pintura, para a tela
@@ -246,9 +256,16 @@ sem dependências instaladas. Abre direto no navegador.
 - **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
   escolhida, e "Otimizar ordem" reordena só as demais — para quando é preciso
   passar num lugar antes do resto do roteiro
-- **Traçar nesta ordem** — rota respeitando a ordem escolhida (OSRM Route API)
-- **Otimizar ordem** — OSRM Trip API recalcula a melhor sequência e reordena a
-  lista automaticamente (`source=first`, `roundtrip=false`)
+- **Otimizar e traçar** — OSRM Trip API recalcula a melhor sequência, reordena a
+  lista e traça (`source=first`, `roundtrip=false`). É o **botão principal** do
+  módulo Rota desde a v7.9.0 (ponto 4 da revisão de design): âmbar e com o dobro
+  da largura do vizinho. O nome diz o **resultado**, não a mecânica
+- **Nesta ordem** — rota respeitando a ordem que está na lista (OSRM Route API),
+  sem reordenar. Virou a **alternativa** (contorno teal, estreita): traçar na
+  ordem escolhida à mão é o caso especial, não o uso normal.
+  ⚠️ O **Enter no campo de origem** continua disparando este, e não o principal:
+  quem digita um endereço e aperta Enter não espera que a ordem das paradas mude
+  sozinha
 - **Módulo Rota sempre visível** (v6.5.0, sugestão de layout 5): o módulo gruda na
   coluna em que estiver — `position:sticky` com **top:0 e bottom:0**, então fica
   preso na base enquanto o lugar natural dele está abaixo e no topo depois de
@@ -742,34 +759,27 @@ Ainda em aberto:
 - Troca do OSRM público antes do uso diário sério (Fase 4)
 - Revisar a decisão de manter arquivo único (Fase 3, ponto de decisão, não iniciado)
 
-### Pendências para a próxima sessão (atualizadas em 18/09/2026)
+### Pendências para a próxima sessão (atualizadas em 19/09/2026)
 
-**Revisão de design (17–18/09/2026).** O usuário pediu que eu olhasse o app como
+**Revisão de design (17–19/09/2026) — encerrada.** O usuário pediu que eu olhasse o app como
 designer e comparasse versões: "me sugira e compare as versões". Saíram **7
 pontos**, montados lado a lado (hoje × proposta, no CSS e nas cores reais) na
 página `COMPARACAO-DESIGN.html`, que fica fora do repositório.
 
-Já feitos:
-- **1 · Barra de progresso do campo invisível** → v7.5.0 (era defeito, não gosto;
-  ver seção 5).
-- **2 · Parada da vez em destaque no campo** → v7.7.0.
-- **3 · Botões da parada** → v7.8.0. O usuário não quis nenhuma das duas
-  variantes oferecidas: pediu navegação **sem preenchimento, com contorno
-  âmbar**, e com isso o de concluir virou o único cheio.
-- **6 · Numeração dos módulos** → v7.5.1, variante "tirar os números".
-- **7 · Cabeçalho** → v7.6.0, ações agrupadas e tema como ícone.
+Os sete, na ordem em que foram propostos:
+1. **Barra de progresso do campo invisível** → v7.5.0 (era defeito, não gosto;
+   ver seção 5).
+2. **Parada da vez em destaque no campo** → v7.7.0.
+3. **Botões da parada** → v7.8.0. O usuário não quis nenhuma das duas variantes
+   oferecidas: pediu navegação **sem preenchimento, com contorno âmbar**, e com
+   isso o de concluir virou o único cheio.
+4. **Módulo Rota** → v7.9.0: "Otimizar e traçar" como principal, "Nesta ordem"
+   como alternativa.
+5. **Um só idioma de ícones** → v7.9.0, junto com o 4.
+6. **Numeração dos módulos** → v7.5.1, variante "tirar os números".
+7. **Cabeçalho** → v7.6.0, ações agrupadas e tema como ícone.
 
-**Em aberto — retomar perguntando quais liberar:**
-
-- **4 · Módulo Rota: dois botões disputando.** "Traçar nesta ordem" e "Otimizar
-  ordem" têm a mesma largura e pesos parecidos, mas o uso normal é otimizar.
-  Proposta: **"Otimizar e traçar"** como principal (o botão diz o resultado, não
-  a mecânica) e "Nesta ordem" como alternativa estreita.
-- **5 · Um só idioma de ícones.** O app mistura emoji (🎯 📍 ★ ✕ ▲ ▼) com ícones
-  de traço em SVG. Emoji muda de desenho entre o Windows do escritório e o
-  Android da equipe, não acompanha o tema e tem peso visual diferente. Proposta:
-  tudo em traço, 1,8px de espessura, 15–17px. É barato e aparece em todas as
-  telas — seria o próximo que eu levaria.
+**Nada ficou em aberto nessa lista.**
 
 **Sugestões de layout (14–15/09/2026), lista à parte e já encerrada.** Das 7, a
 única que sobrou foi a **4 · rolagens dentro de rolagem**, ⚠️ **TENTADA E
@@ -898,6 +908,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 82 | **v7.6.0** — Cabeçalho: ações agrupadas e tema como ícone sol/lua |
 | 83 | **v7.7.0** — Tela do campo: parada da vez em cartão, as outras em linha compacta |
 | 84 | **v7.8.0** — Botões da parada: navegação em contorno âmbar, concluir como único cheio |
+| 85 | **v7.9.0** — Módulo Rota com um botão principal e um só idioma de ícones |
 
 ---
 
@@ -964,7 +975,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.8.0
+7.9.0
 ```
 
 ### Onde o número aparece
@@ -1073,3 +1084,4 @@ os backups locais são conveniência, não garantia.
 | 7.6.0 | 18/09/2026 | Cabeçalho: ações agrupadas e tema como ícone |
 | 7.7.0 | 18/09/2026 | Tela do campo: a parada da vez em destaque |
 | 7.8.0 | 19/09/2026 | Botões da parada: navegação em contorno âmbar |
+| 7.9.0 | 19/09/2026 | Módulo Rota com um botão principal e ícones de traço |

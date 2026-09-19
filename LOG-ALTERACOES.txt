@@ -5283,3 +5283,54 @@ TESTES (celular de 375x812, roteiro de 3 paradas + retorno)
     25%, cartão fecha e a seguinte assume; abrir a concluída -> sem botões
     de navegação (como já era) e com o de reabrir em contorno.
   Sem erro no console.
+
+--------------------------------------------------------
+[19/09/2026] v7.9.0 — Módulo Rota com um botão principal e um só idioma
+                      de ícones (pontos 4 e 5 da revisão de design)
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Inicie 4 e 5". Os dois últimos pontos que faltavam da revisão de design.
+  Foram feitos e testados juntos, numa versão só — pela regra de
+  versionamento a próxima mediana depois da 7.9.0 vira 8.0.0, e não faria
+  sentido gastar uma virada de número maior numa troca de ícones.
+
+PONTO 4 — MÓDULO ROTA
+  Antes: "Traçar nesta ordem" (âmbar) e "Otimizar ordem" (contorno teal),
+  mesma largura, pesos parecidos — mas o uso normal é otimizar; traçar na
+  ordem da lista é o caso especial, quando a sequência foi escolhida à mão.
+  Agora: "Otimizar e traçar" é o principal (âmbar, flex:2 — 229px no painel
+  de 340) e "Nesta ordem" é a alternativa (contorno teal, flex:1, 128px,
+  fonte 12,5px). O botão principal passou a dizer o RESULTADO, não a
+  mecânica. Cada um ganhou dica de mouse explicando o que faz.
+  ⚠️ O Enter no campo de origem continua disparando o "Nesta ordem" (era o
+  routeBtn e continua sendo): quem digita um endereço e aperta Enter não
+  espera que a ordem das paradas mude sozinha.
+
+PONTO 5 — UM SÓ IDIOMA DE ÍCONES
+  Viraram SVG de traço (1,8–1,9px, 13–17px), acompanhando a cor do tema:
+  · 🎯 do "escolher no mapa" (origem e parada avulsa) -> alvo
+  · 📍 da localização -> alfinete
+  · ★/☆ da parada prioritária -> estrela (cheia quando prioritária)
+  · ▲ ▼ de mover uma casa -> chevrons
+  · ✕ de remover -> x
+  · ★ da tela do campo (etiqueta PRIORITÁRIA e linha compacta) -> estrela
+  Motivo: emoji muda de desenho entre o Windows do escritório e o Android
+  da equipe, não acompanha o tema e tem peso visual diferente; ★ ☆ ▲ ▼ ✕
+  são caracteres e dependem da fonte do sistema.
+  Textos que citavam o emoji foram reescritos ("use o botão de alvo...").
+  Ficaram de propósito: o ✓ (base carregada, confirmar, parada concluída),
+  o ↩ do retorno e o 🎉 do fim do roteiro — são glifos de texto dentro de
+  frases e rótulos, não controles.
+
+TESTES (painel de 340px + celular de 375x812)
+  Rota: "Otimizar e traçar" reordenou e traçou (8,6 km / 13 min, com a
+    prioritária mantida na frente); "Nesta ordem" traçou a lista como
+    estava, sem reordenar (10,3 km). Status e resumo iguais aos de antes.
+  Ícones: 12 SVGs nos botões das 3 paradas (estrela cheia na prioritária,
+    vazada nas demais), 2 na linha da origem, 1 no painel da avulsa.
+  Tela do campo: estrela SVG na etiqueta PRIORITÁRIA.
+  Varredura do DOM atrás de emoji: só sobraram o ✓ do "base carregada" e a
+    palavra "★" dentro de uma frase da dica de retomar — os dois de
+    propósito.
+  Tema claro e escuro conferidos. Sem erro no console.

@@ -400,7 +400,14 @@
   /* Firefox reserva um contorno de foco interno no botão, com seu próprio
      padding — soma altura por fora do padding que a gente já define. */
   button::-moz-focus-inner{border:0;padding:0;}
-  .btn-icon{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:0 12px;font-size:15px;}
+  /* Ícones de traço, e não emoji (v7.9.0, ponto 5 da revisão de design): 🎯 e 📍
+     mudavam de desenho entre o Windows do escritório e o Android da equipe, não
+     acompanhavam a cor do tema e tinham peso visual diferente do resto. */
+  .btn-icon{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;
+            padding:0 12px;font-size:15px;
+            display:flex; align-items:center; justify-content:center;}
+  .btn-icon svg{width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8;
+                stroke-linecap:round; stroke-linejoin:round;}
   .btn-icon:hover{border-color:var(--teal);}
   .btn-icon.armado{border-color:var(--amber);color:var(--amber);background:var(--amber-fraco);}
   /* Enquanto o modo "escolher no mapa" está armado, o cursor vira mira sobre o mapa */
@@ -621,8 +628,14 @@
      flex:none (v5.5): sem isso eles encolhiam quando a linha apertava, e o
      símbolo saía deformado. Agora quem cede espaço é a alça e, depois, o nome,
      que quebra linha — o botão nunca se deforma. */
-  .stop-row button{background:none;color:var(--muted);font-size:13px;padding:2px 4px;flex:none;}
+  .stop-row button{background:none;color:var(--muted);font-size:13px;padding:2px 4px;flex:none;
+                   display:inline-flex; align-items:center; justify-content:center;}
   .stop-row button:hover{color:var(--text);}
+  /* Os quatro deixaram de ser caracteres na v7.9.0 (ponto 5): ★ ☆ ▲ ▼ ✕ dependiam
+     da fonte do sistema e não tinham o mesmo traço dos outros ícones do app */
+  .stop-row button svg{width:14px; height:14px; fill:none; stroke:currentColor;
+                       stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round;}
+  .stop-row button svg.cheia{fill:currentColor;}
   /* Paradas prioritárias (★): ficam fixas na ordem escolhida, à frente das demais */
   .stop-row.prioritaria{border-color:var(--amber-dim);}
   .stop-row .btn-fixar{color:var(--muted);}
@@ -642,20 +655,27 @@
     text-transform:uppercase; color:var(--muted); padding:4px 2px 0; list-style:none;
   }
 
-  /* Botões principais: "Traçar nesta ordem" (âmbar) e "Otimizar ordem" (secundário) */
+  /* Botões do módulo Rota: "Otimizar e traçar" (âmbar, principal) e
+     "Nesta ordem" (secundário, mais estreito) */
   .go-btn{background:var(--amber);color:#241705;font-weight:600;font-size:13.5px;border-radius:7px;padding:11px;text-align:center;}
   .go-btn:hover{background:var(--amber-claro);}
   .go-btn.secondary{background:var(--panel-2);color:var(--teal);border:1px solid var(--teal);}
   .go-btn.secondary:hover{background:var(--teal-hover);}
   .btn-row{display:flex;gap:8px;}
   .btn-row .go-btn{flex:1;}
+  /* Hierarquia (v7.9.0, ponto 4 da revisão de design): os dois tinham a mesma
+     largura e pesos parecidos, mas o uso normal é otimizar — traçar na ordem da
+     lista é o caso especial, quando a sequência foi escolhida à mão. O botão
+     principal passou a dizer o RESULTADO ("Otimizar e traçar"), não a mecânica. */
+  .btn-row .go-btn.principal{flex:2;}
+  .btn-row .go-btn.alternativa{flex:1; font-size:12.5px;}
 
   /* Mensagem de status/erro exibida abaixo dos botões */
   .status{font-size:12.5px;color:var(--danger);font-family:'JetBrains Mono',monospace;min-height:16px;}
   /* Desde a v5.7 botões e status moram no mesmo módulo, fora do gap do painel */
   #status{margin-top:14px;}
-  /* Módulo Rota grudado na base (v6.5, sugestão de layout 5): "Traçar nesta
-     ordem" e "Otimizar ordem" são a ação principal e ficavam abaixo da dobra
+  /* Módulo Rota grudado na base (v6.5, sugestão de layout 5): os botões de
+     traçar a rota são a ação principal e ficavam abaixo da dobra
      com a base carregada. Agora o módulo fica colado no fim da coluna em que
      estiver — painel ou coluna auxiliar —, e o resto rola por baixo.
      No painel o módulo é filho direto da coluna rolável (a section é
@@ -837,7 +857,7 @@
   .linha-parada .txt small{color:var(--muted); font-family:'JetBrains Mono',monospace;
                font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;
                display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .linha-parada .estrela{color:var(--amber); flex:none; font-size:13px;}
+  .linha-parada .estrela{color:var(--amber); flex:none; display:flex;}
   /* Seta das linhas fechadas e das abertas (que apontam para fechar) */
   .seta-abrir{color:var(--muted); flex:none; display:flex;}
   .seta-abrir svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2;
@@ -855,7 +875,11 @@
   .parada.feita .parada-n{background:var(--teal);}
   .parada-info{flex:1; min-width:0;}
   .parada-prioritaria{font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
-                      color:var(--amber); letter-spacing:.06em; text-transform:uppercase; margin-bottom:3px;}
+                      color:var(--amber); letter-spacing:.06em; text-transform:uppercase; margin-bottom:3px;
+                      display:flex; align-items:center; gap:5px;}
+  .parada-prioritaria svg, .linha-parada .estrela svg{width:13px; height:13px; flex:none;
+                      fill:currentColor; stroke:currentColor; stroke-width:1.5;
+                      stroke-linejoin:round;}
   .parada.feita .parada-prioritaria{color:var(--muted);}
   .parada-cliente{font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500;
                   color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px;}
@@ -1103,8 +1127,10 @@
         </div>
         <div class="origin-row">
           <input type="text" id="originInput" placeholder="Endereço, cidade — ex.: Rua Anita Garibaldi, Içara">
-          <button class="btn-icon" id="mapPickBtn" title="Escolher o ponto exato no mapa">🎯</button>
-          <button class="btn-icon" id="geoBtn" title="Usar minha localização">📍</button>
+          <button class="btn-icon" id="mapPickBtn" aria-label="Escolher o ponto exato no mapa"
+                  title="Escolher o ponto exato no mapa"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+          <button class="btn-icon" id="geoBtn" aria-label="Usar minha localização"
+                  title="Usar minha localização"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg></button>
         </div>
         <!-- Aparece só quando a busca devolve mais de um endereço possível -->
         <div class="origem-opcoes" id="origemOpcoes" style="display:none;"></div>
@@ -1176,12 +1202,13 @@
           <input type="text" id="avulsaNome" placeholder="Nome da parada (ex.: Cliente novo — Angélica)">
           <div class="tipos-add">
             <input type="text" id="avulsaCoord" placeholder="-28.67750, -49.36970">
-            <button class="btn-icon" id="avulsaMapaBtn" type="button" title="Escolher o ponto no mapa">🎯</button>
+            <button class="btn-icon" id="avulsaMapaBtn" type="button" aria-label="Escolher o ponto no mapa"
+                    title="Escolher o ponto no mapa"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
             <div class="tipo-add-btn" id="avulsaAddBtn" role="button" tabindex="0">Adicionar</div>
           </div>
           <div class="envio-dica" style="margin-top:0;">
-            Cole a coordenada (o formato que o Google Maps copia) ou use o 🎯 para
-            marcar no mapa. A parada entra na viagem, no link e na tela do campo.
+            Cole a coordenada (o formato que o Google Maps copia) ou use o botão de
+            alvo para marcar no mapa. A parada entra na viagem, no link e na tela do campo.
           </div>
         </div>
         <div class="checklist sem-base" id="checklist">
@@ -1237,8 +1264,10 @@
           <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Rota</span>
         </div>
         <div class="btn-row">
-          <button class="go-btn" id="routeBtn">Traçar nesta ordem</button>
-          <button class="go-btn secondary" id="optimizeBtn">Otimizar ordem</button>
+          <button class="go-btn principal" id="optimizeBtn"
+                  title="O app escolhe a melhor sequência e já traça a rota. As paradas prioritárias continuam fixas na frente.">Otimizar e traçar</button>
+          <button class="go-btn secondary alternativa" id="routeBtn"
+                  title="Traça na ordem que está na lista, sem reordenar nada">Nesta ordem</button>
         </div>
         <!-- Voltar para a origem (v6.3): entra como último ponto da viagem -->
         <label class="opcao-rota" title="A volta entra na distância, no tempo, no mapa e no roteiro do campo">
@@ -1364,7 +1393,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '7.8.0';
+const VERSAO = '7.9.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2235,8 +2264,13 @@ document.getElementById('tipoNovoInput').addEventListener('keydown', e => {
 });
 
 // Redesenha a lista numerada de paradas (seção 4) a partir de `stops`, na ordem atual do array.
-// Cada linha tem a alça de arraste (⋮⋮), botões ▲/▼ (troca de posição com o
-// vizinho) e ✕ (remove da viagem)
+// Cada linha tem a alça de arraste (⋮⋮), botões de subir/descer (troca de posição
+// com o vizinho) e de remover da viagem. Os ícones são SVG desde a v7.9.0 (ponto 5
+// da revisão de design): como caracteres (★ ☆ ▲ ▼ ✕) eles dependiam da fonte do
+// sistema e não tinham o mesmo traço do resto do app.
+const svgEstrela = cheia => `<svg viewBox="0 0 24 24" class="${cheia ? 'cheia' : ''}" aria-hidden="true"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"/></svg>`;
+const svgSeta = paraCima => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${paraCima ? 'M6 14.5l6-6 6 6' : 'M6 9.5l6 6 6-6'}"/></svg>`;
+const svgRemover = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>`;
 // Mantém o invariante da lista: as paradas prioritárias sempre ficam à frente das
 // demais, preservando a ordem relativa dentro de cada bloco (filter é estável).
 function reordenarPorPrioridade(){
@@ -2279,10 +2313,10 @@ function renderStopsList(){
     const sub = s.cliente ? `<span class="nm-cli">${escaparHtml(s.cliente)}</span>` : '';
     const tag = s.tipo ? `<span class="nm-tipo">${escaparHtml(s.tipo)}</span>` : '';
     li.innerHTML = `<span class="alca" title="Arraste para mudar a ordem" aria-hidden="true"></span><span class="n" title="Clique para ver esta parada no mapa">${i+1}</span><span class="nm" title="Clique para ver esta parada no mapa">${escaparHtml(s.name)}${sub}${tag}</span>
-      <button data-act="fixar" class="btn-fixar" title="${s.prioritaria ? 'Tirar da prioridade' : 'Marcar como prioritária'}">${s.prioritaria ? '★' : '☆'}</button>
-      <button data-act="up" title="Mover para cima">▲</button>
-      <button data-act="down" title="Mover para baixo">▼</button>
-      <button data-act="rm" title="Remover">✕</button>`;
+      <button data-act="fixar" class="btn-fixar" aria-label="${s.prioritaria ? 'Tirar da prioridade' : 'Marcar como prioritária'}" title="${s.prioritaria ? 'Tirar da prioridade' : 'Marcar como prioritária'}">${svgEstrela(s.prioritaria)}</button>
+      <button data-act="up" aria-label="Mover para cima" title="Mover para cima">${svgSeta(true)}</button>
+      <button data-act="down" aria-label="Mover para baixo" title="Mover para baixo">${svgSeta(false)}</button>
+      <button data-act="rm" aria-label="Remover da viagem" title="Remover">${svgRemover}</button>`;
 
     li.querySelector('.alca').addEventListener('pointerdown', ev => iniciarArraste(ev, i, li));
     li.querySelector('[data-act=fixar]').onclick = () => {
@@ -3712,7 +3746,7 @@ document.getElementById('geoBtn').onclick = () => {
         if (originMarker) originMarker.setPopupContent(escaparHtml(nome));
       }
     },
-    () => setStatus('Não foi possível obter localização. Digite um endereço ou marque o ponto com 🎯.')
+    () => setStatus('Não foi possível obter localização. Digite um endereço ou marque o ponto no mapa (botão de alvo).')
   );
 };
 // Wrapper de fetch()+JSON usado por todas as chamadas de rede (Nominatim e OSRM).
@@ -3772,7 +3806,7 @@ function pediuNumero(texto){ return /[,\s]\s*\d{1,6}\s*$/.test(texto.trim()); }
 // Antes isso acontecia em silêncio, e a origem ficava num lugar qualquer da via.
 function avisarNumeroIgnorado(resultado, textoDigitado){
   if (pediuNumero(textoDigitado) && resultado && !resultado.temNumero){
-    setStatus('Origem na rua indicada — o número não existe no mapa desta região. Use o 🎯 para marcar o ponto exato.');
+    setStatus('Origem na rua indicada — o número não existe no mapa desta região. Use o botão de alvo para marcar o ponto exato.');
     return true;
   }
   return false;
@@ -4617,7 +4651,7 @@ function desenharCampo(roteiro, codigo, feitos, confirmando, abertos){
           <span class="txt"><b>${escaparHtml(nome)}</b>${
             cliente ? `<small>${escaparHtml(cliente)}</small>`
                     : (retorno ? '<small>Retorno</small>' : '')}</span>
-          ${prioritaria ? '<span class="estrela" title="Prioritária">★</span>' : ''}
+          ${prioritaria ? `<span class="estrela" title="Prioritária">${svgEstrela(true)}</span>` : ''}
           ${seta(false)}
         </button>`;
       }
@@ -4628,7 +4662,7 @@ function desenharCampo(roteiro, codigo, feitos, confirmando, abertos){
       const rotuloTipo = tipo ? `<div class="parada-tag">${escaparHtml(tipo)}</div>` : '';
       // Mesma estrela da tela do escritório, para quem está na rua reconhecer
       // de imediato que aquela parada foi marcada como prioritária
-      const rotuloPrioridade = prioritaria ? `<div class="parada-prioritaria">★ Prioritária</div>` : '';
+      const rotuloPrioridade = prioritaria ? `<div class="parada-prioritaria">${svgEstrela(true)} Prioritária</div>` : '';
       // Botão de concluir: normalmente um único botão, mas troca para o par
       // Confirmar/Cancelar enquanto este índice está em `confirmando` — segundo
       // toque intencional antes de mudar o estado de verdade, ver
