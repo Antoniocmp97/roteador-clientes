@@ -5385,3 +5385,56 @@ TESTES
   lista, página sem sobra de altura, sem erro no console.
   Escritório: abre normal (nada quebrou com a remoção do sessionStorage) e
   retomar pelo módulo Clientes devolveu as 3 paradas do link de teste.
+
+--------------------------------------------------------
+[19/09/2026] v8.0.0 — Efeito ao tracar a rota
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Quero implementar um efeito na hora que a rota é traçada." Foram
+  propostos quatro efeitos e montada a página COMPARACAO-EFEITOS.html, com
+  seis mapas de verdade rodando a mesma rota (como é hoje, os quatro
+  separados e o conjunto), com "rodar todos", controle de velocidade e
+  troca de tema. Ele escolheu: "o conjunto todo me agradou muito".
+
+O QUE FOI FEITO (na ordem em que acontece)
+  1. O mapa VOA até o enquadramento da rota (flyToBounds, 1,2 s) em vez de
+     saltar.
+  2. A linha SE DESENHA da origem até o fim (900 ms), por
+     stroke-dasharray/stroke-dashoffset no path do Leaflet.
+  3. Cada número ACENDE QUANDO A LINHA CHEGA NELE — não em intervalos
+     fixos. A fração vem das legs do OSRM (distância acumulada / total), que
+     já vêm na resposta; não precisa medir a geometria de novo. Medido numa
+     rota de 4 paradas: 268, 441, 712 e 900 ms.
+  4. km e min CONTAM de zero até o valor (600 ms).
+  Total: ~2,1 s, e o mapa continua usável durante a animação.
+
+DESLIGADO EM DOIS CASOS
+  · prefers-reduced-motion: a rota aparece direto e o enquadramento é
+    instantâneo (animate:false) — quem pediu menos animação não leva nem o
+    deslize do mapa;
+  · se o Leaflet não devolver o elemento do path (renderizador canvas).
+
+⚠️ ARMADILHAS RESOLVIDAS (as duas do mesmo parente das v6.5 e v6.9)
+  · Em aba de segundo plano o navegador PAUSA o relógio de quadros: o voo
+    não termina, o "moveend" não chega e o Leaflet RECORTA o traçado ao que
+    está visível — medir o path ali devolve comprimento ZERO e a rota
+    sumiria. Reproduzido no ambiente de teste (mapa travado no zoom 19, d
+    do path com 4 caracteres). Solução: um setTimeout de 1,35 s que, se o
+    voo não acabou, enquadra na marra (animate:false) e mostra tudo pronto,
+    sem efeito — que é o que o usuário encontra ao voltar para a aba.
+  · O contador de km/min congelaria num valor parcial pelo mesmo motivo:
+    ganhou um timer que crava o valor final.
+  · Traçar de novo no meio da animação: cada traçado tem um número
+    (efeitoAtual) e só o mais recente desenha.
+
+TESTES
+  Caminho animado (com o "moveend" forçado na hora): dasharray e
+    transition de 900ms aplicados, atrasos 268/441/712/900 ms nas quatro
+    paradas, classe parada-acende em todas.
+  Visual: dois prints seguidos durante a animação mostram a linha curta e
+    depois mais longa, com o resumo em "1,0 km / 2 min" e depois
+    "2,2 km / 4 min" — desenhando e contando.
+  prefers-reduced-motion simulado: sem dasharray, sem classes, km/min
+    direto e enquadramento instantâneo (zoom 11 -> 14).
+  Sem erro no console.

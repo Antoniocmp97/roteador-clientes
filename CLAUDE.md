@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 19/09/2026 — v7.9.2 (frase do rodapé do campo removida)
+> **Última atualização:** 19/09/2026 — v8.0.0 (efeito ao traçar a rota)
 
 ---
 
@@ -294,6 +294,25 @@ sem dependências instaladas. Abre direto no navegador.
   teste: 16,2 km sem volta, 27,1 km com volta na mesma ordem, e 24,1 km quando o
   otimizador trabalha sabendo que precisa voltar
 - Marcadores numerados conforme a ordem final de visita
+- **Efeito ao traçar a rota** (v8.0.0, pedido do usuário; ele escolheu o conjunto
+  entre quatro efeitos comparados lado a lado em mapas de verdade): o mapa **voa**
+  até o enquadramento (1,2 s), a **linha se desenha** da origem até o fim (900 ms,
+  por `stroke-dasharray`/`stroke-dashoffset` no path do Leaflet), cada **número
+  acende quando a linha chega nele** — a fração vem das `legs` do OSRM, distância
+  acumulada sobre o total, então não é intervalo fixo — e o **km/min conta** de
+  zero até o valor (600 ms). ~2,1 s no total, com o mapa usável o tempo inteiro.
+  Antes a rota aparecia inteira de uma vez e nada indicava o sentido da viagem.
+  **Desligado** quando o sistema pede `prefers-reduced-motion` (aí o enquadramento
+  é instantâneo, sem nem o deslize) ou quando o Leaflet não devolve o elemento do
+  path. ⚠️ **Duas armadilhas resolvidas, as duas da mesma família das v6.5/v6.9:**
+  em aba de segundo plano o navegador pausa o relógio de quadros, o voo não
+  termina, o `moveend` não chega e o Leaflet **recorta o traçado ao que está
+  visível** — medir o path ali devolve comprimento **zero** e a rota sumiria
+  (reproduzido: mapa travado no zoom 19, `d` do path com 4 caracteres). Um
+  `setTimeout` de 1,35 s enquadra na marra e mostra tudo pronto nesse caso. O
+  contador de km/min tem o mesmo tipo de rede. E traçar de novo no meio da
+  animação não faz a linha antiga voltar: cada traçado tem um número e só o mais
+  recente desenha
 - **Clicar na parada leva o mapa até ela** (v6.9.0): clique no nome ou no número
   centraliza o mapa na parada com zoom 16, abre o balão e acende o marcador. O
   zoom **nunca afasta** (se já estiver mais perto, só centraliza). Alça e botões
@@ -843,8 +862,11 @@ OSRM) e 2-opt acima disso; **(d)** km/min por trecho na tela do campo;
 
 **Material de trabalho na pasta, fora do repositório** (padrão `COMPARACAO-*.html`
 no `.gitignore`), para apagar quando não servirem mais:
-`COMPARACAO-MODULO1.html` (as 5 propostas do módulo 1; a v7.4.0 saiu da "D") e
-`COMPARACAO-DESIGN.html` (os 7 pontos acima).
+`COMPARACAO-MODULO1.html` (as 5 propostas do módulo 1; a v7.4.0 saiu da "D"),
+`COMPARACAO-DESIGN.html` (os 7 pontos acima) e `COMPARACAO-EFEITOS.html` (os
+quatro efeitos ao traçar a rota, em seis mapas de verdade; a v8.0.0 saiu do
+"conjunto"). ⚠️ A de efeitos tem a rota de exemplo embutida, então funciona sem
+rede — só os ladrilhos do mapa é que precisam de internet.
 
 Regra de trabalho vigente: implementar e testar, mas **perguntar antes de fazer
 commit/push** — o usuário testa antes de publicar; `.haga` dele significa "pode
@@ -954,6 +976,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 85 | **v7.9.0** — Módulo Rota com um botão principal e um só idioma de ícones |
 | 86 | **v7.9.1** — Vão de encaixe só com a borda, sem preenchimento |
 | 87 | **v7.9.2** — Rodapé da tela do campo removido (frase e atalho do escritório) |
+| 88 | **v8.0.0** — Efeito ao traçar a rota: voo, linha se desenhando, números em sequência e km/min contando |
 
 ---
 
@@ -1020,7 +1043,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-7.9.2
+8.0.0
 ```
 
 ### Onde o número aparece
@@ -1132,3 +1155,4 @@ os backups locais são conveniência, não garantia.
 | 7.9.0 | 19/09/2026 | Módulo Rota com um botão principal e ícones de traço |
 | 7.9.1 | 19/09/2026 | Vão de encaixe só com a borda |
 | 7.9.2 | 19/09/2026 | Rodapé da tela do campo removido |
+| 8.0.0 | 19/09/2026 | Efeito ao traçar a rota |

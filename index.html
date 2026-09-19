@@ -758,6 +758,22 @@
   .stop-row.realcada{border-color:var(--amber); background:var(--hover);}
   .brand-icon.num{width:20px;height:20px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-family:'JetBrains Mono',monospace;}
 
+  /* ---- Efeito ao traçar a rota (v8.0.0, escolha do usuário numa página de
+     comparação com os quatro efeitos lado a lado: "o conjunto todo me agradou") ----
+     O mapa voa até o enquadramento, a linha se desenha da origem até o fim, cada
+     número acende QUANDO A LINHA CHEGA NELE e o km/min conta. ~1,6 s no total.
+     Antes a rota aparecia inteira de uma vez e nada indicava o sentido da viagem.
+     A parada nasce invisível e só acende quando o JS marca "acende" com o atraso
+     dela; sem isso os números piscariam antes da linha chegar. */
+  .parada-entrando .brand-icon{opacity:0;}
+  .parada-acende .brand-icon{animation:parada-pop .32s cubic-bezier(.2,1.4,.5,1) both;}
+  @keyframes parada-pop{from{transform:scale(0); opacity:0;} 60%{transform:scale(1.25);} to{transform:scale(1); opacity:1;}}
+  /* Quem configurou "reduzir animações" no sistema vê a rota aparecer direto */
+  @media (prefers-reduced-motion: reduce){
+    .parada-entrando .brand-icon{opacity:1;}
+    .parada-acende .brand-icon{animation:none;}
+  }
+
   /* Layout empilhado (mapa em cima, painel embaixo) em telas estreitas */
   @media (max-width:760px){
     main{flex-direction:column;}
@@ -1387,7 +1403,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '7.9.2';
+const VERSAO = '8.0.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -3885,6 +3901,40 @@ async function ensureOrigin(){
   }catch(e){ setStatus(e.message); return false; }
 }
 
+/* ---------------- Efeito ao traçar a rota (v8.0.0) ----------------
+   Pedido do usuário: "quero implementar um efeito na hora que a rota é traçada".
+   Foram montados quatro efeitos numa página de comparação, com mapas de verdade,
+   e ele escolheu o conjunto: voo do enquadramento + linha se desenhando +
+   números acendendo na hora certa + km/min contando.
+
+   ⚠️ O efeito é desligado em dois casos: quando o sistema pede menos animação
+   (prefers-reduced-motion) — aí a rota aparece direto, como antes — e quando o
+   Leaflet não devolve o elemento do path (renderizador canvas, por exemplo). */
+const DUR_ROTA = 900;    // a linha leva isso para ir da origem ao fim
+const VOO_ROTA = 1.2;    // segundos do flyToBounds, antes de a linha começar
+let efeitoAtual = 0;     // qual traçado é o mais recente (ver "comecar")
+
+function efeitoLigado(){
+  try{ if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false; }catch(e){}
+  return !!(routeLine && routeLine.getElement && routeLine.getElement());
+}
+
+// Conta de zero até o valor, para o resumo km/min não aparecer pronto.
+// ⚠️ O timer no fim não é enfeite: se a aba for para segundo plano no meio da
+// contagem, o relógio de quadros para e o número congelaria num valor parcial.
+function animarNumero(el, valor, formatar, dur = 600){
+  const t0 = performance.now();
+  let pronto = false;
+  const passo = agora => {
+    const f = Math.min(1, (agora - t0) / dur);
+    if (pronto) return;
+    el.textContent = formatar(valor * f);
+    if (f < 1) requestAnimationFrame(passo); else pronto = true;
+  };
+  requestAnimationFrame(passo);
+  setTimeout(() => { if (!pronto){ pronto = true; el.textContent = formatar(valor); } }, dur + 400);
+}
+
 // Desenha o resultado de uma rota calculada (por routeBtn ou optimizeBtn): traça a polyline
 // âmbar sobre a geometria retornada pelo OSRM, substitui os marcadores das paradas por
 // versões numeradas na ordem de visita, enquadra o mapa na rota e preenche o painel de
@@ -3902,13 +3952,89 @@ function drawResult(distance, duration, geometry, legs){
     // Realce mapa -> lista (v6.7). O índice é o da ordem de visita, o mesmo da lista.
     m.on('mouseover', () => realcarParada(i, true, true));
     m.on('mouseout',  () => realcarParada(i, false, true));
+    if (efeitoLigado()) m.getElement().classList.add('parada-entrando');   // nasce invisível
     stopMarkers.push(m);
   });
 
-  map.fitBounds(routeLine.getBounds(), { padding:[40,40] });
+  const enquadrar = routeLine.getBounds();
+  const elDist = document.getElementById('distVal'), elTempo = document.getElementById('timeVal');
 
-  document.getElementById('distVal').textContent = `${(distance/1000).toFixed(1)} km`;
-  document.getElementById('timeVal').textContent = `${Math.round(duration/60)} min`;
+  if (!efeitoLigado()){
+    // animate:false porque este é o caminho de quem pediu MENOS animação no
+    // sistema: até o deslize do enquadramento sai
+    map.fitBounds(enquadrar, { padding:[40,40], animate:false });
+    elDist.textContent = `${(distance/1000).toFixed(1)} km`;
+    elTempo.textContent = `${Math.round(duration/60)} min`;
+  }else{
+    /* Efeito ao traçar (v8.0.0). A linha nasce escondida porque o mapa ainda vai
+       voar: enquanto ele voa, o Leaflet REPROJETA o path a cada quadro, e o
+       comprimento medido antes do voo não valeria mais no fim dele. */
+    const path = routeLine.getElement();
+    path.style.opacity = '0';
+    map.flyToBounds(enquadrar, { padding:[40,40], duration: VOO_ROTA });
+
+    // Onde cada parada cai ao longo do caminho, em fração da distância total:
+    // é o que faz o número acender quando a linha chega nele, e não em
+    // intervalos fixos. Vem das legs do OSRM, que já são as distâncias trecho a
+    // trecho — não precisa medir a geometria de novo.
+    let acumulado = 0;
+    const fracao = legs.map(l => { acumulado += l.distance; return acumulado / distance; });
+
+    const mostrarResumo = () => {
+      elDist.textContent = `${(distance/1000).toFixed(1)} km`;
+      elTempo.textContent = `${Math.round(duration/60)} min`;
+    };
+
+    const meuEfeito = ++efeitoAtual;
+    let comecou = false;
+    const comecar = instantaneo => {
+      // Só o efeito mais recente desenha: traçar de novo no meio da animação
+      // troca a linha, e a antiga não pode voltar do além
+      if (comecou || meuEfeito !== efeitoAtual || !path.isConnected) return;
+      comecou = true;
+      path.style.opacity = '';
+      const mostrarParadas = () => stopMarkers.forEach(m => {
+        const el = m.getElement();
+        if (el) el.classList.remove('parada-entrando');
+      });
+
+      /* ⚠️ Caminho do "nada está sendo desenhado" (aba em segundo plano). O
+         navegador pausa o relógio de quadros: o voo não termina, o mapa fica
+         parado no meio do caminho e o Leaflet RECORTA o traçado ao que está
+         visível — medir o path aqui devolve comprimento zero e a rota some.
+         Então aqui não há efeito nenhum: enquadra na marra e mostra tudo
+         pronto, que é o que o usuário vai encontrar ao voltar para a aba. */
+      if (instantaneo){
+        map.fitBounds(enquadrar, { padding:[40,40], animate:false });
+        mostrarParadas();
+        mostrarResumo();
+        return;
+      }
+
+      const comprimento = path.getTotalLength();
+      if (!comprimento){ mostrarParadas(); return; }      // sem geometria medível, mostra direto
+      path.style.transition = 'none';
+      path.style.strokeDasharray = comprimento;
+      path.style.strokeDashoffset = comprimento;
+      path.getBoundingClientRect();                       // força o navegador a aplicar antes da transição
+      path.style.transition = `stroke-dashoffset ${DUR_ROTA}ms linear`;
+      path.style.strokeDashoffset = 0;
+      stopMarkers.forEach((m, i) => {
+        const el = m.getElement();
+        if (!el) return;
+        el.style.animationDelay = Math.round((fracao[i] || 0) * DUR_ROTA) + 'ms';
+        el.classList.remove('parada-entrando');
+        el.classList.add('parada-acende');
+      });
+      animarNumero(elDist, distance/1000, v => `${v.toFixed(1)} km`);
+      animarNumero(elTempo, duration/60, v => `${Math.round(v)} min`);
+    };
+    map.once('moveend', () => comecar(false));
+    // Rede de segurança do caso acima: o relógio de quadros para, mas o tempo
+    // continua correndo, então o timer resolve (v6.5 e v6.9 registram a mesma
+    // armadilha em outros cantos do app)
+    setTimeout(() => comecar(true), VOO_ROTA * 1000 + 150);
+  }
 
   const stepsEl = document.getElementById('steps');
   stepsEl.innerHTML = '';
