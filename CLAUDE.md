@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 19/09/2026 — v8.0.0 (efeito ao traçar a rota)
+> **Última atualização:** 22/09/2026 — v8.1.0 (vidro: o mapa passa por baixo do painel)
 
 ---
 
@@ -123,6 +123,55 @@ sem dependências instaladas. Abre direto no navegador.
   total. Antes o disquete e a lixeira ficavam colados na marca, como se fossem
   parte dela. Em tela estreita (<760px) o arranjo some, como já era, e o divisor
   some junto
+- **Vidro: o mapa passa por baixo do painel** (v8.1.0, pedido do usuário; ele
+  escolheu o modo "Apple" numa comparação com quatro modos e cinco controles).
+  O mapa é **absoluto e ocupa a tela inteira**; o painel e as colunas flutuam
+  sobre ele como **cartões** (margem de 12px, cantos de 18px), com tinta em
+  gradiente (84%→94%), `backdrop-filter: blur(16px) saturate(140%)`, **véu**
+  escuro de 18% atrás do conteúdo, fio de luz de 1px e sombra. No tema claro o
+  véu e o fio são claros. As caixas de dentro vão a 80% — sólidas, virariam
+  blocos boiando no vidro. Medido numa janela de 1400px: o mapa passou de
+  **~580px para 1400px** de largura.
+  ⚠️ **A saturação é o que faz parecer vidro**, não só o desfoque — sem ela o
+  fundo vira um borrão cinza. ⚠️ O usuário pediu "transparente, **mas não ao
+  ponto de sumir**": é para isso que existe o véu, que segura a leitura quando
+  embaixo passa um bairro cheio de ruas claras.
+  ⚠️ **O enquadramento do mapa teve de mudar junto**, senão a rota fica debaixo
+  do painel: `folgaDasColunas()` mede o quanto os cartões cobrem, `paddingDoMapa()`
+  entra nos `fitBounds`/`flyToBounds` e `centralizarVisivel()` no clique da parada
+  e na origem. Nesta última, o centro deslocado é **calculado** — com um `panBy`
+  depois do `setView` o resultado dependia de a animação ter rodado, e a parada
+  ia parar na borda (medido: x=8 numa área visível de 676px; calculando, x=338).
+  ⚠️ Em tela estreita (≤760px) **o vidro sai de cena**: volta o empilhado de
+  antes, mapa em cima e painel embaixo, e `folgaDasColunas()` devolve 0.
+  ⚠️ A divisória de largura perdeu o fundo sólido: sobre o mapa, ela cortaria a
+  imagem em duas. ⚠️ **O módulo Rota também perdeu o fundo fixo**: ele tinha
+  `background:var(--panel)` desde a v6.5 para tapar a lista que rola por baixo
+  quando está grudado, e sobre o vidro isso virava um bloco escuro dentro do
+  cartão em qualquer posição (relatado pelo usuário, com print). Agora o fundo
+  entra **só enquanto ele flutua**, com o material do cartão (92% + blur 10px) —
+  parado no lugar dele não há nada passando por baixo. A marca `grudado` é
+  espelhada na section (`rota-grudada`) porque, nas colunas, quem gruda é ela.
+  ⚠️ **E a folga de 120px da v7.1.0 passou a valer só para a borda de baixo**:
+  em cima ela fazia o módulo **nascer grudado** quando estava na primeira
+  posição e a coluna não tinha rolado (a sentinela fica em `c.top + h - 16`, por
+  causa do padding/margem negativa que cobre o respiro da coluna, e a conta
+  exigia `c.top + h + 120`). Até a v8.0.0 o efeito era só o modo compacto ligado
+  à toa; com o vidro virou o bloco escuro do print. A oscilação que a folga
+  resolve é só de baixo, onde o módulo encolhe ao grudar e a sentinela reaparece.
+  ⚠️ Não tente medir "está deslocado?" com `offsetTop`: num elemento sticky ele
+  **já vem com o deslocamento embutido** e a conta dá zero sempre (medido:
+  offsetTop subindo 16→216→516→771 junto com o scroll, com o rect parado).
+  ⚠️ **O `padding:16px 0` com `margin:-16px 0` também virou coisa do estado
+  grudado**: ele existe para cobrir o respiro da coluna enquanto o módulo
+  flutua, e parado no lugar a margem negativa puxava o módulo de baixo 16px
+  para cima — com a linha de status vazia fora, o de baixo passou a quase
+  encostar (relatado pelo usuário). ⚠️ E a **sentinela é um item de layout do
+  painel** (a section é `display:contents`): ela comia um segundo `gap` de 14px,
+  deixando o módulo abaixo da Rota com 28px de respiro contra os 14 dos outros.
+  Resolvido com `margin-bottom:-14px` **na sentinela** — mover a sentinela em si
+  deslocaria o limiar do "grudado", que depende da posição dela. Medido no fim:
+  14px entre módulos comuns e 14px da Rota para o de baixo
 - **O mapa acompanha o tema**: no escuro usa o Esri Dark Gray com um tratamento
   de cor que reproduz a referência do usuário (ver seção 5); no claro **troca de
   ladrilhos** para o Esri Light Gray, que é onde ruas e rótulos foram desenhados
@@ -337,7 +386,12 @@ sem dependências instaladas. Abre direto no navegador.
   rota e com a numerada depois. ⚠️ O `transform` vai no ícone **de dentro**: o
   elemento de fora é do Leaflet e carrega a posição do marcador
 - Distância total e tempo estimado **logo abaixo de Traçar/Otimizar**, no módulo
-  Rota (v6.2; antes ficavam no topo do Roteiro, no fim do painel). Instruções passo
+  Rota (v6.2; antes ficavam no topo do Roteiro, no fim do painel).
+  ⚠️ **A linha de status some quando está vazia** (v8.1.0, pelo print do usuário):
+  `.status` tem `min-height:16px` e `#status` 14px de margem, então ela reservava
+  **30px** embaixo dos botões mesmo sem recado nenhum — dentro do cartão de vidro
+  essa sobra ficou à vista. `#status:empty{display:none}`, a mesma regra que a
+  linha de avisos do módulo Clientes usa desde a v7.4.0. Instruções passo
   a passo agrupadas por parada no módulo Roteiro
 - **Modo campo (Fase 1):** depois de traçar a rota, um botão gera um link com o
   roteiro inteiro. Quem abre esse link (ex.: recebido pelo WhatsApp) cai numa
@@ -863,9 +917,10 @@ OSRM) e 2-opt acima disso; **(d)** km/min por trecho na tela do campo;
 **Material de trabalho na pasta, fora do repositório** (padrão `COMPARACAO-*.html`
 no `.gitignore`), para apagar quando não servirem mais:
 `COMPARACAO-MODULO1.html` (as 5 propostas do módulo 1; a v7.4.0 saiu da "D"),
-`COMPARACAO-DESIGN.html` (os 7 pontos acima) e `COMPARACAO-EFEITOS.html` (os
+`COMPARACAO-DESIGN.html` (os 7 pontos acima), `COMPARACAO-EFEITOS.html` (os
 quatro efeitos ao traçar a rota, em seis mapas de verdade; a v8.0.0 saiu do
-"conjunto"). ⚠️ A de efeitos tem a rota de exemplo embutida, então funciona sem
+"conjunto") e `COMPARACAO-VIDRO.html` (quatro modos de transparência com cinco
+controles; a v8.1.0 saiu do modo "Apple"). ⚠️ A de efeitos tem a rota de exemplo embutida, então funciona sem
 rede — só os ladrilhos do mapa é que precisam de internet.
 
 Regra de trabalho vigente: implementar e testar, mas **perguntar antes de fazer
@@ -977,6 +1032,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 86 | **v7.9.1** — Vão de encaixe só com a borda, sem preenchimento |
 | 87 | **v7.9.2** — Rodapé da tela do campo removido (frase e atalho do escritório) |
 | 88 | **v8.0.0** — Efeito ao traçar a rota: voo, linha se desenhando, números em sequência e km/min contando |
+| 89 | **v8.1.0** — Vidro: o mapa passa por baixo do painel e das colunas |
 
 ---
 
@@ -1043,7 +1099,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.0.0
+8.1.0
 ```
 
 ### Onde o número aparece
@@ -1156,3 +1212,4 @@ os backups locais são conveniência, não garantia.
 | 7.9.1 | 19/09/2026 | Vão de encaixe só com a borda |
 | 7.9.2 | 19/09/2026 | Rodapé da tela do campo removido |
 | 8.0.0 | 19/09/2026 | Efeito ao traçar a rota |
+| 8.1.0 | 22/09/2026 | Vidro: o mapa por baixo do painel e das colunas |

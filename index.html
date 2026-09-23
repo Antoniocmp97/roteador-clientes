@@ -114,14 +114,23 @@
   :root[data-tema="escuro"] .camada-base{filter:grayscale(1) brightness(1.425) contrast(2.035) brightness(.5);}
 
   /* Área principal: mapa (flex:1, ocupa o espaço restante) + painel lateral */
-  main{position:relative;flex:1;display:flex;min-height:0;}
-  #map{flex:1;min-height:0;background:var(--map-bg);}
+  /* ---- Vidro (v8.1.0, pedido do usuário; valores escolhidos por ele numa
+     comparação com quatro modos) ----
+     O mapa deixou de dividir a linha com o painel: agora ele ocupa a tela toda,
+     POR BAIXO, e o painel e as colunas flutuam sobre ele como cartões de vidro.
+     Ganho medido na comparação: o mapa passou de ~580px (com duas colunas
+     abertas numa tela de 1280) para a largura inteira.
+     ⚠️ z-index:0 + isolation no #map: os painéis internos do Leaflet usam
+     z-index de 200 a 700, e sem um contexto de empilhamento próprio eles podem
+     passar por cima das colunas. */
+  main{position:relative;flex:1;display:flex;min-height:0;justify-content:flex-end;}
+  #map{position:absolute; inset:0; z-index:0; isolation:isolate; background:var(--map-bg);}
 
   /* Colunas auxiliares (v4.4; duas desde a v5.7). Ficam ENTRE o mapa e o
      painel: assim o módulo puxado para fora continua ao lado dos outros, que é
      o que o usuário pediu depois de ver a primeira versão, que jogava a coluna
      para a borda esquerda da tela. Ordem: mapa · coluna 3 · coluna 2 · painel. */
-  .guia{container-type:inline-size;width:var(--guia-w, 360px); background:var(--panel); border-left:1px solid var(--line);
+  .guia{container-type:inline-size;width:var(--guia-w, 360px);
         padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:none;}
   #guiaExtra{width:var(--guia2-w, 360px);}
 
@@ -277,9 +286,51 @@
      embaixo) continua mandando, sem precisar competir com `style=""`. */
   /* container-type: permite às regras @container lá embaixo medirem a largura
      REAL da coluna (que muda com a divisória) e ajustar o que está dentro. */
-  .console{container-type:inline-size;width:var(--painel-w, 340px);background:var(--panel);border-left:1px solid var(--line);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+  .console{container-type:inline-size;width:var(--painel-w, 340px);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+
+  /* O material de vidro, igual nas três colunas (v8.1.0):
+     · tinta em gradiente, mais clara em cima, como o material do macOS;
+     · desfoque do que está atrás + saturação, que é o que dá o brilho de cor —
+       sem ela o fundo vira só um borrão cinza;
+     · VÉU (o inset de 2000px): uma camada escura fina atrás do conteúdo. É o que
+       impede o painel de "sumir" quando embaixo passa um bairro cheio de ruas
+       claras — o usuário pediu "transparente, mas não ao ponto de sumir";
+     · fio de luz de 1px na borda + sombra, que descolam o cartão do mapa. */
+  .guia, .console{
+      position:relative; z-index:2;
+      margin:12px 12px 12px 0; border-radius:18px;
+      background:linear-gradient(to bottom,
+                 color-mix(in srgb, var(--panel) 84%, transparent),
+                 color-mix(in srgb, var(--panel) 94%, transparent));
+      backdrop-filter:blur(16px) saturate(140%);
+      -webkit-backdrop-filter:blur(16px) saturate(140%);
+      box-shadow:inset 0 0 0 2000px rgba(0,0,0,.18),
+                 inset 0 1px 0 rgba(255,255,255,.16),
+                 inset 0 0 0 1px rgba(255,255,255,.10),
+                 0 10px 34px rgba(0,0,0,.42);
+  }
+  /* No tema claro o véu e o fio de luz são claros, senão o painel encardia */
+  :root[data-tema="claro"] .guia, :root[data-tema="claro"] .console{
+      box-shadow:inset 0 0 0 2000px rgba(255,255,255,.35),
+                 inset 0 1px 0 rgba(255,255,255,.9),
+                 inset 0 0 0 1px rgba(255,255,255,.55),
+                 0 10px 30px rgba(21,34,41,.18);
+  }
+  /* As caixas de dentro acompanham: sólidas, virariam blocos boiando no vidro */
+  .guia .check-row, .console .check-row,
+  .guia .stop-row, .console .stop-row,
+  .guia .resumo-rota, .console .resumo-rota,
+  .guia input[type="text"], .console input[type="text"],
+  .guia .tipos-painel, .console .tipos-painel,
+  .guia .go-btn.secondary, .console .go-btn.secondary,
+  .guia .btn-lista, .console .btn-lista,
+  .guia .btn-icon, .console .btn-icon{
+      background:color-mix(in srgb, var(--panel-2) 80%, transparent);
+  }
   /* Divisória arrastável entre o mapa e o painel */
-  .divisor{flex:0 0 7px; cursor:col-resize; background:var(--ink);
+  /* Sem fundo desde a v8.1.0: a divisória agora fica SOBRE o mapa, e um bloco
+     com a cor do app cortaria o mapa em duas. Fica só o risquinho do ::after. */
+  .divisor{flex:0 0 7px; cursor:col-resize; background:transparent; position:relative; z-index:2;
            display:flex; align-items:center; justify-content:center;
            touch-action:none; /* impede o navegador de rolar a página no arraste por toque */}
   .divisor::after{content:''; width:3px; height:34px; border-radius:2px; background:var(--line);}
@@ -677,6 +728,12 @@
   .status{font-size:12.5px;color:var(--danger);font-family:'JetBrains Mono',monospace;min-height:16px;}
   /* Desde a v5.7 botões e status moram no mesmo módulo, fora do gap do painel */
   #status{margin-top:14px;}
+  /* Vazio, não ocupa nada (v8.1.0, pelo print do usuário): o min-height de 16px
+     mais a margem de 14 deixavam 30px de espaço morto embaixo dos botões sempre
+     que não havia recado nenhum — e com o vidro essa sobra ficou à vista dentro
+     do cartão. Mesma regra que a linha de avisos do módulo Clientes usa desde a
+     v7.4.0. */
+  #status:empty{display:none;}
   /* Módulo Rota grudado na base (v6.5, sugestão de layout 5): os botões de
      traçar a rota são a ação principal e ficavam abaixo da dobra
      com a base carregada. Agora o módulo fica colado no fim da coluna em que
@@ -692,10 +749,35 @@
     /* top E bottom: gruda na base enquanto o lugar natural dele está abaixo, e
        no topo depois de passar por ele — assim os botões ficam visíveis com o
        módulo em qualquer posição da coluna. */
-    position:sticky; top:0; bottom:0; z-index:3; background:var(--panel);
+    position:sticky; top:0; bottom:0; z-index:3;
+  }
+  /* ⚠️ O fundo entra SÓ quando ele está flutuando de verdade (v8.1.0). Até a
+     v8.0.0 ele era fixo e sólido (var(--panel)): sobre o vidro isso virava um
+     bloco mais escuro dentro do cartão, em qualquer posição do módulo —
+     relatado pelo usuário com print. Parado no lugar dele não há nada passando
+     por baixo, então não precisa de fundo nenhum; grudado, ele ganha o mesmo
+     material do cartão, forte o bastante para a lista não vazar através. */
+  #moduloRota.grudado,
+  .guia > .modulo-movel.rota-grudada{
+    /* ⚠️ O padding com margem negativa também é só do estado grudado (v8.1.0):
+       ele existe para o módulo cobrir os 16px de respiro da coluna enquanto
+       flutua. Parado no lugar, a margem negativa puxava o módulo de baixo 16px
+       para cima — com a linha de status vazia sumindo, o de baixo passou a
+       quase encostar (relatado pelo usuário). Solto, vale o gap de 14px da
+       coluna, como em qualquer outro módulo. */
     padding:16px 0; margin:-16px 0;
+    background:color-mix(in srgb, var(--panel) 92%, transparent);
+    backdrop-filter:blur(10px) saturate(140%);
+    -webkit-backdrop-filter:blur(10px) saturate(140%);
     box-shadow:0 -10px 14px -12px var(--sombra), 0 10px 14px -12px var(--sombra);
   }
+
+  /* A sentinela é um item de layout do painel (a section é display:contents),
+     então ela comia um segundo gap de 14px: o módulo abaixo da Rota ficava com
+     28px de respiro contra os 14 dos outros. A margem negativa cancela esse
+     segundo gap SEM mover a sentinela — a conta do "grudado" depende da posição
+     dela, e mexer nela deslocaria o limiar (v8.1.0). */
+  .console > .modulo-movel[data-modulo="m5"] > #sentinelaRota{margin-bottom:-14px;}
 
   /* Enquanto está grudado o módulo fica compacto: título, botões e resultado.
      A opção de retorno e o status voltam quando ele chega ao lugar dele — senão
@@ -780,6 +862,12 @@
     /* Empilhado, o painel ocupa a largura inteira: a divisória vertical perde
        o sentido e a largura guardada é ignorada. O mesmo vale para a guia
        lateral — em tela estreita o módulo volta para o painel. */
+    /* Tela estreita: o vidro sai de cena e volta o empilhado de antes — o mapa
+       em cima, o painel embaixo, cada um com a sua faixa (v8.1.0) */
+    main{justify-content:initial;}
+    #map{position:static; z-index:auto; isolation:auto; flex:1;}
+    .console{margin:0; border-radius:0; backdrop-filter:none; -webkit-backdrop-filter:none;
+             background:var(--panel); box-shadow:none;}
     .divisor{display:none;}
     .guia{display:none;}
     .arranjo-acoes{display:none;}
@@ -1403,7 +1491,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.0.0';
+const VERSAO = '8.1.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1589,6 +1677,34 @@ document.querySelectorAll('[data-tema-btn]').forEach(b => {
   b.addEventListener('click', () => aplicarTema(temaAtual() === 'escuro' ? 'claro' : 'escuro', true));
 });
 aplicarTema(temaAtual(), false); // acerta o ícone do tema no estado salvo
+
+/* Quanto da largura da tela está coberto pelos cartões de vidro (v8.1.0).
+   Com o mapa passando por baixo deles, enquadrar "no mapa inteiro" jogaria a
+   rota para debaixo do painel: tudo que enquadra desconta esta folga. */
+function folgaDasColunas(){
+  if (!telaComportaGuia()) return 0;   // empilhado: o painel não cobre o mapa
+  let total = 0;
+  document.querySelectorAll('main > .console, main > .guia:not([hidden])')
+          .forEach(el => { const r = el.getBoundingClientRect(); if (r.width) total += r.width + 12; });
+  return Math.round(total);
+}
+// Enquadramento que respeita a folga: o conteúdo cabe na parte VISÍVEL do mapa
+function paddingDoMapa(base = 40){
+  return { paddingTopLeft:[base, base], paddingBottomRight:[base + folgaDasColunas(), base] };
+}
+/* Centraliza um ponto na parte visível, e não no meio da tela.
+   ⚠️ O centro deslocado é CALCULADO, e não aplicado com um panBy depois do
+   setView. Com o panBy, o resultado dependia de a animação do setView ter
+   rodado ou não: quando ela não roda (aba sem pintura, ou um segundo clique
+   interrompendo o voo), só o pan valia e a parada ia parar na borda — medido
+   x=8 numa área visível de 676px. Calculando o centro, o ponto cai no meio da
+   área visível nos dois casos (medido: x=338 de 676). */
+function centralizarVisivel(latlng, zoom, animar){
+  const folga = folgaDasColunas();
+  if (!folga){ map.setView(latlng, zoom, { animate: animar }); return; }
+  const centro = map.unproject(map.project(latlng, zoom).add([folga / 2, 0]), zoom);
+  map.setView(centro, zoom, { animate: animar });
+}
 
 // Ícone de bolinha simples (usado para clientes e para o marcador de origem, cor varia por chamada)
 function dot(color){
@@ -1946,7 +2062,7 @@ function importClients(grupos, filename, salvoEm){
   });
 
   const group = L.featureGroup(clientPoints.map(c => c.marker));
-  map.fitBounds(group.getBounds(), { padding: [40,40] });
+  map.fitBounds(group.getBounds(), paddingDoMapa());
 
   const nCli = grupos.length;
   // Data só aparece quando a base foi restaurada do navegador — assim dá para
@@ -2507,7 +2623,7 @@ function verParadaNoMapa(i, forcar){
   const s = stops[i];
   if (!s || !map) return;
   if (zoomAoClicar || forcar)
-    map.setView([s.lat, s.lng], Math.max(map.getZoom(), ZOOM_DA_PARADA), { animate:true });
+    centralizarVisivel([s.lat, s.lng], Math.max(map.getZoom(), ZOOM_DA_PARADA), true);
   const m = marcadorDaParada(i);
   if (m && m.openPopup) m.openPopup();   // diz qual é, quando há vários por perto
   realcarParada(i, true, false);
@@ -3579,7 +3695,7 @@ function setOrigin(lat, lng, label, abrirPopup = true, enquadrar = false){
   // animate:false de propósito: a animação de deslocamento fica congelada
   // enquanto a aba não está à vista, e o mapa pararia no meio do caminho se o
   // usuário trocasse de aba logo depois de clicar. Ir direto é previsível.
-  if (enquadrar) map.setView([lat, lng], Math.max(map.getZoom(), 16), { animate:false });
+  if (enquadrar) centralizarVisivel([lat, lng], Math.max(map.getZoom(), 16), false);
 }
 
 /* ---------------- Origem padrão salva no navegador ---------------- */
@@ -3962,7 +4078,7 @@ function drawResult(distance, duration, geometry, legs){
   if (!efeitoLigado()){
     // animate:false porque este é o caminho de quem pediu MENOS animação no
     // sistema: até o deslize do enquadramento sai
-    map.fitBounds(enquadrar, { padding:[40,40], animate:false });
+    map.fitBounds(enquadrar, { ...paddingDoMapa(), animate:false });
     elDist.textContent = `${(distance/1000).toFixed(1)} km`;
     elTempo.textContent = `${Math.round(duration/60)} min`;
   }else{
@@ -3971,7 +4087,7 @@ function drawResult(distance, duration, geometry, legs){
        comprimento medido antes do voo não valeria mais no fim dele. */
     const path = routeLine.getElement();
     path.style.opacity = '0';
-    map.flyToBounds(enquadrar, { padding:[40,40], duration: VOO_ROTA });
+    map.flyToBounds(enquadrar, { ...paddingDoMapa(), duration: VOO_ROTA });
 
     // Onde cada parada cai ao longo do caminho, em fração da distância total:
     // é o que faz o número acender quando a linha chega nele, e não em
@@ -4005,7 +4121,7 @@ function drawResult(distance, duration, geometry, legs){
          Então aqui não há efeito nenhum: enquadra na marra e mostra tudo
          pronto, que é o que o usuário vai encontrar ao voltar para a aba. */
       if (instantaneo){
-        map.fitBounds(enquadrar, { padding:[40,40], animate:false });
+        map.fitBounds(enquadrar, { ...paddingDoMapa(), animate:false });
         mostrarParadas();
         mostrarResumo();
         return;
@@ -4115,8 +4231,25 @@ function atualizarRotaGrudada(){
   const h = corpo.getBoundingClientRect().height;
   const jaGrudado = corpo.classList.contains('grudado');
   const margem = jaGrudado ? FOLGA : 0;
-  const dentro = sy < c.bottom - 1 - margem && sy > c.top + h + margem;
-  corpo.classList.toggle('grudado', !dentro);
+  /* ⚠️ A folga vale só para a borda DE BAIXO (v8.1.0, pelo print do usuário).
+     No topo ela sobrava: com o módulo na primeira posição e a coluna sem rolar,
+     a sentinela fica em c.top + h - 16 (os 16px vêm do padding/margem negativa
+     que o módulo usa para cobrir o respiro da coluna), e a conta antiga exigia
+     c.top + h + 120 — ou seja, ele nascia "grudado" parado no lugar dele. Antes
+     isso só ligava o modo compacto à toa (o "Voltar para a origem no fim"
+     sumia); com o vidro passou a pintar um bloco escuro dentro do cartão.
+     A oscilação que a folga resolveu na v7.1.0 é só de baixo: lá o módulo
+     encolhe ao grudar e a sentinela reaparece. No topo, encolher move a
+     sentinela e o h na mesma medida, então a comparação não oscila — só
+     precisa da tolerância dos 16px. */
+  const dentro = sy < c.bottom - 1 - margem && sy > c.top + h - 20;
+
+  const grudado = !dentro;
+  corpo.classList.toggle('grudado', grudado);
+  // Nas colunas quem gruda é a section, não o corpo: ela precisa da marca para
+  // receber o fundo (ver a regra .guia > .modulo-movel.rota-grudada)
+  const secao = corpo.closest('.modulo-movel');
+  if (secao) secao.classList.toggle('rota-grudada', grudado);
 }
 if (!modoCampoAtivo){
   // Sem requestAnimationFrame de propósito: o navegador o pausa quando a aba não

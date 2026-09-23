@@ -5438,3 +5438,116 @@ TESTES
   prefers-reduced-motion simulado: sem dasharray, sem classes, km/min
     direto e enquadramento instantâneo (zoom 11 -> 14).
   Sem erro no console.
+
+--------------------------------------------------------
+[22/09/2026] v8.1.0 — Vidro: o mapa passa por baixo do painel
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "É possível aplicar um efeito de transparência nas colunas?" e, depois:
+  "tire como exemplo o glass da Apple". Foi montada a COMPARACAO-VIDRO.html
+  com quatro modos (como é hoje / vidro simples / vidro Apple / Liquid) e
+  cinco controles. Na primeira versão ele achou que "bugou" e pediu
+  "transparente, mas não ao ponto de sumir"; corrigido, ele aprovou o
+  modo Apple com os valores calmos.
+
+O QUE FOI FEITO
+  · O mapa deixou de dividir a linha com o painel: agora é absoluto, ocupa
+    a tela inteira e fica POR BAIXO. O painel e as colunas viram cartões
+    flutuantes (margem de 12px, cantos de 18px).
+  · Material do vidro: tinta em gradiente (84% em cima, 94% embaixo),
+    backdrop-filter blur(16px) saturate(140%), VÉU escuro de 18% atrás do
+    conteúdo, fio de luz de 1px na borda e sombra de 34px.
+    No tema claro o véu e o fio viram claros.
+  · As caixas de dentro (linhas, campos, resumo, botões de ícone) foram a
+    80% de opacidade — sólidas, virariam blocos boiando no vidro.
+  · A divisória de largura perdeu o fundo: sobre o mapa, um bloco com a cor
+    do app cortaria o mapa em duas. Ficou só o risquinho.
+  · Tela estreita (<=760px): tudo volta ao empilhado de antes — mapa em
+    cima, painel embaixo, sem vidro.
+
+ENQUADRAMENTO (a parte funcional, não é enfeite)
+  Com o mapa passando por baixo, enquadrar "no mapa inteiro" jogaria a rota
+  para debaixo do painel. Entraram três apoios:
+  · folgaDasColunas() — quanto da largura está coberto pelos cartões;
+  · paddingDoMapa() — usado nos fitBounds/flyToBounds (base carregada e os
+    três enquadramentos do efeito da v8.0.0);
+  · centralizarVisivel() — usado ao clicar numa parada e ao definir origem.
+  ⚠️ O centro deslocado é CALCULADO, não um panBy depois do setView: com o
+  pan, o resultado dependia de a animação ter rodado, e quando ela não roda
+  só o pan valia — a parada ia parar na borda (medido: x=8 numa área visível
+  de 676px). Calculando, cai no meio da área visível (medido: x=338 de 676).
+
+MEDIDAS (janela de 1400px)
+  Mapa: de ~580px (painel + duas colunas ao lado) para 1400px de largura.
+  Folga descontada no enquadramento: 724px com painel + uma coluna.
+  Rota traçada: todo o traçado entre x=123 e x=553, dentro dos 676px
+    visíveis — nada escondido atrás do painel.
+
+AJUSTE DENTRO DA MESMA VERSÃO (relatado pelo usuário, com print)
+  "Ao mover o módulo da Rota fica um fundo mais forte por dentro." Era o
+  fundo SÓLIDO que ele tem desde a v6.5 (var(--panel)) para tapar a lista
+  que rola por baixo quando está grudado: sobre o vidro isso virava um
+  bloco escuro dentro do cartão, em qualquer posição do módulo.
+  Agora o fundo entra SÓ quando ele está flutuando de verdade — parado no
+  lugar dele não há nada passando por baixo, então não precisa de fundo. E,
+  grudado, ele ganha o material do cartão (92% + blur 10px), não mais uma
+  cor chapada. A marca "grudado" passou a ser espelhada na section
+  (classe rota-grudada), porque nas colunas quem gruda é ela, e não o corpo.
+  Medido: no lugar, fundo rgba(0,0,0,0) e sem desfoque; depois de rolar,
+  fundo a 92% com blur(10px) saturate(140%).
+
+  SEGUNDO PRINT (o fundo continuava aparecendo com o módulo no TOPO)
+  A causa era outra, e mais antiga: a FOLGA de 120px da v7.1.0 estava sendo
+  aplicada também na borda de cima. Com o módulo na primeira posição e a
+  coluna sem rolar, a sentinela fica em c.top + h - 16 (os 16px são do
+  padding/margem negativa que ele usa para cobrir o respiro da coluna), e a
+  conta exigia c.top + h + 120 — ou seja, ele NASCIA grudado, parado no
+  lugar dele. Até a v8.0.0 isso só ligava o modo compacto à toa (o "Voltar
+  para a origem no fim" sumia sem motivo); com o vidro virou um bloco
+  escuro dentro do cartão.
+  A folga agora vale só para a borda de baixo, que é onde a oscilação da
+  v7.1.0 acontecia (lá o módulo encolhe ao grudar e a sentinela reaparece).
+  Em cima ficou uma tolerância de 20px, suficiente para os 16.
+  ⚠️ Tentativa descartada antes desta: medir o DESLOCAMENTO do módulo em
+  relação ao lugar natural (offsetTop - scrollTop). Não funciona — o
+  offsetTop de um elemento sticky já vem com o deslocamento embutido, então
+  a conta dava zero sempre (medido: offsetTop subindo 16 -> 216 -> 516 -> 771
+  junto com o scroll, com o rectTop parado em 93).
+  Medido depois da correção, com o módulo na primeira posição: scroll 0 ->
+  solto, fundo transparente e opção de retorno visível; scroll 89 e 201 ->
+  grudado, fundo a 92%, compacto; voltando a 0 -> solto de novo. Na coluna
+  auxiliar (que não rola) ele fica sempre solto e transparente.
+
+  TERCEIRO PRINT (sobra embaixo do módulo Rota)
+  Era a linha de status: .status tem min-height de 16px e #status tem 14px
+  de margem, então ela reservava 30px mesmo sem recado nenhum. Dentro do
+  cartão de vidro essa sobra ficou à vista. Agora #status:empty some — a
+  mesma regra que a linha de avisos do módulo Clientes usa desde a v7.4.0.
+  Medido com o módulo solto: sem recado, módulo de 121px e o último
+  elemento visível passa a ser a opção "Voltar para a origem no fim";
+  com recado, 152px (+31) e o status aparece; apagando, volta a 121.
+
+  QUARTO RELATO (ficou curto: o módulo de baixo quase encostava)
+  Com a sobra do status fora, apareceu o que ela escondia: o módulo Rota
+  tem padding:16px 0 com margin:-16px 0 — a margem negativa puxava o módulo
+  seguinte 16px para cima. Esse par existe para ele cobrir o respiro de
+  16px da coluna ENQUANTO GRUDA; parado no lugar, não serve para nada.
+  Passou para o estado grudado, junto com o fundo.
+  E, com ele fora, apareceu um segundo detalhe: a SENTINELA é um item de
+  layout do painel (a section é display:contents), então ela comia um
+  segundo gap de 14px — o módulo abaixo da Rota ficava com 28px de respiro
+  contra os 14 dos outros. Uma margem negativa de -14px na sentinela
+  cancela esse gap sem mover a sentinela (mover deslocaria o limiar do
+  "grudado", que depende da posição dela).
+  Medido: vão entre módulos comuns 14px; Rota -> módulo de baixo, solto,
+  14px (era 12px antes de tudo isso, e 28px no meio do caminho); grudado,
+  negativo, que é o módulo flutuando por cima como deve.
+
+TESTES
+  Tema escuro e claro conferidos (no claro o véu é branco a 35%).
+  Tela de 700px: mapa volta a static, painel sem margem, sem cantos e sem
+    desfoque, folga = 0.
+  Módulo arrastado para a coluna continua funcionando (a detecção do destino
+    usa as caixas das colunas, não a do mapa).
+  Sem erro no console.
