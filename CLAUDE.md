@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 23/09/2026 — v8.2.0 (fluidez do vidro)
+> **Última atualização:** 23/09/2026 — v8.3.0 (o mapa ficava por cima do painel)
 
 ---
 
@@ -212,6 +212,21 @@ sem dependências instaladas. Abre direto no navegador.
     `prefers-reduced-transparency` do sistema — o "efeitos de transparência" do
     Windows. ⚠️ A regra vive dentro de `@media (min-width:761px)`: em tela
     estreita quem manda é o empilhado, e os dois modos dão o mesmo layout.
+  ⚠️ **O `#map` nunca pode virar `position:static`** (v8.3.0, relatado com
+  print: "com o vidro desligado o mapa fica por cima"). Os painéis do Leaflet —
+  ladrilhos, marcadores, traçado — são `position:absolute` e se ancoram no
+  primeiro ancestral **posicionado**; com o mapa static esse ancestral vira o
+  corpo da página, os painéis saem da caixa dele (o `overflow:hidden` não
+  recorta um absoluto cujo ancestral é outro) e pintam **por cima do painel**,
+  esticando a janela (medido: `offsetParent` do `.leaflet-map-pane` de `map`
+  para o corpo, e o documento de 1280px para 1338px). Tanto a regra do vidro
+  desligado quanto a de tela estreita usam `position:relative; inset:auto`.
+  ⚠️ Até a v8.0.0 o `#map` não tinha `position` no CSS e o **próprio Leaflet**
+  escrevia `relative` inline ao nascer — por isso isto nunca tinha aparecido. A
+  v8.1.0 pôs `absolute`, e aí o Leaflet deixa de escrever o inline: quem abre
+  com vidro e desliga depois fica sem a rede. ⚠️ E o teste que não pega isso é
+  **recarregar já desligado** — aí o mapa nasce static, o Leaflet se salva
+  sozinho e tudo parece certo. O caminho quebrado é abrir com vidro e desligar.
   ⚠️ `folgaDasColunas()` devolve **0** com o vidro desligado — o mapa não passa
   mais por baixo de nada. ⚠️ **A melhora não foi medida**: na máquina de casa o
   problema não reproduz. O que dá para afirmar é o que saiu do caminho —
@@ -1078,6 +1093,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 88 | **v8.0.0** — Efeito ao traçar a rota: voo, linha se desenhando, números em sequência e km/min contando |
 | 89 | **v8.1.0** — Vidro: o mapa passa por baixo do painel e das colunas |
 | 90 | **v8.2.0** — Fluidez: o borrão sai enquanto o mapa se mexe, e um interruptor desliga o vidro |
+| 91 | **v8.3.0** — Correção: o mapa pintava por cima do painel com o vidro desligado |
 
 ---
 
@@ -1144,7 +1160,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.2.0
+8.3.0
 ```
 
 ### Onde o número aparece
@@ -1259,3 +1275,4 @@ os backups locais são conveniência, não garantia.
 | 8.0.0 | 19/09/2026 | Efeito ao traçar a rota |
 | 8.1.0 | 22/09/2026 | Vidro: o mapa por baixo do painel e das colunas |
 | 8.2.0 | 23/09/2026 | Fluidez do vidro (travava em máquina com vídeo integrado) |
+| 8.3.0 | 23/09/2026 | Correção: o mapa pintava por cima do painel sem o vidro |

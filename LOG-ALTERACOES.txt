@@ -5630,3 +5630,53 @@ TESTES
   getComputedStyle devolvendo vazio para um documento que ainda não pintou —
   o Leaflet então conclui que a posição é static e "conserta". Depois de um
   reload não acontece, e no site publicado não acontece. Não é do app.
+
+--------------------------------------------------------
+[23/09/2026] v8.3.0 — Correcao: o mapa ficava por cima do painel
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  Print da v8.2.0 com o vidro desligado: "com o vidro desligado o mapa fica
+  por cima". Os ladrilhos cobriam a metade esquerda do painel (o endereço, os
+  nomes dos clientes e os botões apareciam cortados no meio da palavra) e a
+  janela ganhou uma barra de rolagem horizontal.
+
+CAUSA
+  Os painéis do Leaflet — ladrilhos, marcadores, traçado — são
+  `position:absolute` e se ancoram no primeiro ancestral POSICIONADO. As duas
+  regras que tiram o vidro punham o #map em `position:static`:
+    · :root[data-vidro="0"] #map   (v8.2.0, o interruptor)
+    · #map dentro de @media (max-width:760px)   (v8.1.0, tela estreita)
+  Com o #map static, o ancestral posicionado passa a ser o corpo da página: os
+  painéis saem da caixa do mapa, o `overflow:hidden` não os segura (ele não
+  recorta um absoluto cujo ancestral é outro) e eles pintam por cima do painel.
+  Medido: offsetParent do .leaflet-map-pane de "map" para o corpo, e o
+  documento de 1280px para 1338px de largura.
+
+  ⚠️ POR QUE SÓ APARECEU AGORA. Até a v8.0.0 o #map não tinha `position`
+  nenhum no CSS: nascia static, e o próprio Leaflet escrevia
+  `style="position:relative"` ao inicializar — ele faz isso justamente para
+  garantir a âncora. A v8.1.0 pôs `position:absolute`, então o Leaflet vê uma
+  posição válida e NÃO escreve o inline. Quem desliga o vidro depois de a
+  página ter aberto fica sem rede.
+
+  ⚠️ POR QUE O TESTE DA v8.2.0 NÃO PEGOU. Eu testei recarregando a página já
+  com o vidro desligado — e aí o mapa nasce static, o Leaflet escreve o inline
+  e tudo funciona. O caminho quebrado é o outro: abrir COM vidro e desligar.
+  O sinal estava na minha própria medição (scrollWidth 1338 num viewport de
+  1280) e eu o descartei como "provavelmente não é novo". Era.
+
+O QUE FOI FEITO
+  `position:relative` (com `inset:auto`, para desfazer o `inset:0` da regra do
+  vidro, que num relative viraria deslocamento) nas DUAS regras. A caixa do
+  mapa é a mesma de um static em fluxo normal, e a âncora dos painéis volta.
+
+TESTES (janela de 1280)
+  Abrindo com vidro e desligando:   mapa 933px, painel em x=940, sem sobrepor,
+    documento 1280px, âncora dos painéis de volta no #map.
+  Abrindo já sem vidro:             idem.
+  Ligando de volta:                 mapa 1280px, painel flutuando por cima
+    (que é o que o vidro é), documento 1280px.
+  Tela de 375px, com e sem vidro:   mapa 375x390, painel embaixo, âncora no
+    #map, documento 375px.
+  Sem erro no console.
