@@ -269,6 +269,11 @@
   .icone-btn:hover{color:var(--text); background:var(--hover);}
   #arranjoNormalBtn:hover{color:var(--danger);}
   .icone-btn:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
+  /* Liga/desliga o vidro (v8.2.0). Mesmo idioma do botão de zoom do módulo 4:
+     o estado padrão é discreto e o estado trocado fica riscado e em âmbar. */
+  .vidro-btn .risco{display:none;}
+  .vidro-btn.desligado{color:var(--amber);}
+  .vidro-btn.desligado .risco{display:inline;}
   /* Confirmação rápida depois de salvar: o disquete vira um ✓ */
   .icone-check{display:none;}
   #salvarArranjoBtn.salvo .icone-disquete{display:none;}
@@ -327,6 +332,67 @@
   .guia .btn-icon, .console .btn-icon{
       background:color-mix(in srgb, var(--panel-2) 80%, transparent);
   }
+  /* ---- Fluidez do vidro (v8.2.0, relatado pelo usuário) ----
+     O vidro não é desenhado uma vez só: o navegador REFAZ o borrão a cada
+     quadro em que muda alguma coisa atrás do painel. E o que está atrás é o
+     mapa, que na v8.1.0 passou de ~580px para a tela inteira e ainda carrega o
+     filtro de cor dos ladrilhos (v3.4) — o borrão tem de ler a saída já
+     filtrada, num retângulo de ~700x900px, a cada quadro do arraste.
+     Numa máquina com vídeo integrado isso derruba o mapa para 20-30 quadros por
+     segundo (computador do trabalho do usuário; no de casa, mais forte, não
+     aparece — mesmo arquivo, mesma versão).
+     Enquanto o mapa se mexe ninguém está lendo o painel, então o borrão sai e a
+     tinta vira opaca. A mistura é a MESMA de cima, só com --map-bg no lugar da
+     transparência: com o véu, o que passa do mapa é ~13% no topo e ~5% embaixo,
+     e a média dessa fração é justamente a cor do fundo do mapa — por isso a
+     troca não aparece, nem no tema claro (onde --map-bg é claro também). */
+  body.vidro-parado .guia, body.vidro-parado .console{
+      backdrop-filter:none; -webkit-backdrop-filter:none;
+      background:linear-gradient(to bottom,
+                 color-mix(in srgb, var(--panel) 84%, var(--map-bg)),
+                 color-mix(in srgb, var(--panel) 94%, var(--map-bg)));
+  }
+
+  /* ---- Vidro desligado (v8.2.0) ----
+     A saída para a máquina que não dá conta: volta o layout de antes da v8.1.0,
+     com o mapa dividindo a linha com as colunas opacas. Aí não há borrão nenhum
+     para refazer E o mapa volta a ter ~metade da largura, então o filtro dos
+     ladrilhos também custa menos — são os dois custos de uma vez.
+     Fica preso no data-vidro do <html>, e não numa classe do body, porque o
+     script do <head> precisa aplicá-lo ANTES da primeira pintura: senão quem
+     desligou o vidro veria a tela abrir com ele e dar um salto (o mesmo motivo
+     do tema).
+     Só vale em tela larga — na estreita o layout empilhado lá embaixo já faz
+     isso, e ele é que manda. */
+  @media (min-width:761px){
+    :root[data-vidro="0"] main{justify-content:initial;}
+    :root[data-vidro="0"] #map{position:static; z-index:auto; isolation:auto; flex:1; min-height:0;}
+    :root[data-vidro="0"] .guia, :root[data-vidro="0"] .console{
+        margin:0; border-radius:0; box-shadow:none;
+        background:var(--panel); border-left:1px solid var(--line);
+        backdrop-filter:none; -webkit-backdrop-filter:none;
+    }
+    /* A divisória volta a ter fundo: sem o mapa por baixo, ela é só a emenda
+       entre dois blocos opacos, como era até a v8.0.0 */
+    :root[data-vidro="0"] .divisor{background:var(--ink);}
+    /* E as caixas de dentro voltam a ser sólidas: a 80% elas mostrariam o
+       painel opaco atrás, que é uma cor diferente da que elas deveriam ter */
+    :root[data-vidro="0"] .guia .check-row,    :root[data-vidro="0"] .console .check-row,
+    :root[data-vidro="0"] .guia .stop-row,     :root[data-vidro="0"] .console .stop-row,
+    :root[data-vidro="0"] .guia .resumo-rota,  :root[data-vidro="0"] .console .resumo-rota,
+    :root[data-vidro="0"] .guia input[type="text"], :root[data-vidro="0"] .console input[type="text"],
+    :root[data-vidro="0"] .guia .tipos-painel, :root[data-vidro="0"] .console .tipos-painel,
+    :root[data-vidro="0"] .guia .go-btn.secondary, :root[data-vidro="0"] .console .go-btn.secondary,
+    :root[data-vidro="0"] .guia .btn-lista,    :root[data-vidro="0"] .console .btn-lista,
+    :root[data-vidro="0"] .guia .btn-icon,     :root[data-vidro="0"] .console .btn-icon{
+        background:var(--panel-2);
+    }
+    /* Sem vidro, o módulo Rota grudado volta a ser opaco: é ele que tapa a
+       lista rolando por baixo, e a 94% sobraria um fantasma do texto passando */
+    :root[data-vidro="0"] #moduloRota.grudado,
+    :root[data-vidro="0"] .guia > .modulo-movel.rota-grudada{background:var(--panel);}
+  }
+
   /* Divisória arrastável entre o mapa e o painel */
   /* Sem fundo desde a v8.1.0: a divisória agora fica SOBRE o mapa, e um bloco
      com a cor do app cortaria o mapa em duas. Fica só o risquinho do ::after. */
@@ -766,9 +832,13 @@
        quase encostar (relatado pelo usuário). Solto, vale o gap de 14px da
        coluna, como em qualquer outro módulo. */
     padding:16px 0; margin:-16px 0;
-    background:color-mix(in srgb, var(--panel) 92%, transparent);
-    backdrop-filter:blur(10px) saturate(140%);
-    -webkit-backdrop-filter:blur(10px) saturate(140%);
+    /* ⚠️ Sem backdrop-filter desde a v8.2.0: o que está atrás deste módulo é o
+       próprio cartão de vidro, que JÁ vem borrado. Era um segundo borrão em
+       cima do primeiro — um passe a mais por quadro, aninhado dentro do
+       primeiro (o caso mais caro que existe), para não mudar nada que se veja.
+       A tinta subiu de 92% para 94% e resolve sozinha: o que passa é 6% de uma
+       imagem que já está desfocada. */
+    background:color-mix(in srgb, var(--panel) 94%, transparent);
     box-shadow:0 -10px 14px -12px var(--sombra), 0 10px 14px -12px var(--sombra);
   }
 
@@ -871,6 +941,7 @@
     .divisor{display:none;}
     .guia{display:none;}
     .arranjo-acoes{display:none;}
+    .vidro-btn{display:none;}   /* em tela estreita o vidro já não existe */
     .cab-divisor{display:none;}
     .console{width:auto;max-height:56%;border-left:none;border-top:1px solid var(--line);}
     /* Em tela estreita o painel inteiro tem pouca altura: um checklist de 320px
@@ -1080,6 +1151,19 @@
     var t = null;
     try{ t = localStorage.getItem('hg_tema'); }catch(e){ /* localStorage bloqueado */ }
     document.documentElement.setAttribute('data-tema', t === 'claro' ? 'claro' : 'escuro');
+    /* O vidro entra aqui pelo mesmo motivo (v8.2.0): aplicado só no script do
+       fim da página, quem o deixou desligado veria a tela abrir com o painel
+       translúcido e o mapa inteiro, e dar um salto para o layout opaco. */
+    var v = null;
+    try{ v = localStorage.getItem('hg_vidro'); }catch(e){}
+    if (v === null){
+      /* Sem escolha guardada, quem manda é o sistema: desligar "efeitos de
+         transparência" no Windows é exatamente este pedido, e quem desliga
+         costuma fazê-lo por causa da máquina. */
+      try{ v = window.matchMedia('(prefers-reduced-transparency: reduce)').matches ? '0' : '1'; }
+      catch(e){ v = '1'; }
+    }
+    document.documentElement.setAttribute('data-vidro', v === '0' ? '0' : '1');
   })();
 </script>
 </head>
@@ -1109,6 +1193,17 @@
       </button>
     </div>
       <span class="cab-divisor" aria-hidden="true"></span>
+      <!-- Vidro ligado/desligado (v8.2.0). Desligado, o painel volta a ser opaco
+           e o mapa divide a linha com ele, como era até a v8.0.0 — é a saída
+           para a máquina que não dá conta do desfoque. -->
+      <button class="icone-btn vidro-btn" type="button" role="switch" aria-checked="true"
+              data-vidro-btn aria-label="Vidro no painel">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.2" y="3.2" width="12" height="12" rx="2.6"/>
+          <path d="M8.8 20.8h9a3 3 0 0 0 3-3v-9"/>
+          <path class="risco" d="M3.5 20.5L20.5 3.5"/>
+        </svg>
+      </button>
       <button class="icone-btn tema-btn" type="button" role="switch" aria-checked="true"
               data-tema-btn aria-label="Tema claro ou escuro">
         <svg class="icone-lua" viewBox="0 0 24 24" aria-hidden="true">
@@ -1491,7 +1586,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.1.0';
+const VERSAO = '8.2.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1678,11 +1773,65 @@ document.querySelectorAll('[data-tema-btn]').forEach(b => {
 });
 aplicarTema(temaAtual(), false); // acerta o ícone do tema no estado salvo
 
+/* ---------------- Fluidez do vidro (v8.2.0) ----------------
+   Ver o comentário no CSS: o borrão é refeito a cada quadro em que o mapa muda,
+   e numa máquina com vídeo integrado isso sozinho segura o arraste em 20-30
+   quadros por segundo. Enquanto o mapa se mexe o borrão sai e volta uma tinta
+   opaca da mesma cor — dá para desligar porque ninguém lê o painel no meio de
+   um arraste. */
+let tempoVidro = null;
+function congelarVidro(ms){
+  clearTimeout(tempoVidro);
+  document.body.classList.add('vidro-parado');
+  /* ⚠️ Rede de segurança, a mesma família de armadilha das v6.5/v6.9/v8.0.0:
+     se o fim do movimento não chegar (aba sem pintura pausa o relógio de
+     quadros e o moveend não vem), o vidro voltaria congelado para sempre. */
+  tempoVidro = setTimeout(() => document.body.classList.remove('vidro-parado'), ms || 2500);
+}
+function descongelarVidro(atraso){
+  clearTimeout(tempoVidro);
+  /* ⚠️ Com atraso, e não na hora: o zoom pela rodinha dispara um moveend por
+     degrau, e voltar o borrão entre um degrau e outro custaria mais caro que
+     tê-lo deixado ligado. Qualquer movimento novo cancela este relógio. */
+  tempoVidro = setTimeout(() => document.body.classList.remove('vidro-parado'),
+                          typeof atraso === 'number' ? atraso : 150);
+}
+if (map){
+  map.on('movestart zoomstart', () => congelarVidro());
+  map.on('moveend zoomend', () => descongelarVidro());
+}
+
+/* ---------------- Vidro ligado ou desligado (v8.2.0) ----------------
+   Desligado, o app volta ao layout de antes da v8.1.0: painel opaco e mapa ao
+   lado. É preferência guardada no navegador, como o tema e o zoom da parada. */
+const CHAVE_VIDRO = 'hg_vidro';
+function vidroLigado(){ return document.documentElement.getAttribute('data-vidro') !== '0'; }
+function aplicarVidro(lig, salvar){
+  document.documentElement.setAttribute('data-vidro', lig ? '1' : '0');
+  document.querySelectorAll('[data-vidro-btn]').forEach(b => {
+    b.classList.toggle('desligado', !lig);
+    b.setAttribute('aria-checked', String(lig));
+    b.title = lig
+      ? 'Vidro ligado: o mapa passa por baixo do painel. Clique para desligar — em máquina mais fraca o mapa fica mais fluido.'
+      : 'Vidro desligado: painel opaco e mapa ao lado, como antes. Clique para ligar.';
+  });
+  if (salvar){ try{ localStorage.setItem(CHAVE_VIDRO, lig ? '1' : '0'); }catch(e){} }
+  // O mapa muda de tamanho junto (de absoluto para dividir a linha com as
+  // colunas), então o Leaflet precisa remedir — senão faltam ladrilhos de um
+  // lado. No quadro seguinte, com o layout novo já valendo.
+  if (map) setTimeout(() => map.invalidateSize(), 0);
+}
+document.querySelectorAll('[data-vidro-btn]').forEach(b => {
+  b.addEventListener('click', () => aplicarVidro(!vidroLigado(), true));
+});
+aplicarVidro(vidroLigado(), false);   // acerta o ícone no estado que o <head> aplicou
+
 /* Quanto da largura da tela está coberto pelos cartões de vidro (v8.1.0).
    Com o mapa passando por baixo deles, enquadrar "no mapa inteiro" jogaria a
    rota para debaixo do painel: tudo que enquadra desconta esta folga. */
 function folgaDasColunas(){
-  if (!telaComportaGuia()) return 0;   // empilhado: o painel não cobre o mapa
+  // Sem vidro o mapa não passa por baixo de nada: não há folga a descontar
+  if (!telaComportaGuia() || !vidroLigado()) return 0;   // empilhado: o painel não cobre o mapa
   let total = 0;
   document.querySelectorAll('main > .console, main > .guia:not([hidden])')
           .forEach(el => { const r = el.getBoundingClientRect(); if (r.width) total += r.width + 12; });
@@ -4135,6 +4284,10 @@ function drawResult(distance, duration, geometry, legs){
       path.getBoundingClientRect();                       // força o navegador a aplicar antes da transição
       path.style.transition = `stroke-dashoffset ${DUR_ROTA}ms linear`;
       path.style.strokeDashoffset = 0;
+      /* A linha se desenhando também muda pixels debaixo do painel, quadro a
+         quadro, e refaria o borrão junto (v8.2.0). Segura o congelamento até o
+         fim do traçado — o moveend do voo acabou de pedir para descongelar. */
+      congelarVidro(DUR_ROTA + 300);
       stopMarkers.forEach((m, i) => {
         const el = m.getElement();
         if (!el) return;

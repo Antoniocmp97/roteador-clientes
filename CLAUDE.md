@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 22/09/2026 — v8.1.0 (vidro: o mapa passa por baixo do painel)
+> **Última atualização:** 23/09/2026 — v8.2.0 (fluidez do vidro)
 
 ---
 
@@ -172,6 +172,50 @@ sem dependências instaladas. Abre direto no navegador.
   Resolvido com `margin-bottom:-14px` **na sentinela** — mover a sentinela em si
   deslocaria o limiar do "grudado", que depende da posição dela. Medido no fim:
   14px entre módulos comuns e 14px da Rota para o de baixo
+- **Vidro que sai de cena quando atrapalha** (v8.2.0, relatado pelo usuário:
+  "testei no trabalho e ficou meio travado, como se estivesse rodando a 20-30
+  fps"; na máquina dele de casa o mesmo arquivo roda liso).
+  ⚠️ **O `backdrop-filter` não é desenhado uma vez só**: o navegador refaz o
+  borrão a cada quadro em que muda alguma coisa **atrás** do painel — e o que
+  está atrás, desde a v8.1.0, é o mapa inteiro. Três agravantes somados: o mapa
+  passou de ~580px para a largura toda, os ladrilhos carregam o filtro de quatro
+  estágios da v3.4 (então o borrão lê uma saída **já filtrada**) e o módulo Rota
+  grudado tinha borrão próprio **dentro** do cartão que já tinha o seu. Numa
+  janela de 1280 são ~724×640px de borrão por quadro. Com vídeo dedicado passa
+  despercebido; com vídeo integrado, não. Três frentes:
+  · **Enquanto o mapa se mexe, o borrão sai** (`body.vidro-parado`, ligada no
+    `movestart`/`zoomstart`, desligada 150ms depois do `moveend`) e entra uma
+    tinta opaca **da mesma cor**: a mistura de 84%/94% passa a ser com
+    `--map-bg` no lugar da transparência. Não é aproximação — o véu já deixa
+    passar só ~13% do mapa, e a conta fecha no mesmo pixel (medido: srgb 0.0800
+    nos dois casos no escuro, 0.9862 nos dois no claro). O desenho da linha da
+    v8.0.0 congela junto, que é o mesmo tipo de movimento.
+    ⚠️ **O atraso de 150ms para voltar não é enfeite**: o zoom pela rodinha
+    dispara um `moveend` por degrau, e devolver o borrão entre um degrau e outro
+    custaria mais caro que tê-lo deixado ligado. ⚠️ E há rede de segurança de
+    2,5s, pela armadilha de sempre (v6.5/v6.9/v8.0.0): em aba sem pintura o
+    `moveend` pode não chegar, e o vidro ficaria congelado para sempre.
+  · **O módulo Rota grudado perdeu o `backdrop-filter`** de vez: o que está
+    atrás dele é o próprio cartão, que **já vem borrado** — borrão aninhado em
+    borrão, o caso mais caro que existe, para não mudar nada que se veja. A
+    tinta subiu de 92% para 94%. Sem vidro ele volta a ser **opaco**, senão
+    sobraria um fantasma da lista rolando por baixo.
+  · **Interruptor no cabeçalho** (`hg_vidro`, ícone de camadas ao lado do tema,
+    riscado e em âmbar quando desligado — o mesmo idioma da lupa do módulo 4):
+    desligado, o app volta ao **layout de antes da v8.1.0**, com o painel opaco
+    e o mapa dividindo a linha. Aí não há borrão nenhum **e** o mapa volta a
+    ~metade da largura, então o filtro dos ladrilhos também custa menos — os
+    dois custos de uma vez (medido numa janela de 1280: mapa de 1280px para
+    918px, e 551px com uma coluna aberta). ⚠️ Mora em `data-vidro` no `<html>` e
+    é aplicado pelo script do `<head>`, **antes da primeira pintura**, pelo
+    mesmo motivo do tema. Sem escolha guardada, quem manda é o
+    `prefers-reduced-transparency` do sistema — o "efeitos de transparência" do
+    Windows. ⚠️ A regra vive dentro de `@media (min-width:761px)`: em tela
+    estreita quem manda é o empilhado, e os dois modos dão o mesmo layout.
+  ⚠️ `folgaDasColunas()` devolve **0** com o vidro desligado — o mapa não passa
+  mais por baixo de nada. ⚠️ **A melhora não foi medida**: na máquina de casa o
+  problema não reproduz. O que dá para afirmar é o que saiu do caminho —
+  durante um arraste, de até **três borrões** para **nenhum**
 - **O mapa acompanha o tema**: no escuro usa o Esri Dark Gray com um tratamento
   de cor que reproduz a referência do usuário (ver seção 5); no claro **troca de
   ladrilhos** para o Esri Light Gray, que é onde ruas e rótulos foram desenhados
@@ -807,8 +851,8 @@ repositório é público (ver `.gitignore`).
   brasileiros (Google, Mapbox), com cadastro e chave de acesso.
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
   origem padrão, a lista de tipos de serviço, a preferência de formato do link,
-  a opção de voltar para a origem, o zoom ao clicar na parada,
-  a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
+  a opção de voltar para a origem, o zoom ao clicar na parada, o vidro ligado
+  ou desligado, a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
   botão), o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
   recarregar a página zera essa parte, de propósito (é o roteiro do dia, não
@@ -1033,6 +1077,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 87 | **v7.9.2** — Rodapé da tela do campo removido (frase e atalho do escritório) |
 | 88 | **v8.0.0** — Efeito ao traçar a rota: voo, linha se desenhando, números em sequência e km/min contando |
 | 89 | **v8.1.0** — Vidro: o mapa passa por baixo do painel e das colunas |
+| 90 | **v8.2.0** — Fluidez: o borrão sai enquanto o mapa se mexe, e um interruptor desliga o vidro |
 
 ---
 
@@ -1099,7 +1144,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.1.0
+8.2.0
 ```
 
 ### Onde o número aparece
@@ -1213,3 +1258,4 @@ os backups locais são conveniência, não garantia.
 | 7.9.2 | 19/09/2026 | Rodapé da tela do campo removido |
 | 8.0.0 | 19/09/2026 | Efeito ao traçar a rota |
 | 8.1.0 | 22/09/2026 | Vidro: o mapa por baixo do painel e das colunas |
+| 8.2.0 | 23/09/2026 | Fluidez do vidro (travava em máquina com vídeo integrado) |

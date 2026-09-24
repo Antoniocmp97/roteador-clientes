@@ -5551,3 +5551,82 @@ TESTES
   Módulo arrastado para a coluna continua funcionando (a detecção do destino
     usa as caixas das colunas, não a do mapa).
   Sem erro no console.
+
+--------------------------------------------------------
+[23/09/2026] v8.2.0 — Fluidez do vidro
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Testei no trabalho e ficou meio travado, como se estivesse rodando a
+  20-30 fps. No meu computador (esse) não tive esse problema."
+  Mesmo arquivo, mesma versão (8.1.0), duas máquinas — ou seja, custo de
+  desenho, não erro de código.
+
+CAUSA
+  O backdrop-filter NÃO é desenhado uma vez só. O navegador refaz o borrão a
+  cada quadro em que muda alguma coisa ATRÁS do elemento — e o que está atrás,
+  desde a v8.1.0, é o mapa inteiro. Foram três agravantes somados:
+   1. o mapa passou de ~580px para a largura toda (v8.1.0), então a área a
+      borrar por quadro é o painel + colunas: ~724x640px numa janela de 1280;
+   2. os ladrilhos carregam o filtro de cor de quatro estágios da v3.4, então
+      o borrão tem de ler uma saída JÁ filtrada;
+   3. o módulo Rota grudado tinha backdrop-filter próprio DENTRO do cartão que
+      já tem o seu — borrão aninhado em borrão, o caso mais caro que existe.
+  Com vídeo dedicado isso passa despercebido; com vídeo integrado, não.
+
+O QUE FOI FEITO
+  · ENQUANTO O MAPA SE MEXE, O BORRÃO SAI. Classe body.vidro-parado, ligada no
+    movestart/zoomstart e desligada 150ms depois do moveend. No lugar do vidro
+    entra uma tinta OPACA DA MESMA COR: a mistura de 84%/94% passa a ser com
+    --map-bg em vez de transparência. Não é aproximação, é a mesma conta —
+    medido no tema escuro: 0.0800 nos dois casos; no claro: 0.9862 nos dois.
+    ⚠️ O atraso de 150ms para voltar existe porque o zoom pela rodinha dispara
+    um moveend por degrau: devolver o borrão entre um degrau e outro sairia
+    mais caro que tê-lo deixado ligado. Qualquer movimento novo cancela.
+    ⚠️ Rede de segurança de 2,5s (a armadilha das v6.5/v6.9/v8.0.0: em aba sem
+    pintura o moveend pode não chegar, e o vidro ficaria congelado para sempre).
+  · O DESENHO DA LINHA da v8.0.0 também congela o vidro (DUR_ROTA + 300ms): a
+    linha crescendo muda pixels debaixo do painel quadro a quadro, igual a um
+    arraste.
+  · O MÓDULO ROTA GRUDADO PERDEU O backdrop-filter de vez. O que está atrás
+    dele é o próprio cartão, que já vem borrado — o segundo borrão não mudava
+    nada que se visse. A tinta subiu de 92% para 94%.
+  · INTERRUPTOR NO CABEÇALHO (ícone de camadas, ao lado do tema). Desligado, o
+    app volta ao layout de antes da v8.1.0: painel opaco, mapa dividindo a
+    linha. Aí não há borrão nenhum E o mapa volta a ~metade da largura, então
+    o filtro dos ladrilhos também custa menos — são os dois custos de uma vez.
+    Guardado em hg_vidro; sem escolha guardada, quem manda é o
+    prefers-reduced-transparency do sistema (é o "efeitos de transparência" do
+    Windows). Aplicado pelo script do <head>, antes da primeira pintura, senão
+    a tela abriria com vidro e daria um salto — o mesmo motivo do tema.
+    Riscado e em âmbar quando desligado: o mesmo idioma da lupa do módulo 4.
+
+MEDIDAS (janela de 1280, tema escuro)
+  Com vidro:  mapa 1280px, folga 352px (só painel) / 724px (painel + coluna).
+  Sem vidro:  mapa 918px (só painel) / 551px (painel + coluna), folga 0.
+  Tinta do painel parado x congelado: srgb 0.0800 nos dois (escuro);
+    0.9862 nos dois (claro). O véu é box-shadow, então não muda nos dois casos.
+  Borrões ativos durante um arraste: de até 3 (painel + coluna + Rota
+    aninhado) para 0.
+
+TESTES
+  Congelar/descongelar por movestart/moveend, com o retorno depois de 150ms.
+  Interruptor: ida e volta, com e sem coluna aberta, nos dois temas.
+  Módulo Rota grudado: sem borrão com vidro (tinta 94%) e opaco sem vidro.
+  Tela de 375px: os dois modos dão exatamente o mesmo layout empilhado, o
+    botão do vidro some e a borda vai para o topo (a regra do modo sem vidro
+    está presa em @media (min-width:761px), então não briga com o empilhado).
+  folgaDasColunas() devolve 0 com o vidro desligado.
+  Sem erro no console.
+
+⚠️ NÃO MEDIDO
+  A melhora em si não dá para medir aqui: a máquina do usuário em casa não
+  reproduz o problema. O que dá para afirmar é o que saiu do caminho.
+  Falta o teste na máquina do trabalho.
+
+⚠️ ARTEFATO DE TESTE (mais um da mesma família)
+  No PRIMEIRO carregamento dentro do painel de preview, o Leaflet escreveu
+  style="position:relative" no #map e o mapa nasceu com largura 0. É o
+  getComputedStyle devolvendo vazio para um documento que ainda não pintou —
+  o Leaflet então conclui que a posição é static e "conserta". Depois de um
+  reload não acontece, e no site publicado não acontece. Não é do app.
