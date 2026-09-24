@@ -6023,3 +6023,37 @@ PENDÊNCIAS QUE ISTO ABRE
     bastar, o passo seguinte é impedir a marcação e oferecer "mover para cá".
   · A rota traçada não volta no restaurar — só o planejamento. Guardar a
     geometria do OSRM por técnico é possível, mas ela é grande e envelhece.
+
+--------------------------------------------------------
+[23/09/2026] v8.6.0 — O nome do tecnico chega na tela do campo
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Na tela externa, acrescente o nome que foi setado na tela interna (exemplo
+  'Rodrigo'). E coloque ao lado da versão."
+
+O QUE FOI FEITO
+  · FORMATO v9 do link: 10º grupo = o nome da aba que gerou o link. Os nove
+    grupos anteriores não mudaram de posição nem de significado.
+  · Na tela do campo, uma pílula com o nome ao lado do selo de versão. Mesma
+    forma do selo, mas em ÂMBAR: o selo de versão é informação de suporte, e
+    este é de quem o roteiro é. Com a dica do mouse "Roteiro de Rodrigo".
+
+RETROCOMPATIBILIDADE
+  A leitura passou a aceitar '9' e a tratar v8 e v9 juntos onde eles são iguais
+  (rid, retorno e origem moram nos mesmos grupos nos dois). Link sem o 10º
+  grupo — ou seja, todo link já enviado à equipe — abre igual, e a pílula
+  simplesmente não aparece.
+  ⚠️ Testado com um link v8 montado à mão a partir de um v9 (trocando o número
+  do formato e tirando o último grupo): abriu com as 2 paradas + retorno,
+  7,5 km / 11 min, e o selo do nome ficou escondido.
+
+TESTES
+  Aba renomeada para "Rodrigo", rota traçada e link gerado: o código tem 10
+    grupos, o último é "Rodrigo", e a leitura devolve v:9 com tecnico:"Rodrigo".
+  Abrindo o link: "Rodrigo" em âmbar (#F2A93C) logo depois do "v8.6.0" — o selo
+    de versão termina em x=221 e o nome começa em x=227.
+  Link v8 antigo: abre normal, selo escondido.
+  Retomar o link v9 no escritório: 2 paradas, origem "Centro", retorno ligado e
+    o rid preservado — o caminho de colar o link de volta continua valendo.
+  Sem erro no console.

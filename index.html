@@ -107,6 +107,16 @@
           color:var(--muted);border:1px solid var(--line);border-radius:4px;
           padding:1px 5px;margin-left:8px;vertical-align:middle;letter-spacing:.02em;}
 
+  /* Nome do técnico na tela do campo (v8.6.0, pedido do usuário): mesma pílula
+     do selo de versão, ao lado dele, mas em âmbar — o selo de versão é
+     informação de suporte, e este é de quem o roteiro é. Some quando o link não
+     traz nome (todo link gerado antes da v8.6.0). */
+  .campo-marca .tecnico{
+          font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;
+          color:var(--amber);border:1px solid var(--amber-dim);border-radius:4px;
+          padding:1px 5px;margin-left:6px;vertical-align:middle;letter-spacing:.02em;}
+  .campo-marca .tecnico[hidden]{display:none;}
+
   /* Botão do tema (v3.3 como interruptor de trilho; ícone desde a v7.6.0).
      Mostra o estado atual — lua no escuro, sol no claro. Continua sendo um
      <button role="switch"> de verdade, com aria-checked, para funcionar por
@@ -1803,7 +1813,7 @@
 <div class="campo" id="modoCampo" hidden>
   <header class="campo-head">
     <div class="campo-topo">
-      <div class="campo-marca">hagamorfis<span>/</span>rotas<span class="versao" id="versaoCampo"></span></div>
+      <div class="campo-marca">hagamorfis<span>/</span>rotas<span class="versao" id="versaoCampo"></span><span class="tecnico" id="tecnicoCampo" hidden></span></div>
       <button class="icone-btn tema-btn" type="button" role="switch" aria-checked="true"
               data-tema-btn aria-label="Tema claro ou escuro">
         <svg class="icone-lua" viewBox="0 0 24 24" aria-hidden="true">
@@ -1836,7 +1846,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.5.0';
+const VERSAO = '8.6.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -5661,13 +5671,19 @@ function montarRoteiro(){
   //      acrescenta uma parada e manda o link de novo
   //   9º origem: "lat*lng*rótulo", sempre que houver — é o que permite retomar
   //      o roteiro no escritório a partir do próprio link
+  // FORMATO v9 (v8.6.0): 10º grupo = nome do técnico da aba que gerou o link,
+  //   para a tela do campo dizer de quem é o roteiro. Vazio quando a aba ainda
+  //   está com o nome automático? Não — vai sempre; quem abre prefere ler
+  //   "Técnico 2" a não ler nada.
   // O v7 guardava a coordenada do retorno no 7º grupo; a leitura entende os dois.
   const origem = originLatLng
     ? [Math.round(originLatLng[0] * 1e5), Math.round(originLatLng[1] * 1e5), escSep(rotuloOrigem())].join('*')
     : '';
-  return ['8', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
+  const tecnico = (tecnicos[tecnicoAtivo] || {}).nome || '';
+  return ['9', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
           ultimoResumo ? ultimoResumo.d : '', ultimoResumo ? ultimoResumo.t : '',
-          (voltarParaOrigem() && originLatLng) ? '1' : '', idDoRoteiro(), origem].join('~');
+          (voltarParaOrigem() && originLatLng) ? '1' : '', idDoRoteiro(), origem,
+          escSep(tecnico)].join('~');
 }
 
 /* ---------------- Compressão do link (v2.7) ---------------- */
@@ -5731,11 +5747,15 @@ function lerRoteiroJson(json){
 }
 
 function lerRoteiroCompacto(texto){
-  const [ver, clientesRaw, tiposRaw, paradasRaw, d, t, retornoRaw, ridRaw, origemRaw] = texto.split('~');
+  const [ver, clientesRaw, tiposRaw, paradasRaw, d, t, retornoRaw, ridRaw, origemRaw,
+         tecnicoRaw] = texto.split('~');
   // v6 acrescentou a prioridade como 6º campo da parada; v7, o retorno como 7º
   // grupo (com a coordenada dentro); v8, o identificador do roteiro e a origem
-  // em grupos próprios. Em links antigos os campos simplesmente não vêm.
-  if (!['5','6','7','8'].includes(ver)) return null; // formato desconhecido: link inválido
+  // em grupos próprios; v9, o nome do técnico. Em links antigos os campos
+  // simplesmente não vêm.
+  if (!['5','6','7','8','9'].includes(ver)) return null; // formato desconhecido: link inválido
+  // Do v8 em diante o rid, o retorno e a origem moram nos mesmos grupos
+  const v8ouMais = ver === '8' || ver === '9';
   const clientes = clientesRaw ? clientesRaw.split('|').map(unescSep) : [];
   const tipos    = tiposRaw    ? tiposRaw.split('|').map(unescSep)    : [];
   let la = 0, ln = 0;
@@ -5757,16 +5777,17 @@ function lerRoteiroCompacto(texto){
     const lat = Number(la) / 1e5, lng = Number(ln) / 1e5;
     return (isFinite(lat) && isFinite(lng)) ? { lat, lng, nome: unescSep(nome || 'Origem') } : null;
   };
-  if (ver === '8' && origemRaw) origem = lerPonto(origemRaw);
+  if (v8ouMais && origemRaw) origem = lerPonto(origemRaw);
   else if (ver === '7' && retornoRaw) origem = lerPonto(retornoRaw);
 
-  const temRetorno = ver === '8' ? retornoRaw === '1' : !!(ver === '7' && retornoRaw);
+  const temRetorno = v8ouMais ? retornoRaw === '1' : !!(ver === '7' && retornoRaw);
   // O retorno entra como último item da lista, com a marca no 7º campo: assim a
   // tela do campo o mostra, navega e marca como concluído sem código separado
   if (temRetorno && origem) s.push([origem.nome, origem.lat, origem.lng, 'RETORNO', '', false, true]);
 
   return { v: Number(ver), s, d: d ? Number(d) : null, t: t ? Number(t) : null,
-           rid: (ver === '8' && ridRaw) ? ridRaw : null, origem, retorno: temRetorno };
+           rid: (v8ouMais && ridRaw) ? ridRaw : null, origem, retorno: temRetorno,
+           tecnico: (ver === '9' && tecnicoRaw) ? unescSep(tecnicoRaw) : '' };
 }
 
 // Botão "Gerar link do roteiro": monta o link completo (URL atual + #r=...) e mostra
@@ -5983,6 +6004,15 @@ async function ativarModoCampo(){
 // Redesenha a lista de paradas e a barra de progresso a partir do estado atual
 // (roteiro fixo, vindo do link; feitos e confirmando mudam conforme o uso)
 function desenharCampo(roteiro, codigo, feitos, confirmando, abertos){
+  // De quem é este roteiro (v8.6.0). Link gerado antes disso não traz nome, e
+  // aí a pílula simplesmente não aparece.
+  const selo = document.getElementById('tecnicoCampo');
+  if (selo){
+    selo.textContent = roteiro.tecnico || '';
+    selo.hidden = !roteiro.tecnico;
+    selo.title = roteiro.tecnico ? 'Roteiro de ' + roteiro.tecnico : '';
+  }
+
   const total = roteiro.s.length;
   // Conta só o que está NESTE roteiro: uma parada marcada pode ter saído da
   // versão nova do link, e aí ela não entra no "3/6" (v6.8.0)

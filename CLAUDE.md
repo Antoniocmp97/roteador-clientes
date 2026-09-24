@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 23/09/2026 — v8.5.0 (um roteiro por técnico, em abas)
+> **Última atualização:** 23/09/2026 — v8.6.0 (o nome do técnico na tela do campo)
 
 ---
 
@@ -625,9 +625,17 @@ sem dependências instaladas. Abre direto no navegador.
   eram âmbar cheio: a cor mais forte do app, reservada à origem e à rota, estava
   nos dois botões que fazem a mesma coisa por caminhos diferentes, e o único que
   muda o estado do roteiro era o mais apagado do cartão.
+  **O nome do técnico aparece no cabeçalho** (v8.6.0, pedido do usuário): uma
+  pílula com o nome da aba que gerou o link, **ao lado do selo de versão**, na
+  mesma forma dele mas em **âmbar** — o selo de versão é informação de suporte,
+  e este é de quem o roteiro é. Link gerado antes disso não traz nome e a pílula
+  simplesmente não aparece.
   **Formato v8** (v6.8.0): 7º grupo = retorno ("1"/vazio), 8º = **id do roteiro**
   (rid), 9º = **origem** "lat*lng*rótulo". No v7 a coordenada do retorno vinha no
   7º grupo; a leitura entende os dois, e links v5/v6/v7 continuam abrindo.
+  **Formato v9** (v8.6.0): 10º grupo = **nome do técnico**. Os nove anteriores
+  não mudaram de posição nem de significado, e a leitura trata v8 e v9 juntos
+  onde eles são iguais (rid, retorno e origem moram nos mesmos grupos).
 - **Retomar um roteiro pelo link** (v6.8.0, pedido do usuário: "meia hora depois
   surge mais uma parada"): colar o link no **módulo 1** (v6.8.1, sempre à mão — o
   campo do módulo 5 só existe depois de uma rota traçada; desde a v7.4.0 fica num
@@ -1251,6 +1259,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 93 | **v8.4.1** — Barras de rolagem no tema, com a pista transparente |
 | 94 | **v8.4.2** — Checklist sem a bolinha: a seta e o contador acendem |
 | 95 | **v8.5.0** — Um roteiro por técnico, em abas, com as rotas juntas no mapa |
+| 96 | **v8.6.0** — O nome do técnico viaja no link e aparece na tela do campo |
 
 ---
 
@@ -1317,7 +1326,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.5.0
+8.6.0
 ```
 
 ### Onde o número aparece
@@ -1437,3 +1446,4 @@ os backups locais são conveniência, não garantia.
 | 8.4.1 | 23/09/2026 | Barras de rolagem acompanhando o tema |
 | 8.4.2 | 23/09/2026 | Checklist sem a bolinha da calha; chevron de traço |
 | 8.5.0 | 23/09/2026 | Um roteiro por técnico, em abas (Fase 2) |
+| 8.6.0 | 23/09/2026 | Nome do técnico no cabeçalho da tela do campo (link v9) |
