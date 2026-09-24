@@ -5680,3 +5680,108 @@ TESTES (janela de 1280)
   Tela de 375px, com e sem vidro:   mapa 375x390, painel embaixo, âncora no
     #map, documento 375px.
   Sem erro no console.
+
+--------------------------------------------------------
+[23/09/2026] v8.4.0 — Janelas livres, ligadas por um botao
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Da sessão anterior: "poder apertar no topo ao centro, e poder colocar a
+  coluna inteira (inclusive os módulos dentro) para qualquer parte da tela,
+  parecendo bastante como um aplicativo". Escolhas dele, numa conversa de três
+  perguntas: posição TOTALMENTE LIVRE, com um leve auxílio de alinhamento ao
+  soltar; TODAS as colunas viram janelas, o painel junto; e redimensionar
+  LARGURA E ALTURA.
+  Agora: "baseado nesse mesmo caminho do botão de vidro, adicione um que
+  permita a customização das colunas" — ou seja, o modo entra atrás de um
+  interruptor, como o vidro, e não como o comportamento único.
+
+O QUE FOI FEITO
+  · BOTÃO NO CABEÇALHO, ao lado do vidro e do tema. Desligado (padrão), nada
+    muda: a fila de colunas de sempre. O ícone mostra o estado ATUAL, como o do
+    tema — três colunas em fila, ou duas janelas soltas em âmbar.
+    Guardado em hg_janelas e aplicado pelo script do <head>, antes da primeira
+    pintura, senão a tela abriria em fila e daria um salto.
+  · CADA COLUNA VIRA UMA JANELA com x, y, largura, altura e ordem de frente.
+    Puxador no topo ao centro para mover, canto embaixo à direita para
+    redimensionar. Tocar em qualquer lugar traz a janela para a frente.
+  · AUXÍLIO DE ALINHAMENTO: as bordas procuram as bordas da tela e das outras
+    janelas; a menos de 10px encostam, e uma linha âmbar mostra onde foi.
+  · SOLTAR UM MÓDULO NO MAPA abre a coluna nova NO PONTO onde foi solto, e não
+    encostada à direita. É o que faz o modo parecer um aplicativo.
+  · A GEOMETRIA ENTRA NO ARRANJO: o disquete salva, a lixeira devolve tudo.
+  · BOTÃO DO ÍMÃ, acrescentado depois de o usuário ver o modo pronto:
+    "acrescente a opção de auxílio de encaixar a coluna para poder soltar aonde
+    quiser". Ele escolheu botão no cabeçalho, entre três formas oferecidas (as
+    outras eram segurar Alt durante o arraste, e as duas juntas). O ícone SÓ
+    APARECE com as janelas ligadas — fora delas não há o que alinhar. Ligado é
+    o padrão e fica discreto; desligado fica riscado e em âmbar, e a janela vai
+    exatamente para onde o ponteiro está. Guardado em hg_ima.
+    O cabeçalho ficou [disquete] [lixeira] | [janelas] [ímã] [vidro] [tema].
+    ⚠️ Com o ímã desligado, linhasDeApoio() nem chega a ser chamada: o arraste
+    recebe listas vazias, e com isso não há atração NEM linha de apoio — sem
+    precisar de um segundo caminho no código do arraste.
+
+DECISÕES QUE VALE REGISTRAR
+  ⚠️ SÓ A JANELA ARRASTADA É GUARDADA (marca `livre`). As outras são
+  recalculadas pela geometria padrão a cada aplicarJanelas() — encostadas à
+  direita, painel · coluna 2 · coluna 3. Sem isso, duas coisas quebravam: o
+  modo ligado abriria diferente do desligado, e o disquete acenderia sozinho ao
+  abrir, porque a geometria padrão depende do tamanho da tela e dois
+  computadores nunca dariam o mesmo JSON.
+  ⚠️ O z (ordem de frente) fica FORA do que se salva e do que se compara: ele
+  muda a cada clique numa janela, e "trouxe para a frente" não é arranjo.
+  ⚠️ O MODO EXIGE O MAPA POR BAIXO, então vale mesmo com o vidro desligado: sem
+  vidro muda só o MATERIAL da janela (opaca, com sombra própria), não o layout.
+  Por isso as regras do vidro desligado ganharam :not([data-janelas="1"]) na
+  parte de LAYOUT, e a parte de MATERIAL ficou numa regra separada.
+  ⚠️ O puxador e o canto NÃO moram dentro da janela: ela rola, e eles sumiriam
+  junto com a rolagem. Ficam em `main`, posicionados pelo mesmo código.
+  ⚠️ Posição de emergência no CSS (top/right/bottom): entre o <head> marcar
+  data-janelas e o JS posicionar as janelas existe um quadro em que elas são
+  absolutas SEM coordenada, e um absoluto sem coordenada fica onde calhar, com
+  a altura do conteúdo. Encostadas à direita, esse quadro fica idêntico ao
+  layout de sempre (medido: 1048/77/340x731 nos dois casos).
+
+FOLGA DO MAPA, REESCRITA
+  folgaDasColunas() somava as larguras das colunas visíveis — conta que só vale
+  com elas enfileiradas à direita. Com as janelas livres, uma pode estar no meio
+  da tela, e somar a largura dela empurraria a rota para o lado errado. Agora a
+  função mede a FAIXA COLADA NA BORDA DIREITA que está coberta, encadeando
+  janela a janela. Janela solta no meio não conta: a folga dá 0 e o mapa
+  enquadra na tela inteira — quem a pôs ali escolheu cobrir aquele pedaço.
+  ⚠️ A tolerância do encadeamento é 24px, e não 13: entre duas colunas
+  encostadas há a margem de 12 do cartão de vidro MAIS a divisória de 7 (19px
+  de vão). Com 13 a conta parava na primeira coluna e devolvia 352 onde o certo
+  eram 731 — erro pego no teste.
+
+MEDIDAS (janela de 1400x820)
+  Ligar o modo com tudo no lugar: o painel não se mexe (1048/77, 340x731 antes
+    e depois), ganha puxador e canto, e o disquete NÃO acende.
+  Mover: painel de 1048 para 448, puxador e canto acompanham (588 e 766).
+  Redimensionar: 340x731 para 490x431; piso respeitado em 320x160.
+  Ímã: solto a 4px do topo da tela, encostou em y=0.
+  Soltar o módulo 3 no mapa em (300,400): coluna 2 nasceu em x=120, y=390.
+  Salvar, recarregar: volta tudo, e o disquete abre apagado.
+  Folga: 352 só com o painel, 731 com painel + coluna em fila, 337 com a coluna
+    solta no meio (só o painel encosta na direita).
+  Ímã ligado: solto a 4px do topo, encostou em y=0; redimensionado até 4px da
+    borda direita, encostou em 1385 (a borda real, sem a barra de rolagem).
+  Ímã desligado: os mesmos dois gestos pararam em y=4 e em 1396 — exatamente
+    onde o ponteiro estava.
+
+TESTES
+  Ligar e desligar o modo, ida e volta, com e sem coluna aberta.
+  Botão do ímã: aparece e some junto com o modo, sobrevive ao recarregar, e
+    vale tanto para mover quanto para redimensionar.
+  Lixeira: módulos voltam ao painel, geometria volta ao padrão, disquete apaga.
+  Sem vidro + janelas: mapa inteiro por baixo, janela opaca com sombra e cantos,
+    âncora dos painéis do Leaflet intacta, sem barra de rolagem.
+  Tela de 375px: aplicarArranjo limpa os estilos inline e os puxadores, volta o
+    empilhado, o botão some, documento com 375px.
+  Sem erro no console.
+
+⚠️ ARTEFATO DE TESTE
+  A emulação de viewport do painel de preview NÃO dispara o evento resize na
+  página. O layout fica velho até alguém chamar aplicarArranjo(). Conferido
+  disparando o evento à mão: com ele, tudo se ajusta sozinho. Não é do app.

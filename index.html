@@ -271,6 +271,22 @@
   .icone-btn:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
   /* Liga/desliga o vidro (v8.2.0). Mesmo idioma do botão de zoom do módulo 4:
      o estado padrão é discreto e o estado trocado fica riscado e em âmbar. */
+  /* Janelas livres ligadas/desligadas (v8.4.0). O ícone mostra o estado ATUAL,
+     como o do tema: três colunas em fila (o de sempre) ou duas janelas soltas,
+     acesas em âmbar porque o modo livre é o estado fora do padrão. */
+  /* Ímã de alinhamento (v8.4.0, pedido do usuário depois de ver o modo pronto:
+     "acrescente a opção de auxílio de encaixar a coluna para poder soltar aonde
+     quiser"). O botão só existe com as janelas ligadas — fora delas não há o
+     que alinhar. Ligado é o padrão e fica discreto; desligado fica riscado e em
+     âmbar, o mesmo idioma do vidro e da lupa do módulo 4. */
+  .ima-btn{display:none;}
+  .ima-btn .risco{display:none;}
+  .ima-btn.desligado{color:var(--amber);}
+  .ima-btn.desligado .risco{display:inline;}
+  .janelas-btn .icone-livres{display:none;}
+  .janelas-btn.ligado{color:var(--amber);}
+  .janelas-btn.ligado .icone-livres{display:block;}
+  .janelas-btn.ligado .icone-fila{display:none;}
   .vidro-btn .risco{display:none;}
   .vidro-btn.desligado{color:var(--amber);}
   .vidro-btn.desligado .risco{display:inline;}
@@ -353,6 +369,59 @@
                  color-mix(in srgb, var(--panel) 94%, var(--map-bg)));
   }
 
+  /* ---- Janelas livres (v8.4.0, pedido do usuário: "poder apertar no topo ao
+     centro e poder colocar a coluna inteira em qualquer parte da tela,
+     parecendo bastante como um aplicativo") ----
+     Ligadas pelo botão do cabeçalho — fora dele, nada muda. No modo ligado a
+     fila de colunas dá lugar a janelas com posição, tamanho e ordem de frente
+     próprias, guardadas no arranjo (o disquete salva, a lixeira devolve tudo).
+     ⚠️ O puxador (topo, ao centro) e o canto de redimensionar NÃO moram dentro
+     da janela: ela rola, e eles sumiriam junto com a rolagem. Ficam ao lado,
+     em `main`, posicionados pelo mesmo código que posiciona a janela.
+     ⚠️ O modo exige o mapa por baixo, então ele vale mesmo com o vidro
+     desligado: sem vidro muda só o MATERIAL da janela (opaca), não o layout.
+     ⚠️ Tudo preso em @media (min-width:761px): em tela estreita continua
+     valendo o empilhado, e o botão nem aparece. */
+  @media (min-width:761px){
+    /* ⚠️ O top/right/bottom é a posição de emergência: entre o script do <head>
+       marcar data-janelas e o JS posicionar as janelas existe um quadro em que
+       elas são absolutas SEM coordenada nenhuma — e um absoluto sem coordenada
+       fica onde calhar, com a altura do conteúdo. Encostadas à direita, esse
+       quadro fica idêntico ao layout de sempre. Quando o JS escreve left/top/
+       width/height inline, esses vencem (left+width mandam mais que right, e
+       top+height mais que bottom), então isto não atrapalha depois. */
+    :root[data-janelas="1"] .guia,
+    :root[data-janelas="1"] .console{position:absolute; margin:0;
+                                     top:12px; right:12px; bottom:12px;}
+    :root[data-janelas="1"] .divisor{display:none;}
+    /* O botão do ímã aparece junto com o modo, e só em tela larga (esta regra
+       mora dentro do @media, então a estreita continua com ele escondido) */
+    :root[data-janelas="1"] .ima-btn{display:flex;}
+    /* Sem vidro a janela fica opaca, mas continua sendo uma janela: mantém os
+       cantos e ganha sombra própria (o véu do vidro sairia escurecendo o
+       painel opaco, por isso a sombra é redeclarada e não herdada). */
+    :root[data-vidro="0"][data-janelas="1"] .guia,
+    :root[data-vidro="0"][data-janelas="1"] .console{box-shadow:0 10px 34px rgba(0,0,0,.42);}
+    :root[data-tema="claro"][data-vidro="0"][data-janelas="1"] .guia,
+    :root[data-tema="claro"][data-vidro="0"][data-janelas="1"] .console{box-shadow:0 10px 30px rgba(21,34,41,.18);}
+  }
+  .pega-janela, .canto-janela{position:absolute; z-index:6; touch-action:none;}
+  .pega-janela{height:22px; display:flex; align-items:center; justify-content:center; cursor:grab;}
+  .pega-janela::before{content:''; width:44px; height:5px; border-radius:3px;
+                       background:color-mix(in srgb, var(--muted) 60%, transparent); transition:background .15s;}
+  .pega-janela:hover::before, .pega-janela.pegando::before{background:var(--amber);}
+  .canto-janela{width:22px; height:22px; cursor:nwse-resize;}
+  .canto-janela::after{content:''; position:absolute; right:5px; bottom:5px; width:9px; height:9px;
+      border-right:2px solid color-mix(in srgb, var(--muted) 70%, transparent);
+      border-bottom:2px solid color-mix(in srgb, var(--muted) 70%, transparent); border-radius:0 0 3px 0;}
+  .canto-janela:hover::after{border-color:var(--amber);}
+  /* Linha do auxílio de alinhamento: mostra com qual borda a janela encostou */
+  .guia-alinha{position:absolute; z-index:7; background:var(--amber); pointer-events:none;
+               box-shadow:0 0 6px color-mix(in srgb, var(--amber) 60%, transparent);}
+  .guia-alinha.v{width:1px;} .guia-alinha.h{height:1px;}
+  body.movendo-janela{cursor:grabbing; user-select:none;}
+  body.movendo-janela #map{pointer-events:none;}
+
   /* ---- Vidro desligado (v8.2.0) ----
      A saída para a máquina que não dá conta: volta o layout de antes da v8.1.0,
      com o mapa dividindo a linha com as colunas opacas. Aí não há borrão nenhum
@@ -365,7 +434,11 @@
      Só vale em tela larga — na estreita o layout empilhado lá embaixo já faz
      isso, e ele é que manda. */
   @media (min-width:761px){
-    :root[data-vidro="0"] main{justify-content:initial;}
+    /* ⚠️ O layout em fila sai de cena quando as janelas livres estão ligadas
+       (v8.4.0): elas precisam do mapa por baixo. Sem vidro, o que muda é só o
+       material da janela — por isso o `:not` está aqui e não na regra do
+       material, logo abaixo. */
+    :root[data-vidro="0"]:not([data-janelas="1"]) main{justify-content:initial;}
     /* ⚠️ relative, NUNCA static (v8.3.0, relatado pelo usuário com print: "com o
        vidro desligado o mapa fica por cima"). Os painéis do Leaflet — ladrilhos,
        marcadores, traçado — são `position:absolute` e se ancoram no primeiro
@@ -379,10 +452,14 @@
        vidro e desliga depois fica sem a rede.
        `inset:auto` desfaz o inset:0 da regra do vidro, que num relative viraria
        deslocamento em vez de esticar o elemento. */
-    :root[data-vidro="0"] #map{position:relative; inset:auto; z-index:auto; isolation:auto; flex:1; min-height:0;}
+    :root[data-vidro="0"]:not([data-janelas="1"]) #map{position:relative; inset:auto; z-index:auto; isolation:auto; flex:1; min-height:0;}
+    :root[data-vidro="0"]:not([data-janelas="1"]) .guia,
+    :root[data-vidro="0"]:not([data-janelas="1"]) .console{
+        margin:0; border-radius:0; border-left:1px solid var(--line);
+    }
+    /* O MATERIAL opaco vale nos dois layouts: em fila e como janela solta */
     :root[data-vidro="0"] .guia, :root[data-vidro="0"] .console{
-        margin:0; border-radius:0; box-shadow:none;
-        background:var(--panel); border-left:1px solid var(--line);
+        background:var(--panel); box-shadow:none;
         backdrop-filter:none; -webkit-backdrop-filter:none;
     }
     /* A divisória volta a ter fundo: sem o mapa por baixo, ela é só a emenda
@@ -957,6 +1034,7 @@
     .guia{display:none;}
     .arranjo-acoes{display:none;}
     .vidro-btn{display:none;}   /* em tela estreita o vidro já não existe */
+    .janelas-btn{display:none;} /* nem as colunas, então nem as janelas */
     .cab-divisor{display:none;}
     .console{width:auto;max-height:56%;border-left:none;border-top:1px solid var(--line);}
     /* Em tela estreita o painel inteiro tem pouca altura: um checklist de 320px
@@ -1179,6 +1257,13 @@
       catch(e){ v = '1'; }
     }
     document.documentElement.setAttribute('data-vidro', v === '0' ? '0' : '1');
+    /* Janelas livres (v8.4.0), aqui pelo mesmo motivo: elas mudam o layout
+       inteiro, e aplicá-las só no fim da página faria a tela abrir em fila e
+       dar um salto. Padrão desligado — quem nunca apertou o botão continua com
+       o app de sempre. */
+    var j = null;
+    try{ j = localStorage.getItem('hg_janelas'); }catch(e){}
+    document.documentElement.setAttribute('data-janelas', j === '1' ? '1' : '0');
   })();
 </script>
 </head>
@@ -1208,6 +1293,30 @@
       </button>
     </div>
       <span class="cab-divisor" aria-hidden="true"></span>
+      <!-- Janelas livres (v8.4.0): as colunas passam a ter posição e tamanho
+           próprios, movidas pelo puxador no topo ao centro. -->
+      <button class="icone-btn janelas-btn" type="button" role="switch" aria-checked="false"
+              data-janelas-btn aria-label="Janelas livres">
+        <svg class="icone-fila" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="4.5" width="4.5" height="15" rx="1.4"/>
+          <rect x="9.8" y="4.5" width="4.5" height="15" rx="1.4"/>
+          <rect x="16.5" y="4.5" width="4.5" height="15" rx="1.4"/>
+        </svg>
+        <svg class="icone-livres" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2.8" y="3.4" width="12" height="9" rx="2"/>
+          <rect x="9.2" y="11.6" width="12" height="9" rx="2"/>
+        </svg>
+      </button>
+      <!-- Ímã de alinhamento das janelas (v8.4.0). Só aparece com as janelas
+           ligadas; desligado, a janela fica exatamente onde foi solta. -->
+      <button class="icone-btn ima-btn" type="button" role="switch" aria-checked="true"
+              data-ima-btn aria-label="Encaixe das janelas">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5.5 4.2v7.6a6.5 6.5 0 0 0 13 0V4.2"/>
+          <path d="M5.5 10.2h4M14.5 10.2h4"/>
+          <path class="risco" d="M4 20L20 4"/>
+        </svg>
+      </button>
       <!-- Vidro ligado/desligado (v8.2.0). Desligado, o painel volta a ser opaco
            e o mapa divide a linha com ele, como era até a v8.0.0 — é a saída
            para a máquina que não dá conta do desfoque. -->
@@ -1601,7 +1710,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.3.0';
+const VERSAO = '8.4.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1847,10 +1956,28 @@ aplicarVidro(vidroLigado(), false);   // acerta o ícone no estado que o <head> 
 function folgaDasColunas(){
   // Sem vidro o mapa não passa por baixo de nada: não há folga a descontar
   if (!telaComportaGuia() || !vidroLigado()) return 0;   // empilhado: o painel não cobre o mapa
-  let total = 0;
-  document.querySelectorAll('main > .console, main > .guia:not([hidden])')
-          .forEach(el => { const r = el.getBoundingClientRect(); if (r.width) total += r.width + 12; });
-  return Math.round(total);
+  const main = document.querySelector('main').getBoundingClientRect();
+  const caixas = [...document.querySelectorAll('main > .console, main > .guia:not([hidden])')]
+                 .map(el => el.getBoundingClientRect()).filter(r => r.width > 0);
+  /* A faixa colada na borda DIREITA que está coberta (v8.4.0). Antes era a soma
+     das larguras, que só valia com as colunas enfileiradas à direita; com as
+     janelas livres uma delas pode estar no meio da tela, e somar a largura dela
+     empurraria a rota para o lado errado. Janela solta no meio não conta: a
+     folga dá 0 e o mapa enquadra na tela inteira — quem a pôs ali escolheu
+     deixar aquele pedaço coberto.
+     ⚠️ A tolerância de 24px cobre o maior vão que separa duas colunas
+     encostadas: a margem de 12 do cartão de vidro MAIS a divisória de 7
+     (medido: 19px de vão). Com 13 a conta parava na primeira coluna e devolvia
+     352 onde o certo eram 731. Em fila dá 352 com o painel e 731 com painel +
+     uma coluna — 7px a mais que a soma de larguras da v8.1.0, porque agora a
+     divisória entre elas também entra, que é o certo. */
+  let limite = main.right, mudou = true;
+  while (mudou){
+    mudou = false;
+    for (const r of caixas)
+      if (r.right >= limite - 24 && r.left < limite - 1){ limite = r.left; mudou = true; }
+  }
+  return Math.round(Math.max(0, main.right - limite));
 }
 // Enquadramento que respeita a folga: o conteúdo cabe na parte VISÍVEL do mapa
 function paddingDoMapa(base = 40){
@@ -3030,7 +3157,7 @@ const COLUNAS = {
 function arranjoNormal(){
   const local = {};
   ORDEM_MODULOS.forEach(k => local[k] = 'painel');
-  return { local, ordem:[...ORDEM_MODULOS], pesos:{}, fixas:{} };
+  return { local, ordem:[...ORDEM_MODULOS], pesos:{}, fixas:{}, janelas:{} };
 }
 let arranjo = arranjoNormal();   // o que está na tela agora
 
@@ -3115,6 +3242,236 @@ const LARGURA_MINIMA_GUIA = 761;   // abaixo disso o layout é empilhado (ver me
 
 function telaComportaGuia(){ return document.documentElement.clientWidth >= LARGURA_MINIMA_GUIA; }
 
+/* ---------------- Janelas livres (v8.4.0) ----------------
+   Com o botão do cabeçalho ligado, cada coluna vira uma janela com posição,
+   tamanho e ordem de frente próprias, em coordenadas de `main`. A geometria
+   entra no arranjo, então o disquete salva e a lixeira devolve tudo ao normal.
+
+   ⚠️ Só a janela que o usuário ARRASTOU (marca `livre`) é guardada. As outras
+   são recalculadas a cada `aplicarJanelas()` pela geometria padrão — encostadas
+   à direita, na ordem painel · coluna 2 · coluna 3, que é o desenho de sempre.
+   É isso que faz o modo ligado abrir idêntico ao modo desligado, e que impede
+   o disquete de acender sozinho só porque as janelas nasceram. */
+const CHAVE_JANELAS = 'hg_janelas';
+const JANELA_MIN_L = LARGURA_GUIA_MIN;   // 320px, o mesmo piso de sempre (v5.6)
+const JANELA_MIN_A = 160;
+const IMA_JANELA = 10;       // distância em que as bordas se atraem ao soltar
+const CHAVE_IMA = 'hg_ima';
+/* O ímã pode ser desligado (v8.4.0, pedido do usuário: "para poder soltar aonde
+   quiser"). Desligado, a janela vai exatamente para onde o ponteiro está — sem
+   encostar em borda nenhuma e sem as linhas de apoio. */
+let imaAtivo = true;
+try{ imaAtivo = localStorage.getItem(CHAVE_IMA) !== '0'; }catch(e){ /* padrão: ligado */ }
+function aplicarIma(lig, salvar){
+  imaAtivo = lig;
+  document.querySelectorAll('[data-ima-btn]').forEach(b => {
+    b.classList.toggle('desligado', !lig);
+    b.setAttribute('aria-checked', String(lig));
+    b.title = lig
+      ? 'Encaixe ligado: ao soltar, a janela encosta nas bordas da tela e das outras. Clique para soltar exatamente onde quiser.'
+      : 'Encaixe desligado: a janela fica exatamente onde for solta. Clique para voltar a encostar nas bordas.';
+  });
+  if (salvar){ try{ localStorage.setItem(CHAVE_IMA, lig ? '1' : '0'); }catch(e){} }
+}
+const RESPIRO_JANELA = 12;   // a margem dos cartões de vidro (v8.1.0)
+let frenteJanela = 5;        // z-index de quem está na frente
+
+function modoJanelas(){ return document.documentElement.getAttribute('data-janelas') === '1'; }
+function aplicarModoJanelas(lig, salvar){
+  document.documentElement.setAttribute('data-janelas', lig ? '1' : '0');
+  document.querySelectorAll('[data-janelas-btn]').forEach(b => {
+    b.classList.toggle('ligado', lig);
+    b.setAttribute('aria-checked', String(lig));
+    b.title = lig
+      ? 'Janelas livres: arraste pelo puxador no topo de cada coluna, e pelo canto de baixo para mudar o tamanho. Clique para voltar às colunas em fila.'
+      : 'Colunas em fila, como sempre. Clique para soltar cada uma como janela.';
+  });
+  if (salvar){ try{ localStorage.setItem(CHAVE_JANELAS, lig ? '1' : '0'); }catch(e){} }
+  // Quem troca o layout é o aplicarArranjo: a escolha entre a fila e as janelas
+  // mora lá dentro, num lugar só
+  aplicarArranjo();
+}
+// Ligado E com tela que comporta colunas: na estreita continua o empilhado
+function janelasLivres(){ return modoJanelas() && telaComportaGuia(); }
+
+const areaMain = () => document.querySelector('main').getBoundingClientRect();
+const janelasVisiveis = () =>
+  ['painel', 'g1', 'g2'].filter(l => { const el = containerDe(l); return el && !el.hidden; });
+
+// O desenho de sempre: encostadas à direita, painel · coluna 2 · coluna 3
+function geometriaPadrao(local){
+  const m = areaMain();
+  const larguras = { painel: LARGURA_PADRAO, g1: larguraGuiaGuardada('g1'), g2: larguraGuiaGuardada('g2') };
+  const visiveis = janelasVisiveis();
+  const altura = Math.max(JANELA_MIN_A, m.height - RESPIRO_JANELA * 2);
+  let direita = m.width - RESPIRO_JANELA;
+  for (const l of ['painel', 'g1', 'g2']){
+    if (l === local) return { x: Math.max(0, direita - larguras[l]), y: RESPIRO_JANELA,
+                              w: larguras[l], a: altura };
+    if (visiveis.includes(l)) direita -= larguras[l] + RESPIRO_JANELA;
+  }
+  return { x: RESPIRO_JANELA, y: RESPIRO_JANELA, w: LARGURA_GUIA_PADRAO, a: altura };
+}
+
+function geometriaDaJanela(local){
+  if (!arranjo.janelas) arranjo.janelas = {};
+  const atual = arranjo.janelas[local];
+  if (!atual) arranjo.janelas[local] = { ...geometriaPadrao(local), z: ++frenteJanela };
+  // Janela nunca arrastada acompanha o padrão: muda de lugar quando uma coluna
+  // abre ou fecha e acompanha o tamanho da janela do navegador, como as colunas
+  else if (!atual.livre) Object.assign(atual, geometriaPadrao(local));
+  return arranjo.janelas[local];
+}
+
+// Nunca deixa uma janela sair da tela nem ficar maior que ela
+function limitarJanela(g){
+  const m = areaMain();
+  g.w = Math.round(Math.max(JANELA_MIN_L, Math.min(g.w, m.width - 8)));
+  g.a = Math.round(Math.max(JANELA_MIN_A, Math.min(g.a, m.height - 8)));
+  g.x = Math.round(Math.max(0, Math.min(g.x, m.width - g.w)));
+  // O topo nunca some da tela: é onde mora o puxador, sem ele a janela ficaria
+  // presa onde está
+  g.y = Math.round(Math.max(0, Math.min(g.y, m.height - 40)));
+  return g;
+}
+
+// Volta a fila de colunas: tira o que o modo janelas escreveu
+function limparJanelas(){
+  const main = document.querySelector('main');
+  main.querySelectorAll(':scope > .pega-janela, :scope > .canto-janela').forEach(el => el.remove());
+  ['painel', 'g1', 'g2'].forEach(l => {
+    const el = containerDe(l);
+    if (!el) return;
+    ['left', 'top', 'width', 'height', 'z-index'].forEach(p => el.style.removeProperty(p));
+  });
+}
+
+function aplicarJanelas(){
+  const main = document.querySelector('main');
+  const visiveis = janelasVisiveis();
+  Object.values(arranjo.janelas || {}).forEach(g => { if (g.z > frenteJanela) frenteJanela = g.z; });
+  // Puxador e canto de janela que saiu da tela vão junto
+  main.querySelectorAll(':scope > .pega-janela, :scope > .canto-janela').forEach(el => {
+    if (!visiveis.includes(el.dataset.janela)) el.remove();
+  });
+  visiveis.forEach(local => {
+    const el = containerDe(local), g = limitarJanela(geometriaDaJanela(local));
+    Object.assign(el.style, { left:g.x + 'px', top:g.y + 'px', width:g.w + 'px', height:g.a + 'px',
+                              zIndex:String(g.z || 5) });
+    ['pega', 'canto'].forEach(tipo => {
+      let c = main.querySelector(`:scope > .${tipo}-janela[data-janela="${local}"]`);
+      if (!c){
+        c = document.createElement('div');
+        c.className = tipo + '-janela';
+        c.dataset.janela = local;
+        c.title = tipo === 'pega' ? 'Arraste para mover esta janela pela tela'
+                                  : 'Arraste para mudar a largura e a altura';
+        main.appendChild(c);
+        arrastarJanela(local, c, tipo === 'pega' ? 'mover' : 'tamanho');
+      }
+      // Sempre à frente da própria janela, senão o conteúdo dela taparia o alvo
+      if (tipo === 'pega') Object.assign(c.style, { left:(g.x + g.w / 2 - 30) + 'px', top:(g.y + 4) + 'px',
+                                                    width:'60px', zIndex:String((g.z || 5) + 1) });
+      else Object.assign(c.style, { left:(g.x + g.w - 22) + 'px', top:(g.y + g.a - 22) + 'px',
+                                    zIndex:String((g.z || 5) + 1) });
+    });
+  });
+}
+
+// Tocar numa janela traz ela para a frente
+function frentearJanela(local){
+  if (!janelasLivres()) return;
+  const g = geometriaDaJanela(local);
+  if (g.z === frenteJanela) return;
+  g.z = ++frenteJanela;
+  aplicarJanelas();
+}
+
+/* Auxílio de alinhamento (escolha do usuário: "totalmente livre, porém um leve
+   auxílio para ficar alinhado quando soltado"): as bordas da janela procuram as
+   bordas da tela e as das outras janelas, e a menos de IMA_JANELA pixels elas
+   encostam. A linha âmbar mostra com qual borda foi. */
+let guiasAlinhamento = [];
+function mostrarGuias(lista){
+  guiasAlinhamento.forEach(g => g.remove());
+  guiasAlinhamento = [];
+  const main = document.querySelector('main'), m = areaMain();
+  lista.forEach(({ eixo, valor }) => {
+    const g = document.createElement('div');
+    g.className = 'guia-alinha ' + eixo;
+    if (eixo === 'v') Object.assign(g.style, { left:valor + 'px', top:'0', height:m.height + 'px' });
+    else Object.assign(g.style, { top:valor + 'px', left:'0', width:m.width + 'px' });
+    main.appendChild(g);
+    guiasAlinhamento.push(g);
+  });
+}
+function linhasDeApoio(menos){
+  const m = areaMain();
+  const v = [0, m.width], h = [0, m.height];
+  janelasVisiveis().forEach(l => {
+    if (l === menos) return;
+    const g = geometriaDaJanela(l);
+    v.push(g.x, g.x + g.w); h.push(g.y, g.y + g.a);
+  });
+  return { v, h };
+}
+
+function arrastarJanela(local, alca, modo){
+  alca.addEventListener('pointerdown', ev => {
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    // ⚠️ try/catch: com ponteiro sintético (teste) o setPointerCapture atira
+    // NotFoundError, como já acontece no arraste dos módulos
+    try{ alca.setPointerCapture(ev.pointerId); }catch(e){}
+    frentearJanela(local);
+    const g = geometriaDaJanela(local);
+    const x0 = ev.clientX, y0 = ev.clientY, inicial = { ...g };
+    alca.classList.add('pegando');
+    document.body.classList.add('movendo-janela');
+    const mover = e => {
+      const dx = e.clientX - x0, dy = e.clientY - y0;
+      const usadas = [];
+      /* Sem ímã, as listas vêm vazias: nenhuma borda atrai e nenhuma linha de
+         apoio aparece, sem precisar de um segundo caminho no código abaixo. */
+      const { v, h } = imaAtivo ? linhasDeApoio(local) : { v:[], h:[] };
+      if (modo === 'mover'){
+        g.x = inicial.x + dx; g.y = inicial.y + dy;
+        for (const linha of v){
+          if (Math.abs(g.x - linha) <= IMA_JANELA){ g.x = linha; usadas.push({ eixo:'v', valor:linha }); break; }
+          if (Math.abs(g.x + g.w - linha) <= IMA_JANELA){ g.x = linha - g.w; usadas.push({ eixo:'v', valor:linha }); break; }
+        }
+        for (const linha of h){
+          if (Math.abs(g.y - linha) <= IMA_JANELA){ g.y = linha; usadas.push({ eixo:'h', valor:linha }); break; }
+          if (Math.abs(g.y + g.a - linha) <= IMA_JANELA){ g.y = linha - g.a; usadas.push({ eixo:'h', valor:linha }); break; }
+        }
+      }else{
+        g.w = inicial.w + dx; g.a = inicial.a + dy;
+        limitarJanela(g);
+        for (const linha of v) if (Math.abs(g.x + g.w - linha) <= IMA_JANELA){ g.w = linha - g.x; usadas.push({ eixo:'v', valor:linha }); break; }
+        for (const linha of h) if (Math.abs(g.y + g.a - linha) <= IMA_JANELA){ g.a = linha - g.y; usadas.push({ eixo:'h', valor:linha }); break; }
+      }
+      g.livre = true;     // a partir daqui ela não volta a seguir o padrão
+      limitarJanela(g);
+      mostrarGuias(usadas);
+      aplicarJanelas();
+    };
+    const soltar = () => {
+      alca.classList.remove('pegando');
+      document.body.classList.remove('movendo-janela');
+      mostrarGuias([]);
+      window.removeEventListener('pointermove', mover);
+      window.removeEventListener('pointerup', soltar);
+      window.removeEventListener('pointercancel', soltar);
+      atualizarBotaoArranjo();          // a tela passou a diferir do salvo
+      if (map) map.invalidateSize({ animate:false });
+    };
+    // Na janela, e não na alça: o ponteiro sai de cima dela o tempo todo
+    window.addEventListener('pointermove', mover);
+    window.addEventListener('pointerup', soltar);
+    window.addEventListener('pointercancel', soltar);
+  });
+}
+
 /* ---- Pôr os módulos onde o arranjo manda ---- */
 
 // Coloca os módulos da lista no container, nessa ordem, mexendo só no que está
@@ -3148,8 +3505,14 @@ function aplicarArranjo(){
   const i3 = chaves.painel.indexOf('m3');
   document.body.classList.toggle('sem-divisoria-34', !(i3 >= 0 && chaves.painel[i3 + 1] === 'm4'));
 
-  // A coluna que apareceu pode não caber com a largura guardada
-  Object.keys(COLUNAS).forEach(col => aplicarLarguraGuia(col, larguraGuiaGuardada(col), false));
+  // Posição e tamanho das janelas (v8.4.0), ou as larguras da fila de sempre —
+  // a coluna que apareceu pode não caber com a largura guardada
+  if (janelasLivres()){
+    aplicarJanelas();
+  }else{
+    limparJanelas();
+    Object.keys(COLUNAS).forEach(col => aplicarLarguraGuia(col, larguraGuiaGuardada(col), false));
+  }
   atualizarModulosNasColunas();
   atualizarBotaoArranjo();
   // A largura do mapa mudou: sem isto o Leaflet segue desenhando no tamanho antigo
@@ -3245,7 +3608,19 @@ function descreverArranjo(a){
   Object.keys(COLUNAS).forEach(col => {
     if (a.fixas && a.fixas[col] && ORDEM_MODULOS.some(k => local[k] === col)) fixas[col] = true;
   });
-  return { local, ordem:[...a.ordem], pesos, fixas };
+  /* Só a janela ARRASTADA entra (v8.4.0). Sem isso, o disquete acenderia
+     sozinho ao abrir, porque as janelas nascem com a geometria padrão e essa
+     geometria depende do tamanho da tela — dois computadores nunca dariam o
+     mesmo JSON. O z fica de fora de propósito: ele muda a cada clique numa
+     janela, e "trouxe para a frente" não é arranjo a salvar. */
+  const janelas = {};
+  ['painel', 'g1', 'g2'].forEach(l => {
+    const g = a.janelas && a.janelas[l];
+    const usada = ORDEM_MODULOS.some(k => local[k] === l);
+    if (g && g.livre && usada)
+      janelas[l] = { x:Math.round(g.x), y:Math.round(g.y), w:Math.round(g.w), a:Math.round(g.a), livre:true };
+  });
+  return { local, ordem:[...a.ordem], pesos, fixas, janelas };
 }
 function arranjoGuardado(){
   try{
@@ -3257,6 +3632,10 @@ function arranjoGuardado(){
       if (g.pesos && g.pesos[k] > 0) a.pesos[k] = g.pesos[k];
     });
     Object.keys(COLUNAS).forEach(col => { if (g.fixas && g.fixas[col] === true) a.fixas[col] = true; });
+    ['painel', 'g1', 'g2'].forEach(l => {
+      const j = g.janelas && g.janelas[l];
+      if (j && j.w > 0 && j.a > 0) a.janelas[l] = { x:+j.x, y:+j.y, w:+j.w, a:+j.a, livre:true };
+    });
     // Arranjo salvo antes da v6.0 não tem ordem: fica a da numeração
     if (Array.isArray(g.ordem)){
       const validas = g.ordem.filter((k, i) => ORDEM_MODULOS.includes(k) && g.ordem.indexOf(k) === i);
@@ -3299,24 +3678,49 @@ function destinoDoModulo(chave, x, y){
                    ['g1', document.getElementById('guiaLateral')],
                    ['g2', document.getElementById('guiaExtra')]]
     .filter(([, el]) => !el.hidden);
-  let local = null, rect = null;
-  for (const [id, el] of colunas){
-    const r = el.getBoundingClientRect();
-    // A divisória à esquerda conta como parte da coluna
-    if (x >= r.left - 7 && x <= r.right){ local = id; rect = r; break; }
-  }
-  if (!local){
-    // Sobre o mapa: abre a próxima coluna, se ainda houver uma
-    const maisEsquerda = colunas[colunas.length - 1][1].getBoundingClientRect();
-    if (x >= maisEsquerda.left - 7) return null;
-    const nova = document.getElementById('guiaLateral').hidden ? 'g1'
-               : document.getElementById('guiaExtra').hidden ? 'g2' : null;
-    if (!nova) return null;
-    const largura = larguraGuiaGuardada(nova);
-    const main = document.querySelector('main').getBoundingClientRect();
-    local = nova;
-    rect = { left: maisEsquerda.left - 7 - largura, top: main.top, width: largura, height: main.height };
-    rect.nova = true;
+  let local = null, rect = null, geo = null;
+  if (janelasLivres()){
+    /* Com as janelas livres o acerto é pelos DOIS eixos, e ganha a que está na
+       frente: elas podem se sobrepor, o que numa fila de colunas nunca
+       acontecia (v8.4.0). */
+    const sob = colunas.filter(([, el]) => {
+      const r = el.getBoundingClientRect();
+      return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    }).sort((a, b) => (geometriaDaJanela(b[0]).z || 0) - (geometriaDaJanela(a[0]).z || 0))[0];
+    if (sob){ local = sob[0]; rect = sob[1].getBoundingClientRect(); }
+    else{
+      // Soltou no mapa: a coluna que abrir NASCE onde o ponteiro está, e não
+      // encostada à direita — é o que faz o modo parecer um aplicativo
+      const nova = document.getElementById('guiaLateral').hidden ? 'g1'
+                 : document.getElementById('guiaExtra').hidden ? 'g2' : null;
+      if (!nova) return null;
+      const m = areaMain(), largura = larguraGuiaGuardada(nova);
+      geo = limitarJanela({ x: x - m.left - largura / 2, y: y - m.top - 10, w: largura,
+                            a: Math.max(JANELA_MIN_A, m.height - RESPIRO_JANELA * 2),
+                            z: frenteJanela + 1, livre: true });
+      local = nova;
+      rect = { left: m.left + geo.x, top: m.top + geo.y, width: geo.w, height: geo.a };
+      rect.nova = true;
+    }
+  }else{
+    for (const [id, el] of colunas){
+      const r = el.getBoundingClientRect();
+      // A divisória à esquerda conta como parte da coluna
+      if (x >= r.left - 7 && x <= r.right){ local = id; rect = r; break; }
+    }
+    if (!local){
+      // Sobre o mapa: abre a próxima coluna, se ainda houver uma
+      const maisEsquerda = colunas[colunas.length - 1][1].getBoundingClientRect();
+      if (x >= maisEsquerda.left - 7) return null;
+      const nova = document.getElementById('guiaLateral').hidden ? 'g1'
+                 : document.getElementById('guiaExtra').hidden ? 'g2' : null;
+      if (!nova) return null;
+      const largura = larguraGuiaGuardada(nova);
+      const main = document.querySelector('main').getBoundingClientRect();
+      local = nova;
+      rect = { left: maisEsquerda.left - 7 - largura, top: main.top, width: largura, height: main.height };
+      rect.nova = true;
+    }
   }
 
   // Posição dentro da coluna. Módulos escondidos não têm caixa e são pulados:
@@ -3335,7 +3739,7 @@ function destinoDoModulo(chave, x, y){
 
   const simulado = simularMovimento(arranjo, chave, local, antesDe);
   if (mesmoLugar(simulado, arranjo)) return null;
-  return { local, antesDe, rect };
+  return { local, antesDe, rect, geo };
 }
 
 function iniciarMoverModulo(ev, chave, alca){
@@ -3447,7 +3851,15 @@ function iniciarMoverModulo(ev, chave, alca){
     encaixe.remove();
     fantasma.remove();
     alvo.remove();
-    if (aplicar && destino) moverModulo(chave, destino.local, destino.antesDe);
+    if (aplicar && destino){
+      // A janela nova nasce onde o módulo foi solto (v8.4.0). Antes de mover,
+      // senão aplicarArranjo já a desenharia encostada à direita.
+      if (destino.geo){
+        if (!arranjo.janelas) arranjo.janelas = {};
+        arranjo.janelas[destino.local] = destino.geo;
+      }
+      moverModulo(chave, destino.local, destino.antesDe);
+    }
   };
   const soltar = () => terminar(true);
   const cancelar = () => terminar(false);
@@ -3507,6 +3919,17 @@ if (!modoCampoAtivo){
     while (n && !(n.textContent || '').trim()) n = n.nextSibling;
     alca.classList.toggle('sem-numero', !n || !/^\s*\d/.test(n.textContent));
   });
+
+  /* Tocar em qualquer lugar de uma janela traz ela para a frente (v8.4.0).
+     Na fase de captura, para valer mesmo quando o clique é num botão de dentro,
+     e sem impedir nada: só reordena o z. */
+  document.querySelector('main').addEventListener('pointerdown', ev => {
+    if (!janelasLivres()) return;
+    const janela = ev.target.closest('.console, .guia');
+    if (!janela) return;
+    frentearJanela(janela.classList.contains('console') ? 'painel'
+                 : janela.id === 'guiaLateral' ? 'g1' : 'g2');
+  }, true);
 
   // Uma escuta só para todas as alças, inclusive as dos avisos
   document.querySelector('main').addEventListener('pointerdown', ev => {
@@ -3696,6 +4119,16 @@ if (!modoCampoAtivo){
 
   arranjo = arranjoGuardado() || arranjoNormal();
   aplicarArranjo();
+
+  document.querySelectorAll('[data-janelas-btn]').forEach(b => {
+    b.addEventListener('click', () => aplicarModoJanelas(!modoJanelas(), true));
+  });
+  aplicarModoJanelas(modoJanelas(), false);   // acerta o ícone no estado do <head>
+
+  document.querySelectorAll('[data-ima-btn]').forEach(b => {
+    b.addEventListener('click', () => aplicarIma(!imaAtivo, true));
+  });
+  aplicarIma(imaAtivo, false);   // acerta o ícone no estado guardado
 }
 
 /* ---------------- Arrastar para reordenar (v3.8) ----------------

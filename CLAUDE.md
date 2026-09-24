@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 23/09/2026 — v8.3.0 (o mapa ficava por cima do painel)
+> **Última atualização:** 23/09/2026 — v8.4.0 (janelas livres, atrás de um botão)
 
 ---
 
@@ -231,6 +231,55 @@ sem dependências instaladas. Abre direto no navegador.
   mais por baixo de nada. ⚠️ **A melhora não foi medida**: na máquina de casa o
   problema não reproduz. O que dá para afirmar é o que saiu do caminho —
   durante um arraste, de até **três borrões** para **nenhum**
+- **Janelas livres** (v8.4.0, pedido do usuário: "poder apertar no topo ao
+  centro, e poder colocar a coluna inteira para qualquer parte da tela,
+  parecendo bastante como um aplicativo"; depois: "baseado nesse mesmo caminho
+  do botão de vidro, adicione um que permita a customização das colunas").
+  **Botão no cabeçalho**, ao lado do vidro (`hg_janelas`, ícone mostrando o
+  estado atual como o do tema: três colunas em fila, ou duas janelas soltas em
+  âmbar). **Desligado por padrão — aí nada muda.** Ligado, cada coluna vira uma
+  janela com **x, y, largura, altura e ordem de frente**: puxador no topo ao
+  centro para mover, canto embaixo à direita para largura **e** altura, e tocar
+  em qualquer lugar traz a janela para a frente. As bordas se **imantam** às da
+  tela e às das outras janelas a menos de 10px, com uma linha âmbar mostrando o
+  encontro (escolha do usuário: "totalmente livre, porém um leve auxílio para
+  ficar alinhado quando soltado") — e esse ímã **tem botão próprio**
+  (`hg_ima`), que só aparece com as janelas ligadas, porque fora delas não há o
+  que alinhar. Desligado, a janela fica exatamente onde for solta; foi pedido
+  depois de o modo ficar pronto ("para poder soltar aonde quiser"), e o usuário
+  escolheu o botão entre três formas — as outras eram segurar Alt durante o
+  arraste, e as duas juntas. O cabeçalho ficou
+  `[disquete] [lixeira] | [janelas] [ímã] [vidro] [tema]`.
+  ⚠️ Com o ímã desligado, `linhasDeApoio()` **nem é chamada**: o arraste recebe
+  listas vazias, e com isso somem a atração e as linhas de apoio de uma vez —
+  sem um segundo caminho no código do arraste. **Soltar um módulo no mapa** abre a coluna
+  nova **no ponto onde foi solto**. A geometria entra no arranjo: o disquete
+  salva, a lixeira devolve tudo.
+  ⚠️ **Só a janela que foi arrastada é guardada** (marca `livre`); as outras são
+  recalculadas pela geometria padrão a cada `aplicarJanelas()` — encostadas à
+  direita, painel · coluna 2 · coluna 3. Sem isso o modo ligado abriria
+  diferente do desligado, e o **disquete acenderia sozinho** ao abrir, porque a
+  geometria padrão depende do tamanho da tela e dois computadores nunca dariam
+  o mesmo JSON. ⚠️ O **z fica fora** do que se salva e do que se compara: ele
+  muda a cada clique, e "trouxe para a frente" não é arranjo.
+  ⚠️ **O modo exige o mapa por baixo**, então vale mesmo com o vidro desligado:
+  sem vidro muda só o **material** da janela (opaca, com sombra própria), não o
+  layout — por isso as regras do vidro desligado ganharam
+  `:not([data-janelas="1"])` na parte de layout, e o material virou regra à
+  parte. ⚠️ **O puxador e o canto não moram dentro da janela**: ela rola, e eles
+  sumiriam junto com a rolagem; ficam em `main`, posicionados pelo mesmo código.
+  ⚠️ **Posição de emergência no CSS** (`top/right/bottom`): entre o `<head>`
+  marcar `data-janelas` e o JS posicionar as janelas há um quadro em que elas
+  são absolutas **sem coordenada**, e aí ficariam onde calhar, com a altura do
+  conteúdo. Encostadas à direita, esse quadro fica idêntico ao layout de sempre
+  (medido: 1048/77, 340×731 nos dois casos).
+  ⚠️ **`folgaDasColunas()` teve de ser reescrita**: somar as larguras só valia
+  com as colunas enfileiradas à direita. Agora ela mede a **faixa colada na
+  borda direita** que está coberta, encadeando janela a janela; janela solta no
+  meio não conta, e o mapa enquadra na tela inteira. ⚠️ A tolerância do
+  encadeamento é **24px** — entre duas colunas encostadas há a margem de 12 do
+  cartão mais a divisória de 7 (19px de vão); com 13 a conta parava na primeira
+  e devolvia 352 onde o certo eram 731
 - **O mapa acompanha o tema**: no escuro usa o Esri Dark Gray com um tratamento
   de cor que reproduz a referência do usuário (ver seção 5); no claro **troca de
   ladrilhos** para o Esri Light Gray, que é onde ruas e rótulos foram desenhados
@@ -867,7 +916,8 @@ repositório é público (ver `.gitignore`).
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
   origem padrão, a lista de tipos de serviço, a preferência de formato do link,
   a opção de voltar para a origem, o zoom ao clicar na parada, o vidro ligado
-  ou desligado, a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
+  ou desligado, as janelas livres ligadas ou desligadas, o ímã de alinhamento
+  delas, a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
   botão), o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
   recarregar a página zera essa parte, de propósito (é o roteiro do dia, não
@@ -1094,6 +1144,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 89 | **v8.1.0** — Vidro: o mapa passa por baixo do painel e das colunas |
 | 90 | **v8.2.0** — Fluidez: o borrão sai enquanto o mapa se mexe, e um interruptor desliga o vidro |
 | 91 | **v8.3.0** — Correção: o mapa pintava por cima do painel com o vidro desligado |
+| 92 | **v8.4.0** — Janelas livres: cada coluna solta pela tela, atrás de um botão |
 
 ---
 
@@ -1160,7 +1211,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.3.0
+8.4.0
 ```
 
 ### Onde o número aparece
@@ -1276,3 +1327,4 @@ os backups locais são conveniência, não garantia.
 | 8.1.0 | 22/09/2026 | Vidro: o mapa por baixo do painel e das colunas |
 | 8.2.0 | 23/09/2026 | Fluidez do vidro (travava em máquina com vídeo integrado) |
 | 8.3.0 | 23/09/2026 | Correção: o mapa pintava por cima do painel sem o vidro |
+| 8.4.0 | 23/09/2026 | Janelas livres (posição, tamanho e ordem de frente por coluna) |
