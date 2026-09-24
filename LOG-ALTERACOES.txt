@@ -5824,3 +5824,63 @@ MEDIDAS
 TESTES
   Painel, checklist, lista de paradas e roteiro conferidos um a um, nos dois
   temas. Sem erro no console.
+
+--------------------------------------------------------
+[23/09/2026] v8.4.2 — A bolinha do checklist sai; seta e contador acendem
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  Com um print da lista: "quanto ao retângulo indicando a posição no print.
+  Está me parecendo redundante o ponto e a seta, o que você sugere?"
+
+O DIAGNÓSTICO (o instinto estava certo, o alvo não)
+  A seta e a bolinha NÃO faziam a mesma coisa: a seta diz se a cascata abre, e
+  a bolinha dizia que há filial selecionada ali dentro. A redundância era da
+  bolinha com o CONTADOR da direita, que já virava "2/9" quando há seleção — e
+  diz quantas de quantas, que é mais do que a bolinha dizia, no mesmo lugar.
+  E em repouso a bolinha era teal a 35% de opacidade: uma segunda marca apagada
+  na calha, sem informação nenhuma.
+
+COMO FOI DECIDIDO
+  Montada a COMPARACAO-CHECKLIST.html (fora do repositório) com as três opções
+  lado a lado, na largura real do painel (340px), com os nomes do print do
+  usuário e as linhas com seleção marcadas. Ele escolheu A E B COMBINADAS: a
+  bolinha sai e acendem em âmbar TANTO a seta QUANTO o contador. E pediu o
+  chevron de traço na mesma leva.
+
+O QUE FOI FEITO
+  · A bolinha saiu dos dois níveis (.grupo-marca do cliente e .grupo-umap-marca
+    do grupo do uMap).
+  · Com seleção, a seta fica âmbar e o contador fica âmbar e negrito. Os dois,
+    e não só um: o contador é o preciso, a seta é a que dá para varrer de
+    relance numa lista de 39 clientes.
+  · O triângulo ▶ virou SVG de traço, numa constante CHEVRON usada nos dois
+    níveis. Ele tinha ficado para trás na v7.9.0, que trocou os outros
+    controles justamente porque caractere depende da fonte do sistema.
+
+MEDIDAS (painel de 340px)
+  Calha da borda da caixa até o nome: 42px antes (▶ + bolinha) → 31px agora.
+  Na página de comparação, com o chevron nos dois lados para isolar a bolinha:
+    46px → 31px, e o nome de 236px → 251px.
+  ⚠️ O ganho real saindo de hoje é 11px, e não 15: o chevron SVG é 4px mais
+  largo que o caractere ▶. Os 15px são só da bolinha.
+
+TESTES
+  Base de exemplo carregada: 4 clientes, 0 bolinhas, 4 chevrons, nenhum ▶ no
+    HTML, calha de 31px.
+  Selecionando uma filial: seta rgb(242,169,60) e contador "1/2" em âmbar
+    negrito; linha sem seleção com os dois em rgb(124,147,160).
+  Cascata aberta: chevron girado 90 graus (matrix(0,1,-1,0,0,0)).
+  Nível do grupo do uMap conferido à parte (a base de exemplo não tem grupos),
+    nos dois temas: âmbar #F2A93C/#C9821A com seleção, muted #7C93A0/#5B6F7D sem.
+  Sem erro no console.
+
+⚠️ ARMADILHA DE MEDIÇÃO (a mesma das v6.5/v6.9/v8.0.0/v8.1.0, de novo)
+  A seta ganhou `transition: color .15s`. Medindo a cor logo depois de trocar a
+  classe, ela vinha SEMPRE UM PASSO ATRÁS — sem seleção lia âmbar, com seleção
+  lia muted. Parecia seletor invertido. Não era: a aba do painel de teste não
+  está pintando, então o relógio da transição não anda e getComputedStyle
+  devolve o último valor confirmado. O contador, que não tem transição, estava
+  certo em todas as leituras — foi esse contraste que denunciou.
+  Confirmado pondo `transition:none` no elemento antes de ler: aí os quatro
+  casos (com/sem seleção x escuro/claro) deram exatamente o esperado.

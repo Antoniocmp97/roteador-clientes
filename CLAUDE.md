@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 23/09/2026 — v8.4.1 (barras de rolagem no tema)
+> **Última atualização:** 23/09/2026 — v8.4.2 (checklist sem a bolinha da calha)
 
 ---
 
@@ -53,6 +53,23 @@ sem dependências instaladas. Abre direto no navegador.
 - Checklist com **cascata de três níveis** quando o uMap tem grupos:
   **Grupo → Camada → Unidades**. Camadas sem grupo continuam no primeiro nível,
   lado a lado com os grupos
+- **A calha do checklist tem uma marca só** (v8.4.2, relatado pelo usuário com
+  print: "está me parecendo redundante o ponto e a seta"). ⚠️ O instinto estava
+  certo, o alvo não: a seta e a bolinha **não** faziam a mesma coisa — a seta
+  diz se a cascata abre, a bolinha dizia que há filial selecionada ali dentro.
+  A redundância era da **bolinha com o contador**, que já virava "2/9" e diz
+  *quantas de quantas*, no mesmo lugar. E em repouso a bolinha era teal a **35%
+  de opacidade**: uma segunda marca apagada, sem informação nenhuma. Ela saiu
+  dos dois níveis, e agora quem acende em âmbar é a **seta e o contador** —
+  os dois, escolha do usuário entre as opções comparadas na
+  `COMPARACAO-CHECKLIST.html`: o contador é o preciso, a seta é a que dá para
+  varrer de relance numa lista de 39 clientes. Medido num painel de 340px: a
+  calha até o nome caiu de **42px para 31px**, o que tira uma linha dos nomes
+  que quebram em duas. ⚠️ O **▶ virou chevron SVG** na mesma leva (constante
+  `CHEVRON`, usada nos dois níveis): ele tinha ficado para trás na v7.9.0, que
+  trocou os outros controles justamente porque caractere depende da fonte do
+  sistema. Por isso o ganho real é **11px** e não 15 — o chevron é 4px mais
+  largo que o ▶; os 15px são só da bolinha
 - **Base ordenada alfabeticamente** ao carregar, nos três níveis, com
   `Intl.Collator('pt-BR')` — acentos e cedilha entram no lugar certo. A ordem da
   rota não é afetada: quem decide a sequência da viagem é a otimização
@@ -86,8 +103,9 @@ sem dependências instaladas. Abre direto no navegador.
   (Nominatim). ⚠️ Vive só na sessão: recarregar limpa, como a seleção do dia; para
   recuperar, retoma-se pelo link
 - **A cascata fecha ao selecionar** (v5.0): marcar uma filial fecha a cascata do
-  cliente, para a lista não ficar poluída. O contador no cabeçalho (ex.: "1/9")
-  e a bolinha âmbar continuam mostrando que há seleção ali dentro. Desmarcar
+  cliente, para a lista não ficar poluída. O **contador** no cabeçalho
+  (ex.: "1/9") continua mostrando que há seleção ali dentro — **em âmbar e
+  negrito**, junto com a seta, desde a v8.4.2. Desmarcar
   **não** fecha. Dentro de um grupo do uMap, só a camada fecha — o grupo
   continua aberto
 - **Base guardada no navegador** (Fase 3): depois de carregar o `.umap` uma vez,
@@ -1041,7 +1059,9 @@ no `.gitignore`), para apagar quando não servirem mais:
 `COMPARACAO-DESIGN.html` (os 7 pontos acima), `COMPARACAO-EFEITOS.html` (os
 quatro efeitos ao traçar a rota, em seis mapas de verdade; a v8.0.0 saiu do
 "conjunto") e `COMPARACAO-VIDRO.html` (quatro modos de transparência com cinco
-controles; a v8.1.0 saiu do modo "Apple"). ⚠️ A de efeitos tem a rota de exemplo embutida, então funciona sem
+controles; a v8.1.0 saiu do modo "Apple") e `COMPARACAO-CHECKLIST.html` (a
+bolinha da calha: como era, contador acendendo e seta acendendo, na largura
+real do painel; a v8.4.2 saiu das duas últimas combinadas). ⚠️ A de efeitos tem a rota de exemplo embutida, então funciona sem
 rede — só os ladrilhos do mapa é que precisam de internet.
 
 Regra de trabalho vigente: implementar e testar, mas **perguntar antes de fazer
@@ -1158,6 +1178,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 91 | **v8.3.0** — Correção: o mapa pintava por cima do painel com o vidro desligado |
 | 92 | **v8.4.0** — Janelas livres: cada coluna solta pela tela, atrás de um botão |
 | 93 | **v8.4.1** — Barras de rolagem no tema, com a pista transparente |
+| 94 | **v8.4.2** — Checklist sem a bolinha: a seta e o contador acendem |
 
 ---
 
@@ -1224,7 +1245,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.4.1
+8.4.2
 ```
 
 ### Onde o número aparece
@@ -1342,3 +1363,4 @@ os backups locais são conveniência, não garantia.
 | 8.3.0 | 23/09/2026 | Correção: o mapa pintava por cima do painel sem o vidro |
 | 8.4.0 | 23/09/2026 | Janelas livres (posição, tamanho e ordem de frente por coluna) |
 | 8.4.1 | 23/09/2026 | Barras de rolagem acompanhando o tema |
+| 8.4.2 | 23/09/2026 | Checklist sem a bolinha da calha; chevron de traço |

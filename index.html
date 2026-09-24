@@ -718,7 +718,14 @@
   .grupo-head{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer;
               user-select:none;font-size:13px;font-weight:600;color:var(--text);}
   .grupo-head:hover{background:var(--hover);}
-  .grupo-seta{color:var(--muted);font-size:10px;transition:transform .15s;flex:none;}
+  /* Chevron de traço desde a v8.4.2. Era o caractere ▶, que ficou para trás
+     quando a v7.9.0 trocou os outros controles por SVG: caractere depende da
+     fonte do sistema, e o desenho mudava entre o Windows do escritório e o
+     Android da equipe. */
+  .grupo-seta{color:var(--muted); flex:none; width:13px; height:13px; margin-top:1px;
+              fill:none; stroke:currentColor; stroke-width:2;
+              stroke-linecap:round; stroke-linejoin:round;
+              transition:transform .15s, color .15s;}
   .grupo.aberto .grupo-seta{transform:rotate(90deg);}
   /* O nome quebra linha em vez de ser cortado com "…". Medido em 08/09/2026 na
      base real: o maior nome precisa de 438px e a caixa tinha 207px — o corte
@@ -728,12 +735,26 @@
      tela menor lê em duas linhas, mas lê inteiro. */
   .grupo-nome{flex:1;min-width:0;white-space:normal;line-height:1.3;overflow-wrap:anywhere;}
   .grupo-head{align-items:flex-start;}
-  .grupo-seta, .grupo-marca, .grupo-cont{margin-top:2px;}
+  .grupo-cont{margin-top:2px;}
   .grupo-cont{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);flex:none;}
-  /* Bolinha teal que acende em âmbar quando o cliente tem filial selecionada —
-     assim dá para ver o que está escolhido sem abrir grupo por grupo. */
-  .grupo-marca{width:7px;height:7px;border-radius:50%;background:var(--teal);opacity:.35;flex:none;}
-  .grupo.tem-selecao .grupo-marca{background:var(--amber);opacity:1;}
+  /* ---- Quem mostra que há filial selecionada aqui dentro (v8.4.2) ----
+     Até a v8.4.1 era uma bolinha de 7px na calha, ao lado da seta. O usuário
+     estranhou ("está me parecendo redundante o ponto e a seta") e ele tinha
+     razão, só que a redundância era com o CONTADOR: ele já vira "2/9" quando
+     há seleção, e diz quantas de quantas — a bolinha dizia menos, no mesmo
+     lugar. E em repouso ela era teal a 35% de opacidade: uma segunda marca
+     apagada, sem informação nenhuma.
+     Agora o sinal é a COR da seta e do contador, que já estavam ali. Medido num
+     painel de 340px, numa comparação lado a lado com a base de verdade: a calha
+     até o nome caiu de 46px para 31px e o nome ganhou 15px (236 → 251), que é o
+     que tira uma linha dos nomes que quebram em duas.
+     ⚠️ Os dois acendem, e não só um (escolha do usuário entre as duas opções
+     comparadas): o contador é o preciso, e a seta é a que dá para varrer de
+     relance numa lista de 39 clientes. */
+  .grupo.tem-selecao .grupo-seta,
+  .grupo-umap.tem-selecao .grupo-seta{color:var(--amber);}
+  .grupo.tem-selecao .grupo-cont,
+  .grupo-umap.tem-selecao .grupo-cont{color:var(--amber); font-weight:700;}
   .grupo-corpo{display:none;padding:0 8px 8px 8px;flex-direction:column;gap:6px;}
   .grupo-corpo > *{flex:none;}
   .grupo.aberto .grupo-corpo{display:flex;}
@@ -748,9 +769,6 @@
                    background:var(--panel-2); border:1px solid var(--line); border-radius:7px;}
   .grupo-umap-head:hover{background:var(--hover);}
   .grupo-umap.aberto .grupo-seta{transform:rotate(90deg);}
-  /* Bolinha âmbar distingue o grupo da bolinha teal das camadas */
-  .grupo-umap-marca{width:7px;height:7px;border-radius:50%;background:var(--amber);opacity:.35;flex:none;}
-  .grupo-umap.tem-selecao .grupo-umap-marca{opacity:1;}
   .grupo-umap-corpo{display:none; flex-direction:column; gap:6px;
                     margin:6px 0 0 5px; padding-left:7px; border-left:2px solid var(--line);}
   .grupo-umap.aberto .grupo-umap-corpo{display:flex;}
@@ -1741,7 +1759,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.4.1';
+const VERSAO = '8.4.2';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2449,6 +2467,10 @@ window.toggleStop = toggleStop; // precisa estar em escopo global: é chamado vi
 // Redesenha o checklist do zero a partir de clientPoints. Cada linha tem um checkbox cujo
 // estado (marcado/desmarcado) espelha se o cliente está em `stops`; marcar/desmarcar
 // adiciona ou remove o cliente de `stops` e atualiza a lista de paradas
+/* O chevron que abre e fecha a cascata, nos dois níveis (v8.4.2). Numa
+   constante porque são dois lugares que precisam desenhar o mesmo. */
+const CHEVRON = '<svg class="grupo-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+
 function renderChecklist(){
   const el = document.getElementById('checklist');
   const buscaInput = document.getElementById('buscaClientes');
@@ -2513,8 +2535,7 @@ function renderChecklist(){
     // Cabeçalho: clicar abre/fecha a cascata de filiais deste cliente
     const head = document.createElement('div');
     head.className = 'grupo-head';
-    head.innerHTML = `<span class="grupo-seta">▶</span>
-      <span class="grupo-marca"></span>
+    head.innerHTML = `${CHEVRON}
       <span class="grupo-nome">${escaparHtml(g.cliente)}</span>
       <span class="grupo-cont">${selecionadas ? selecionadas + '/' : ''}${g.pontos.length}</span>`;
     head.onclick = () => {
@@ -2613,8 +2634,7 @@ function renderChecklist(){
 
     const cab = document.createElement('div');
     cab.className = 'grupo-umap-head';
-    cab.innerHTML = `<span class="grupo-seta">▶</span>
-      <span class="grupo-umap-marca"></span>
+    cab.innerHTML = `${CHEVRON}
       <span class="grupo-nome">${escaparHtml(no.nome)}</span>
       <span class="grupo-cont">${selecionados ? selecionados + '/' : ''}${totalPontos}</span>`;
     cab.onclick = () => {
