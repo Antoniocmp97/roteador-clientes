@@ -332,6 +332,74 @@
   #salvarArranjoBtn.pendente::after{content:''; position:absolute; top:4px; right:4px;
              width:6px; height:6px; border-radius:50%; background:var(--amber);}
 
+  /* ---- Abas de técnico (v8.5.0, pedido do usuário: "abrir uma segunda tela,
+     como se fosse uma guia de navegador, onde tenho técnico um e na outra aba o
+     técnico dois... ao traçar a rota consigo ver no mapa a rota de ambos, cada
+     um em sua cor") ----
+     É a Fase 2 que ficou adiada em 29/08/2026 ("dividir clientes entre as 2-3
+     pessoas da equipe, um link por pessoa"), numa forma concreta.
+     Pílulas, e não abas de navegador coladas numa borda: desde a v8.1.0 o
+     painel flutua sobre o mapa, então não há borda em que encostar. A bolinha
+     de cor é a mesma cor da rota daquele técnico no mapa — a aba é a legenda. */
+  /* ⚠️ As abas moram DENTRO do cabeçalho, ao lado do selo de versão (pedido do
+     usuário) — antes eram uma barra própria entre o cabeçalho e o mapa, e
+     comiam 40px de altura mesmo com um técnico só. `align-self:center` porque
+     o header é `align-items:baseline`, e a linha de base de uma pílula não é a
+     do texto da marca. Com `flex-wrap` do header, em tela estreita elas caem
+     sozinhas para uma linha só delas. */
+  header .abas{display:flex; align-items:center; gap:6px;
+        flex:1 1 auto; min-width:0; align-self:center;
+        overflow-x:auto; scrollbar-width:none;}
+  header .abas::-webkit-scrollbar{display:none;}
+  .aba{display:flex; align-items:center; gap:7px; flex:none; max-width:220px;
+       padding:5px 6px 5px 10px; border-radius:999px; cursor:pointer; user-select:none;
+       background:transparent; border:1px solid var(--line); color:var(--muted);
+       font-size:12.5px; transition:background .15s, color .15s, border-color .15s;}
+  .aba:hover{background:var(--hover); color:var(--text);}
+  .aba.ativa{background:var(--panel-2); color:var(--text); font-weight:600; border-color:var(--panel-2);}
+  /* Na aba aberta, o nome é campo: um clique já entra na edição com o texto
+     inteiro selecionado, então digitar troca o "Técnico 1" pelo nome da pessoa */
+  .aba.ativa .aba-nome{cursor:text;}
+  .aba-cor{width:9px; height:9px; border-radius:50%; flex:none;}
+  .aba-nome{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:1ch;}
+  .aba-nome[contenteditable="true"]{outline:none; text-overflow:clip; cursor:text;
+       box-shadow:inset 0 -1px 0 var(--amber);}
+  .aba-x{width:18px; height:18px; padding:0; border-radius:50%; flex:none; background:none;
+         border:none; color:var(--muted); display:flex; align-items:center; justify-content:center;
+         cursor:pointer; opacity:.6;}
+  .aba-x:hover{opacity:1; color:var(--danger); background:var(--hover);}
+  .aba-mais{width:26px; height:26px; padding:0; border-radius:50%; flex:none; background:none;
+            border:1px dashed var(--line); color:var(--muted); cursor:pointer;
+            display:flex; align-items:center; justify-content:center;}
+  .aba-mais:hover{color:var(--amber); border-color:var(--amber-dim); background:var(--hover);}
+  .aba-x svg, .aba-mais svg{width:12px; height:12px; fill:none; stroke:currentColor;
+            stroke-width:2.2; stroke-linecap:round;}
+  .aba-mais svg{width:14px; height:14px;}
+
+  /* Faixa de "tem planejamento guardado" (v8.5.0). Fica entre o cabeçalho e o
+     mapa, aparece só quando há o que restaurar e some assim que a pessoa
+     decide — por isso não custa altura no dia a dia. */
+  .retomar-dia{display:flex; align-items:center; gap:12px; flex:none;
+       margin:0 16px 10px; padding:9px 14px; border-radius:10px; font-size:13px;
+       background:var(--amber-fraco); border:1px solid var(--amber-dim); color:var(--text);}
+  .retomar-dia[hidden]{display:none;}
+  .retomar-dia b{color:var(--amber);}
+  .retomar-dia .texto{flex:1; min-width:0; line-height:1.4;}
+  .retomar-dia button{flex:none; font-family:'Inter',sans-serif; font-size:12.5px;
+       padding:6px 12px; border-radius:7px; cursor:pointer;}
+  .retomar-dia .sim{background:var(--amber); color:#241705; border:none; font-weight:700;}
+  .retomar-dia .nao{background:transparent; color:var(--muted); border:1px solid var(--line);}
+  .retomar-dia .nao:hover{color:var(--danger); border-color:var(--danger);}
+
+  /* Marca de que a parada já está na rota de OUTRO técnico (v8.5.0). Fica do
+     lado DIREITO, junto do contador: a calha da esquerda acabou de ser limpa na
+     v8.4.2 e não vai voltar a ter duas marcas. Só aparece quando há o que
+     dizer, então nunca é enfeite — que foi o problema da bolinha antiga. O anel
+     separa a cor do fundo da caixa, que às vezes é parecido. */
+  .dono-marca{width:8px; height:8px; border-radius:50%; flex:none; margin-top:3px;
+              box-shadow:0 0 0 2px var(--panel-2);}
+  .grupo-corpo .dono-marca{box-shadow:0 0 0 2px var(--panel); margin-top:5px;}
+
   /* Painel lateral ("console") com os controles: upload, origem, checklist, paradas, botões */
   /* A largura vem de uma variável para a divisória poder alterá-la sem estilo
      inline — assim o layout empilhado das telas estreitas (media query lá
@@ -1320,6 +1388,8 @@
 <div class="app">
   <header>
     <div class="mark">hagamorfis<span>/</span>rotas<span class="versao" id="versaoEscritorio"></span></div>
+    <!-- Abas de técnico (v8.5.0), ao lado do selo de versão. Desenhadas em renderAbas(). -->
+    <div class="abas" id="abasTecnicos" role="tablist" aria-label="Roteiros por técnico"></div>
     <!-- Arranjo dos módulos nas colunas (v5.7). Mover um módulo vale só enquanto
          a página está aberta; "salvar" faz o site abrir sempre assim, e "voltar
          ao normal" põe tudo de volta no painel e apaga o que foi salvo. -->
@@ -1389,6 +1459,13 @@
       </button>
     </div>
   </header>
+
+  <!-- Planejamento guardado da sessão anterior (v8.5.0) -->
+  <div class="retomar-dia" id="retomarDia" hidden>
+    <span class="texto" id="retomarDiaTexto"></span>
+    <button class="sim" type="button" id="retomarDiaSim">Restaurar</button>
+    <button class="nao" type="button" id="retomarDiaNao">Começar do zero</button>
+  </div>
 
   <main>
     <div id="map"></div>
@@ -1759,7 +1836,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.4.2';
+const VERSAO = '8.5.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -1974,6 +2051,365 @@ if (map){
   map.on('moveend zoomend', () => descongelarVidro());
 }
 
+/* ---------------- Um roteiro por técnico, em abas (v8.5.0) ----------------
+   Cada aba tem a SUA seleção de paradas, ordem, origem, rota e link. O mapa
+   mostra todas ao mesmo tempo, cada uma na cor da aba; a ativa fica em cor
+   cheia e as outras apagadas ao fundo.
+
+   ⚠️ COMO ISTO NÃO VIROU UMA REFATORAÇÃO GIGANTE. O estado de um roteiro são
+   sete variáveis (stops, originLatLng, originMarker, routeLine, stopMarkers,
+   ultimoResumo, idRoteiro), mas elas são lidas em ~150 lugares — só `stops`
+   aparece 83 vezes. Em vez de trocar tudo para `tecnico.stops`, elas continuam
+   sendo as variáveis do técnico ATIVO: trocar de aba guarda as atuais no objeto
+   da aba e carrega as da outra. Nenhuma das 150 chamadas mudou.
+   ⚠️ A exceção é justamente o que se quer ver junto: as CAMADAS DO MAPA de cada
+   técnico ficam no mapa o tempo todo. Trocar de aba só muda qual está acesa.
+   ⚠️ O que o traçado escreveu no painel (roteiro passo a passo, km/min, link)
+   é guardado como texto já pronto, e não recalculado: refazer o traçado ao
+   trocar de aba redesenharia o mapa e rodaria a animação de novo. */
+const CORES_TECNICO = ['#F2A93C', '#A78BFA', '#5BC0F8', '#F97EB9', '#B8E04A', '#FF9A6B'];
+const SVG_ABA_X = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const SVG_ABA_MAIS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+let tecnicos = [];
+let tecnicoAtivo = 0;
+let contaTecnicos = 0;
+
+const corDoTecnico = () => (tecnicos[tecnicoAtivo] || {}).cor || CORES_TECNICO[0];
+
+function novoTecnico(){
+  contaTecnicos++;
+  return {
+    nome: 'Técnico ' + contaTecnicos,
+    cor: CORES_TECNICO[(contaTecnicos - 1) % CORES_TECNICO.length],
+    stops: [], origem: null, origemTexto: '', voltar: true,
+    linha: null, marcadores: [], origemMarker: null,
+    resumo: null, rid: null, painel: null
+  };
+}
+
+// O que o traçado deixou escrito no painel, para voltar igual na troca de aba
+function salvarNoTecnico(t){
+  if (!t) return;
+  t.stops = stops; t.origem = originLatLng; t.origemMarker = originMarker;
+  t.linha = routeLine; t.marcadores = stopMarkers;
+  t.resumo = ultimoResumo; t.rid = idRoteiro;
+  t.origemTexto = document.getElementById('originInput').value;
+  t.voltar = document.getElementById('voltarOrigem').checked;
+  t.painel = {
+    steps: document.getElementById('steps').innerHTML,
+    dist: document.getElementById('distVal').textContent,
+    tempo: document.getElementById('timeVal').textContent,
+    readout: document.getElementById('readout').classList.contains('show'),
+    resumo: !document.getElementById('resumoRota').hidden,
+    envio: document.getElementById('envioSection').style.display,
+    linkPronto: document.getElementById('linkPronto').style.display,
+    link: document.getElementById('linkCampo').value
+  };
+}
+
+function carregarDoTecnico(t){
+  stops = t.stops; originLatLng = t.origem; originMarker = t.origemMarker;
+  routeLine = t.linha; stopMarkers = t.marcadores;
+  ultimoResumo = t.resumo; idRoteiro = t.rid;
+  document.getElementById('originInput').value = t.origemTexto || '';
+  document.getElementById('voltarOrigem').checked = !!t.voltar;
+  const p = t.painel || {};
+  document.getElementById('steps').innerHTML = p.steps || '';
+  document.getElementById('distVal').textContent = p.dist || '';
+  document.getElementById('timeVal').textContent = p.tempo || '';
+  document.getElementById('readout').classList.toggle('show', !!p.readout);
+  document.getElementById('resumoRota').hidden = !p.resumo;
+  document.getElementById('envioSection').style.display = p.envio || 'none';
+  document.getElementById('linkPronto').style.display = p.linkPronto || 'none';
+  document.getElementById('linkCampo').value = p.link || '';
+  setStatus('');
+  esconderOpcoesEndereco();
+  renderStopsList();
+  renderChecklist();
+  atualizarBotaoOrigemPadrao();
+}
+
+/* A rota do técnico ativo em cor cheia e na frente; as outras apagadas atrás.
+   ⚠️ A opacidade do marcador vai no elemento de FORA (o do Leaflet), e não no
+   ícone de dentro: o de dentro já carrega o realce de hover da v6.7.0, e os
+   dois brigariam pelo mesmo estilo. */
+function realcarCamadas(){
+  // ⚠️ Sincroniza antes de olhar: as camadas do técnico ATIVO vivem nas
+  // variáveis globais, e o objeto da aba só recebe a cópia em salvarNoTecnico.
+  // Sem isto, chamar daqui logo depois de traçar leria a rota anterior.
+  salvarNoTecnico(tecnicos[tecnicoAtivo]);
+  tecnicos.forEach((t, i) => {
+    const ativo = i === tecnicoAtivo;
+    if (t.linha){
+      t.linha.setStyle({ opacity: ativo ? .9 : .28, weight: ativo ? 5 : 3 });
+      if (ativo) t.linha.bringToFront();
+    }
+    [...t.marcadores, t.origemMarker].forEach(m => {
+      const el = m && m.getElement();
+      if (el){ el.style.opacity = ativo ? '1' : '.38'; el.style.zIndex = ativo ? '' : '-1'; }
+    });
+  });
+}
+
+function trocarTecnico(i){
+  if (i === tecnicoAtivo || !tecnicos[i]) return;
+  salvarNoTecnico(tecnicos[tecnicoAtivo]);
+  tecnicoAtivo = i;
+  carregarDoTecnico(tecnicos[i]);
+  realcarCamadas();
+  renderAbas();
+}
+
+function adicionarTecnico(){
+  salvarNoTecnico(tecnicos[tecnicoAtivo]);
+  tecnicos.push(novoTecnico());
+  tecnicoAtivo = tecnicos.length - 1;
+  carregarDoTecnico(tecnicos[tecnicoAtivo]);
+  // Origem própria, mas começando na mesma (escolha do usuário): a aba nova
+  // nasce na origem padrão salva, e daí cada um pode mudar a sua
+  const o = lerOrigemPadrao();
+  if (o) setOrigin(o.lat, o.lng, o.label, false);
+  realcarCamadas();
+  renderAbas();
+}
+
+function fecharTecnico(i){
+  if (tecnicos.length <= 1) return;
+  salvarNoTecnico(tecnicos[tecnicoAtivo]);
+  const t = tecnicos[i];
+  if (t.stops.length && !confirm('Fechar a aba de ' + t.nome + '?\n\nAs '
+      + t.stops.length + ' paradas e a rota dela são perdidas.')) return;
+  if (t.linha) map.removeLayer(t.linha);
+  t.marcadores.forEach(m => map.removeLayer(m));
+  if (t.origemMarker) map.removeLayer(t.origemMarker);
+  tecnicos.splice(i, 1);
+  if (tecnicoAtivo > i) tecnicoAtivo--;
+  else if (tecnicoAtivo === i) tecnicoAtivo = Math.min(i, tecnicos.length - 1);
+  carregarDoTecnico(tecnicos[tecnicoAtivo]);
+  // As avulsas que só existiam na aba fechada não têm mais dono
+  if (limparAvulsasSoltas()){ renderChecklist(); renderStopsList(); }
+  realcarCamadas();
+  renderAbas();
+}
+
+function renomearTecnico(i, span){
+  if (span.contentEditable === 'true') return;   // já estava editando
+  span.contentEditable = 'true';
+  span.focus();
+  const sel = getSelection(), r = document.createRange();
+  r.selectNodeContents(span); sel.removeAllRanges(); sel.addRange(r);
+  const fim = guardar => {
+    span.onblur = null;
+    span.contentEditable = 'false';
+    const novo = span.textContent.trim().slice(0, 28);
+    if (guardar && novo) tecnicos[i].nome = novo;
+    renderAbas();
+  };
+  span.onblur = () => fim(true);
+  span.onkeydown = ev => {
+    if (ev.key === 'Enter'){ ev.preventDefault(); fim(true); }
+    if (ev.key === 'Escape'){ ev.preventDefault(); fim(false); }
+  };
+}
+
+/* A primeira aba existe desde o começo: o estado dela É o das variáveis
+   globais, então o app abre exatamente como sempre abriu. */
+function iniciarTecnicos(){
+  tecnicos = [novoTecnico()];
+  tecnicoAtivo = 0;
+  renderAbas();
+}
+
+/* ---------------- O planejamento do dia sobrevive ao recarregar (v8.5.0) ----
+   Até aqui só a CONFIGURAÇÃO era guardada (base, origem padrão, tema, arranjo);
+   o roteiro do dia — paradas, ordem, ★, tipo, origem — morria no F5, de
+   propósito: é trabalho do dia, não ajuste. Com as abas, essa conta mudou de
+   tamanho: um F5 sem querer passou a custar o planejamento dos TRÊS técnicos
+   de uma vez. Agora ele é guardado e, ao abrir, o app OFERECE restaurar — não
+   restaura sozinho, senão a seleção de ontem voltaria sem ninguém pedir.
+   ⚠️ A ROTA TRAÇADA NÃO É GUARDADA, só o planejamento. A geometria do OSRM é
+   grande, envelhece, e retraçar é um clique — o que dá trabalho de verdade é
+   escolher e ordenar as paradas. */
+const CHAVE_DIA = 'hg_dia_planejado';
+let diaPronto = false;      // enquanto false, não grava (ver a armadilha abaixo)
+let salvarDiaAgendado = null;
+
+function salvarDia(){
+  /* ⚠️ A armadilha: ao abrir, renderStopsList() roda com a lista vazia e
+     gravaria um dia vazio POR CIMA do que se quer restaurar, antes de a pessoa
+     ver a faixa. Por isso só grava depois que ela decidiu (restaurar ou
+     descartar) ou quando o planejamento deixa de estar vazio. */
+  if (!diaPronto){
+    const temAlgo = stops.length || tecnicos.some(t => t.stops.length);
+    if (!temAlgo) return;
+    diaPronto = true;
+    esconderRetomarDia();      // começou a planejar: a oferta ficou velha
+  }
+  salvarNoTecnico(tecnicos[tecnicoAtivo]);
+  const dia = {
+    quando: Date.now(),
+    ativo: tecnicoAtivo,
+    tecnicos: tecnicos.map(t => ({
+      nome: t.nome, cor: t.cor, voltar: !!t.voltar,
+      origem: t.origem ? { lat: t.origem[0], lng: t.origem[1], label: t.origemTexto || '' } : null,
+      paradas: t.stops.map(s => ({ id: s.id, name: s.name, lat: s.lat, lng: s.lng,
+                                   cliente: s.cliente, tipo: s.tipo || '', prio: !!s.prioritaria }))
+    }))
+  };
+  try{ localStorage.setItem(CHAVE_DIA, JSON.stringify(dia)); }catch(e){ /* segue sem persistir */ }
+}
+// Uma gravação só por rajada: renderStopsList é chamada várias vezes seguidas
+function agendarSalvarDia(){
+  clearTimeout(salvarDiaAgendado);
+  salvarDiaAgendado = setTimeout(salvarDia, 400);
+}
+function lerDiaGuardado(){
+  try{
+    const d = JSON.parse(localStorage.getItem(CHAVE_DIA));
+    if (!d || !Array.isArray(d.tecnicos)) return null;
+    return d.tecnicos.some(t => t.paradas && t.paradas.length) ? d : null;
+  }catch(e){ return null; }
+}
+function esconderRetomarDia(){ const el = document.getElementById('retomarDia'); if (el) el.hidden = true; }
+
+function descartarDia(){
+  try{ localStorage.removeItem(CHAVE_DIA); }catch(e){}
+  diaPronto = true;
+  esconderRetomarDia();
+}
+
+/* Remonta as abas a partir do que foi guardado. A parada é reencontrada pelo id
+   na base; a que não estiver mais lá é contada e avisada, e a AVULSA é recriada
+   das coordenadas — ela nunca esteve na base (mesma regra da retomada por link). */
+function restaurarDia(){
+  const d = lerDiaGuardado();
+  if (!d) return descartarDia();
+  // Fora do mapa o que estiver desenhado agora
+  tecnicos.forEach(t => {
+    if (t.linha) map.removeLayer(t.linha);
+    t.marcadores.forEach(m => map.removeLayer(m));
+    if (t.origemMarker) map.removeLayer(t.origemMarker);
+  });
+  if (routeLine) map.removeLayer(routeLine);
+  stopMarkers.forEach(m => map.removeLayer(m));
+  if (originMarker) map.removeLayer(originMarker);
+  routeLine = null; stopMarkers = []; originMarker = null; originLatLng = null;
+  stops = []; ultimoResumo = null; idRoteiro = null;
+
+  /* ⚠️ Casa pela COORDENADA, com o id só como reserva — é o que a retomada por
+     link faz desde a v6.8.0, e pelo mesmo motivo: o id de um ponto da base é
+     `c<índice da camada>_<id da feature>`, então basta o uMap reordenar ou
+     renomear uma camada para todos os ids mudarem, e o planejamento voltaria
+     vazio. A coordenada é o que de fato identifica a filial. */
+  const porCoord = new Map(clientPoints.map(c => [chaveCoord(c.lat, c.lng), c]));
+  let perdidas = 0;
+  contaTecnicos = 0;
+  tecnicos = d.tecnicos.map(td => {
+    const t = novoTecnico();
+    t.nome = td.nome || t.nome;
+    t.cor = td.cor || t.cor;
+    t.voltar = !!td.voltar;
+    t.origem = td.origem ? [td.origem.lat, td.origem.lng] : null;
+    t.origemTexto = (td.origem && td.origem.label) || '';
+    t.stops = (td.paradas || []).map(p => {
+      const achado = porCoord.get(chaveCoord(p.lat, p.lng)) || clientPoints.find(c => c.id === p.id);
+      if (achado) return Object.assign(achado, { tipo: p.tipo || achado.tipo, prioritaria: p.prio });
+      if (p.cliente === CLIENTE_AVULSO){
+        const novo = novoPontoAvulso(p.lat, p.lng, p.name);
+        novo.tipo = p.tipo; novo.prioritaria = p.prio;
+        porCoord.set(chaveCoord(p.lat, p.lng), novo);   // a mesma avulsa em duas abas é UM ponto
+        return novo;
+      }
+      perdidas++;
+      return null;
+    }).filter(Boolean);
+    return t;
+  });
+  if (!tecnicos.length) tecnicos = [novoTecnico()];
+  tecnicoAtivo = Math.min(d.ativo || 0, tecnicos.length - 1);
+  carregarDoTecnico(tecnicos[tecnicoAtivo]);
+  // O pino da origem é redesenhado a partir do que foi guardado
+  const t = tecnicos[tecnicoAtivo];
+  if (t.origem) setOrigin(t.origem[0], t.origem[1], t.origemTexto, false);
+  diaPronto = true;
+  esconderRetomarDia();
+  renderAbas();
+  renderChecklist(); renderStopsList();
+  const quantas = tecnicos.reduce((n, x) => n + x.stops.length, 0);
+  setStatus(`Planejamento restaurado: ${quantas} ${quantas === 1 ? 'parada' : 'paradas'} em `
+    + `${tecnicos.length} ${tecnicos.length === 1 ? 'aba' : 'abas'}.`
+    + (perdidas ? ` ${perdidas} parada(s) não estão mais na base e ficaram de fora.` : '')
+    + ' Trace a rota de novo para gerar os links.', !perdidas);
+}
+
+/* A oferta só aparece quando há base carregada: sem ela as paradas não têm
+   como ser reencontradas. Chamada depois do import, como a retomada por link. */
+function oferecerRetomarDia(){
+  if (diaPronto || !clientPoints.length) return;
+  const d = lerDiaGuardado();
+  if (!d) return;
+  const quantas = d.tecnicos.reduce((n, t) => n + (t.paradas || []).length, 0);
+  const quando = new Date(d.quando || Date.now());
+  const hoje = new Date().toDateString() === quando.toDateString();
+  const dia = quando.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+  const hora = quando.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+  document.getElementById('retomarDiaTexto').innerHTML =
+    `Há um planejamento guardado ${hoje ? 'de hoje' : 'de ' + dia} (${hora}): `
+    + `<b>${quantas} ${quantas === 1 ? 'parada' : 'paradas'}</b> em `
+    + `<b>${d.tecnicos.length} ${d.tecnicos.length === 1 ? 'aba' : 'abas'}</b>. `
+    + `As rotas precisam ser traçadas de novo.`;
+  document.getElementById('retomarDia').hidden = false;
+}
+
+function renderAbas(){
+  const barra = document.getElementById('abasTecnicos');
+  if (!barra) return;
+  barra.innerHTML = '';
+  tecnicos.forEach((t, i) => {
+    const ativa = i === tecnicoAtivo;
+    const el = document.createElement('div');
+    el.className = 'aba' + (ativa ? ' ativa' : '');
+    el.setAttribute('role', 'tab');
+    el.setAttribute('aria-selected', String(ativa));
+    el.title = ativa ? 'Roteiro de ' + t.nome + ' — clique no nome para trocar pelo nome da pessoa'
+                     : 'Abrir o roteiro de ' + t.nome;
+    el.innerHTML = '<span class="aba-cor" style="background:' + t.cor + '"></span>'
+      + '<span class="aba-nome">' + escaparHtml(t.nome) + '</span>'
+      + (tecnicos.length > 1
+         ? '<button class="aba-x" type="button" aria-label="Fechar a aba de ' + escaparHtml(t.nome) + '">' + SVG_ABA_X + '</button>'
+         : '');
+    /* Um clique no nome da aba ABERTA já entra na edição, com o texto inteiro
+       selecionado — digitar troca o "Técnico 1" pelo nome da pessoa (pedido do
+       usuário). Nas outras abas o clique troca de aba, como se espera. */
+    el.onclick = ev => {
+      if (ev.target.closest('.aba-x')) return;
+      if (ativa && ev.target.closest('.aba-nome')) renomearTecnico(i, el.querySelector('.aba-nome'));
+      else trocarTecnico(i);
+    };
+    el.ondblclick = ev => {
+      if (ev.target.closest('.aba-x')) return;
+      if (!ativa) trocarTecnico(i);
+      renomearTecnico(i, barra.children[i].querySelector('.aba-nome'));
+    };
+    const x = el.querySelector('.aba-x');
+    if (x) x.onclick = ev => { ev.stopPropagation(); fecharTecnico(i); };
+    barra.appendChild(el);
+  });
+  const mais = document.createElement('button');
+  mais.className = 'aba-mais';
+  mais.type = 'button';
+  mais.title = 'Planejar o roteiro de mais um técnico';
+  mais.setAttribute('aria-label', 'Adicionar técnico');
+  mais.innerHTML = SVG_ABA_MAIS;
+  mais.onclick = adicionarTecnico;
+  barra.appendChild(mais);
+}
+if (!modoCampoAtivo){
+  iniciarTecnicos();
+  document.getElementById('retomarDiaSim').onclick = restaurarDia;
+  document.getElementById('retomarDiaNao').onclick = descartarDia;
+}
+
 /* ---------------- Vidro ligado ou desligado (v8.2.0) ----------------
    Desligado, o app volta ao layout de antes da v8.1.0: painel opaco e mapa ao
    lado. É preferência guardada no navegador, como o tema e o zoom da parada. */
@@ -2051,8 +2487,9 @@ function dot(color){
   return L.divIcon({ className:'', html:`<div class="brand-icon" style="background:${color}"></div>`, iconSize:[14,14], iconAnchor:[7,7] });
 }
 // Ícone de bolinha numerada (usado nas paradas depois que a rota é traçada, mostra a ordem de visita)
-function numIcon(n){
-  return L.divIcon({ className:'', html:`<div class="brand-icon num" style="background:var(--amber)">${n}</div>`, iconSize:[20,20], iconAnchor:[10,10] });
+// A cor vem do técnico dono da rota (v8.5.0): é o que distingue as rotas no mapa
+function numIcon(n, cor){
+  return L.divIcon({ className:'', html:`<div class="brand-icon num" style="background:${cor || 'var(--amber)'}">${n}</div>`, iconSize:[20,20], iconAnchor:[10,10] });
 }
 
 // Estado global do app (em memória — nada é persistido, recarregar a página zera tudo)
@@ -2424,6 +2861,8 @@ function importClients(grupos, filename, salvoEm){
     `${clientPoints.length} ${clientPoints.length === 1 ? 'ponto' : 'pontos'} em ${nCli} ${nCli === 1 ? 'cliente' : 'clientes'} · arquivo "${filename}"${quando}`;
   renderChecklist();
   zerarIdRoteiro();   // base nova = roteiro novo (v6.8.0)
+  // Só agora as paradas guardadas têm como ser reencontradas (v8.5.0)
+  if (!modoCampoAtivo) setTimeout(oferecerRetomarDia, 0);
   // Link colado antes da base (v6.8.1): agora dá para casar as paradas
   if (linkPendente){
     const link = linkPendente; linkPendente = null;
@@ -2470,6 +2909,34 @@ window.toggleStop = toggleStop; // precisa estar em escopo global: é chamado vi
 /* O chevron que abre e fecha a cascata, nos dois níveis (v8.4.2). Numa
    constante porque são dois lugares que precisam desenhar o mesmo. */
 const CHEVRON = '<svg class="grupo-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+
+/* ---- Aviso de parada já tomada por outro técnico (v8.5.0) ----
+   O usuário tinha pedido para deixar para depois e voltou atrás depois de ver
+   as abas funcionando. Sem isto, o mesmo cliente entra em duas rotas e ninguém
+   percebe até a rua.
+   ⚠️ Olha só as OUTRAS abas: a lista do técnico ativo é a `stops` global, e a
+   dele já aparece no próprio checkbox marcado. As outras estão nos objetos, que
+   ficam certos porque são gravados ao sair de cada aba. */
+function donoDaParada(ponto){
+  for (let i = 0; i < tecnicos.length; i++){
+    if (i === tecnicoAtivo) continue;
+    if (tecnicos[i].stops.some(s => s.id === ponto.id)) return tecnicos[i];
+  }
+  return null;
+}
+function marcaDoDono(dono, texto){
+  return dono ? `<span class="dono-marca" style="background:${dono.cor}" title="${escaparHtml(texto)}"></span>` : '';
+}
+// Os técnicos que têm alguma parada desta lista, sem repetir — para o cabeçalho
+// do cliente e o do grupo dizerem o que há lá dentro sem precisar abrir
+function marcasDosDonos(pontos){
+  const vistos = new Set(), fora = [];
+  pontos.forEach(pt => {
+    const d = donoDaParada(pt);
+    if (d && !vistos.has(d)){ vistos.add(d); fora.push(marcaDoDono(d, d.nome + ' tem parada aqui dentro')); }
+  });
+  return fora.join('');
+}
 
 function renderChecklist(){
   const el = document.getElementById('checklist');
@@ -2537,6 +3004,7 @@ function renderChecklist(){
     head.className = 'grupo-head';
     head.innerHTML = `${CHEVRON}
       <span class="grupo-nome">${escaparHtml(g.cliente)}</span>
+      ${marcasDosDonos(g.pontos)}
       <span class="grupo-cont">${selecionadas ? selecionadas + '/' : ''}${g.pontos.length}</span>`;
     head.onclick = () => {
       // Durante a busca, quem manda é a lista de "fechadas apesar da busca";
@@ -2578,11 +3046,13 @@ function renderChecklist(){
 
       const row = document.createElement('div');
       row.className = 'check-row';
+      const dono = donoDaParada(c);
       row.innerHTML = `
         <label class="check-row-label">
           <input type="checkbox" id="chk-${c.id}">
           <span>${escaparHtml(c.name)}</span>
         </label>
+        ${marcaDoDono(dono, 'Já está na rota de ' + dono?.nome)}
         ${seletorTipo}`;
       const cb = row.querySelector('input');
       cb.checked = !!marcado;
@@ -2636,6 +3106,7 @@ function renderChecklist(){
     cab.className = 'grupo-umap-head';
     cab.innerHTML = `${CHEVRON}
       <span class="grupo-nome">${escaparHtml(no.nome)}</span>
+      ${marcasDosDonos(no.camadas.flatMap(c => c.pontos))}
       <span class="grupo-cont">${selecionados ? selecionados + '/' : ''}${totalPontos}</span>`;
     cab.onclick = () => {
       if (gruposUmapAbertos.has(no.nome)) gruposUmapAbertos.delete(no.nome);
@@ -2746,6 +3217,7 @@ function reordenarPorPrioridade(){
 }
 
 function renderStopsList(){
+  agendarSalvarDia();   // o planejamento do dia acompanha (v8.5.0)
   // Avulsa removida da viagem sai do mapa e da base em memória (v7.2.0)
   if (typeof limparAvulsasSoltas === 'function' && limparAvulsasSoltas()) renderChecklist();
   const section = document.getElementById('stopsSection');
@@ -2866,8 +3338,13 @@ function novoPontoAvulso(lat, lng, nome){
    para aquela viagem: tirando ela da lista, o marcador tem que sair do mapa
    junto, senão fica uma bolinha órfã (relatado pelo usuário em 15/09/2026).
    Roda a cada redesenho da lista de paradas, que é por onde toda remoção passa. */
+/* ⚠️ "Solta" é a avulsa que não está na viagem de NENHUM técnico (v8.5.0).
+   Olhando só a `stops` global, a avulsa criada na aba do técnico 2 seria
+   apagada assim que alguém mexesse na lista do técnico 1. */
 function limparAvulsasSoltas(){
-  const sobrando = clientPoints.filter(c => c.cliente === CLIENTE_AVULSO && !stops.includes(c));
+  const temDono = c => stops.includes(c)
+    || tecnicos.some((t, i) => i !== tecnicoAtivo && t.stops.includes(c));
+  const sobrando = clientPoints.filter(c => c.cliente === CLIENTE_AVULSO && !temDono(c));
   if (!sobrando.length) return false;
   sobrando.forEach(c => {
     if (c.marker) map.removeLayer(c.marker);
@@ -4334,10 +4811,11 @@ function setOrigin(lat, lng, label, abrirPopup = true, enquadrar = false){
   // escaparHtml: o Leaflet trata o texto do balão como HTML. O rótulo vem do
   // Nominatim ou do que foi salvo como origem padrão — "<" ou "&" num nome de
   // lugar não podem virar marcação (achado em 10/09/2026).
-  originMarker = L.marker([lat, lng], { icon: dot('#F2A93C') }).addTo(map).bindPopup(escaparHtml(label || 'Origem'));
+  originMarker = L.marker([lat, lng], { icon: dot(corDoTecnico()) }).addTo(map).bindPopup(escaparHtml(label || 'Origem'));
   if (abrirPopup) originMarker.openPopup(); // na restauração da origem salva não abre, para não cobrir o mapa
   document.getElementById('originInput').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   atualizarBotaoOrigemPadrao();
+  agendarSalvarDia();   // a origem é do técnico, e faz parte do dia (v8.5.0)
   // Sem isto o pino podia cair fora da vista: o mapa não se mexia e parecia
   // que o botão não tinha feito nada — foi o que o usuário relatou em 09/09.
   // animate:false de propósito: a animação de deslocamento fica congelada
@@ -4709,16 +5187,23 @@ function drawResult(distance, duration, geometry, legs){
   stopMarkers = [];
 
   const coords = geometry.coordinates.map(c => [c[1], c[0]]);
-  routeLine = L.polyline(coords, { color:'#F2A93C', weight:5, opacity:0.9 }).addTo(map);
+  const cor = corDoTecnico();
+  const dono = tecnicos[tecnicoAtivo];      // de quem é esta rota (v8.5.0)
+  routeLine = L.polyline(coords, { color:cor, weight:5, opacity:0.9 }).addTo(map);
 
   stops.forEach((s, i) => {
-    const m = L.marker([s.lat, s.lng], { icon: numIcon(i+1) }).addTo(map).bindPopup(`${i+1}. ${escaparHtml(s.name)}`);
-    // Realce mapa -> lista (v6.7). O índice é o da ordem de visita, o mesmo da lista.
-    m.on('mouseover', () => realcarParada(i, true, true));
-    m.on('mouseout',  () => realcarParada(i, false, true));
+    const m = L.marker([s.lat, s.lng], { icon: numIcon(i+1, cor) }).addTo(map).bindPopup(`${i+1}. ${escaparHtml(s.name)}`);
+    /* Realce mapa -> lista (v6.7). O índice é o da ordem de visita, o mesmo da
+       lista. ⚠️ Só vale enquanto esta for a aba aberta: os marcadores das outras
+       continuam no mapa, e sem esta trava o mouse num marcador do técnico 2
+       acenderia a linha de outra parada na lista do técnico 1 (v8.5.0). */
+    m.on('mouseover', () => { if (tecnicos[tecnicoAtivo] === dono) realcarParada(i, true, true); });
+    m.on('mouseout',  () => { if (tecnicos[tecnicoAtivo] === dono) realcarParada(i, false, true); });
     if (efeitoLigado()) m.getElement().classList.add('parada-entrando');   // nasce invisível
     stopMarkers.push(m);
   });
+
+  realcarCamadas();   // a rota nova vai para a frente; as das outras abas ficam atrás
 
   const enquadrar = routeLine.getBounds();
   const elDist = document.getElementById('distVal'), elTempo = document.getElementById('timeVal');

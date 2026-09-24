@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 23/09/2026 — v8.4.2 (checklist sem a bolinha da calha)
+> **Última atualização:** 23/09/2026 — v8.5.0 (um roteiro por técnico, em abas)
 
 ---
 
@@ -298,6 +298,74 @@ sem dependências instaladas. Abre direto no navegador.
   encadeamento é **24px** — entre duas colunas encostadas há a margem de 12 do
   cartão mais a divisória de 7 (19px de vão); com 13 a conta parava na primeira
   e devolvia 352 onde o certo eram 731
+- **Um roteiro por técnico, em abas** (v8.5.0, pedido do usuário: "abrir uma
+  segunda tela, como se fosse uma guia de navegador... ao traçar a rota consigo
+  ver no mapa a rota de ambos, cada um em sua cor"). É a **Fase 2** adiada em
+  29/08/2026. Uma barra de pílulas acima do mapa: cada aba tem a **sua**
+  seleção, ordem, origem, rota e link, e o mapa mostra **todas ao mesmo tempo**
+  — a ativa com opacidade .9 e traço 5, as outras .28 e traço 3, a ativa na
+  frente. Abas se **adicionam e removem**, com nome editável (duplo clique), e
+  seis cores cicladas: âmbar `#F2A93C` (o técnico 1 fica com a cor de sempre),
+  `#A78BFA`, `#5BC0F8`, `#F97EB9`, `#B8E04A`, `#FF9A6B` — todas claras o
+  bastante para o número escuro do marcador continuar legível, e nenhuma perto
+  do teal dos não selecionados. **A origem é por técnico**, começando na padrão
+  salva (escolha do usuário).
+  ⚠️ **A tela do campo não mudou nada**: o link já carrega o roteiro inteiro com
+  id próprio e o progresso já é por `rid` desde a v6.8.0 — cada técnico gera o
+  dele e abre o dele.
+  ⚠️ **Por que isto não virou uma refatoração gigante**: o estado de um roteiro
+  são sete variáveis, mas lidas em **~150 lugares** (só `stops` aparece 83
+  vezes). Em vez de trocar tudo para `tecnico.stops`, elas continuam sendo as do
+  técnico **ativo**: trocar de aba guarda as atuais no objeto da aba e carrega
+  as da outra. Nenhuma das ~150 chamadas mudou. A exceção são as **camadas do
+  mapa**, que ficam no mapa o tempo todo — é justamente o que se quer ver junto.
+  ⚠️ O que o traçado escreveu no painel (roteiro, km/min, link) é guardado como
+  **texto já pronto**: refazer o traçado ao trocar de aba redesenharia o mapa e
+  rodaria a animação da v8.0.0 de novo. ⚠️ `realcarCamadas()` começa chamando
+  `salvarNoTecnico()` — as camadas do ativo vivem nas globais, e sem sincronizar
+  antes ela leria a rota anterior.
+  ⚠️ **Dois defeitos que a mudança criaria, resolvidos junto**: a **parada
+  avulsa perdia o dono** (`limparAvulsasSoltas()` apagava toda avulsa fora da
+  `stops`, então a do técnico 2 sumiria ao mexer na lista do técnico 1 — agora
+  "solta" é a que não está na viagem de *nenhum*), e o **realce do mapa cruzava
+  as abas** (o mouse num marcador do técnico 2 acendia outra parada na lista do
+  técnico 1 — os manipuladores guardam de quem é a rota).
+  ⚠️ **As abas moram dentro do cabeçalho**, ao lado do selo de versão (pedido do
+  usuário; antes eram uma barra própria que comia 40px de altura mesmo com um
+  técnico só). `align-self:center` porque o header é `align-items:baseline`; com
+  o `flex-wrap` que ele já tinha, em tela estreita elas caem sozinhas para uma
+  linha só delas (medido a 375px: header de 102px). **Um clique no nome da aba
+  aberta** entra na edição com o texto inteiro selecionado, então digitar troca
+  "Técnico 1" pelo nome da pessoa
+- **Aviso de parada já tomada por outro técnico** (v8.5.0): uma bolinha na
+  **cor do outro técnico** na unidade ("Já está na rota de Jonas"), na linha do
+  cliente e na do grupo do uMap ("Jonas tem parada aqui dentro"). **Avisa, mas
+  não bloqueia** — há caso legítimo, como entrega de manhã e manutenção à
+  tarde. ⚠️ Fica do lado **direito**, junto do contador: a calha da esquerda
+  acabou de ser limpa na v8.4.2 e não volta a ter duas marcas. Só aparece
+  quando há o que dizer, então nunca é enfeite — que foi o problema da bolinha
+  antiga
+- **O planejamento do dia sobrevive ao recarregar** (v8.5.0, pedido do usuário).
+  Até aqui só a **configuração** era guardada; o roteiro do dia morria no F5, de
+  propósito. Com as abas a conta mudou de tamanho: um F5 sem querer passou a
+  custar o planejamento dos **três** técnicos de uma vez. Agora ele vai para
+  `hg_dia_planejado` e, ao abrir, uma faixa **oferece** restaurar — não restaura
+  sozinho, senão a seleção de ontem voltaria sem ninguém pedir. "Restaurar" ou
+  "Começar do zero".
+  ⚠️ **A rota traçada não é guardada**, só o planejamento (paradas, ordem, ★,
+  tipo, origem, nome e cor de cada aba): a geometria do OSRM é grande, envelhece,
+  e retraçar é um clique — o trabalho de verdade é escolher e ordenar.
+  ⚠️ **A armadilha**, que apareceu na primeira tentativa: ao abrir,
+  `renderStopsList()` roda com a lista vazia e gravaria um dia **vazio** por cima
+  do que se quer restaurar, antes de a pessoa ver a faixa. A gravação só começa
+  depois que ela decide, ou quando o planejamento deixa de estar vazio — este
+  último caso cobre quem ignora a faixa e começa a trabalhar.
+  ⚠️ **A parada é reencontrada pela coordenada**, com o id só como reserva: o id
+  de um ponto da base é `c<índice da camada>_<id da feature>`, então basta o uMap
+  reordenar ou renomear uma camada para todos mudarem e o planejamento voltar
+  vazio (pego no teste). É a mesma regra da retomada por link desde a v6.8.0, e
+  a avulsa é recriada das coordenadas como lá. ⚠️ A faixa só aparece com **base
+  carregada**: sem ela as paradas não têm como ser reencontradas
 - **O mapa acompanha o tema**: no escuro usa o Esri Dark Gray com um tratamento
   de cor que reproduz a referência do usuário (ver seção 5); no claro **troca de
   ladrilhos** para o Esri Light Gray, que é onde ruas e rótulos foram desenhados
@@ -947,7 +1015,8 @@ repositório é público (ver `.gitignore`).
   origem padrão, a lista de tipos de serviço, a preferência de formato do link,
   a opção de voltar para a origem, o zoom ao clicar na parada, o vidro ligado
   ou desligado, as janelas livres ligadas ou desligadas, o ímã de alinhamento
-  delas, a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
+  delas, **o planejamento do dia** (v8.5.0, restaurado só se a pessoa aceitar),
+  a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
   botão), o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
   recarregar a página zera essa parte, de propósito (é o roteiro do dia, não
@@ -1077,7 +1146,9 @@ Concluído:
 Adiados a pedido do usuário em 29/08/2026 (continuam descritos no documento
 de arquitetura, para retomar quando fizer sentido):
 - Campo de observação livre por parada (Fase 2)
-- Dividir clientes entre as 2-3 pessoas da equipe, um link por pessoa (Fase 2)
+- ~~Dividir clientes entre as 2-3 pessoas da equipe, um link por pessoa~~ —
+  ✅ **feito na v8.5.0**, em abas de técnico, com aviso no checklist quando um
+  cliente já está na rota de outro.
 
 ---
 
@@ -1179,6 +1250,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 92 | **v8.4.0** — Janelas livres: cada coluna solta pela tela, atrás de um botão |
 | 93 | **v8.4.1** — Barras de rolagem no tema, com a pista transparente |
 | 94 | **v8.4.2** — Checklist sem a bolinha: a seta e o contador acendem |
+| 95 | **v8.5.0** — Um roteiro por técnico, em abas, com as rotas juntas no mapa |
 
 ---
 
@@ -1245,7 +1317,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.4.2
+8.5.0
 ```
 
 ### Onde o número aparece
@@ -1364,3 +1436,4 @@ os backups locais são conveniência, não garantia.
 | 8.4.0 | 23/09/2026 | Janelas livres (posição, tamanho e ordem de frente por coluna) |
 | 8.4.1 | 23/09/2026 | Barras de rolagem acompanhando o tema |
 | 8.4.2 | 23/09/2026 | Checklist sem a bolinha da calha; chevron de traço |
+| 8.5.0 | 23/09/2026 | Um roteiro por técnico, em abas (Fase 2) |

@@ -5884,3 +5884,142 @@ TESTES
   certo em todas as leituras — foi esse contraste que denunciou.
   Confirmado pondo `transition:none` no elemento antes de ler: aí os quatro
   casos (com/sem seleção x escuro/claro) deram exatamente o esperado.
+
+--------------------------------------------------------
+[23/09/2026] v8.5.0 — Um roteiro por tecnico, em abas
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "É possível abrir uma segunda tela, no caso como se fosse uma guia de
+  navegador, onde tenho técnico um, e na outra aba tem o técnico dois? Cada um
+  tem a sua página, porém ao traçar a rota e exportar, consigo ver no mapa a
+  rota de ambos, cada um em sua cor."
+  É a Fase 2 adiada em 29/08/2026 ("dividir clientes entre as 2-3 pessoas da
+  equipe, um link por pessoa"), agora numa forma concreta.
+
+DECISÕES DO USUÁRIO (perguntadas antes de construir)
+  · Abas que se ADICIONAM E REMOVEM, com nome editável — não um número fixo.
+  · Cliente repetido em duas rotas: IGNORAR por enquanto (o checklist não
+    mostra o que o outro técnico já pegou). Fica como pendência.
+  · Origem PRÓPRIA por técnico, começando na origem padrão salva.
+
+COMO FOI FEITO, E POR QUE NÃO VIROU UMA REFATORAÇÃO GIGANTE
+  O estado de um roteiro são sete variáveis (stops, originLatLng, originMarker,
+  routeLine, stopMarkers, ultimoResumo, idRoteiro), mas elas são lidas em ~150
+  lugares — só `stops` aparece 83 vezes. Em vez de trocar tudo para
+  `tecnico.stops`, elas continuam sendo as variáveis do técnico ATIVO: trocar de
+  aba guarda as atuais no objeto da aba e carrega as da outra.
+  NENHUMA das ~150 chamadas mudou.
+  ⚠️ A exceção é justamente o que se quer ver junto: as CAMADAS DO MAPA de cada
+  técnico ficam no mapa o tempo todo. Trocar de aba só muda qual está acesa —
+  ativa com opacidade .9 e traço 5, as outras .28 e traço 3, e a ativa vai para
+  a frente.
+  ⚠️ O que o traçado escreveu no painel (roteiro passo a passo, km/min, link) é
+  guardado como texto JÁ PRONTO, e não recalculado: refazer o traçado ao trocar
+  de aba redesenharia o mapa e rodaria a animação da v8.0.0 de novo.
+  ⚠️ realcarCamadas() começa chamando salvarNoTecnico(): as camadas do ativo
+  vivem nas globais, e sem sincronizar antes ela leria a rota anterior.
+
+CORES
+  Seis, cicladas: âmbar #F2A93C (o técnico 1 continua com a cor de sempre),
+  #A78BFA, #5BC0F8, #F97EB9, #B8E04A, #FF9A6B. Todas claras o bastante para o
+  número escuro do marcador continuar legível em cima, e nenhuma perto do teal
+  dos clientes não selecionados nem do vermelho de erro.
+
+DOIS DEFEITOS QUE A MUDANÇA CRIARIA, RESOLVIDOS JUNTO
+  · A AVULSA PERDIA O DONO. limparAvulsasSoltas() apagava toda avulsa fora da
+    `stops` — com duas abas, a avulsa criada pelo técnico 2 sumiria assim que
+    alguém mexesse na lista do técnico 1. Agora "solta" é a que não está na
+    viagem de NENHUM técnico. Testado: sobrevive enquanto alguém a tem, some
+    quando o último a tira.
+  · O REALCE DO MAPA CRUZAVA AS ABAS. Os marcadores das outras rotas continuam
+    no mapa, e o mouse num marcador do técnico 2 acenderia a linha de outra
+    parada na lista do técnico 1. Os manipuladores agora guardam de quem é a
+    rota e só agem se aquela for a aba aberta.
+
+ACRESCENTADO DEPOIS, NA MESMA VERSÃO (o usuário viu funcionando e pediu)
+  · AVISO DE PARADA JÁ TOMADA. Ele tinha pedido para deixar para depois e
+    voltou atrás. Uma bolinha na COR do outro técnico aparece na unidade ("Já
+    está na rota de Jonas"), na linha do cliente e na do grupo do uMap ("Jonas
+    tem parada aqui dentro"). Fica do lado DIREITO, junto do contador: a calha
+    da esquerda acabou de ser limpa na v8.4.2 e não vai voltar a ter duas
+    marcas. Só aparece quando há o que dizer, então nunca é enfeite. Avisa,
+    mas não bloqueia — há caso legítimo (entrega de manhã, manutenção à tarde).
+  · AS ABAS FORAM PARA DENTRO DO CABEÇALHO, ao lado do selo de versão (pedido
+    do usuário). Antes eram uma barra própria entre o cabeçalho e o mapa e
+    comiam 40px de altura mesmo com um técnico só; agora o mapa recuperou esses
+    40px. `align-self:center` porque o header é `align-items:baseline`, e a
+    linha de base de uma pílula não é a do texto da marca. Com o `flex-wrap`
+    que o header já tinha, em tela estreita elas caem sozinhas para uma linha
+    só delas (medido a 375px: header de 102px, sem rolagem horizontal).
+  · RENOMEAR NUM CLIQUE. Um clique no nome da aba ABERTA entra na edição com o
+    texto inteiro selecionado, então digitar já troca "Técnico 1" pelo nome da
+    pessoa. Nas outras abas o clique troca de aba, como se espera; o duplo
+    clique continua valendo em qualquer uma.
+
+O PLANEJAMENTO DO DIA SOBREVIVE AO RECARREGAR
+  Até aqui só a CONFIGURAÇÃO era guardada; o roteiro do dia morria no F5, de
+  propósito. Com as abas essa conta mudou de tamanho: um F5 sem querer passou a
+  custar o planejamento dos TRÊS técnicos de uma vez. O usuário pediu a opção.
+  Agora ele é guardado (hg_dia_planejado) e, ao abrir, uma faixa OFERECE
+  restaurar — não restaura sozinho, senão a seleção de ontem voltaria sem
+  ninguém pedir. Dois botões: "Restaurar" e "Começar do zero".
+  ⚠️ A ROTA TRAÇADA NÃO É GUARDADA, só o planejamento (paradas, ordem, ★, tipo,
+  origem, nome e cor de cada aba). A geometria do OSRM é grande, envelhece, e
+  retraçar é um clique — o que dá trabalho de verdade é escolher e ordenar.
+  ⚠️ A ARMADILHA, que aparece na primeira tentativa: ao abrir, renderStopsList()
+  roda com a lista vazia e gravaria um dia VAZIO por cima do que se quer
+  restaurar, antes de a pessoa ver a faixa. Por isso a gravação só começa
+  depois que ela decidiu (restaurar ou descartar) ou quando o planejamento
+  deixa de estar vazio — este último caso cobre quem ignora a faixa e começa a
+  trabalhar, e aí a oferta some porque ficou velha.
+  ⚠️ A parada é reencontrada pela COORDENADA, com o id só como reserva. Foi o
+  que o primeiro teste pegou: o id de um ponto da base é
+  `c<índice da camada>_<id da feature>`, então basta o uMap reordenar ou
+  renomear uma camada para todos os ids mudarem e o planejamento voltar vazio.
+  É a mesma regra que a retomada por link usa desde a v6.8.0. A avulsa é
+  recriada das coordenadas, como lá.
+  ⚠️ A faixa só aparece com BASE CARREGADA: sem ela as paradas não têm como ser
+  reencontradas. Entra depois do import, como a retomada por link.
+
+O QUE NÃO MUDOU (de propósito)
+  A TELA DO CAMPO. O link já carrega o roteiro inteiro com id próprio, e o
+  progresso já é por rid — cada técnico gera o dele e abre o dele. Essa metade
+  do problema já estava pronta desde a v6.8.0.
+
+MEDIDAS E TESTES (com a base de exemplo e o OSRM de verdade)
+  Técnico 1: 2 paradas, rota âmbar de 7,5 km.
+  Aba nova: painel limpo (0 paradas, campos vazios) e a rota do 1 no mapa a
+    0.28 de opacidade.
+  Técnico 2: origem própria, 2 outras paradas, rota violeta de 17,2 km.
+    As duas no mapa ao mesmo tempo, 4 marcadores numerados, 2 pinos de origem.
+  Voltando para a aba 1: 2 paradas na lista, "Centro de Criciuma" no campo,
+    7,5 km, 3 trechos no roteiro, e as opacidades invertem (.9 / .28).
+  Link: 221 e 244 caracteres, diferentes.
+  Mexer na lista do 1: desfez só a rota do 1 — a do 2 ficou no mapa com os
+    marcadores e o link guardado.
+  Renomear: "Técnico 1" -> "Jonas", na tela e no objeto.
+  Terceira aba: terceira cor (#5BC0F8).
+  Fechar a do meio: camadas fora do mapa, índice do ativo corrigido.
+  Tela de 375px: o cabeçalho quebra e as abas ficam numa linha só delas
+    (header de 102px), mapa 312, painel 398 — 812 no total, sem rolagem.
+  Aviso de parada tomada: 0 marcas na aba de quem escolheu (o próprio checkbox
+    já diz), 4 na outra — 2 na unidade e 2 na linha do cliente, todas na cor
+    do dono.
+  Renomear num clique: o nome entra em edição com "Técnico 2" inteiro
+    selecionado; digitar e Enter deixou "Marcos". Clique numa aba fechada troca
+    de aba e não edita.
+  Guardar/restaurar o dia: 2 abas com 2 e 3 paradas (uma ★, uma com tipo, uma
+    avulsa) e duas origens diferentes. Recarregando, a faixa apareceu com
+    "5 paradas em 2 abas"; restaurar trouxe tudo de volta, inclusive a ★, o
+    tipo, as duas origens e a avulsa no mapa.
+  Esperar o debounce sem decidir NÃO apagou o dia guardado.
+  "Começar do zero" apagou a chave e escondeu a faixa.
+  Ignorar a faixa e começar a planejar escondeu a oferta e gravou o novo.
+  Sem erro no console.
+
+PENDÊNCIAS QUE ISTO ABRE
+  · O aviso de parada tomada AVISA, mas não bloqueia. Se algum dia isso não
+    bastar, o passo seguinte é impedir a marcação e oferecer "mover para cá".
+  · A rota traçada não volta no restaurar — só o planejamento. Guardar a
+    geometria do OSRM por técnico é possível, mas ela é grande e envelhece.
