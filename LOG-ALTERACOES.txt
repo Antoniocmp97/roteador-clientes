@@ -5785,3 +5785,42 @@ TESTES
   A emulação de viewport do painel de preview NÃO dispara o evento resize na
   página. O layout fica velho até alguém chamar aplicarArranjo(). Conferido
   disparando o evento à mão: com ele, tudo se ajusta sozinho. Não é do app.
+
+--------------------------------------------------------
+[23/09/2026] v8.4.1 — As barras de rolagem acompanham o tema
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "O scroll com fundo branco não está na mesma sintonia do restante. É possível
+  ficar igual ao restante da coluna?"
+
+CAUSA
+  Nunca houve estilo de barra de rolagem no projeto: o navegador desenhava a
+  dele, clara, e dentro de um cartão escuro — ainda mais de vidro, desde a
+  v8.1.0 — ela virava um risco branco atravessando a coluna. São cinco áreas
+  que rolam: o painel, a guia, o checklist, a lista de paradas e o roteiro.
+
+O QUE FOI FEITO
+  Duas variáveis novas por tema (--barra e --barra-forte), então as barras
+  trocam junto com o tema como o resto do app, e duas declarações:
+  · scrollbar-color / scrollbar-width — a forma padronizada (Firefox e
+    Chrome/Edge novos);
+  · ::-webkit-scrollbar — para o Chrome/Edge mais antigo, que não entende a
+    primeira. Onde a padronizada vale, o navegador ignora esta; não brigam.
+  A PISTA É TRANSPARENTE de propósito: com cor sólida ela viraria uma faixa
+  dentro do cartão de vidro, que é justamente o que se queria tirar.
+
+⚠️ PEGADINHA DA HERANÇA (pega no teste)
+  `scrollbar-color` é herdada, mas `scrollbar-width` NÃO é. Declarando as duas
+  só em :root, as listas de dentro (checklist, paradas, roteiro) saíam com a
+  cor certa e a barra LARGA do sistema — medido: scrollbar-width "auto" nelas e
+  "thin" só na raiz. Resolvido com o seletor universal para a largura,
+  mantendo a cor na raiz, que é onde ela basta.
+
+MEDIDAS
+  Escuro: rgb(51,73,85) sobre pista transparente, "thin" nas quatro áreas.
+  Claro:  rgb(196,206,214), trocando junto com o tema.
+
+TESTES
+  Painel, checklist, lista de paradas e roteiro conferidos um a um, nos dois
+  temas. Sem erro no console.

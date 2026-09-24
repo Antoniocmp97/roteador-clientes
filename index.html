@@ -32,6 +32,8 @@
     --teal-escuro:#28a094;  /* teal de :active */
     --map-bg:#0C1418;       /* fundo do mapa enquanto os ladrilhos não chegam */
     --sombra:rgba(0,0,0,.4);
+    --barra:#334955;        /* barra de rolagem */
+    --barra-forte:#4B6776;  /* barra de rolagem sob o mouse */
   }
   /* Tema claro. Não é o escuro "invertido": o âmbar e o teal precisaram
      escurecer para continuarem legíveis sobre branco — os tons do tema
@@ -50,7 +52,36 @@
     --teal-escuro:#0E5F57;
     --map-bg:#E9EDF0;
     --sombra:rgba(21,34,41,.22);
+    --barra:#C4CED6;
+    --barra-forte:#9EAFBB;
   }
+  /* ---- Barras de rolagem (v8.4.1, relatado pelo usuário: "o scroll com fundo
+     branco não está na mesma sintonia do restante") ----
+     O navegador desenha a barra com a cor DELE, clara, e dentro de um cartão
+     escuro — ainda mais de vidro — ela virava um risco branco atravessando a
+     coluna. As cores saem das variáveis, então as barras trocam junto com o
+     tema, como o resto do app.
+     ⚠️ As duas formas estão aqui de propósito: `scrollbar-color` é a
+     padronizada (Firefox, e Chrome/Edge novos); o `::-webkit-scrollbar` cobre
+     o Chrome/Edge mais antigo, que não entende a primeira. Onde a padronizada
+     vale, o navegador ignora a de baixo — não brigam.
+     ⚠️ `scrollbar-color` é HERDADA, então declarar na raiz já alcança toda
+     rolagem, inclusive a da tela do campo. `scrollbar-width` NÃO é: sem o
+     seletor universal, as listas de dentro (checklist, paradas, roteiro)
+     ficavam com a barra larga do sistema e só a cor certa.
+     ⚠️ A pista é TRANSPARENTE: com cor sólida ela viraria uma faixa dentro do
+     cartão de vidro, que é justamente o que se queria tirar. */
+  *{scrollbar-width:thin;}
+  :root{scrollbar-color:var(--barra) transparent;}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  /* A borda transparente com background-clip dá o respiro em volta do polegar,
+     que é o que a barra "thin" do padrão faz sozinha */
+  ::-webkit-scrollbar-thumb{background:var(--barra); border-radius:6px;
+                            border:2px solid transparent; background-clip:content-box;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--barra-forte); background-clip:content-box;}
+  ::-webkit-scrollbar-corner{background:transparent;}
+
   /* Reset básico + ocupa a tela inteira (necessário para o mapa em tela cheia) */
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;background:var(--ink);color:var(--text);font-family:'Inter',system-ui,sans-serif;}
@@ -1710,7 +1741,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.4.0';
+const VERSAO = '8.4.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 

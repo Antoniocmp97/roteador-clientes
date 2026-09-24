@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 23/09/2026 — v8.4.0 (janelas livres, atrás de um botão)
+> **Última atualização:** 23/09/2026 — v8.4.1 (barras de rolagem no tema)
 
 ---
 
@@ -596,7 +596,19 @@ Variáveis em `:root` (tema escuro):
 --hover:#22343E       --teal-fraco:#0e2422   --teal-hover:#132229
 --amber-fraco:#2a1f0e --amber-claro:#FFC163  --teal-escuro:#28a094
 --map-bg:#0C1418      --sombra:rgba(0,0,0,.4)
+--barra:#334955       --barra-forte:#4B6776
 ```
+
+As **barras de rolagem** saem dessas duas últimas desde a v8.4.1 (relatado
+pelo usuário: "o scroll com fundo branco não está na mesma sintonia do
+restante"). Nunca tinham estilo: o navegador desenhava a dele, clara, e dentro
+de um cartão escuro virava um risco branco atravessando a coluna. A **pista é
+transparente**, senão viraria uma faixa dentro do vidro. Estão declaradas nas
+duas formas — `scrollbar-color`/`scrollbar-width` (padronizada) e
+`::-webkit-scrollbar` (Chrome/Edge antigo); onde a primeira vale, o navegador
+ignora a segunda. ⚠️ `scrollbar-color` **é herdada**, `scrollbar-width` **não**:
+declarando as duas só em `:root`, o checklist, a lista de paradas e o roteiro
+saíam com a cor certa e a barra larga do sistema.
 
 Tema claro em `:root[data-tema="claro"]`. **Não é o escuro invertido**: o âmbar
 e o teal precisaram escurecer (`#C9821A`, `#12796E`) para continuarem legíveis
@@ -1145,6 +1157,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 90 | **v8.2.0** — Fluidez: o borrão sai enquanto o mapa se mexe, e um interruptor desliga o vidro |
 | 91 | **v8.3.0** — Correção: o mapa pintava por cima do painel com o vidro desligado |
 | 92 | **v8.4.0** — Janelas livres: cada coluna solta pela tela, atrás de um botão |
+| 93 | **v8.4.1** — Barras de rolagem no tema, com a pista transparente |
 
 ---
 
@@ -1211,7 +1224,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.4.0
+8.4.1
 ```
 
 ### Onde o número aparece
@@ -1328,3 +1341,4 @@ os backups locais são conveniência, não garantia.
 | 8.2.0 | 23/09/2026 | Fluidez do vidro (travava em máquina com vídeo integrado) |
 | 8.3.0 | 23/09/2026 | Correção: o mapa pintava por cima do painel sem o vidro |
 | 8.4.0 | 23/09/2026 | Janelas livres (posição, tamanho e ordem de frente por coluna) |
+| 8.4.1 | 23/09/2026 | Barras de rolagem acompanhando o tema |
