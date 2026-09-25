@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 24/09/2026 — v8.10.0 (o módulo Rota grudado)
+> **Última atualização:** 25/09/2026 — v8.11.0 (teto dos puxadores de altura)
 
 ---
 
@@ -261,8 +261,9 @@ sem dependências instaladas. Abre direto no navegador.
   mais por baixo de nada. ⚠️ **A melhora não foi medida**: na máquina de casa o
   problema não reproduz. O que dá para afirmar é o que saiu do caminho —
   durante um arraste, de até **três borrões** para **nenhum**
-- **Modo leve** (v8.7.0, relatado pelo usuário depois de testar a v8.2.0 no
-  trabalho: "ficou menos travado, mas notei que antes ficava mais fluido. Tem
+- **Modo leve** (v8.7.0; ✅ **validado pelo usuário na máquina do trabalho em
+  25/09/2026** — "utilizei o modo desempenho no trabalho e deu certo"; relatado
+  depois de testar a v8.2.0 no trabalho: "ficou menos travado, mas notei que antes ficava mais fluido. Tem
   como criar um botão onde desativa tudo que possa deixar o site mais travado
   para computadores mais antigos?"). Um interruptor no cabeçalho (`hg_leve`,
   ícone de velocímetro, âmbar quando ligado) que **manda nos outros**: força o
@@ -573,6 +574,30 @@ sem dependências instaladas. Abre direto no navegador.
   paradas no painel. O resto saiu quando o
   painel passou a repartir altura como as colunas: hoje o ajuste é a **divisória
   entre módulos com lista** e o **puxador do último**, iguais nos três lugares.
+  ⚠️ **Os puxadores ganharam TETO na v8.11.0** (relatado pelo usuário com
+  print: "o módulo de clientes pode ser expandido passando pelo módulo de
+  Rota"). Os três — checklist, lista de paradas e o das colunas — só tinham
+  piso; arrastar para baixo crescia sem limite. Medido num contêiner de 741px
+  visíveis: **960px**, **940px** e **1321px**. As **divisórias** nunca tiveram
+  o problema, porque conservam uma soma e já limitavam os dois lados.
+  A regra: **nenhum módulo mais alto que o contêiner que o mostra, menos o
+  mínimo de um módulo** (741 → 621). Uma lista maior que o painel é inútil de
+  qualquer forma — rola-se o painel para ver uma lista que também rola, que é a
+  dupla rolagem rejeitada na v6.4.1.
+  ⚠️ A regra **não** promete que tudo caiba sem rolar, de propósito: o painel
+  foi feito para rolar e o módulo Rota flutuar sobre a lista é a v6.5
+  funcionando. Ela impede o caso absurdo, não o projeto.
+  ⚠️ **Uma tentativa que não serve, para ninguém refazer**: medir o espaço livre
+  com `clientHeight - acima - abaixo`, tirando `abaixo` do `scrollHeight`.
+  Quando o conteúdo **cabe**, o `scrollHeight` fica preso na altura da caixa e a
+  conta degenera para "o teto é a altura atual" — o módulo nunca mais cresce
+  (pego no teste: o checklist foi a 120px sozinho no arranque). Somar os filhos
+  à mão também não fecha (medido 964 contra 932), porque as sections do painel
+  são `display:contents` e o módulo Rota é `sticky`.
+  ⚠️ `corrigirAlturasDoPainel()` aperta o módulo quando a **janela encolhe**,
+  comparando sempre contra o valor **guardado** e sem gravar — alargando a
+  janela de volta, ele volta ao tamanho escolhido (medido: guardado 600, tela
+  431 numa janela de 560, e 600 de novo a 830).
   ⚠️ Lição da v5.8 que continua valendo: altura de lista nunca sai de
   `max-height` nem de medida da tela — com `max-height` uma busca de poucos
   resultados encolhia a caixa e travava os controles
@@ -1408,6 +1433,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 98 | **v8.8.0** — Quilometragem somada do dia, com todas as abas |
 | 99 | **v8.9.0** — A parada é do técnico, não da base (★ e tipo deixam de ser compartilhados) |
 | 100 | **v8.10.0** — O módulo Rota grudado deixa de virar uma laje mais clara |
+| 101 | **v8.11.0** — Os puxadores de altura ganham teto (nenhum módulo maior que o painel) |
 
 ---
 
@@ -1475,7 +1501,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.10.0
+8.11.0
 ```
 
 ### Onde o número aparece
@@ -1600,3 +1626,4 @@ os backups locais são conveniência, não garantia.
 | 8.8.0 | 24/09/2026 | Quilometragem somada do dia |
 | 8.9.0 | 24/09/2026 | A parada é do técnico, não da base; limpeza de peso morto |
 | 8.10.0 | 24/09/2026 | Correção: o fundo do módulo Rota grudado não batia com o cartão |
+| 8.11.0 | 25/09/2026 | Correção: puxadores de altura sem teto deixavam o módulo passar do painel |

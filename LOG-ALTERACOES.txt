@@ -6335,3 +6335,80 @@ TESTES (janela de 1280, painel com 6 paradas e rota traçada)
     opaco em todas as posições em que está grudado, e fundo totalmente
     transparente quando ele pousa no lugar dele — o ajuste da v8.1.0 intacto.
   Sem erro no console.
+
+--------------------------------------------------------
+[25/09/2026] v8.11.0 — Os puxadores de altura ganham teto
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  Com print: "o módulo de clientes pode ser expandido passando pelo módulo de
+  Rota. Se certifique de ajustar e verificar se também pode acontecer em outros
+  módulos." Antes disso, a boa notícia: o modo leve funcionou no trabalho.
+
+CAUSA
+  Os três PUXADORES de altura só tinham piso (ALTURA_MODULO_MIN / _GUIA_MIN) e
+  nenhum teto. Arrastar para baixo crescia sem limite. Reproduzido com uma base
+  sintética de 39 clientes, num contêiner de 741px visíveis:
+    checklist (painel)          -> 960px
+    lista de paradas (painel)   -> 940px
+    módulo 3 numa coluna        -> 1321px
+  ⚠️ As DIVISÓRIAS nunca tiveram o problema: elas conservam uma soma, então já
+  limitavam os dois lados. Era só dos puxadores — os três, como o usuário
+  suspeitou ao pedir para verificar os outros módulos.
+
+A REGRA ESCOLHIDA
+  Nenhum módulo pode ficar mais alto que o contêiner que o mostra, menos o
+  mínimo de um módulo. Num painel de 741px o teto é 621px.
+  Uma lista de 960px num painel de 741 é inútil de qualquer jeito: rola-se o
+  painel para ver uma lista que também rola — exatamente a dupla rolagem que a
+  v6.4 tentou resolver e o usuário rejeitou.
+  ⚠️ A regra NÃO promete que tudo caiba sem rolar, e isso é de propósito: o
+  painel foi feito para rolar (a v6.4 acabou com a rolagem e foi desfeita na
+  v6.4.1 a pedido dele), e o módulo Rota flutuar por cima da lista é a v6.5
+  funcionando. O que a regra impede é o caso absurdo.
+
+⚠️ UMA TENTATIVA QUE NÃO SERVE, PARA NINGUÉM REFAZER
+  A primeira versão media "quanto sobra de espaço" com
+  `clientHeight - acima - abaixo`, tirando `abaixo` do `scrollHeight`. Não
+  funciona: quando o conteúdo CABE, o scrollHeight fica preso na altura da
+  caixa, e a conta degenera para "o teto é a altura atual" — o módulo nunca
+  mais crescia. Pego no teste: o checklist foi parar em 120px sozinho, no
+  arranque.
+  Somar os filhos à mão também não fecha — medido 964 contra os 932 do
+  scrollHeight —, porque as sections do painel são `display:contents` (não têm
+  caixa) e o módulo Rota é `sticky` (o rect dele não está no lugar do layout).
+  Daí a regra simples, que não depende de medir o conteúdo.
+
+CORREÇÃO AO ENCOLHER A JANELA
+  Uma altura guardada pode ficar grande demais para uma janela menor — e aí o
+  módulo passaria por cima dos de baixo sem ninguém ter arrastado nada.
+  corrigirAlturasDoPainel() roda junto com aplicarArranjo (arranque, resize e
+  troca de módulo de coluna).
+  ⚠️ Ela compara sempre contra o valor GUARDADO, nunca contra o que está na
+  tela, e NÃO grava: assim encolher a janela aperta o módulo e alargá-la de
+  volta o devolve ao tamanho que a pessoa escolheu. Medido: guardado 600, numa
+  janela de 560 a tela mostra 431 e o guardado continua 600; voltando a 830, a
+  tela volta a 600.
+
+⚠️ SOBRE O PRINT
+  O sintoma visual do print — o texto da lista aparecendo ATRAVÉS do módulo
+  Rota — já tinha sido resolvido na v8.10.0, que deu ao módulo grudado a cor
+  exata do cartão e o deixou opaco. Varri as 28 posições de rolagem possíveis
+  na versão atual procurando "sobrepõe E está sem fundo": ZERO. O print deve
+  ser de antes de o trabalho pegar a v8.10.0.
+  O que o usuário nomeou — "pode ser expandido passando pelo módulo de Rota" —
+  esse sim continuava valendo, e é o que esta versão conserta.
+
+TESTES (base sintética de 39 clientes / 78 pontos)
+  Painel de 741px, teto 621:
+    puxador do checklist, arrastando 900px -> parou em 621; -900px -> 120.
+    puxador das paradas, arrastando 900px  -> parou em 621.
+    padrão de 320px intacto; duplo clique continua voltando para 320.
+  Coluna de 741px: puxador arrastando 900px -> parou em 621 (peso 621).
+  Janela de 830 -> 560: tela cai de 600 para 431, guardado segue 600.
+  Janela de 560 -> 830: tela volta para 600.
+  MODO LEVE (regra do projeto): painel de 765px, teto 645, arraste de 900px
+    parou em 645.
+  Tela de 375px: nada muda — ali as listas usam max-height (200px) e a correção
+    nem roda; o valor guardado fica intacto.
+  Sem erro no console.

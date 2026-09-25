@@ -1972,7 +1972,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.10.0';
+const VERSAO = '8.11.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -3753,6 +3753,34 @@ function alturasAtuais(){
   return { c: c > 0 ? c : g.c, p: p > 0 ? p : g.p };
 }
 
+/* ---- Teto de altura de um módulo (v8.11.0, relatado pelo usuário com print:
+   "o módulo de clientes pode ser expandido passando pelo módulo de Rota") ----
+   Até aqui os PUXADORES só tinham piso (ALTURA_MODULO_MIN). Sem teto, arrastar
+   para baixo crescia sem limite: medido num painel de 741px visíveis, o
+   checklist chegou a 960px, a lista de paradas a 940px e, numa coluna, o módulo
+   3 a 1321px.
+   ⚠️ As DIVISÓRIAS nunca tiveram esse problema: elas conservam uma soma, então
+   já limitavam os dois lados. Era só dos três puxadores.
+
+   A REGRA: nenhum módulo pode ficar mais alto que o contêiner que o mostra,
+   menos o mínimo de um módulo. Uma lista de 960px num painel de 741 é inútil de
+   qualquer jeito — rola-se o painel para ver uma lista que também rola, que é
+   exatamente a dupla rolagem que a v6.4 tentou e o usuário rejeitou.
+   ⚠️ Isto NÃO promete que tudo caiba sem rolar. O painel foi feito para rolar
+   (a v6.4 acabou com a rolagem e foi desfeita na v6.4.1 a pedido do usuário), e
+   o módulo Rota flutuar por cima da lista é a v6.5 funcionando. O que a regra
+   impede é o caso absurdo.
+   ⚠️ Uma tentativa anterior mediu "quanto sobra de espaço" pelo `scrollHeight`
+   e não serve: quando o conteúdo CABE, o scrollHeight fica preso na altura da
+   caixa e a conta degenera para "o teto é a altura atual" — o módulo nunca mais
+   crescia. Somar os filhos à mão também não fecha (medido: 964 contra os 932 do
+   scrollHeight), porque as sections do painel são `display:contents` e o módulo
+   Rota é `sticky`. Daí a regra simples. */
+function tetoDeAltura(container, minimo){
+  if (!container || !container.clientHeight) return Infinity;
+  return Math.max(minimo, container.clientHeight - minimo);
+}
+
 function aplicarAlturas(checklist, paradas, salvar){
   const c = Math.round(Math.max(checklist, ALTURA_MODULO_MIN));
   const p = Math.round(Math.max(paradas, ALTURA_MODULO_MIN));
@@ -3760,6 +3788,25 @@ function aplicarAlturas(checklist, paradas, salvar){
   document.documentElement.style.setProperty('--altura-paradas', p + 'px');
   if (salvar){ try{ localStorage.setItem(CHAVE_ALTURAS, JSON.stringify({ c, p })); }catch(e){ /* segue sem persistir */ } }
   return { c, p };
+}
+
+/* Uma janela menor — ou um arranjo com mais módulos no painel — pode deixar
+   uma altura GUARDADA grande demais para o espaço que sobrou. Sem isto o
+   módulo continuaria passando por cima dos de baixo sem ninguém ter arrastado
+   nada (v8.11.0).
+   ⚠️ Compara sempre contra o valor GUARDADO, nunca contra o que está na tela:
+   assim encolher a janela aperta o módulo e alargá-la de volta o devolve ao
+   tamanho que a pessoa escolheu. Por isso também não grava. */
+function corrigirAlturasDoPainel(){
+  if (modoCampoAtivo || !telaComportaGuia()) return;   // empilhado: as listas usam max-height
+  const p = document.querySelector('.console');
+  if (!p) return;
+  const g = alturasGuardadas();
+  const teto = tetoDeAltura(p, ALTURA_MODULO_MIN);
+  const c  = Math.min(g.c, teto);
+  const pa = Math.min(g.p, teto);
+  const atual = alturasAtuais();
+  if (Math.round(c) !== atual.c || Math.round(pa) !== atual.p) aplicarAlturas(c, pa, false);
 }
 
 if (!modoCampoAtivo){
@@ -3824,8 +3871,9 @@ if (!modoCampoAtivo){
 
     const inicioY = ev.clientY;
     const { c: cInicial, p: pFixo } = alturasAtuais();
+    const teto = tetoDeAltura(document.querySelector('.console'), ALTURA_MODULO_MIN);
 
-    const mover = e => aplicarAlturas(cInicial + (e.clientY - inicioY), pFixo, false);
+    const mover = e => aplicarAlturas(Math.min(cInicial + (e.clientY - inicioY), teto), pFixo, false);
     const soltar = () => {
       puxador3.removeEventListener('pointermove', mover);
       puxador3.removeEventListener('pointerup', soltar);
@@ -3854,8 +3902,9 @@ if (!modoCampoAtivo){
 
     const inicioY = ev.clientY;
     const { c: cFixo, p: pInicial } = alturasAtuais();
+    const teto = tetoDeAltura(document.querySelector('.console'), ALTURA_MODULO_MIN);
 
-    const mover = e => aplicarAlturas(cFixo, pInicial + (e.clientY - inicioY), false);
+    const mover = e => aplicarAlturas(cFixo, Math.min(pInicial + (e.clientY - inicioY), teto), false);
     const soltar = () => {
       puxador4.removeEventListener('pointermove', mover);
       puxador4.removeEventListener('pointerup', soltar);
@@ -4274,6 +4323,7 @@ function aplicarArranjo(){
     Object.keys(COLUNAS).forEach(col => aplicarLarguraGuia(col, larguraGuiaGuardada(col), false));
   }
   atualizarModulosNasColunas();
+  corrigirAlturasDoPainel();   // a janela ou o arranjo podem ter encolhido o espaço (v8.11.0)
   atualizarBotaoArranjo();
   // A largura do mapa mudou: sem isto o Leaflet segue desenhando no tamanho antigo
   if (map) map.invalidateSize({ animate:false });
@@ -4787,9 +4837,13 @@ if (!modoCampoAtivo){
     const chave = pux.dataset.modulo;
     const inicial = arranjo.pesos[chave];
     const inicioY = ev.clientY;
+    /* A mesma regra do painel, agora contra a COLUNA (v8.11.0). A coluna
+       continua podendo rolar no modo de altura fixa — o que ela não pode é ter
+       um módulo maior que ela inteira. */
+    const teto = tetoDeAltura(coluna, ALTURA_MODULO_GUIA_MIN);
 
     const mover = e => {
-      const h = Math.max(inicial + (e.clientY - inicioY), ALTURA_MODULO_GUIA_MIN);
+      const h = Math.min(Math.max(inicial + (e.clientY - inicioY), ALTURA_MODULO_GUIA_MIN), teto);
       arranjo.pesos[chave] = h;
       vagaDoModulo(chave).style.setProperty('--peso', String(h));
     };
