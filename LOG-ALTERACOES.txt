@@ -6288,3 +6288,50 @@ TESTES (todos pelo caminho real da interface)
   2. Contei "botões visíveis no cabeçalho" lendo o `display` de cada botão —
      que continua `flex` mesmo quando o CONTÊINER deles está `display:none`.
   Em ambos os casos o app estava certo e a régua é que estava torta.
+
+--------------------------------------------------------
+[24/09/2026] v8.10.0 — O modulo Rota grudado deixa de virar uma laje clara
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Realmente o módulo Rota ficou meio bugado o layout, às vezes ao dar scroll
+  fica com um fundo à mostra."
+
+CAUSA (medida, não suposta)
+  O fundo do módulo grudado pinta ACIMA do véu do cartão — aquele
+  `inset 0 0 0 2000px rgba(0,0,0,.18)` que segura a leitura sobre o mapa. Com
+  uma tinta de 94% de --panel, ele saía com a cor da tinta SEM o véu.
+  Medido no tema escuro: módulo em rgb(22,35,42), cartão em volta em
+  rgb(18,28,34). Distância de 11 num fundo escuro — uma laje mais clara
+  atravessando a coluna. É isso que aparece ao rolar, porque é rolando que o
+  módulo passa a flutuar.
+  ⚠️ No tema claro a diferença já era 2 (o véu ali é branco e --panel também),
+  então o defeito era só do escuro — que é o tema padrão.
+
+O CONSERTO
+  A cor passou a incluir o véu na conta: tinta de 94% de --panel sobre o fundo
+  do mapa, e esse resultado a 82% sobre preto (os mesmos 18% do véu). No tema
+  claro, a outra ponta: 65% sobre branco.
+  Medido depois: diferença 0 nos dois temas.
+  ⚠️ E ficou OPACO. A 94% a lista ainda passava 6% por baixo enquanto rolava —
+  um fantasma fraco, mas era o que o fundo existia para tapar.
+  ⚠️ O gradiente do cartão (84%→94%) faz a cor variar um pouco ao longo da
+  coluna, mas no topo a diferença dá 2 — abaixo do que se enxerga. Um valor só
+  serve para a coluna inteira, sem precisar de gradiente no módulo.
+
+SEGUNDO DEFEITO, ACHADO NO MESMO TESTE (modo leve)
+  A regra do modo leve tirava a sombra do módulo grudado junto com as outras.
+  Só que ali a sombra não é enfeite: é o ÚNICO sinal de que a lista está
+  passando por baixo. Sem ela o módulo virava uma laje sem borda no meio da
+  coluna. Virou um fio de 1px em --line, que não tem desfoque nenhum para
+  repintar — respeita a regra do modo leve e devolve a separação.
+
+TESTES (janela de 1280, painel com 6 paradas e rota traçada)
+  Tema escuro + vidro:  módulo rgb(18,28,34) = cartão rgb(18,28,34) → 0.
+  Tema claro + vidro:   254,254,254 = 254,254,254 → 0.
+  Modo leve:            fundo rgb(22,35,43) (o --panel opaco, que é a cor do
+    cartão ali) e sombra virando dois fios de 1px em rgb(42,61,71).
+  Varredura de 21 posições de rolagem: UMA troca de estado (sem oscilação),
+    opaco em todas as posições em que está grudado, e fundo totalmente
+    transparente quando ele pousa no lugar dele — o ajuste da v8.1.0 intacto.
+  Sem erro no console.

@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 24/09/2026 — v8.9.0 (a parada é do técnico, não da base)
+> **Última atualização:** 24/09/2026 — v8.10.0 (o módulo Rota grudado)
 
 ---
 
@@ -230,6 +230,18 @@ sem dependências instaladas. Abre direto no navegador.
     `prefers-reduced-transparency` do sistema — o "efeitos de transparência" do
     Windows. ⚠️ A regra vive dentro de `@media (min-width:761px)`: em tela
     estreita quem manda é o empilhado, e os dois modos dão o mesmo layout.
+  ⚠️ **O fundo do módulo Rota grudado tem de incluir o VÉU do cartão**
+  (v8.10.0, relatado pelo usuário: "às vezes ao dar scroll fica com um fundo à
+  mostra"). O fundo dele pinta **acima** do `inset 0 0 0 2000px rgba(0,0,0,.18)`
+  do cartão, então uma tinta de 94% de `--panel` saía com a cor da tinta **sem**
+  o véu: medido, **rgb(22,35,42)** contra os **rgb(18,28,34)** do cartão em
+  volta — uma laje mais clara atravessando a coluna. A conta agora é tinta de
+  94% sobre `--map-bg`, e o resultado a **82% sobre preto** (os mesmos 18%); no
+  tema claro, **65% sobre branco**. Medido depois: **diferença 0 nos dois**.
+  ⚠️ E ficou **opaco** — a 94% a lista ainda passava 6% por baixo, que é
+  justamente o que o fundo existe para tapar. ⚠️ No modo leve a sombra dele
+  vira um **fio de 1px**, e não some como a dos outros: ali ela é o único sinal
+  de que a lista está passando por baixo.
   ⚠️ **O `#map` nunca pode virar `position:static`** (v8.3.0, relatado com
   print: "com o vidro desligado o mapa fica por cima"). Os painéis do Leaflet —
   ladrilhos, marcadores, traçado — são `position:absolute` e se ancoram no
@@ -1395,6 +1407,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 97 | **v8.7.0** — Modo leve: um botão desliga de uma vez tudo que custa desenho |
 | 98 | **v8.8.0** — Quilometragem somada do dia, com todas as abas |
 | 99 | **v8.9.0** — A parada é do técnico, não da base (★ e tipo deixam de ser compartilhados) |
+| 100 | **v8.10.0** — O módulo Rota grudado deixa de virar uma laje mais clara |
 
 ---
 
@@ -1462,7 +1475,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.9.0
+8.10.0
 ```
 
 ### Onde o número aparece
@@ -1586,3 +1599,4 @@ os backups locais são conveniência, não garantia.
 | 8.7.0 | 24/09/2026 | Modo leve (para computador mais antigo) |
 | 8.8.0 | 24/09/2026 | Quilometragem somada do dia |
 | 8.9.0 | 24/09/2026 | A parada é do técnico, não da base; limpeza de peso morto |
+| 8.10.0 | 24/09/2026 | Correção: o fundo do módulo Rota grudado não batia com o cartão |

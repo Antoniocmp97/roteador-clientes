@@ -495,9 +495,15 @@
   /* Sombra desfocada é repintada junto com o que passa atrás dela */
   :root[data-leve="1"] .guia, :root[data-leve="1"] .console,
   :root[data-leve="1"] .modulo-movel,
-  :root[data-leve="1"] #moduloRota.grudado,
-  :root[data-leve="1"] .guia > .modulo-movel.rota-grudada,
   :root[data-leve="1"] .retomar-dia{box-shadow:none !important;}
+  /* ⚠️ O módulo Rota grudado é a exceção: a sombra dele não é enfeite, é o
+     único sinal de que a lista está passando POR BAIXO. Sem nada, ele vira uma
+     laje sem borda no meio da coluna. Vira um fio de 1px, que não tem desfoque
+     nenhum para repintar (v8.10.0). */
+  :root[data-leve="1"] #moduloRota.grudado,
+  :root[data-leve="1"] .guia > .modulo-movel.rota-grudada{
+    box-shadow:0 -1px 0 var(--line), 0 1px 0 var(--line) !important;
+  }
   /* Os dois que o modo leve já força saem de cena (o ímã some junto com as
      janelas, pela regra dele) */
   :root[data-leve="1"] .vidro-btn,
@@ -1099,10 +1105,33 @@
        próprio cartão de vidro, que JÁ vem borrado. Era um segundo borrão em
        cima do primeiro — um passe a mais por quadro, aninhado dentro do
        primeiro (o caso mais caro que existe), para não mudar nada que se veja.
-       A tinta subiu de 92% para 94% e resolve sozinha: o que passa é 6% de uma
-       imagem que já está desfocada. */
-    background:color-mix(in srgb, var(--panel) 94%, transparent);
+       ⚠️ OPACO, e com o VÉU na conta (v8.10.0, relatado pelo usuário: "às vezes
+       ao dar scroll fica com um fundo à mostra"). O fundo deste módulo pinta
+       ACIMA do véu do cartão — aquele `inset 0 0 0 2000px rgba(0,0,0,.18)` que
+       segura a leitura sobre o mapa. Com uma tinta de 94% de --panel ele saía
+       com a cor da tinta SEM o véu: medido, rgb(22,35,42) contra os
+       rgb(18,28,34) do cartão em volta. Diferença de 11 num fundo escuro — uma
+       laje mais clara atravessando a coluna, que é o que o usuário viu.
+       A conta agora fecha: tinta de 94% sobre o fundo do mapa, e esse resultado
+       a 82% sobre preto — os mesmos 18% do véu. Medido depois: bate exato.
+       ⚠️ Ser opaco também mata o fantasma que sobrava: a 94% a lista passava 6%
+       por baixo enquanto rolava.
+       ⚠️ O gradiente do cartão (84%→94%) faz a cor variar um pouco ao longo da
+       coluna, mas no topo a diferença dá 2 — abaixo do que se enxerga. Um valor
+       só serve para a coluna inteira. */
+    background:color-mix(in srgb,
+               color-mix(in srgb, var(--panel) 94%, var(--map-bg)) 82%, #000);
     box-shadow:0 -10px 14px -12px var(--sombra), 0 10px 14px -12px var(--sombra);
+  }
+
+  /* No tema claro o véu do cartão é BRANCO a 35%, então a conta é a outra
+     ponta. Ali a diferença já era pequena (medido: 2), mas deixar as duas
+     fórmulas explícitas evita que a do escuro seja aplicada no claro — ela
+     acinzentaria o módulo em 18%. */
+  :root[data-tema="claro"] #moduloRota.grudado,
+  :root[data-tema="claro"] .guia > .modulo-movel.rota-grudada{
+    background:color-mix(in srgb,
+               color-mix(in srgb, var(--panel) 94%, var(--map-bg)) 65%, #fff);
   }
 
   /* A sentinela é um item de layout do painel (a section é display:contents),
@@ -1943,7 +1972,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.9.0';
+const VERSAO = '8.10.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
