@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 23/09/2026 — v8.6.0 (o nome do técnico na tela do campo)
+> **Última atualização:** 24/09/2026 — v8.7.0 (modo leve)
 
 ---
 
@@ -249,6 +249,32 @@ sem dependências instaladas. Abre direto no navegador.
   mais por baixo de nada. ⚠️ **A melhora não foi medida**: na máquina de casa o
   problema não reproduz. O que dá para afirmar é o que saiu do caminho —
   durante um arraste, de até **três borrões** para **nenhum**
+- **Modo leve** (v8.7.0, relatado pelo usuário depois de testar a v8.2.0 no
+  trabalho: "ficou menos travado, mas notei que antes ficava mais fluido. Tem
+  como criar um botão onde desativa tudo que possa deixar o site mais travado
+  para computadores mais antigos?"). Um interruptor no cabeçalho (`hg_leve`,
+  ícone de velocímetro, âmbar quando ligado) que **manda nos outros**: força o
+  **vidro** e as **janelas livres** desligados — e com isso o mapa volta a
+  ~metade da largura (medido a 1400px: de 1400 para 1053) — e ainda tira
+  **transições, animações, sombras desfocadas** e o **efeito ao traçar**. Os
+  botões de vidro e de janelas **somem** enquanto ele está ligado, porque a
+  escolha deles não vale nada ali; o do ímã some junto, pela regra dele.
+  ⚠️ **Não apaga a escolha dos outros dois**: força as duas desligadas sem tocar
+  no que está guardado, e ao sair elas voltam exatamente como estavam. É
+  aplicado pelo script do `<head>` **depois** dos outros dois, porque manda
+  neles.
+  ⚠️ **A exceção que não pode faltar**: matar `transition` em tudo quebraria o
+  zoom do Leaflet, que termina a animação no evento de **fim da transição** —
+  sem ela o `transitionend` não chega e a vista pode ficar presa no meio do
+  zoom (a mesma família das armadilhas de relógio parado das v6.5/v6.9/v8.0.0).
+  Uma regra devolve exatamente a declaração do próprio Leaflet para
+  `.leaflet-zoom-anim .leaflet-zoom-animated`.
+  ⚠️ **O que ele NÃO desliga**: o **filtro de cor dos ladrilhos** (v3.4). Ele
+  existe desde a v3.2 e o app era fluido com ele — o que mudou na v8.1.0 foi o
+  mapa virar tela cheia e ganhar o borrão por cima, e é isso que o modo leve
+  desfaz. Tirar o filtro devolveria o cinza médio do Esri e quebraria a
+  identidade do tema escuro, que custou três versões para acertar. Fica como a
+  **próxima alavanca** se ainda estiver pesado
 - **Janelas livres** (v8.4.0, pedido do usuário: "poder apertar no topo ao
   centro, e poder colocar a coluna inteira para qualquer parte da tela,
   parecendo bastante como um aplicativo"; depois: "baseado nesse mesmo caminho
@@ -1023,8 +1049,8 @@ repositório é público (ver `.gitignore`).
   origem padrão, a lista de tipos de serviço, a preferência de formato do link,
   a opção de voltar para a origem, o zoom ao clicar na parada, o vidro ligado
   ou desligado, as janelas livres ligadas ou desligadas, o ímã de alinhamento
-  delas, **o planejamento do dia** (v8.5.0, restaurado só se a pessoa aceitar),
-  a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
+  delas, **o modo leve** (v8.7.0), **o planejamento do dia** (v8.5.0, restaurado
+  só se a pessoa aceitar), a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
   botão), o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
   recarregar a página zera essa parte, de propósito (é o roteiro do dia, não
@@ -1260,6 +1286,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 94 | **v8.4.2** — Checklist sem a bolinha: a seta e o contador acendem |
 | 95 | **v8.5.0** — Um roteiro por técnico, em abas, com as rotas juntas no mapa |
 | 96 | **v8.6.0** — O nome do técnico viaja no link e aparece na tela do campo |
+| 97 | **v8.7.0** — Modo leve: um botão desliga de uma vez tudo que custa desenho |
 
 ---
 
@@ -1326,7 +1353,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.6.0
+8.7.0
 ```
 
 ### Onde o número aparece
@@ -1447,3 +1474,4 @@ os backups locais são conveniência, não garantia.
 | 8.4.2 | 23/09/2026 | Checklist sem a bolinha da calha; chevron de traço |
 | 8.5.0 | 23/09/2026 | Um roteiro por técnico, em abas (Fase 2) |
 | 8.6.0 | 23/09/2026 | Nome do técnico no cabeçalho da tela do campo (link v9) |
+| 8.7.0 | 24/09/2026 | Modo leve (para computador mais antigo) |

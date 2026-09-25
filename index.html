@@ -320,6 +320,9 @@
      quiser"). O botão só existe com as janelas ligadas — fora delas não há o
      que alinhar. Ligado é o padrão e fica discreto; desligado fica riscado e em
      âmbar, o mesmo idioma do vidro e da lupa do módulo 4. */
+  /* Modo leve: o único dos interruptores de desempenho que continua visível
+     em tela estreita, porque lá ele ainda desliga transições e animações */
+  .leve-btn.ligado{color:var(--amber);}
   .ima-btn{display:none;}
   .ima-btn .risco{display:none;}
   .ima-btn.desligado{color:var(--amber);}
@@ -400,6 +403,15 @@
   .retomar-dia .sim{background:var(--amber); color:#241705; border:none; font-weight:700;}
   .retomar-dia .nao{background:transparent; color:var(--muted); border:1px solid var(--line);}
   .retomar-dia .nao:hover{color:var(--danger); border-color:var(--danger);}
+  /* ⚠️ Em tela estreita os dois botões (83 + 128px) e as margens sobravam só
+     78px para o texto, que virava uma coluna de 200px de altura (medido a
+     375px: a faixa inteira com 220px). Agora o texto toma a linha inteira e os
+     botões dividem a de baixo — a faixa cai para uma altura de recado. */
+  @media (max-width:760px){
+    .retomar-dia{flex-wrap:wrap; gap:10px;}
+    .retomar-dia .texto{flex:1 1 100%;}
+    .retomar-dia button{flex:1 1 auto;}
+  }
 
   /* Marca de que a parada já está na rota de OUTRO técnico (v8.5.0). Fica do
      lado DIREITO, junto do contador: a calha da esquerda acabou de ser limpa na
@@ -457,6 +469,40 @@
   .guia .btn-icon, .console .btn-icon{
       background:color-mix(in srgb, var(--panel-2) 80%, transparent);
   }
+  /* ---- Modo leve (v8.7.0, pedido do usuário: "testei no trabalho e ficou
+     menos travado, mas notei que antes ficava mais fluido. Tem como criar um
+     botão onde desativa tudo que possa deixar o site mais travado para
+     computadores mais antigos?") ----
+     Um interruptor só, que manda nos outros: força o vidro e as janelas livres
+     desligados e, além disso, tira o que custa desenho sem mudar o que o app
+     FAZ — transições, animações, sombras desfocadas e o efeito ao traçar.
+     Os botões de vidro e de janelas somem enquanto ele está ligado, porque a
+     escolha deles não vale nada ali. */
+  :root[data-leve="1"] *,
+  :root[data-leve="1"] *::before,
+  :root[data-leve="1"] *::after{
+      transition:none !important; animation:none !important;
+      backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+  }
+  /* ⚠️ EXCEÇÃO OBRIGATÓRIA. O Leaflet termina a animação de zoom no evento de
+     FIM da transição. Matando a transição, o `transitionend` não chega e a
+     vista pode ficar presa no meio do zoom — a mesma família das armadilhas de
+     relógio parado das v6.5/v6.9/v8.0.0. Esta regra devolve exatamente a
+     declaração do próprio Leaflet. */
+  :root[data-leve="1"] .leaflet-zoom-anim .leaflet-zoom-animated{
+      transition:transform .25s cubic-bezier(0,0,.25,1) !important;
+  }
+  /* Sombra desfocada é repintada junto com o que passa atrás dela */
+  :root[data-leve="1"] .guia, :root[data-leve="1"] .console,
+  :root[data-leve="1"] .modulo-movel,
+  :root[data-leve="1"] #moduloRota.grudado,
+  :root[data-leve="1"] .guia > .modulo-movel.rota-grudada,
+  :root[data-leve="1"] .retomar-dia{box-shadow:none !important;}
+  /* Os dois que o modo leve já força saem de cena (o ímã some junto com as
+     janelas, pela regra dele) */
+  :root[data-leve="1"] .vidro-btn,
+  :root[data-leve="1"] .janelas-btn{display:none !important;}
+
   /* ---- Fluidez do vidro (v8.2.0, relatado pelo usuário) ----
      O vidro não é desenhado uma vez só: o navegador REFAZ o borrão a cada
      quadro em que muda alguma coisa atrás do painel. E o que está atrás é o
@@ -1391,6 +1437,18 @@
     var j = null;
     try{ j = localStorage.getItem('hg_janelas'); }catch(e){}
     document.documentElement.setAttribute('data-janelas', j === '1' ? '1' : '0');
+    /* Modo leve (v8.7.0): vem DEPOIS dos outros dois de propósito, porque ele
+       manda neles. Não mexe no que está guardado — só força o efeito enquanto
+       está ligado, e aí a escolha de vidro e de janelas volta inteira quando
+       ele sai. */
+    var lv = null;
+    try{ lv = localStorage.getItem('hg_leve'); }catch(e){}
+    var leve = lv === '1';
+    document.documentElement.setAttribute('data-leve', leve ? '1' : '0');
+    if (leve){
+      document.documentElement.setAttribute('data-vidro', '0');
+      document.documentElement.setAttribute('data-janelas', '0');
+    }
   })();
 </script>
 </head>
@@ -1422,6 +1480,15 @@
       </button>
     </div>
       <span class="cab-divisor" aria-hidden="true"></span>
+      <!-- Modo leve (v8.7.0): manda no vidro e nas janelas, e tira transições,
+           animações, sombras e o efeito ao traçar. -->
+      <button class="icone-btn leve-btn" type="button" role="switch" aria-checked="false"
+              data-leve-btn aria-label="Modo leve">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4.5 18a8.5 8.5 0 1 1 15 0"/>
+          <path d="M12 18l4.2-5.4"/>
+        </svg>
+      </button>
       <!-- Janelas livres (v8.4.0): as colunas passam a ter posição e tamanho
            próprios, movidas pelo puxador no topo ao centro. -->
       <button class="icone-btn janelas-btn" type="button" role="switch" aria-checked="false"
@@ -1846,7 +1913,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.6.0';
+const VERSAO = '8.7.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2418,6 +2485,40 @@ if (!modoCampoAtivo){
   iniciarTecnicos();
   document.getElementById('retomarDiaSim').onclick = restaurarDia;
   document.getElementById('retomarDiaNao').onclick = descartarDia;
+}
+
+/* ---------------- Modo leve (v8.7.0) ----------------
+   Um interruptor que manda nos outros. Ele NÃO apaga a escolha de vidro nem a
+   de janelas: enquanto está ligado, força as duas desligadas; ao sair, lê de
+   volta o que estava guardado e devolve tudo como era.
+   O que ele tira, além disso: transições, animações, sombras desfocadas e o
+   efeito ao traçar a rota. Nada disso muda o que o app FAZ — só o que ele
+   desenha a mais. */
+const CHAVE_LEVE = 'hg_leve';
+function modoLeve(){ return document.documentElement.getAttribute('data-leve') === '1'; }
+// O que o usuário escolheu, ignorando o que o modo leve está forçando agora
+function vidroGuardado(){
+  let v = null;
+  try{ v = localStorage.getItem(CHAVE_VIDRO); }catch(e){}
+  if (v !== null) return v !== '0';
+  try{ return !matchMedia('(prefers-reduced-transparency: reduce)').matches; }catch(e){ return true; }
+}
+function janelasGuardado(){
+  try{ return localStorage.getItem(CHAVE_JANELAS) === '1'; }catch(e){ return false; }
+}
+function aplicarModoLeve(lig, salvar){
+  document.documentElement.setAttribute('data-leve', lig ? '1' : '0');
+  document.querySelectorAll('[data-leve-btn]').forEach(b => {
+    b.classList.toggle('ligado', lig);
+    b.setAttribute('aria-checked', String(lig));
+    b.title = lig
+      ? 'Modo leve ligado: sem vidro, sem janelas livres, sem animações e sem o efeito ao traçar. Clique para voltar ao normal.'
+      : 'Modo leve: desliga de uma vez tudo que custa desenho — para computador mais antigo. Clique para ligar.';
+  });
+  if (salvar){ try{ localStorage.setItem(CHAVE_LEVE, lig ? '1' : '0'); }catch(e){} }
+  // Sem salvar: a escolha dos dois continua guardada e volta inteira ao sair
+  aplicarVidro(lig ? false : vidroGuardado(), false);
+  aplicarModoJanelas(lig ? false : janelasGuardado(), false);
 }
 
 /* ---------------- Vidro ligado ou desligado (v8.2.0) ----------------
@@ -4667,6 +4768,11 @@ if (!modoCampoAtivo){
     b.addEventListener('click', () => aplicarIma(!imaAtivo, true));
   });
   aplicarIma(imaAtivo, false);   // acerta o ícone no estado guardado
+
+  document.querySelectorAll('[data-leve-btn]').forEach(b => {
+    b.addEventListener('click', () => aplicarModoLeve(!modoLeve(), true));
+  });
+  aplicarModoLeve(modoLeve(), false);   // acerta o ícone no estado do <head>
 }
 
 /* ---------------- Arrastar para reordenar (v3.8) ----------------
@@ -5167,6 +5273,7 @@ const VOO_ROTA = 1.2;    // segundos do flyToBounds, antes de a linha começar
 let efeitoAtual = 0;     // qual traçado é o mais recente (ver "comecar")
 
 function efeitoLigado(){
+  if (modoLeve()) return false;   // (v8.7.0) a rota aparece pronta
   try{ if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false; }catch(e){}
   return !!(routeLine && routeLine.getElement && routeLine.getElement());
 }

@@ -6057,3 +6057,77 @@ TESTES
   Retomar o link v9 no escritório: 2 paradas, origem "Centro", retorno ligado e
     o rid preservado — o caminho de colar o link de volta continua valendo.
   Sem erro no console.
+
+--------------------------------------------------------
+[24/09/2026] v8.7.0 — Modo leve: um botao que desliga tudo que custa desenho
+--------------------------------------------------------
+
+RELATO DO USUÁRIO
+  "Testei no trabalho e ficou menos travado. Mas notei que antes ficava mais
+  'fluido'. Tem como criar um botão onde desativa tudo que possa deixar o site
+  mais travado para computadores mais antigos?"
+  O "antes" é a v8.0.0, antes do vidro. A v8.2.0 tirou o borrão durante o
+  movimento, mas sobrou o resto.
+
+O QUE O MODO LEVE DESLIGA
+  · VIDRO, forçado. Volta o layout lado a lado: sem borrão E com o mapa em
+    ~metade da largura, então o filtro dos ladrilhos custa menos (medido numa
+    janela de 1400: mapa de 1400px para 1053px).
+  · JANELAS LIVRES, forçadas. Elas exigem o mapa por baixo, ou seja, mapa em
+    tela cheia — que é justamente o custo que se quer tirar.
+  · TRANSIÇÕES E ANIMAÇÕES, todas.
+  · SOMBRAS DESFOCADAS dos cartões, módulos e da faixa de restaurar: sombra
+    borrada é repintada junto com o que passa atrás dela.
+  · EFEITO AO TRAÇAR A ROTA (v8.0.0): a rota aparece pronta.
+  Os botões de vidro e de janelas SOMEM enquanto ele está ligado — a escolha
+  deles não vale nada ali. O do ímã some junto, pela regra dele.
+
+⚠️ NÃO APAGA A ESCOLHA DOS OUTROS DOIS
+  O modo leve força vidro e janelas desligados sem tocar no que está guardado:
+  ao desligá-lo, os dois voltam exatamente como estavam (testado: hg_janelas
+  seguiu "1" o tempo todo, e o layout de janelas voltou inteiro).
+  Aplicado pelo script do <head>, DEPOIS dos outros dois, porque manda neles.
+
+⚠️ A EXCEÇÃO QUE NÃO PODE FALTAR
+  Matar `transition` em tudo quebraria o zoom do Leaflet: ele termina a
+  animação no evento de FIM da transição, e sem ela o `transitionend` não chega
+  e a vista pode ficar presa no meio do zoom — a mesma família das armadilhas
+  de relógio parado das v6.5/v6.9/v8.0.0. Uma regra devolve exatamente a
+  declaração do próprio Leaflet para `.leaflet-zoom-anim .leaflet-zoom-animated`.
+  Conferido com o modo leve ligado: o `.leaflet-proxy` fica com
+  "0.25s / transform" durante o zoom, e um botão do painel com 0s.
+
+⚠️ O QUE O MODO LEVE **NÃO** DESLIGA, E POR QUÊ
+  O FILTRO DE COR DOS LADRILHOS (v3.4, quatro estágios). Ele existe desde a
+  v3.2 e o app era fluido com ele — o que mudou na v8.1.0 foi o mapa virar tela
+  cheia e ganhar o borrão por cima. O modo leve desfaz exatamente isso. Tirar o
+  filtro devolveria o cinza médio do Esri e quebraria a identidade do tema
+  escuro, que custou três versões para acertar (v3.2 → v3.4). Fica como a
+  PRÓXIMA ALAVANCA se ainda estiver pesado.
+
+CORRIGIDO JUNTO (defeito da v8.5.0, só visível em tela estreita)
+  A faixa de "restaurar o planejamento" não quebrava linha: os dois botões
+  (83 + 128px) e as margens deixavam 78px para o texto, que virava uma coluna
+  de 200px. Medido a 375px: a faixa tinha 220px de altura. Agora o texto toma a
+  linha inteira e os botões dividem a de baixo — 113px, e o texto com 313px.
+
+TESTES
+  Ligar: vidro e janelas caem para 0 com o guardado intacto, backdrop-filter
+    "none", box-shadow "none", mapa 1400 → 1053, cabeçalho de 7 para 4 botões.
+  Desligar: vidro e janelas voltam a 1, mapa 1400, borrão de volta, 7 botões.
+  Recarregar com ele ligado: aplicado antes da primeira pintura.
+  Traçar a rota no modo leve: traçou (7,5 km), efeitoLigado() false, sem
+    stroke-dashoffset e sem marcador animado.
+  Tela de 375px: o botão do modo leve continua visível (é o único que ainda faz
+    diferença lá), sem rolagem horizontal.
+  Sem erro no console.
+
+⚠️ ARTEFATO DE TESTE (mais um da mesma família)
+  O zoom ANIMADO não completa no painel de preview — nem com o modo leve
+  ligado, nem com ele desligado; com `animate:false` funciona (13→15→17). É a
+  aba que não pinta. Só dá para afirmar isso porque o teste foi feito nos dois
+  estados: ver um lado só teria parecido regressão do modo leve.
+
+⚠️ NÃO MEDIDO
+  O ganho em si. Aqui o problema não reproduz. O que dá para afirmar é o que
+  saiu do caminho — e o teste que vale é o da máquina do trabalho.
