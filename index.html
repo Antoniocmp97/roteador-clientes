@@ -1360,7 +1360,6 @@
     color:var(--teal); background:var(--teal-fraco); border:1px solid var(--teal);
     border-radius:4px; padding:2px 7px;
   }
-  .parada-obs{font-size:13px; color:var(--muted); margin-top:7px; line-height:1.5;}
 
   .parada-acoes{display:flex; gap:8px;}
   .parada-acoes button{
@@ -1493,7 +1492,7 @@
          a página está aberta; "salvar" faz o site abrir sempre assim, e "voltar
          ao normal" põe tudo de volta no painel e apaga o que foi salvo. -->
     <div class="cabecalho-acoes">
-    <div class="arranjo-acoes" id="arranjoAcoes">
+    <div class="arranjo-acoes">
       <!-- Ícones desenhados em SVG, e não emoji: 💾 e 🗑 mudam de cara (e de
            cor) conforme o sistema, e não acompanhariam o tema. -->
       <button class="icone-btn" id="salvarArranjoBtn" type="button" aria-label="Salvar arranjo"
@@ -1697,7 +1696,7 @@
 
       <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
       <section class="modulo-movel" data-modulo="m3">
-      <div id="modulo3" class="modulo-corpo">
+      <div class="modulo-corpo">
         <!-- v6.6: "tipos de serviço" e "marcar todos" saíram do cabeçalho e
              viraram ícones na linha da busca. No painel de 340px os três itens
              pediam ~430px numa linha de 307, e cada um quebrava em duas. Sem
@@ -1864,7 +1863,7 @@
             <button class="go-btn" id="compartilharBtn">Compartilhar</button>
             <button class="go-btn secondary" id="copiarBtn">Copiar</button>
           </div>
-          <div class="envio-dica" id="envioDica">
+          <div class="envio-dica">
             Mande este link para quem vai fazer as visitas. Ao abrir, a pessoa
             vê o roteiro na ordem certa, com botão de navegação em cada parada.
           </div>
@@ -1876,7 +1875,7 @@
           </div>
           <!-- Se algum aparelho da equipe não abre o formato compacto, marcar aqui
                evita ter que lembrar do botão acima a cada roteiro -->
-          <label class="envio-dica" id="sempreCompatLinha" style="display:flex;gap:6px;align-items:center;cursor:pointer;">
+          <label class="envio-dica" style="display:flex;gap:6px;align-items:center;cursor:pointer;">
             <input type="checkbox" id="sempreCompativel">
             <span>Sempre gerar link compatível (mais longo, abre em qualquer celular)</span>
           </label>
@@ -1944,7 +1943,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.8.0';
+const VERSAO = '8.9.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2422,12 +2421,11 @@ function restaurarDia(){
     t.origemTexto = (td.origem && td.origem.label) || '';
     t.stops = (td.paradas || []).map(p => {
       const achado = porCoord.get(chaveCoord(p.lat, p.lng)) || clientPoints.find(c => c.id === p.id);
-      if (achado) return Object.assign(achado, { tipo: p.tipo || achado.tipo, prioritaria: p.prio });
+      if (achado) return Object.assign(copiaDaParada(achado), { tipo: p.tipo || '', prioritaria: !!p.prio });
       if (p.cliente === CLIENTE_AVULSO){
         const novo = novoPontoAvulso(p.lat, p.lng, p.name);
-        novo.tipo = p.tipo; novo.prioritaria = p.prio;
-        porCoord.set(chaveCoord(p.lat, p.lng), novo);   // a mesma avulsa em duas abas é UM ponto
-        return novo;
+        porCoord.set(chaveCoord(p.lat, p.lng), novo);   // a mesma avulsa em duas abas é UM ponto no mapa
+        return Object.assign(copiaDaParada(novo), { tipo: p.tipo || '', prioritaria: !!p.prio });
       }
       perdidas++;
       return null;
@@ -3074,9 +3072,9 @@ function toggleStop(id){
   // o botão parecia quebrado (achado em 10/09/2026). Agora a troca é feita
   // direto, com a mesma regra do checkbox, e o aviso diz o que aconteceu, já
   // que o checklist filtrado não mostra a parada.
-  const entrou = !stops.includes(ponto);
-  if (entrou) stops.push(ponto);
-  else { ponto.prioritaria = false; stops = stops.filter(s => s !== ponto); }
+  const entrou = !stops.some(s => s.id === ponto.id);
+  if (entrou) stops.push(copiaDaParada(ponto));
+  else stops = stops.filter(s => s.id !== ponto.id);
   renderChecklist();
   renderStopsList();
   const rotaCaiu = invalidarRota();
@@ -3092,6 +3090,26 @@ window.toggleStop = toggleStop; // precisa estar em escopo global: é chamado vi
 /* O chevron que abre e fecha a cascata, nos dois níveis (v8.4.2). Numa
    constante porque são dois lugares que precisam desenhar o mesmo. */
 const CHEVRON = '<svg class="grupo-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+
+/* ---------------- A parada é do técnico, não da base (v8.9.0) ----------------
+   ⚠️ BUG CONSERTADO, achado na revisão de 24/09/2026. Até aqui, marcar um
+   cliente punha em `stops` o PRÓPRIO objeto de `clientPoints`. Com o mesmo
+   cliente na rota de dois técnicos — caso que o app permite e só avisa desde a
+   v8.5.0 — os dois apontavam para o mesmo objeto: pôr ★ ou trocar o tipo num
+   mudava no outro, sem aviso.
+   Reproduzido: técnico 1 com ★ e "Manutenção"; o técnico 2 entrou já com os
+   dois herdados, tirou a ★ e pôs "Entrega de toner" — e o técnico 1 ficou com
+   "Entrega de toner" e sem ★.
+   É justamente o caso que justifica permitir o repetido ("entrega de manhã,
+   manutenção à tarde"), e era o único em que não funcionava.
+   Agora cada técnico guarda a SUA cópia. A `marker` vai junto de propósito: é
+   o mesmo desenho no mapa para todo mundo, e `marcadorDaParada()` conta com
+   ela antes de a rota ser traçada.
+   ⚠️ O preço é que `stops` deixou de poder ser comparado por identidade com
+   `clientPoints`. As quatro comparações que faziam isso viraram comparação de
+   `id` — `toggleStop`, o "marcar todos", `limparAvulsasSoltas` e a avulsa
+   recém-criada. Se aparecer outra, o sintoma é uma parada que não é encontrada. */
+const copiaDaParada = ponto => ({ ...ponto });
 
 /* ---- Aviso de parada já tomada por outro técnico (v8.5.0) ----
    O usuário tinha pedido para deixar para depois e voltou atrás depois de ver
@@ -3241,13 +3259,14 @@ function renderChecklist(){
       cb.checked = !!marcado;
       cb.addEventListener('change', () => {
         if (cb.checked){
-          if (!stops.some(s=>s.id===c.id)) stops.push(c);
+          if (!stops.some(s=>s.id===c.id)) stops.push(copiaDaParada(c));
           // Selecionou: a cascata fecha, para a lista não ficar poluída (v5.0).
           // Vale nos dois casos — busca ativa ou não.
           gruposAbertos.delete(g.cliente);
           if (termo) gruposFechadosNaBusca.add(g.cliente);
         }
-        else { c.prioritaria = false; stops = stops.filter(s => s.id !== c.id); }
+        // A ★ morre junto com a cópia: não há o que limpar no ponto da base
+        else { stops = stops.filter(s => s.id !== c.id); }
         renderChecklist();   // atualiza a contagem, o destaque do cabeçalho e mostra/esconde o seletor
         renderStopsList();
         paradasMudaram();
@@ -3255,7 +3274,10 @@ function renderChecklist(){
       const sel = row.querySelector('.tipo-select');
       if (sel){
         sel.addEventListener('change', () => {
-          c.tipo = sel.value; // c é o mesmo objeto referenciado em stops — não precisa procurar de novo
+          // ⚠️ O tipo vai na PARADA do técnico, não no ponto da base (v8.9.0):
+          // o mesmo cliente pode estar com outro técnico, com outro tipo
+          const parada = stops.find(s => s.id === c.id);
+          if (parada) parada.tipo = sel.value;
           renderStopsList();  // só a etiqueta na seção 4 precisa atualizar
           // O tipo vai no link, mas não muda a rota: basta tirar da tela um
           // link já gerado, para não ser enviado sem o tipo novo.
@@ -3318,14 +3340,14 @@ document.getElementById('buscaClientes').addEventListener('input', e => {
 // Botão "marcar todos": alterna entre selecionar todos os clientes e limpar a seleção
 document.getElementById('selectAllBtn').onclick = () => {
   const allSelected = stops.length === clientPoints.length && clientPoints.length > 0;
-  if (allSelected) clientPoints.forEach(c => c.prioritaria = false); // limpar seleção limpa a prioridade também
   // Ao marcar todos, as paradas já escolhidas ficam como estavam (inclusive a
   // ordem que o escritório deu a elas) e as que faltavam entram depois. Antes a
   // lista inteira era trocada pela ordem da base, e uma ★ ia parar no meio das
   // demais — o título "Prioritárias" ficava em cima de uma parada comum e
   // "Traçar nesta ordem" visitava a prioritária fora da vez (achado em 10/09/2026).
   if (allSelected) stops = [];
-  else { stops = [...stops, ...clientPoints.filter(c => !stops.includes(c))]; reordenarPorPrioridade(); }
+  else { stops = [...stops, ...clientPoints.filter(c => !stops.some(s => s.id === c.id)).map(copiaDaParada)];
+         reordenarPorPrioridade(); }
   renderChecklist();
   renderStopsList();
   paradasMudaram();
@@ -3525,8 +3547,8 @@ function novoPontoAvulso(lat, lng, nome){
    Olhando só a `stops` global, a avulsa criada na aba do técnico 2 seria
    apagada assim que alguém mexesse na lista do técnico 1. */
 function limparAvulsasSoltas(){
-  const temDono = c => stops.includes(c)
-    || tecnicos.some((t, i) => i !== tecnicoAtivo && t.stops.includes(c));
+  const temDono = c => stops.some(s => s.id === c.id)
+    || tecnicos.some((t, i) => i !== tecnicoAtivo && t.stops.some(s => s.id === c.id));
   const sobrando = clientPoints.filter(c => c.cliente === CLIENTE_AVULSO && !temDono(c));
   if (!sobrando.length) return false;
   sobrando.forEach(c => {
@@ -3545,7 +3567,7 @@ function limparAvulsasSoltas(){
 // Cria e já põe na viagem
 function criarParadaAvulsa(lat, lng, nome){
   const ponto = novoPontoAvulso(lat, lng, nome);
-  stops.push(ponto);
+  stops.push(copiaDaParada(ponto));
   reordenarPorPrioridade();
   renderChecklist(); renderStopsList();
   paradasMudaram();   // a rota traçada deixa de valer
@@ -3560,7 +3582,7 @@ function adicionarAvulsaPeloCampo(){
   const ponto = criarParadaAvulsa(c.lat, c.lng, campoNome.value);
   campoNome.value = ''; campoCoord.value = '';
   setStatus(`Parada avulsa "${ponto.name}" adicionada.`, true);
-  verParadaNoMapa(stops.indexOf(ponto), true);   // recém-criada: vai até ela mesmo com o zoom bloqueado
+  verParadaNoMapa(stops.findIndex(s => s.id === ponto.id), true);   // recém-criada: vai até ela mesmo com o zoom bloqueado
 }
 
 /* ---------------- Realce mapa <-> lista (v6.7) ----------------
@@ -3845,8 +3867,6 @@ if (!modoCampoAtivo){
    - Em tela estreita (layout empilhado) as colunas não existem: os módulos
      ficam no painel e o arranjo espera a tela alargar de novo. */
 try{
-  localStorage.removeItem('hg_modulo4_local');      // resquício da v4.4
-  localStorage.removeItem('hg_altura_guia_topo');   // resquício da v4.9, substituído pelos pesos
 }catch(e){}
 
 const MODULOS = {
@@ -5760,9 +5780,10 @@ function retomarRoteiro(texto){
       // do roteiro retomado — é o caso de um roteiro que já tinha avulsas
       let c = porCoord.get(chaveCoord(lat, lng));
       if (!c){ c = novoPontoAvulso(lat, lng, nome); avulsas.push(nome); }
-      c.prioritaria = !!prio;
-      if (tipo) c.tipo = tipo;
-      achadas.push(c);
+      const parada = copiaDaParada(c);
+      parada.prioritaria = !!prio;
+      if (tipo) parada.tipo = tipo;
+      achadas.push(parada);
     });
     if (!achadas.length) return falhar('Esse link não trouxe nenhuma parada.');
 

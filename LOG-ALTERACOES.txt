@@ -6212,3 +6212,79 @@ MEDIDAS E TESTES (base de exemplo, OSRM de verdade)
   Desfazendo uma das rotas: volta a esconder (sobrou 1), conta 17165 m.
   Fechando a aba da outra rota: esconde, conta 7541 m em 1 rota.
   Sem erro no console.
+
+--------------------------------------------------------
+[24/09/2026] v8.9.0 — A parada e do tecnico, nao da base (+ limpeza)
+--------------------------------------------------------
+
+DE ONDE VEIO
+  Da revisão completa que o usuário pediu em 24/09. Ele mandou consertar as
+  duas coisas que ela achou: o bug e o peso morto.
+
+BUG: A ★ E O TIPO ERAM DO PONTO, NAO DO TECNICO
+  Até aqui, marcar um cliente punha em `stops` o PRÓPRIO objeto de
+  `clientPoints`. Com o mesmo cliente na rota de dois técnicos — caso que o app
+  permite e só avisa desde a v8.5.0 — os dois apontavam para o mesmo objeto.
+  Reproduzido antes do conserto: técnico 1 com ★ e "Manutenção"; o técnico 2
+  pegou o mesmo cliente e entrou JÁ com os dois herdados; tirou a ★ e pôs
+  "Entrega de toner"; o técnico 1 ficou com "Entrega de toner" e sem ★.
+  ⚠️ É justamente o caso que justifica permitir o repetido ("entrega de manhã,
+  manutenção à tarde") — e era o único em que não funcionava.
+
+O CONSERTO
+  `stops` passou a guardar uma CÓPIA RASA do ponto (`copiaDaParada`). A
+  `marker` vai junto de propósito: é o mesmo desenho no mapa para todo mundo, e
+  `marcadorDaParada()` conta com ela antes de a rota ser traçada.
+  ⚠️ O preço é que `stops` deixou de poder ser comparado por IDENTIDADE com
+  `clientPoints`. As quatro comparações que faziam isso viraram comparação de
+  `id`: `toggleStop`, o "marcar todos", `limparAvulsasSoltas` e o índice da
+  avulsa recém-criada. Se algum dia aparecer outra, o sintoma é uma parada que
+  simplesmente não é encontrada.
+  Saíram junto três escritas que sujavam a base e não fazem mais sentido:
+  `ponto.prioritaria = false` ao desmarcar (em dois lugares) e o
+  `clientPoints.forEach(c => c.prioritaria = false)` do "limpar seleção" — a ★
+  agora morre junto com a cópia.
+  Passaram a montar cópia também: o retomar por link e o restaurar do dia.
+
+LIMPEZA (a segunda metade do pedido)
+  · Classe `.parada-obs` no CSS, nunca aplicada — sobra do campo de observação
+    adiado em 29/08/2026.
+  · Quatro ids no HTML que ninguém referenciava: arranjoAcoes, envioDica,
+    modulo3, sempreCompatLinha.
+  · Duas linhas que apagavam chaves de localStorage aposentadas na v4.4 e na
+    v4.9 — rodavam a cada abertura para limpar algo que já não existe.
+  ⚠️ FICARAM DE PROPÓSITO: os ids `versaoEscritorio` e `versaoCampo`. O app
+  alcança os dois selos pela classe `.versao`, então os ids são tecnicamente
+  mortos — mas são a única forma de dizer QUAL dos dois selos se está olhando
+  ao inspecionar, e custam ~40 bytes.
+  Depois da limpeza, a varredura não acha mais nenhuma classe nem id órfão: só
+  sobram as classes do próprio Leaflet, que o CSS estiliza de fora.
+
+TESTES (todos pelo caminho real da interface)
+  ★/tipo por técnico: T1 com ★ + "Manutenção"; T2 pegou o MESMO cliente e
+    entrou LIMPO; mexeu no dele e o T1 ficou intacto. Objetos separados, e o
+    ponto da base sem `prioritaria` e sem `tipo`.
+  Marcar e desmarcar pelo checkbox: 0 -> 1 -> 0.
+  Marcar todos: 6 de 6, sem duplicata. Limpar: 0.
+  toggleStop (botão do balão do mapa): entra e sai.
+  Realce mapa -> lista: acende e apaga a linha certa.
+  Avulsa: criada, sobrevive quando OUTRA aba mexe na lista dela, e some quando
+    o último técnico a tira.
+  Traçar + gerar link + retomar: 2 paradas de volta, com ★ e tipo, e a base
+    intacta.
+  Restaurar o dia: o MESMO cliente voltou nas duas abas com tipos DIFERENTES
+    ("Manutenção" com ★ numa, "Entrega de toner" na outra) — que é exatamente
+    o que não funcionava antes.
+  MODO LEVE (regra nova do usuário): marcar parada, traçar rota, pílula do dia
+    e aviso de parada tomada, todos conferidos com ele ligado.
+  Sem erro no console.
+
+⚠️ ARMADILHA DE MEDIÇÃO (minha, não do app)
+  Duas leituras erradas neste dia, as duas por método:
+  1. Um primeiro teste do bug rodou numa página que ainda tinha abas de um
+     teste anterior, então os índices não eram os que eu supus e pareceu que
+     uma aba tinha PERDIDO a parada. Refeito do zero pelo caminho real, estava
+     correto.
+  2. Contei "botões visíveis no cabeçalho" lendo o `display` de cada botão —
+     que continua `flex` mesmo quando o CONTÊINER deles está `display:none`.
+  Em ambos os casos o app estava certo e a régua é que estava torta.

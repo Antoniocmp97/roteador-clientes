@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 24/09/2026 — v8.8.0 (quilometragem somada do dia)
+> **Última atualização:** 24/09/2026 — v8.9.0 (a parada é do técnico, não da base)
 
 ---
 
@@ -363,6 +363,18 @@ sem dependências instaladas. Abre direto no navegador.
   linha só delas (medido a 375px: header de 102px). **Um clique no nome da aba
   aberta** entra na edição com o texto inteiro selecionado, então digitar troca
   "Técnico 1" pelo nome da pessoa
+- **A parada é do técnico, não da base** (v8.9.0, bug achado na revisão de
+  24/09/2026). `stops` guarda uma **cópia rasa** do ponto de `clientPoints`, e
+  não o próprio objeto. ⚠️ Antes disso, com o mesmo cliente na rota de **dois
+  técnicos**, os dois apontavam para o mesmo objeto: pôr ★ ou trocar o tipo num
+  mudava no outro, sem aviso — justamente o caso que justifica permitir o
+  repetido ("entrega de manhã, manutenção à tarde"). ⚠️ O preço é que `stops`
+  **não pode mais ser comparado por identidade** com `clientPoints`: as quatro
+  comparações que faziam isso (`toggleStop`, "marcar todos",
+  `limparAvulsasSoltas` e o índice da avulsa recém-criada) viraram comparação
+  de `id`. Se aparecer outra, o sintoma é uma parada que não é encontrada.
+  ⚠️ A `marker` vai junto na cópia de propósito: é o mesmo desenho no mapa para
+  todo mundo, e `marcadorDaParada()` conta com ela antes de a rota ser traçada
 - **Aviso de parada já tomada por outro técnico** (v8.5.0): uma bolinha na
   **cor do outro técnico** na unidade ("Já está na rota de Jonas"), na linha do
   cliente e na do grupo do uMap ("Jonas tem parada aqui dentro"). **Avisa, mas
@@ -542,8 +554,11 @@ sem dependências instaladas. Abre direto no navegador.
 - **Controles de altura antigos do painel, aposentados na v6.4** — ficam
   registrados porque explicam decisões que voltam a aparecer: divisória 3↔4
   (v4.3, soma constante), puxador do módulo 3 (v4.5/v5.4), puxador do módulo 4
-  (v4.6, crescia empurrando o resto; a v4.2 fazia isso e foi substituída), e a
-  chave `hg_alturas_modulos` com as alturas em pixels. Tudo isso saiu quando o
+  (v4.6, crescia empurrando o resto; a v4.2 fazia isso e foi substituída).
+  ⚠️ **Correção de 24/09/2026:** este documento afirmava que a chave
+  `hg_alturas_modulos` também tinha saído. **Não saiu** — ela continua viva e em
+  uso (`alturasGuardadas()`), guardando as alturas do checklist e da lista de
+  paradas no painel. O resto saiu quando o
   painel passou a repartir altura como as colunas: hoje o ajuste é a **divisória
   entre módulos com lista** e o **puxador do último**, iguais nos três lugares.
   ⚠️ Lição da v5.8 que continua valendo: altura de lista nunca sai de
@@ -1176,6 +1191,57 @@ OSRM) e 2-opt acima disso; **(d)** km/min por trecho na tela do campo;
 **(e)** abrir a viagem inteira no Google Maps, que aceita vários pontos numa URL
 (o Waze só aceita um destino). Nada disso foi implementado.
 
+**Revisão completa do código (24/09/2026, a pedido do usuário).** Feita com
+análise mecânica do arquivo (funções declaradas x chamadas, ids x uso, classes
+x uso, seletores repetidos, variáveis de topo, temporizadores e observadores) e
+leitura dirigida aos pontos suspeitos. O mapa que saiu junto está em
+`MAPA-DO-CODIGO.md`, versionado.
+
+**O que está são** (verificado, não suposto): nenhuma função declarada sem ser
+chamada; nenhuma variável de topo sem leitura; nenhum `addEventListener`
+acumulando (os que estão dentro de `render*` são sempre em elementos recém
+-criados); o `setInterval` do arraste e o laço de `requestAnimationFrame` da
+rolagem automática têm parada garantida; **nenhuma dependência de
+`transitionend`/`animationend`** no código do app — que é o que faz o modo leve
+ser seguro.
+
+**1. BUG — ★ e tipo de serviço eram do PONTO, não do técnico.**
+✅ **Corrigido na v8.9.0.**
+Com o mesmo cliente na rota de dois técnicos (caso que o app permite e só
+avisa), os dois `stops` guardam **o mesmo objeto**: marcar ★ ou trocar o tipo
+num técnico muda no outro, sem aviso. Reproduzido: técnico 1 com ★ e
+"Manutenção"; o técnico 2 entrou já com ★ e "Manutenção" herdados, tirou a ★ e
+pôs "Entrega de toner" — e o técnico 1 ficou com "Entrega de toner" e sem ★.
+⚠️ É justamente o caso que a v8.5.0 usa para justificar permitir o repetido
+("entrega de manhã, manutenção à tarde") — e é o único em que não funciona.
+Conserto: `stops` passar a guardar uma **cópia rasa** do ponto, e trocar as
+**quatro** comparações por identidade que existem (`stops.includes(ponto)` em
+`toggleStop`, `!stops.includes(c)` no marcar todos, as duas de
+`limparAvulsasSoltas` e o `stops.indexOf(ponto)` da avulsa) por comparação de
+`id`. Contido, mas pede teste cuidadoso do realce mapa↔lista.
+
+**2. Peso morto (pequeno, sem efeito em desempenho).** ✅ **Limpo na v8.9.0**,
+menos os ids `versaoEscritorio`/`versaoCampo`, que ficaram de propósito: são a
+única forma de dizer qual dos dois selos se está olhando ao inspecionar.
+O texto abaixo fica como registro do que foi achado. A classe `.parada-obs`
+está no CSS e nunca é aplicada (sobra do campo de observação adiado); seis ids
+no HTML não são usados por ninguém (`arranjoAcoes`, `envioDica`, `modulo3`,
+`sempreCompatLinha`, `versaoCampo`, `versaoEscritorio` — os dois últimos são
+alcançados pela classe `.versao`); e duas linhas apagam chaves de
+`localStorage` aposentadas na v4.4/v4.9, que já não existem em máquina nenhuma
+há meses.
+
+**3. Ponto a vigiar, não medido.** O módulo Rota grudado escuta `scroll` em
+`main` na **fase de captura**, então qualquer rolagem de qualquer lista dispara
+`atualizarRotaGrudada()`, que lê duas caixas. Em máquina fraca isso pode pesar
+ao rolar o checklist. Não dá para medir aqui (o problema não reproduz nesta
+máquina) e o código tem um aviso explicando por que não usa
+`requestAnimationFrame` — mexer nisso exige o teste na máquina do trabalho.
+
+**4. Comentários são 36% do arquivo** (130 KB de 365 KB). Fica registrado como
+fato, não como problema: o GitHub Pages serve comprimido e o navegador descarta
+comentário no parse. Eles são a memória do projeto.
+
 **Também em aberto, de antes:**
 - **Trocar o OSRM público** (Fase 4) — o usuário ficou de decidir onde hospedar.
   ⚠️ A análise acima reforça: um motor com trânsito aproximaria o plano do que o
@@ -1198,9 +1264,18 @@ bolinha da calha: como era, contador acendendo e seta acendendo, na largura
 real do painel; a v8.4.2 saiu das duas últimas combinadas). ⚠️ A de efeitos tem a rota de exemplo embutida, então funciona sem
 rede — só os ladrilhos do mapa é que precisam de internet.
 
-Regra de trabalho vigente: implementar e testar, mas **perguntar antes de fazer
-commit/push** — o usuário testa antes de publicar; `.haga` dele significa "pode
-commitar e publicar agora".
+Regras de trabalho vigentes:
+
+1. Implementar e testar, mas **perguntar antes de fazer commit/push** — o
+   usuário testa antes de publicar; `.haga` dele significa "pode commitar e
+   publicar agora".
+2. **Toda alteração precisa funcionar com o MODO LEVE ligado** (decidido em
+   24/09/2026). O usuário pensa no app como produto para outros clientes além
+   da Hagamorfis, e "computador mais antigo" é a realidade esperada nesses
+   lugares — um recurso que só funciona com vidro e animações seria inútil
+   justamente para quem mais precisa do modo leve. Na prática: nada pode
+   depender de `transitionend`, de `animationend`, de uma animação terminar,
+   nem do mapa estar em tela cheia. **Testar nos dois estados.**
 
 Concluído:
 - Tipo de serviço por parada — ✅ implementado na v1.9
@@ -1319,6 +1394,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 96 | **v8.6.0** — O nome do técnico viaja no link e aparece na tela do campo |
 | 97 | **v8.7.0** — Modo leve: um botão desliga de uma vez tudo que custa desenho |
 | 98 | **v8.8.0** — Quilometragem somada do dia, com todas as abas |
+| 99 | **v8.9.0** — A parada é do técnico, não da base (★ e tipo deixam de ser compartilhados) |
 
 ---
 
@@ -1332,6 +1408,7 @@ O projeto é versionado em Git e publicado no GitHub Pages.
 PROJETO APP LOGISTICA/        ← raiz do repositório Git
 ├── index.html                ← o app (servido pelo GitHub Pages)
 ├── CLAUDE.md                 ← este arquivo (contexto do projeto)
+├── MAPA-DO-CODIGO.md         ← onde cada coisa mora no index.html (v8.8.0)
 ├── LOG-ALTERACOES.txt        ← log de todas as alterações
 ├── README.md
 ├── .gitignore
@@ -1385,7 +1462,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.8.0
+8.9.0
 ```
 
 ### Onde o número aparece
@@ -1508,3 +1585,4 @@ os backups locais são conveniência, não garantia.
 | 8.6.0 | 23/09/2026 | Nome do técnico no cabeçalho da tela do campo (link v9) |
 | 8.7.0 | 24/09/2026 | Modo leve (para computador mais antigo) |
 | 8.8.0 | 24/09/2026 | Quilometragem somada do dia |
+| 8.9.0 | 24/09/2026 | A parada é do técnico, não da base; limpeza de peso morto |
