@@ -6131,3 +6131,84 @@ TESTES
 ⚠️ NÃO MEDIDO
   O ganho em si. Aqui o problema não reproduz. O que dá para afirmar é o que
   saiu do caminho — e o teste que vale é o da máquina do trabalho.
+
+--------------------------------------------------------
+[24/09/2026] v8.8.0 — Quilometragem somada do dia
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Tive uma ideia após a implementação de mais de um técnico na rua. Gostaria
+  que fosse somada a quilometragem total percorrida durante o dia."
+
+O QUE FOI FEITO
+  Uma pílula no CABEÇALHO, logo depois das abas: "QUILOMETRAGEM APROXIMADA" e o
+  total em km. Soma as
+  rotas TRAÇADAS de todas as abas — rota desfeita não conta, porque o número
+  dela deixou de valer.
+  Aparece só com DUAS ou mais rotas: com uma só, o total é exatamente o que o
+  módulo Rota já mostra a meio metro dali.
+
+ONDE ELA FICA (o usuário pediu a troca depois de ver funcionando)
+  Ela nasceu como um rodapé do módulo Rota e estava errada ali por duas razões:
+  aquele módulo é o de UMA rota, e ele pode ser arrastado para qualquer coluna
+  — o número do dia mudaria de lugar junto. O cabeçalho é fixo, e é onde o dia
+  mora: colada nas abas, lê-se "estas são as rotas do dia, este é o total do
+  dia". Medido numa janela de 1400: pílula de 109x28px entre as abas (que
+  terminam em 1016) e os botões (que começam em 1149).
+  ⚠️ O RÓTULO, em três tentativas. Nasceu "DIA" (curto demais, "dia o quê?"),
+  passou por uma escolha entre "TOTAL DO DIA", "TOTAL A PERCORRER" e "TOTAL
+  PERCORRIDO", e o usuário trouxe a que ficou: "quilometragem aproximada".
+  ⚠️ "APROXIMADA" é a parte que importa: o número vem do cálculo da rota no
+  OSRM, não de odômetro — é o que se espera rodar, antes do trânsito e dos
+  desvios do dia.
+  ⚠️ Grafia: em português é QUILOMETRAGEM, com "qu" (só a abreviação "km" leva
+  k). O usuário escreveu com k no pedido.
+  ⚠️ Quantas rotas são continua na dica do mouse: as abas ao lado já dizem isso.
+  ⚠️ O espaçamento entre letras do rótulo é .04em, e não os .09em dos outros
+  rótulos em caixa alta do app: com 24 caracteres, cada centésimo de em vira
+  largura no cabeçalho, que é onde a briga por espaço acontece.
+  ⚠️ O NÚMERO É ÂMBAR (pedido do usuário), e não a cor do texto: é a mesma cor
+  em que o módulo Rota escreve o km/min de cada rota, então os dois números do
+  app que dizem distância falam a mesma língua. Medido nos dois temas:
+  rgb(242,169,60) no escuro e rgb(201,130,26) no claro, iguais ao #distVal.
+  ⚠️ `align-self:center` pelo mesmo motivo das abas — o header é
+  `align-items:baseline`, e a linha de base de uma pílula não é a do texto.
+
+DECISÃO QUE MUDOU O DESENHO
+  ⚠️ O TEMPO NÃO É SOMADO, e fica só na dica do mouse. Os técnicos saem ao
+  mesmo tempo, então somar as durações daria um número grande e errado bem ao
+  lado de um número certo. Quem responde "quando o dia acaba" é a rota mais
+  longa, e é isso que a dica diz.
+
+DETALHES
+  · O resumo do técnico ATIVO vive na variável global; o das outras abas, no
+    objeto de cada uma. A soma lê de onde o valor está, em vez de chamar
+    salvarNoTecnico() — que mexeria no DOM no meio da montagem do DOM.
+  · Sem fundo próprio de propósito: é um rodapé do resumo, não um segundo
+    bloco. Assim também não precisa entrar nas listas de "caixas de dentro" do
+    vidro e do modo sem vidro, que ganhariam mais um seletor cada.
+  · Recalcula em três pontos: ao traçar (prepararEnvio), ao desfazer
+    (invalidarRota) e ao trocar de aba (carregarDoTecnico) — fechar aba passa
+    por este último.
+
+MEDIDAS E TESTES (base de exemplo, OSRM de verdade)
+  Uma rota (7,5 km): linha escondida.
+  Aba nova sem rota: escondida.
+  Duas rotas (7,5 + 17,2): pílula com "DIA 24.7 km"; a conta interna dá
+    24706 m em 2 rotas, com a mais longa em 1328 s (22 min na dica).
+  Voltando para a aba 1: o total continua 24,7 km.
+  Terceira aba, vazia: o resumo da rota some e o total do dia FICA — no
+    cabeçalho ele nem depende mais daquele bloco.
+  Tela de 375px: o cabeçalho quebra em três linhas e a pílula divide a última
+    com os botões; sem rolagem horizontal.
+  LARGURA DO RÓTULO LONGO: a pílula foi de 109px para 249px. Numa janela de
+    1400 ela cabe com 12px de folga dos dois lados, e as abas passaram de 762
+    para 622px. No 1366 da TV, com TRÊS abas, o cabeçalho continua em uma linha
+    só (65px de altura).
+  ⚠️ Abaixo de ~1100px o cabeçalho passa a quebrar em duas linhas (medido a
+    1024: 107px de altura, com os botões descendo). Não é resolução-alvo — o
+    alvo é Full HD e a TV é 1366 —, mas fica registrado: com o rótulo curto
+    isso não acontecia.
+  Desfazendo uma das rotas: volta a esconder (sobrou 1), conta 17165 m.
+  Fechando a aba da outra rota: esconde, conta 7541 m em 1 rota.
+  Sem erro no console.

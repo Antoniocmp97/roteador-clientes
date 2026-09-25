@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 24/09/2026 — v8.7.0 (modo leve)
+> **Última atualização:** 24/09/2026 — v8.8.0 (quilometragem somada do dia)
 
 ---
 
@@ -371,6 +371,37 @@ sem dependências instaladas. Abre direto no navegador.
   acabou de ser limpa na v8.4.2 e não volta a ter duas marcas. Só aparece
   quando há o que dizer, então nunca é enfeite — que foi o problema da bolinha
   antiga
+- **Quilometragem somada do dia** (v8.8.0, pedido do usuário depois de o modo
+  de vários técnicos ficar pronto): uma **pílula no cabeçalho**, logo depois das
+  abas — `QUILOMETRAGEM APROXIMADA` e o total em km. Soma as rotas
+  **traçadas** de todas as abas;
+  rota desfeita não conta, porque o número dela deixou de valer. Só aparece com
+  **duas ou mais**: com uma só, o total é exatamente o que o módulo Rota já
+  mostra a meio metro dali.
+  ⚠️ **Ela nasceu no módulo Rota e o usuário pediu para mudar** — com razão, e
+  por duas: aquele módulo é o de **uma** rota, e ele pode ser arrastado para
+  qualquer coluna, então o número do dia mudaria de lugar junto. O cabeçalho é
+  fixo, e é onde o dia mora. Medido a 1400px: pílula de 109×28 entre as abas
+  (que terminam em 1016) e os botões (que começam em 1149).
+  ⚠️ **"Aproximada" é a parte que importa**: o número vem do cálculo da rota no
+  OSRM, não de odômetro — é o que se espera rodar, antes do trânsito e dos
+  desvios do dia. O rótulo levou três tentativas: nasceu "DIA" (curto demais),
+  passou por "total do dia / a percorrer / percorrido" e o usuário trouxe o que
+  ficou. ⚠️ Em português é **quilometragem**, com "qu" — só a abreviação "km"
+  leva k. ⚠️ Quantas rotas são fica na dica do mouse: as abas ao lado já dizem.
+  ⚠️ **O número é âmbar**, a mesma cor em que o módulo Rota escreve o km/min de
+  cada rota — os dois números do app que dizem distância falam a mesma língua.
+  ⚠️ O rótulo longo levou a pílula de 109px para **249px**: cabe no 1366 da TV
+  com três abas numa linha só, mas **abaixo de ~1100px o cabeçalho passa a
+  quebrar em duas linhas** (medido a 1024: 107px). Não é resolução-alvo, mas
+  com o rótulo curto isso não acontecia.
+  ⚠️ **O tempo não é somado**, e fica só na dica do mouse: os técnicos saem ao
+  mesmo tempo, então somar as durações daria um número grande e errado bem ao
+  lado de um número certo. Quem responde "quando o dia acaba" é a **rota mais
+  longa**, e é isso que a dica diz.
+  ⚠️ A soma lê o resumo do técnico ativo da variável global e o das outras abas
+  do objeto de cada uma, em vez de chamar `salvarNoTecnico()` — que mexeria no
+  DOM no meio da montagem do DOM
 - **O planejamento do dia sobrevive ao recarregar** (v8.5.0, pedido do usuário).
   Até aqui só a **configuração** era guardada; o roteiro do dia morria no F5, de
   propósito. Com as abas a conta mudou de tamanho: um F5 sem querer passou a
@@ -1287,6 +1318,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 95 | **v8.5.0** — Um roteiro por técnico, em abas, com as rotas juntas no mapa |
 | 96 | **v8.6.0** — O nome do técnico viaja no link e aparece na tela do campo |
 | 97 | **v8.7.0** — Modo leve: um botão desliga de uma vez tudo que custa desenho |
+| 98 | **v8.8.0** — Quilometragem somada do dia, com todas as abas |
 
 ---
 
@@ -1353,7 +1385,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.7.0
+8.8.0
 ```
 
 ### Onde o número aparece
@@ -1475,3 +1507,4 @@ os backups locais são conveniência, não garantia.
 | 8.5.0 | 23/09/2026 | Um roteiro por técnico, em abas (Fase 2) |
 | 8.6.0 | 23/09/2026 | Nome do técnico no cabeçalho da tela do campo (link v9) |
 | 8.7.0 | 24/09/2026 | Modo leve (para computador mais antigo) |
+| 8.8.0 | 24/09/2026 | Quilometragem somada do dia |

@@ -1137,6 +1137,31 @@
   .resumo-rota .row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--amber);font-weight:700;}
   .resumo-rota .row + .row{margin-top:2px;font-size:13px;color:var(--muted);font-weight:400;}
 
+  /* Quilometragem do dia (v8.8.0): a soma de todas as abas, no CABEÇALHO, logo
+     depois das abas (escolha do usuário; eu concordei pelo mesmo motivo que ele
+     deu). O número é DO DIA, e é no cabeçalho que o dia mora — colado nas abas,
+     lê-se "estas são as rotas do dia, este é o total do dia".
+     ⚠️ Ele ficou no módulo Rota por meia hora e estava errado ali por duas
+     razões: aquele módulo é o de UMA rota, e ele pode ser arrastado para
+     qualquer coluna — o número do dia mudaria de lugar junto. O cabeçalho é
+     fixo.
+     `align-self:center` pelo mesmo motivo das abas: o header é
+     `align-items:baseline`, e a linha de base de uma pílula não é a do texto. */
+  header .resumo-dia{flex:none; align-self:center; display:flex; align-items:baseline; gap:7px;
+              padding:4px 11px; border-radius:999px;
+              border:1px solid var(--line); background:var(--panel-2);}
+  /* ⚠️ O espaçamento entre letras é menor que o dos outros rótulos em caixa
+     alta do app (.09em): com 24 caracteres, cada centésimo de em vira largura
+     no cabeçalho, que é onde a briga por espaço acontece. */
+  header .resumo-dia .rotulo{font-family:'JetBrains Mono',monospace; font-size:10.5px;
+              letter-spacing:.04em; text-transform:uppercase; color:var(--muted);
+              white-space:nowrap;}
+  /* Âmbar, e não a cor do texto (pedido do usuário): é a mesma cor em que o
+     módulo Rota escreve o km/min de cada rota, então os dois números do app que
+     dizem distância falam a mesma língua. Troca com o tema, como todo o resto. */
+  header .resumo-dia .valor{font-family:'JetBrains Mono',monospace; font-size:13.5px;
+              font-weight:700; color:var(--amber);}
+
   /* Painel de resultado: distância, tempo e roteiro passo a passo (escondido até haver uma rota) */
   .readout{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--panel-2);display:none;}
   .readout.show{display:block;}
@@ -1458,6 +1483,12 @@
     <div class="mark">hagamorfis<span>/</span>rotas<span class="versao" id="versaoEscritorio"></span></div>
     <!-- Abas de técnico (v8.5.0), ao lado do selo de versão. Desenhadas em renderAbas(). -->
     <div class="abas" id="abasTecnicos" role="tablist" aria-label="Roteiros por técnico"></div>
+    <!-- Soma das rotas traçadas de todas as abas (v8.8.0). Só aparece com duas
+         ou mais: com uma rota só, o total é o mesmo número que o módulo Rota
+         já mostra a meio metro dali. -->
+    <div class="resumo-dia" id="resumoDia" hidden>
+      <span class="rotulo"></span><span class="valor"></span>
+    </div>
     <!-- Arranjo dos módulos nas colunas (v5.7). Mover um módulo vale só enquanto
          a página está aberta; "salvar" faz o site abrir sempre assim, e "voltar
          ao normal" põe tudo de volta no painel e apaga o que foi salvo. -->
@@ -1913,7 +1944,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.7.0';
+const VERSAO = '8.8.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2204,6 +2235,7 @@ function carregarDoTecnico(t){
   renderStopsList();
   renderChecklist();
   atualizarBotaoOrigemPadrao();
+  atualizarResumoDia();   // o total do dia não muda, mas a aba aberta sim (v8.8.0)
 }
 
 /* A rota do técnico ativo em cor cheia e na frente; as outras apagadas atrás.
@@ -2487,6 +2519,45 @@ if (!modoCampoAtivo){
   document.getElementById('retomarDiaNao').onclick = descartarDia;
 }
 
+/* ---------------- Quilometragem do dia (v8.8.0) ----------------
+   Pedido do usuário depois de o modo de vários técnicos ficar pronto: "gostaria
+   que fosse somado a quilometragem total percorrida durante o dia".
+   Soma as rotas TRAÇADAS de todas as abas — rota desfeita não conta, porque o
+   número dela deixou de valer. Aparece só com duas ou mais: com uma só, o
+   total é exatamente o que já está escrito logo acima. */
+function resumoDoDia(){
+  let metros = 0, rotas = 0, maiorTempo = 0;
+  tecnicos.forEach((t, i) => {
+    /* ⚠️ O resumo do técnico ATIVO vive na variável global; o objeto da aba só
+       recebe a cópia em salvarNoTecnico(), e chamá-lo daqui mexeria no DOM sem
+       necessidade — inclusive enquanto esta função está montando o DOM. */
+    const r = (i === tecnicoAtivo) ? ultimoResumo : t.resumo;
+    if (r && r.d > 0){ metros += r.d; rotas++; if (r.t > maiorTempo) maiorTempo = r.t; }
+  });
+  return { metros, rotas, maiorTempo };
+}
+
+function atualizarResumoDia(){
+  const el = document.getElementById('resumoDia');
+  if (!el) return;
+  const { metros, rotas, maiorTempo } = resumoDoDia();
+  el.hidden = rotas < 2;
+  if (el.hidden) return;
+  /* Rótulo escolhido pelo usuário. ⚠️ "APROXIMADA" não é enfeite: o número vem
+     do cálculo da rota no OSRM, não de odômetro — é o que se espera rodar, com
+     o trânsito e os desvios do dia por cima. Quantas rotas são fica na dica: as
+     abas ao lado já dizem isso, e repetir aqui gastaria largura no cabeçalho. */
+  el.querySelector('.rotulo').textContent = 'quilometragem aproximada';
+  el.querySelector('.valor').textContent = `${(metros / 1000).toFixed(1)} km`;
+  /* ⚠️ O TEMPO NÃO É SOMADO, e é por isso que ele fica só na dica: os técnicos
+     saem ao mesmo tempo, então somar as durações não responde nada — quem
+     responde "quando o dia acaba" é a rota mais longa. Somar daria um número
+     grande e errado bem ao lado de um número certo. */
+  el.title = `Quilometragem do dia: soma das ${rotas} rotas traçadas. A mais longa leva `
+    + `${Math.round(maiorTempo / 60)} min — como os técnicos saem juntos, o dia`
+    + ` termina por essa, e não pela soma dos tempos.`;
+}
+
 /* ---------------- Modo leve (v8.7.0) ----------------
    Um interruptor que manda nos outros. Ele NÃO apaga a escolha de vidro nem a
    de janelas: enquanto está ligado, força as duas desligadas; ao sair, lê de
@@ -2715,6 +2786,7 @@ function invalidarRota(){
   document.getElementById('linkPronto').style.display = 'none';
   document.getElementById('linkCampo').value = '';
   ultimoResumo = null;
+  atualizarResumoDia();   // uma rota saiu do dia (v8.8.0)
   return havia;
 }
 // Para os pontos em que o usuário mexe na lista: desfaz a rota e explica por quê.
@@ -5726,6 +5798,7 @@ function retomarRoteiro(texto){
 // guarda o resumo e revela a seção "Enviar para o campo"
 function prepararEnvio(distance, duration){
   ultimoResumo = { d: Math.round(distance), t: Math.round(duration) };
+  atualizarResumoDia();   // entrou mais uma rota no dia (v8.8.0)
   document.getElementById('envioSection').style.display = 'block';
   document.getElementById('linkPronto').style.display = 'none';
   document.getElementById('linkCampo').value = '';
