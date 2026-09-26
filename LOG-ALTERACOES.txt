@@ -6523,3 +6523,114 @@ MEDIDAS E TESTES (janela de 1280x830, base sintética de 39 clientes)
   Mover m5 e m3 para a coluna e trazer de volta: a ordem padrão se refaz.
   Modo leve: mesma ordem, botão a 185px, "Rota otimizada" em âmbar.
   Sem erro no console.
+
+--------------------------------------------------------
+[25/09/2026] v8.14.0 — Passagem ao trocar de técnico
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Primeiro: "implemente um efeito fade ao trocar de técnico, elabore um
+  comparativo com sugestões". Depois de ver a primeira forma rodando (só um
+  fade de entrada, 180ms): "não consegui notar com nitidez a diferença real
+  entre uma e outra" — e então a direção que ficou: "pensei em algo como a
+  opção D, porém quando abrir o outro técnico, aplicar um efeito estilo
+  cascata, que vai aparecendo aos poucos".
+
+O COMPARATIVO
+  COMPARACAO-TROCA-ABA.html (fora do repositório, padrão COMPARACAO-*.html).
+  ⚠️ A PRIMEIRA VERSÃO DA PÁGINA NÃO SERVIA, e o defeito era meu: os quatro
+  efeitos disparavam AO MESMO TEMPO, em quatro painéis. Ninguém consegue olhar
+  para quatro lugares em 180ms. Refeita como banco de provas: um painel só, no
+  mesmo lugar, um efeito de cada vez, abrindo já em câmera lenta (3x, com 1x,
+  6x e 12x), com "Hoje — nada" como primeira opção (a linha de base) e a barra
+  de espaço trocando de técnico para não precisar tirar o olho do painel.
+  Fica como lição para as próximas páginas de comparação: efeito curto se
+  compara EM SEQUÊNCIA e no MESMO lugar, não lado a lado.
+
+O QUE FOI FEITO — dois tempos
+  1. SAÍDA: o painel do técnico que sai apaga junto, em 100ms.
+  2. CASCATA: o do que entra volta módulo a módulo, de cima para baixo, 55ms de
+     um para o outro, cada um com 380ms de fade + 7px de subida. A duração de
+     cada módulo nasceu em 190ms e o usuário pediu o dobro depois de ver
+     rodando. (Houve um passo intermediário em que o DOBRADO foi o passo da
+     cascata, 55 -> 110ms; era equívoco, e voltou.)
+     ⚠️ A duração ficou quase SETE vezes o passo, e é isso que faz a coisa ser
+     uma ONDA subindo pelo painel e não uma escada de blocos acendendo um a um:
+     os módulos entram muito sobrepostos.
+     Os módulos que entram são os que mudam de dono (m2 Origem, m5 Rota,
+     m3 Selecionar paradas, m4 Ordem da viagem, m6 Enviar, m7 Roteiro). O
+     módulo Clientes (m1) NÃO participa: a base é a mesma para todas as abas, e
+     é ele que mantém o painel ancorado enquanto o resto vai e volta.
+  3. No mapa, a rota da aba que sai apaga em 260ms (stroke-opacity .9 -> .28 e
+     stroke-width 5 -> 3) em vez de saltar, com os marcadores junto (1 -> .38).
+  4. Vale também ao ABRIR e ao FECHAR uma aba.
+
+DECISÕES QUE IMPORTAM
+  ⚠️ A troca de verdade acontece DEPOIS da saída, dentro do setTimeout — é o
+     preço do primeiro tempo, e é por isso que ele é curto. 100ms é o limite
+     clássico em que um clique ainda parece instantâneo. Alongar a saída é
+     alongar o atraso do clique.
+  ⚠️ `animation-fill-mode: both` é o que FAZ a cascata existir. Sem ele, o
+     módulo com atraso de 165ms ficaria visível durante a espera e só então
+     piscaria para o começo da animação.
+  ⚠️ O atraso é contado POR CONTÊINER: painel e cada coluna começam do zero e
+     cascateiam ao mesmo tempo. Uma cascata só, atravessando as três colunas,
+     deixaria a última esperando meio segundo.
+  ⚠️ Módulo escondido (o 4 sem paradas, o 6 e o Roteiro sem rota) não pode
+     gastar uma casa da cascata, senão abre um buraco no meio dela. Por isso a
+     ordem sai do DOM e a visibilidade de `offsetParent`, e não de um `nth-child`.
+  ⚠️ `passagemLigada()` decide se há passagem. Com o MODO LEVE ligado não some
+     só a animação: some o RELÓGIO. A espera de 100ms sem animação nenhuma
+     seria atraso puro, sem nada em troca.
+  ⚠️ A classe de saída é tirada ANTES de escrever o conteúdo novo, no mesmo
+     quadro: mesmo que algo estoure no meio, o painel não fica invisível. E a
+     rede de segurança final é o segundo setTimeout, que tira a classe de
+     entrada — sem ele, uma aba que não esteja pintando (armadilha das
+     v6.5/v6.9/v8.0.0) ficaria com o painel preso em opacidade 0, porque o
+     `both` segura o primeiro quadro. Testado: com as animações não rodando, o
+     painel volta inteiro assim que a classe sai.
+
+DOIS BUGS ACHADOS E CORRIGIDOS NO TESTE
+  1. Clicar na aba B e, dentro dos 100ms da saída, voltar para a A deixava a
+     pessoa na B: a guarda "já estou nela" comparava com `tecnicoAtivo`, que
+     ainda era o ANTIGO enquanto a troca estava pendente. Agora existe
+     `abaPedida`, o destino da troca em curso, e a guarda olha para ele.
+  2. A SAÍDA herdava os atrasos da cascata anterior — eles ficam inline no
+     elemento — e desfilava junto, torto: um módulo que estava escondido na
+     troca passada não tinha atraso, e os outros tinham. Só apareceu com os
+     SEIS módulos à vista, na base real. A saída é junta de propósito, então
+     agora os atrasos são zerados antes de ela começar.
+
+MEDIDAS E TESTES NA BASE REAL (BASETESTEGRUPO.umap: 23 camadas, 39 pontos,
+3 com grupo, 62 linhas no checklist; janela de 1400x860; dois técnicos com rota
+traçada de verdade pelo OSRM — 36,5 km e 48,2 km, e a pílula do dia somando
+84,8 km)
+  Cascata com os SEIS módulos à vista: atrasos 0 / 55 / 110 / 165 / 220 / 275ms
+    e duração de 380ms em cada um, na ordem em que eles aparecem
+    (m2, m5, m3, m4, m6, m7). O m1 com "none".
+    Do clique até o último módulo inteiro: 100 + 275 + 380 = 755ms.
+  Saída: os seis com `abaSai` e atraso ZERO, nas duas trocas seguidas — que é o
+    que o bug 2 acima quebrava. Reconferido depois de dobrar o passo.
+  Durante a saída o painel ainda é o do técnico antigo (km 48,2 na tela, aba
+    antiga marcada); 150ms depois já é o novo (36,5) com a cascata montada.
+  JANELAS LIVRES, com m3 e m4 numa janela: a janela cascateia por conta dela e
+    o painel ao mesmo tempo — nenhum espera o outro. É a razão de o atraso ser
+    contado por contêiner. (Medido com o passo de 55: 0/55 na janela e
+    0/55/110/165 no painel.)
+  MODO LEVE com a base real: troca em 2ms, animation "none", opacidade 1.
+  Fim de cada troca: classe fora do body e opacidade 1 nos sete módulos.
+  Sem erro no console em nenhum dos casos.
+
+MEDIDAS ANTERIORES (base sintética de 6 clientes / 12 unidades)
+  Troca de aba, logo após o clique: classe `trocando-aba-saindo`, animação
+    `abaSai` nos seis módulos e o conteúdo AINDA é o do técnico antigo
+    (stops = 2, aba ainda marcada na antiga). O m1 fica com animation "none".
+  130ms depois: conteúdo novo escrito (stops = 4) e atrasos de cascata
+    0 / 55 / 110 / 165ms nos módulos VISÍVEIS; os escondidos ficam sem atraso.
+  Depois da rede de segurança: classe fora do body, opacidade 1 em todos.
+  Duas trocas rápidas: a pendente é cancelada e vale a última.
+  Arrependimento (B e volta para a A dentro da saída): termina na A.
+  MODO LEVE: troca em 0ms, animation "none", opacidade 1 o tempo todo, sem
+    relógio nenhum.
+  Abrir aba e fechar aba: mesma passagem, classe entra e sai.
+  Sem erro no console em nenhum dos casos.

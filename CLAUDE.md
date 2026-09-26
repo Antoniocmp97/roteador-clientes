@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 25/09/2026 — v8.13.0 (a Rota nasce logo abaixo da Origem)
+> **Última atualização:** 25/09/2026 — v8.14.0 (passagem ao trocar de técnico)
 
 ---
 
@@ -361,6 +361,75 @@ sem dependências instaladas. Abre direto no navegador.
   linha só delas (medido a 375px: header de 102px). **Um clique no nome da aba
   aberta** entra na edição com o texto inteiro selecionado, então digitar troca
   "Técnico 1" pelo nome da pessoa
+- **A troca de técnico tem passagem, em dois tempos** (v8.14.0, pedido do
+  usuário: "implemente um efeito fade ao trocar de técnico"; e, depois de ver a
+  primeira forma rodando, "pensei em algo como a opção D, porém quando abrir o
+  outro técnico, aplicar um efeito estilo cascata, que vai aparecendo aos
+  poucos"). Até aqui a troca acontecia num **quadro só**: origem, lista de
+  clientes, ordem da viagem, km/min, link, roteiro e a rota acesa no mapa
+  mudavam todos de uma vez, sem nada dizendo que o painel passou a ser de outra
+  pessoa. Agora: **(1)** o painel de quem sai **apaga junto, em 100ms**;
+  **(2)** o de quem entra volta **módulo a módulo, de cima para baixo** — 55ms
+  de um para o outro, cada um com **380ms** de fade e 7px de subida (o fade
+  nasceu em 190ms e o usuário pediu o dobro depois de ver rodando); **(3)** no mapa
+  a **linha da aba que sai apaga em 260ms** (`stroke-opacity` .9→.28 e
+  `stroke-width` 5→3), com os marcadores dela junto (1→.38). Vale também ao
+  **abrir e ao fechar** uma aba. A saída é o "limpou"; a cascata é o "encheu de
+  novo com outra coisa".
+  ⚠️ **A troca de verdade acontece DEPOIS da saída**, dentro do `setTimeout`. É
+  o preço do primeiro tempo, e é por isso que ele é curto: **100ms é o limite em
+  que um clique ainda parece instantâneo**. Alongar a saída é alongar o atraso
+  do clique — não mexer nesse número sem saber disso.
+  ⚠️ **`animation-fill-mode: both` é o que faz a cascata existir**: sem ele, o
+  módulo com atraso de 275ms ficaria visível durante a espera e só então
+  piscaria para o começo da animação.
+  ⚠️ **A duração é quase sete vezes o passo**, e é isso que faz a coisa ser uma
+  **onda** subindo pelo painel e não uma escada de blocos acendendo um a um: os
+  módulos entram muito sobrepostos. Mexer só no passo muda o desenho — mais
+  passo, mais escada.
+  ⚠️ **O atraso é contado por contêiner**: painel e cada coluna começam do zero
+  e cascateiam ao mesmo tempo. Uma cascata só, atravessando as três colunas,
+  deixaria a última esperando meio segundo. ⚠️ E **módulo escondido não gasta
+  uma casa** da cascata, senão abre um buraco no meio dela — por isso a ordem
+  sai do DOM e a visibilidade de `offsetParent`, e não de um `nth-child`.
+  ⚠️ **Com o modo leve não some só a animação: some o relógio.**
+  `passagemLigada()` é consultado antes de qualquer coisa, e ali a troca é a de
+  sempre, no mesmo quadro. A espera de 100ms sem a animação seria atraso puro,
+  sem nada em troca. O mesmo vale para `prefers-reduced-motion`.
+  ⚠️ **Duas redes de segurança, as duas obrigatórias.** A classe de saída é
+  tirada **antes** de escrever o conteúdo novo, no mesmo quadro — se algo
+  estourar no meio, o painel não fica invisível. E o `setTimeout` que tira a
+  classe de entrada é o que salva a **aba que não está pintando** (armadilha
+  das v6.5/v6.9/v8.0.0): ali as animações não correm e o `both` seguraria o
+  painel em opacidade 0 para sempre. Testado: com as animações paradas, o
+  painel volta inteiro assim que a classe sai.
+  ⚠️ **`abaPedida` existe por causa de um bug pego no teste**: clicar na aba B
+  e, dentro dos 100ms, voltar para a A deixava a pessoa na B — a guarda "já
+  estou nela" comparava com `tecnicoAtivo`, que ainda era o antigo enquanto a
+  troca estava pendente. A guarda passou a olhar para o **destino da troca em
+  curso**.
+  ⚠️ **Os atrasos são zerados antes da saída**, e isso não é zelo: eles ficam
+  **inline** no elemento desde a cascata anterior, e sem zerar a saída desfila
+  junto — e torta, porque um módulo que estava escondido na troca passada não
+  tem atraso e os outros têm. Só apareceu com os **seis módulos à vista**, na
+  base real; com poucos módulos abertos passa despercebido.
+  ⚠️ **Anima o `.modulo-corpo`, não a `section`**: no painel ela é
+  `display:contents` e não gera caixa. Assim o efeito vale igual no painel, nas
+  colunas, nas janelas livres e no empilhado de tela estreita (testados os
+  quatro). ⚠️ O módulo **Clientes fica de fora**: a base é a mesma para todas as
+  abas, e piscá-la seria dizer que mudou algo que não mudou — é também o que
+  mantém o painel ancorado enquanto o resto vai e volta.
+  ⚠️ **A transição da linha vai INLINE**, em `realcarCamadas()`, e não numa
+  regra de folha de estilo: o efeito de traçar (v8.0.0) escreve `transition`
+  inline no mesmo path, e a partir daí o inline ganharia de qualquer regra
+  externa. `stroke-opacity` e `stroke-width` vêm de `setStyle()` como
+  **atributo**, e atributo de apresentação de SVG é propriedade CSS — por isso
+  transiciona (confirmado por `getAnimations()`, que devolve as duas). A
+  `opacity` do elemento fica de fora de propósito: é a que o efeito de traçar
+  usa para esconder a linha durante o voo.
+  ⚠️ Trocar de aba **no meio de um traçado** apaga a transição do desenho e a
+  linha aparece inteira — comportamento desejado: quem trocou de aba não está
+  mais olhando aquela rota
 - **A parada é do técnico, não da base** (v8.9.0, bug achado na revisão de
   24/09/2026). `stops` guarda uma **cópia rasa** do ponto de `clientPoints`, e
   não o próprio objeto. ⚠️ Antes disso, com o mesmo cliente na rota de **dois
@@ -1304,7 +1373,15 @@ quatro efeitos ao traçar a rota, em seis mapas de verdade; a v8.0.0 saiu do
 "conjunto") e `COMPARACAO-VIDRO.html` (quatro modos de transparência com cinco
 controles; a v8.1.0 saiu do modo "Apple") e `COMPARACAO-CHECKLIST.html` (a
 bolinha da calha: como era, contador acendendo e seta acendendo, na largura
-real do painel; a v8.4.2 saiu das duas últimas combinadas). ⚠️ A de efeitos tem a rota de exemplo embutida, então funciona sem
+real do painel; a v8.4.2 saiu das duas últimas combinadas) e
+`COMPARACAO-TROCA-ABA.html` (banco de provas das passagens ao trocar de
+técnico: um painel só, um efeito de cada vez, em câmera lenta; a v8.14.0 saiu
+do "saída + cascata"). ⚠️ **A primeira versão dessa página não servia**, e o
+defeito era meu: os quatro efeitos disparavam **ao mesmo tempo**, em quatro
+painéis — ninguém consegue olhar para quatro lugares em 180ms ("não consegui
+notar com nitidez a diferença real entre uma e outra"). Lição para as
+próximas: **efeito curto se compara em sequência e no mesmo lugar**, com a
+opção "como é hoje" na lista e um controle de câmera lenta. ⚠️ A de efeitos tem a rota de exemplo embutida, então funciona sem
 rede — só os ladrilhos do mapa é que precisam de internet.
 
 Regras de trabalho vigentes:
@@ -1442,6 +1519,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 101 | **v8.11.0** — Os puxadores de altura ganham teto (nenhum módulo maior que o painel) |
 | 102 | **v8.12.0** — O módulo Rota rola como os outros (fim do sticky) e o botão principal fica sem preenchimento |
 | 103 | **v8.13.0** — A Rota nasce logo abaixo da Origem: os botões de traçar ficam à vista sem rolar |
+| 104 | **v8.14.0** — Passagem ao trocar de técnico: o painel sai junto e volta em cascata |
 
 ---
 
@@ -1509,7 +1587,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.13.0
+8.14.0
 ```
 
 ### Onde o número aparece
@@ -1637,3 +1715,4 @@ os backups locais são conveniência, não garantia.
 | 8.11.0 | 25/09/2026 | Correção: puxadores de altura sem teto deixavam o módulo passar do painel |
 | 8.12.0 | 25/09/2026 | Fim do módulo Rota grudado; botão "Rota otimizada" sem preenchimento |
 | 8.13.0 | 25/09/2026 | Ordem padrão do painel com a Rota logo abaixo da Origem |
+| 8.14.0 | 25/09/2026 | Saída + cascata ao trocar de técnico, no painel e no mapa |

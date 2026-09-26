@@ -389,6 +389,49 @@
             stroke-width:2.2; stroke-linecap:round;}
   .aba-mais svg{width:14px; height:14px;}
 
+  /* Passagem ao trocar de técnico (v8.14.0, pedido do usuário). Trocar de aba
+     troca o painel inteiro de dono — origem, lista de clientes, ordem da
+     viagem, km/min, link e roteiro — e até aqui isso acontecia num quadro só,
+     sem nada dizendo que o conteúdo passou a ser de outra pessoa.
+     São DOIS tempos, pedidos pelo usuário depois de ver a primeira forma (que
+     só tinha o segundo): o painel do técnico que sai APAGA junto, rápido, e o
+     do que entra volta EM CASCATA — módulo a módulo, de cima para baixo.
+     A saída é o "limpou"; a cascata é o "encheu de novo com outra coisa".
+     ⚠️ É `animation`, e NÃO "põe opacity:0, espera um pouco, tira": com o modo
+     leve ligado o `animation:none !important` faz o conteúdo aparecer pronto no
+     mesmo quadro, sem um instante de painel vazio — e nada espera
+     `animationend`, que ali nunca chegaria (regra permanente de 24/09/2026).
+     Quem decide se há passagem é `passagemLigada()`, no JS: em modo leve a
+     troca continua sendo a de sempre, instantânea e sem relógio nenhum.
+     ⚠️ `both` no fill-mode é o que faz a cascata existir: sem ele, o módulo com
+     atraso de 180ms ficaria VISÍVEL durante o atraso e só então piscaria para
+     o começo da animação. Com `both` ele nasce no quadro inicial (opacidade 0)
+     e espera a vez.
+     ⚠️ Anima o `.modulo-corpo`, e não a section: no painel ela é
+     `display:contents` e não gera caixa. Assim vale igual no painel, nas
+     colunas e nas janelas livres, onde quer que o módulo esteja.
+     ⚠️ O módulo Clientes (m1) fica de fora de propósito: a base é a mesma para
+     todas as abas, e piscá-la seria dizer que mudou algo que não mudou — é
+     também o que mantém o painel ancorado enquanto o resto vai e volta. */
+  @keyframes abaSai  { from{opacity:1} to{opacity:0;} }
+  @keyframes abaEntra{ from{opacity:0; transform:translateY(7px);} to{opacity:1; transform:none;} }
+  body.trocando-aba-saindo .modulo-movel:not([data-modulo="m1"]) > .modulo-corpo{
+       animation:abaSai .1s ease-in both;}
+  body.trocando-aba .modulo-movel:not([data-modulo="m1"]) > .modulo-corpo{
+       animation:abaEntra .38s cubic-bezier(.2,.7,.3,1) both;}
+  /* Quem pediu menos animação no sistema não recebe nenhuma, como no efeito de
+     traçar a rota (v8.0.0). ⚠️ O JS também consulta isso (passagemLigada), para
+     não ficar um relógio esperando por uma animação que não vai acontecer. */
+  @media (prefers-reduced-motion: reduce){
+    body.trocando-aba-saindo .modulo-movel > .modulo-corpo,
+    body.trocando-aba .modulo-movel > .modulo-corpo{animation:none;}
+  }
+  /* Os marcadores das outras abas apagam junto, em vez de saltar de 1 para .38.
+     ⚠️ A opacidade vai no elemento de FORA (é lá que realcarCamadas escreve); o
+     ícone de dentro é quem carrega o realce de hover da v6.7.0 e a entrada da
+     parada no traçado, e os dois não se cruzam. */
+  .leaflet-marker-icon{transition:opacity .26s linear;}
+
   /* Faixa de "tem planejamento guardado" (v8.5.0). Fica entre o cabeçalho e o
      mapa, aparece só quando há o que restaurar e some assim que a pessoa
      decide — por isso não custa altura no dia a dia. */
@@ -1887,7 +1930,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.13.0';
+const VERSAO = '8.14.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2123,6 +2166,12 @@ const SVG_ABA_X = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 
 const SVG_ABA_MAIS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
 let tecnicos = [];
 let tecnicoAtivo = 0;
+/* Para onde a troca EM CURSO está indo (v8.14.0). Enquanto o painel do técnico
+   que sai está apagando, `tecnicoAtivo` ainda é o antigo — e sem isto um clique
+   na aba de origem, dentro dessa janela de 100ms, cairia na guarda
+   "já estou nela" e deixaria a troca pendente terminar do mesmo jeito: pedia-se
+   voltar para a aba A e o app parava na B. Pego no teste. */
+let abaPedida = 0;
 let contaTecnicos = 0;
 
 const corDoTecnico = () => (tecnicos[tecnicoAtivo] || {}).cor || CORES_TECNICO[0];
@@ -2193,6 +2242,20 @@ function realcarCamadas(){
   tecnicos.forEach((t, i) => {
     const ativo = i === tecnicoAtivo;
     if (t.linha){
+      /* A linha passa de acesa para apagada junto com o painel (v8.14.0).
+         ⚠️ A transição vai INLINE, e não numa regra de folha de estilo: o
+         efeito de traçar (v8.0.0) escreve `transition` inline neste mesmo path
+         para desenhar a linha, e a partir daí o inline ganharia de qualquer
+         regra externa. Escrevendo aqui, cada chamada devolve a transição certa.
+         ⚠️ `stroke-opacity` e `stroke-width` vêm de `setStyle()` como ATRIBUTO,
+         e atributo de apresentação de SVG é propriedade CSS — por isso
+         transiciona. `opacity` (a do elemento) fica de fora de propósito: é a
+         que o efeito de traçar usa para esconder a linha durante o voo.
+         ⚠️ Trocar de aba no meio de um traçado apaga a transição do desenho e a
+         linha aparece inteira. É o comportamento desejado: quem trocou de aba
+         não está mais olhando aquela rota. */
+      const elLinha = t.linha.getElement && t.linha.getElement();
+      if (elLinha) elLinha.style.transition = 'stroke-opacity .26s linear, stroke-width .26s linear';
       t.linha.setStyle({ opacity: ativo ? .9 : .28, weight: ativo ? 5 : 3 });
       if (ativo) t.linha.bringToFront();
     }
@@ -2203,45 +2266,128 @@ function realcarCamadas(){
   });
 }
 
+/* A passagem ao trocar de técnico (v8.14.0), em dois tempos: o painel de quem
+   sai APAGA junto (100ms) e o de quem entra volta EM CASCATA, módulo a módulo.
+
+   ⚠️ A troca de verdade acontece DEPOIS do apagar, dentro do `setTimeout` — é
+   o preço do primeiro tempo, e é por isso que ele é curto: 100ms é o limite em
+   que um clique ainda parece instantâneo. Foi medido e escolhido assim de
+   propósito; alongar a saída é alongar o atraso do clique.
+   ⚠️ Trocar de aba duas vezes rápido CANCELA a troca pendente e faz a segunda
+   direto. É o que se quer: o estado intermediário não chegou a ser mostrado.
+   ⚠️ A classe de saída é tirada ANTES de escrever o conteúdo novo, no mesmo
+   quadro — assim, mesmo que algo estoure no meio, o painel não fica invisível.
+   ⚠️ O relógio é `setTimeout`, e não `animationend`: com o modo leve a animação
+   não acontece e o evento nunca chega. Mas ali nem chega a existir relógio:
+   `passagemLigada()` devolve falso e a troca é a de sempre, no mesmo quadro.
+   É a mesma armadilha das v6.5/v6.9/v8.0.0, por outro caminho. */
+const DUR_SAIDA_ABA = 100;    // o painel de quem sai apaga
+const DUR_TROCA_ABA = 380;    // cada módulo entrando (dobrado a pedido do usuário)
+const PASSO_CASCATA = 55;     // distância de um módulo para o seguinte
+/* ⚠️ A duração é quase SETE vezes o passo, e isso é de propósito: os módulos
+   entram muito sobrepostos, e o que se vê é uma onda subindo pelo painel, não
+   uma escada de blocos acendendo um por um. Mexer só no passo muda o desenho
+   da coisa — mais passo, mais escada. */
+let relogioSaidaAba = null, relogioTrocaAba = null;
+
+function passagemLigada(){
+  if (modoLeve()) return false;
+  try{ if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false; }catch(e){}
+  return true;
+}
+
+/* Dá a cada módulo visível o atraso da vez dele. O atraso é contado POR
+   CONTÊINER: o painel e cada coluna começam do zero, e cascateiam de cima para
+   baixo ao mesmo tempo — uma cascata só, atravessando colunas, deixaria a
+   última coluna esperando meio segundo.
+   ⚠️ Módulo escondido (o 4 sem paradas, o 6 e o Roteiro sem rota) não pode
+   gastar uma casa da cascata, senão abriria um buraco no meio dela. Por isso a
+   ordem sai do DOM e a visibilidade, de `offsetParent`, e não de um índice
+   fixo tipo `nth-child`. */
+function escalonarCascata(){
+  const casas = new Map();
+  document.querySelectorAll('.modulo-movel:not([data-modulo="m1"]) > .modulo-corpo').forEach(corpo => {
+    if (!corpo.offsetParent){ corpo.style.animationDelay = ''; return; }
+    const casa = corpo.closest('.guia') || corpo.closest('.console') || document.body;
+    const n = casas.get(casa) || 0;
+    casas.set(casa, n + 1);
+    corpo.style.animationDelay = (n * PASSO_CASCATA) + 'ms';
+  });
+}
+
+function animarTrocaDeAba(trocaAgora){
+  // Quem chama mexe em tecnicoAtivo; o destino pedido volta a acompanhá-lo
+  const fim = () => { trocaAgora(); abaPedida = tecnicoAtivo; };
+  if (!passagemLigada()){ fim(); return; }
+  const b = document.body;
+  clearTimeout(relogioSaidaAba); clearTimeout(relogioTrocaAba);
+  b.classList.remove('trocando-aba');
+  /* ⚠️ Zera os atrasos ANTES de apagar. Eles ficam inline no elemento desde a
+     cascata anterior, e sem isto a SAÍDA também desfilaria — e torto, porque
+     um módulo que estava escondido na troca passada não tem atraso nenhum.
+     A saída é junta de propósito: é ela que diz "acabou o do outro". Pego no
+     teste com a base real, com os seis módulos à vista. */
+  document.querySelectorAll('.modulo-movel > .modulo-corpo')
+          .forEach(c => c.style.animationDelay = '');
+  b.classList.add('trocando-aba-saindo');
+  relogioSaidaAba = setTimeout(() => {
+    b.classList.remove('trocando-aba-saindo');
+    fim();                        // o conteúdo novo é escrito com o painel apagado
+    escalonarCascata();
+    void b.offsetWidth;           // obriga o navegador a ver a saída e a entrada
+    b.classList.add('trocando-aba');
+    relogioTrocaAba = setTimeout(() => b.classList.remove('trocando-aba'),
+                                 DUR_TROCA_ABA + PASSO_CASCATA * 7 + 60);
+  }, DUR_SAIDA_ABA);
+}
+
 function trocarTecnico(i){
-  if (i === tecnicoAtivo || !tecnicos[i]) return;
-  salvarNoTecnico(tecnicos[tecnicoAtivo]);
-  tecnicoAtivo = i;
-  carregarDoTecnico(tecnicos[i]);
-  realcarCamadas();
-  renderAbas();
+  if (!tecnicos[i] || i === abaPedida) return;
+  abaPedida = i;
+  animarTrocaDeAba(() => {
+    salvarNoTecnico(tecnicos[tecnicoAtivo]);
+    tecnicoAtivo = i;
+    carregarDoTecnico(tecnicos[i]);
+    realcarCamadas();
+    renderAbas();
+  });
 }
 
 function adicionarTecnico(){
-  salvarNoTecnico(tecnicos[tecnicoAtivo]);
-  tecnicos.push(novoTecnico());
-  tecnicoAtivo = tecnicos.length - 1;
-  carregarDoTecnico(tecnicos[tecnicoAtivo]);
-  // Origem própria, mas começando na mesma (escolha do usuário): a aba nova
-  // nasce na origem padrão salva, e daí cada um pode mudar a sua
-  const o = lerOrigemPadrao();
-  if (o) setOrigin(o.lat, o.lng, o.label, false);
-  realcarCamadas();
-  renderAbas();
+  animarTrocaDeAba(() => {      // abrir uma aba também troca o painel de dono
+    salvarNoTecnico(tecnicos[tecnicoAtivo]);
+    tecnicos.push(novoTecnico());
+    tecnicoAtivo = tecnicos.length - 1;
+    carregarDoTecnico(tecnicos[tecnicoAtivo]);
+    // Origem própria, mas começando na mesma (escolha do usuário): a aba nova
+    // nasce na origem padrão salva, e daí cada um pode mudar a sua
+    const o = lerOrigemPadrao();
+    if (o) setOrigin(o.lat, o.lng, o.label, false);
+    realcarCamadas();
+    renderAbas();
+  });
 }
 
 function fecharTecnico(i){
   if (tecnicos.length <= 1) return;
   salvarNoTecnico(tecnicos[tecnicoAtivo]);
   const t = tecnicos[i];
+  // ⚠️ A pergunta fica FORA da animação: só depois do "sim" é que o painel apaga
   if (t.stops.length && !confirm('Fechar a aba de ' + t.nome + '?\n\nAs '
       + t.stops.length + ' paradas e a rota dela são perdidas.')) return;
-  if (t.linha) map.removeLayer(t.linha);
-  t.marcadores.forEach(m => map.removeLayer(m));
-  if (t.origemMarker) map.removeLayer(t.origemMarker);
-  tecnicos.splice(i, 1);
-  if (tecnicoAtivo > i) tecnicoAtivo--;
-  else if (tecnicoAtivo === i) tecnicoAtivo = Math.min(i, tecnicos.length - 1);
-  carregarDoTecnico(tecnicos[tecnicoAtivo]);
-  // As avulsas que só existiam na aba fechada não têm mais dono
-  if (limparAvulsasSoltas()){ renderChecklist(); renderStopsList(); }
-  realcarCamadas();
-  renderAbas();
+  animarTrocaDeAba(() => {      // fechar uma aba abre a do lado: mesma passagem
+    if (t.linha) map.removeLayer(t.linha);
+    t.marcadores.forEach(m => map.removeLayer(m));
+    if (t.origemMarker) map.removeLayer(t.origemMarker);
+    tecnicos.splice(i, 1);
+    if (tecnicoAtivo > i) tecnicoAtivo--;
+    else if (tecnicoAtivo === i) tecnicoAtivo = Math.min(i, tecnicos.length - 1);
+    carregarDoTecnico(tecnicos[tecnicoAtivo]);
+    // As avulsas que só existiam na aba fechada não têm mais dono
+    if (limparAvulsasSoltas()){ renderChecklist(); renderStopsList(); }
+    realcarCamadas();
+    renderAbas();
+  });
 }
 
 function renomearTecnico(i, span){
