@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 25/09/2026 — v8.14.0 (passagem ao trocar de técnico)
+> **Última atualização:** 26/09/2026 — v8.15.0 (o que o mapa mostra dos clientes)
 
 ---
 
@@ -430,6 +430,75 @@ sem dependências instaladas. Abre direto no navegador.
   ⚠️ Trocar de aba **no meio de um traçado** apaga a transição do desenho e a
   linha aparece inteira — comportamento desejado: quem trocou de aba não está
   mais olhando aquela rota
+- **O que o mapa mostra dos clientes, em três estados** (v8.15.0, pedido do
+  usuário em duas partes: primeiro "esconder as bolinhas no mapa que
+  representam as paradas, deixando somente as que pertencerem à rota traçada,
+  para uma visualização mais limpa da rota em si"; depois, vendo aquilo rodando,
+  "realmente a opção a) faz muito sentido" — apagar em vez de sumir — com o
+  esclarecimento de que "apareceriam os pontos de todos os técnicos, como é
+  hoje, porém os que não fazem parte do que foi planejado ficariam como na
+  opção a)"). Um botão no cabeçalho, **primeiro do bloco depois do divisor** —
+  `[disquete] [lixeira] | [foco] [leve] [janelas] [ímã] [vidro] [tema]` — que
+  **cicla em três**: **0** tudo à vista (padrão, nada muda), **1** os clientes
+  fora da viagem **apagados** (opacidade .18, ainda clicáveis), **2** os
+  clientes fora da viagem **escondidos**. Em todos, o que fica inteiro é a
+  linha, os números, a origem e as paradas de **todos** os técnicos. Com a base
+  real são 39 bolinhas no mapa e 5 ou 6 na viagem: o traçado nascia dentro de um
+  campo de pontos que não têm nada a ver com ele (medido: 34 de 39 saem de
+  cena). O ícone mostra o **estado atual**, como o do tema — pontos espalhados,
+  a rota com os vizinhos apagados em volta, a rota sozinha —, discreto no 0 e
+  âmbar nos dois filtrados. A escolha fica guardada (`hg_foco_rota`).
+  ⚠️ **É o único botão do cabeçalho com três estados**, e por isso **não é
+  `role="switch"`**: switch é de dois, e `aria-checked` mentiria no do meio.
+  O `aria-label` diz o estado atual e a dica do mouse diz para onde o clique
+  leva, como no botão de tema.
+  ⚠️ **Por que três e não dois**: apagar e esconder não respondem à mesma coisa.
+  Apagado, o cliente vizinho continua ali **para ser clicado e entrar na
+  viagem** — é isso que ataca a desconfiança do "passei na porta de um cliente
+  do roteiro" medida em 19/09/2026, porque o vizinho fica visível sem competir
+  com a rota. Escondido, a rota fica sozinha na tela, que foi o pedido original.
+  ⚠️ **Quanto apaga é decisão do CSS, não do JS**: o JS só marca quem está fora
+  com `.ponto-fora-da-rota`, e `data-foco` no `<html>` escolhe entre .18 e 0.
+  Trocar do apagado para o escondido é trocar um atributo, e a passagem entre os
+  dois continua suave.
+  ⚠️ **O recorte é "está na viagem de ALGUM técnico"**, e não "da aba aberta".
+  O mapa mostra todas as rotas ao mesmo tempo desde a v8.5.0 — esconder os
+  pontos do técnico 2 porque a aba do 1 está aberta apagaria metade do dia a
+  cada clique numa aba. É a mesma regra de dono de `limparAvulsasSoltas()`.
+  ⚠️ **E o recorte é a VIAGEM, não a rota traçada**, apesar de o pedido falar em
+  rota: assim o botão já serve enquanto se escolhe as paradas, e a lista vai
+  ficando limpa junto. Recortar pela rota faria o botão não fazer nada até o
+  traçado — e depois **desfazer sozinho** o efeito a cada parada acrescentada,
+  porque acrescentar desfaz a rota (v4.1).
+  ⚠️ **Sem nenhuma parada escolhida o foco não vale**, e isso não é detalhe:
+  seria um mapa vazio, sem nada explicando o que aconteceu, logo depois de um
+  clique num botão. Aí não há o que limpar, a base fica inteira à vista e a dica
+  do botão diz isso. É o que faz abrir o app com a chave ligada ser seguro.
+  ⚠️ **O ponto escondido continua no mapa**, apagado (`opacity:0` +
+  `pointer-events:none`), e não é removido da camada: removê-lo e recolocá-lo a
+  cada clique no checklist custaria 30 e tantas operações do Leaflet por
+  marcação, e quebraria o realce mapa↔lista da v6.7.0, que conta com
+  `marcadorDaParada()` achando a bolinha do cliente **antes** de a rota existir.
+  ⚠️ O `pointer-events:none` vale **só no estado escondido**, e é obrigatório
+  lá: um marcador a opacidade 0 continua clicável, e o balão de um cliente
+  invisível abriria do nada. No **apagado** é o contrário — o ponto continua
+  clicável de propósito, e o `:hover` devolve a opacidade inteira, senão se
+  estaria apontando para algo que não se vê. ⚠️ O realce mapa↔lista não acende
+  num ponto fora da viagem, e **nunca acendeu**: `realcarPeloMarcador` só age
+  quando o ponto está em `stops`. Não confundir com defeito do apagado.
+  ⚠️ **A suavidade é de graça e o modo leve é seguro por construção**: quem
+  apaga é a transição que `.leaflet-marker-icon` já tem desde a v8.14.0. Não há
+  classe de saída nem espera de `transitionend` — com o modo leve a transição
+  morre e o ponto simplesmente muda (medido: 1,2ms, zero animações). Por isso o
+  botão **continua visível no modo leve**, ao contrário do vidro e das janelas:
+  ele não custa desenho, tira.
+  ⚠️ O gancho é `renderStopsList()`, que é o ponto por onde **toda** mudança na
+  viagem passa — marcar, desmarcar, remover, reordenar, trocar/abrir/fechar aba,
+  retomar por link, restaurar o dia, trocar de base.
+  ⚠️ Custo medido no cabeçalho: o bloco de ações foi de 229 para 265px, e a
+  altura continua em 65px (uma linha) a 1400, 1366, 1200 e 1024. **Abaixo de
+  ~430px** o bloco passa a cair para uma linha só dele (medido a 420px: 102 →
+  144px) — largura que já não é caso de uso do escritório
 - **A parada é do técnico, não da base** (v8.9.0, bug achado na revisão de
   24/09/2026). `stops` guarda uma **cópia rasa** do ponto de `clientPoints`, e
   não o próprio objeto. ⚠️ Antes disso, com o mesmo cliente na rota de **dois
@@ -1205,7 +1274,8 @@ repositório é público (ver `.gitignore`).
   brasileiros (Google, Mapbox), com cadastro e chave de acesso.
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
   origem padrão, a lista de tipos de serviço, a preferência de formato do link,
-  a opção de voltar para a origem, o zoom ao clicar na parada, o vidro ligado
+  a opção de voltar para a origem, o zoom ao clicar na parada, **o que o mapa
+  mostra dos clientes** (v8.15.0), o vidro ligado
   ou desligado, as janelas livres ligadas ou desligadas, o ímã de alinhamento
   delas, **o modo leve** (v8.7.0), **o planejamento do dia** (v8.5.0, restaurado
   só se a pessoa aceitar), a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
@@ -1520,6 +1590,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 102 | **v8.12.0** — O módulo Rota rola como os outros (fim do sticky) e o botão principal fica sem preenchimento |
 | 103 | **v8.13.0** — A Rota nasce logo abaixo da Origem: os botões de traçar ficam à vista sem rolar |
 | 104 | **v8.14.0** — Passagem ao trocar de técnico: o painel sai junto e volta em cascata |
+| 105 | **v8.15.0** — O que o mapa mostra dos clientes: um botão apaga ou esconde as bolinhas de fora da viagem |
 
 ---
 
@@ -1587,7 +1658,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.14.0
+8.15.0
 ```
 
 ### Onde o número aparece
@@ -1716,3 +1787,4 @@ os backups locais são conveniência, não garantia.
 | 8.12.0 | 25/09/2026 | Fim do módulo Rota grudado; botão "Rota otimizada" sem preenchimento |
 | 8.13.0 | 25/09/2026 | Ordem padrão do painel com a Rota logo abaixo da Origem |
 | 8.14.0 | 25/09/2026 | Saída + cascata ao trocar de técnico, no painel e no mapa |
+| 8.15.0 | 26/09/2026 | O que o mapa mostra dos clientes: tudo / fora da viagem apagado / fora da viagem escondido |

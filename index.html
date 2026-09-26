@@ -323,6 +323,28 @@
   /* Modo leve: o único dos interruptores de desempenho que continua visível
      em tela estreita, porque lá ele ainda desliga transições e animações */
   .leve-btn.ligado{color:var(--amber);}
+  /* O que o mapa mostra dos clientes (v8.15.0, pedido do usuário: "esconder as
+     bolinhas que não pertencem à rota traçada, para uma visualização mais limpa
+     da rota em si"; e, depois de ver rodando, a opção de deixá-las APAGADAS em
+     vez de sumidas — "faz muito sentido").
+     ⚠️ É o ÚNICO botão do cabeçalho com três estados, e não dois. A razão é que
+     apagar e esconder não são a mesma resposta: apagado, o cliente vizinho
+     continua ali para ser clicado e incluído na viagem; escondido, a rota fica
+     sozinha na tela. Os dois são úteis, e um clique passa de um ao outro.
+     O ícone mostra o estado ATUAL, como o do tema: pontos espalhados / a rota
+     com os vizinhos apagados em volta / a rota sozinha. Discreto no estado
+     padrão e âmbar nos dois filtrados.
+     ⚠️ As bolinhas do ícone são PREENCHIDAS, contra o `fill:none` geral dos
+     ícones do cabeçalho: um círculo só de traço a 19px vira um anel cinza
+     indistinguível, e o que se quer reconhecer aqui é justamente um ponto. */
+  .foco-btn .icone-apagado, .foco-btn .icone-so-rota{display:none;}
+  .foco-btn[data-estado="1"] .icone-tudo,
+  .foco-btn[data-estado="2"] .icone-tudo{display:none;}
+  .foco-btn[data-estado="1"] .icone-apagado{display:block;}
+  .foco-btn[data-estado="2"] .icone-so-rota{display:block;}
+  .foco-btn[data-estado="1"], .foco-btn[data-estado="2"]{color:var(--amber);}
+  .foco-btn svg circle{fill:currentColor; stroke:none;}
+  .foco-btn svg circle.fraco{fill-opacity:.32;}
   .ima-btn{display:none;}
   .ima-btn .risco{display:none;}
   .ima-btn.desligado{color:var(--amber);}
@@ -1186,6 +1208,27 @@
   .marcador-destacado .brand-icon{transform:scale(1.6);
               box-shadow:0 0 0 3px var(--amber-fraco), 0 0 12px var(--amber);}
   .stop-row.realcada{border-color:var(--amber); background:var(--hover);}
+  /* ---- O que o mapa mostra dos clientes (v8.15.0) ----
+     O JS marca com `ponto-fora-da-rota` quem não está na viagem de técnico
+     nenhum; QUANTO isso apaga é decidido aqui, pelo estado no `<html>`. Assim
+     trocar de "apagado" para "escondido" é só trocar um atributo, e a passagem
+     entre os dois ainda é suave.
+     ⚠️ O ponto continua no mapa nos dois estados — não é removido da camada.
+     Removê-lo e recolocá-lo a cada clique no checklist custaria 30 e tantas
+     operações do Leaflet por marcação, e quebraria o realce mapa<->lista da
+     v6.7.0, que conta com `marcadorDaParada()` achando a bolinha do cliente
+     antes de a rota existir.
+     ⚠️ APAGADO CONTINUA CLICÁVEL, de propósito: é assim que se percebe um
+     cliente vizinho da rota e se decide incluí-lo na viagem. O hover devolve a
+     opacidade inteira, senão o realce da v6.7.0 acenderia uma bolinha que não
+     se vê. ESCONDIDO leva `pointer-events:none` — um marcador a opacidade 0
+     continua clicável, e o balão de um cliente invisível abriria do nada.
+     ⚠️ A suavidade vem da transição que `.leaflet-marker-icon` já tem desde a
+     v8.14.0 — não há classe de saída, nem espera de `transitionend`. Com o modo
+     leve a transição morre e o ponto simplesmente muda, que é o certo. */
+  :root[data-foco="1"] .leaflet-marker-icon.ponto-fora-da-rota{opacity:.18;}
+  :root[data-foco="1"] .leaflet-marker-icon.ponto-fora-da-rota:hover{opacity:1;}
+  :root[data-foco="2"] .leaflet-marker-icon.ponto-fora-da-rota{opacity:0; pointer-events:none;}
   .brand-icon.num{width:20px;height:20px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-family:'JetBrains Mono',monospace;}
 
   /* ---- Efeito ao traçar a rota (v8.0.0, escolha do usuário numa página de
@@ -1500,6 +1543,33 @@
       </button>
     </div>
       <span class="cab-divisor" aria-hidden="true"></span>
+      <!-- O que o mapa mostra dos clientes (v8.15.0). Três estados, em ciclo:
+           tudo à vista · os de fora da viagem apagados · os de fora escondidos.
+           Não é `role="switch"` justamente por isso — switch é de dois estados,
+           e `aria-checked` mentiria no do meio. O rótulo diz o estado atual e a
+           dica diz para onde o clique leva. -->
+      <button class="icone-btn foco-btn" type="button" data-estado="0"
+              data-foco-btn aria-label="Clientes no mapa">
+        <svg class="icone-tudo" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="5" cy="6.5" r="2.1"/><circle cx="12.5" cy="4.5" r="2.1"/>
+          <circle cx="19.5" cy="8.5" r="2.1"/><circle cx="4.5" cy="15" r="2.1"/>
+          <circle cx="12" cy="12.5" r="2.1"/><circle cx="18" cy="17.5" r="2.1"/>
+          <circle cx="9" cy="20" r="2.1"/>
+        </svg>
+        <svg class="icone-apagado" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4.5 18.5L12 14L19.5 5.5"/>
+          <circle cx="4.5" cy="18.5" r="2.4"/><circle cx="12" cy="14" r="2.4"/>
+          <circle cx="19.5" cy="5.5" r="2.4"/>
+          <circle class="fraco" cx="5.5" cy="7" r="1.8"/>
+          <circle class="fraco" cx="11.5" cy="5.5" r="1.8"/>
+          <circle class="fraco" cx="19" cy="18.5" r="1.8"/>
+        </svg>
+        <svg class="icone-so-rota" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4.5 18.5L12 14L19.5 5.5"/>
+          <circle cx="4.5" cy="18.5" r="2.4"/><circle cx="12" cy="14" r="2.4"/>
+          <circle cx="19.5" cy="5.5" r="2.4"/>
+        </svg>
+      </button>
       <!-- Modo leve (v8.7.0): manda no vidro e nas janelas, e tira transições,
            animações, sombras e o efeito ao traçar. -->
       <button class="icone-btn leve-btn" type="button" role="switch" aria-checked="false"
@@ -1930,7 +2000,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.14.0';
+const VERSAO = '8.15.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2762,6 +2832,81 @@ function numIcon(n, cor){
   return L.divIcon({ className:'', html:`<div class="brand-icon num" style="background:${cor || 'var(--amber)'}">${n}</div>`, iconSize:[20,20], iconAnchor:[10,10] });
 }
 
+/* ---------------- O que o mapa mostra dos clientes (v8.15.0) ----------------
+   Pedido do usuário: "esconder as bolinhas no mapa que representam as paradas,
+   deixando somente as que pertencerem à rota traçada — para uma visualização
+   mais limpa da rota em si". Com a base real são 39 bolinhas teal no mapa e 5
+   ou 6 na viagem: o traçado nasce dentro de um campo de pontos que não têm nada
+   a ver com ele.
+
+   ⚠️ SÃO TRÊS ESTADOS, e não dois, porque o usuário pediu o segundo depois de
+   ver o primeiro rodando: apagar os de fora em vez de sumir com eles "faz muito
+   sentido". Apagar e esconder respondem a coisas diferentes — apagado, o
+   cliente vizinho continua ali para ser clicado e entrar na viagem (e é isso
+   que ataca a desconfiança do "passei na porta de um cliente do roteiro",
+   medida em 19/09/2026); escondido, a rota fica sozinha na tela. O ciclo é
+   0 tudo -> 1 apagado -> 2 escondido -> 0.
+   ⚠️ O estado 0 é o padrão e não muda nada, como as janelas livres: quem nunca
+   tocar no botão vê o app de sempre.
+
+   ⚠️ O recorte é "está na viagem de ALGUM técnico", e não "da aba aberta". O
+   mapa mostra todas as rotas ao mesmo tempo desde a v8.5.0 — esconder os pontos
+   do técnico 2 porque a aba do 1 está aberta apagaria metade do dia a cada
+   clique numa aba. É a mesma regra de dono de `limparAvulsasSoltas()`.
+   ⚠️ E o recorte é a VIAGEM, não a rota traçada: assim o botão já serve
+   enquanto se escolhe as paradas, e a lista vai ficando limpa junto. Recortar
+   pela rota faria o botão não fazer nada até o traçado — e depois desfazer
+   sozinho o efeito a cada parada acrescentada, porque acrescentar desfaz a rota
+   (v4.1).
+   ⚠️ Sem nenhuma parada escolhida o foco NÃO VALE, e isso não é detalhe: seria
+   um mapa vazio, sem nada explicando o que aconteceu, logo depois de um clique
+   num botão. Aí não há o que limpar, e a base fica inteira à vista. */
+const CHAVE_FOCO = 'hg_foco_rota';
+const FOCO_TUDO = 0, FOCO_APAGADO = 1, FOCO_OCULTO = 2;
+let focoMapa = FOCO_TUDO;
+try{ focoMapa = [1, 2].includes(+localStorage.getItem(CHAVE_FOCO)) ? +localStorage.getItem(CHAVE_FOCO) : FOCO_TUDO; }catch(e){}
+
+// Os rótulos e as dicas dos três estados. A dica diz para onde o clique LEVA,
+// como a do botão de tema; o rótulo diz onde se está, para o leitor de tela.
+const RECADOS_FOCO = {
+  0: { rotulo: 'Clientes no mapa: todos à vista',
+       dica: 'Todos os clientes no mapa. Clique para APAGAR os que não estão em viagem nenhuma.' },
+  1: { rotulo: 'Clientes no mapa: os de fora da viagem apagados',
+       dica: 'Os clientes fora da viagem estão apagados — ainda dá para clicar num deles para incluir na viagem. Clique para ESCONDÊ-LOS.' },
+  2: { rotulo: 'Clientes no mapa: só os da viagem',
+       dica: 'Só as paradas da viagem no mapa. Clique para mostrar todos de novo.' }
+};
+
+function atualizarBotaoFoco(quantas){
+  const r = RECADOS_FOCO[focoMapa];
+  // Sem nenhuma parada escolhida os dois estados filtrados não têm o que fazer,
+  // e a dica precisa dizer isso — senão o botão parece quebrado.
+  const semViagem = focoMapa !== FOCO_TUDO && !quantas;
+  document.querySelectorAll('[data-foco-btn]').forEach(b => {
+    b.dataset.estado = String(focoMapa);
+    b.setAttribute('aria-label', r.rotulo);
+    b.title = semViagem
+      ? r.dica + ' (Nenhuma parada escolhida ainda, então não há o que filtrar e a base segue inteira.)'
+      : focoMapa === FOCO_TUDO
+        ? r.dica
+        : `${quantas} ${quantas === 1 ? 'parada' : 'paradas'} na viagem. ` + r.dica;
+  });
+}
+
+function aplicarFocoNaRota(){
+  const naViagem = new Set();
+  stops.forEach(s => naViagem.add(s.id));
+  tecnicos.forEach((t, i) => { if (i !== tecnicoAtivo) t.stops.forEach(s => naViagem.add(s.id)); });
+  const vale = focoMapa !== FOCO_TUDO && naViagem.size > 0;
+  // Quanto cada marca apaga é decidido no CSS, por este atributo
+  document.documentElement.setAttribute('data-foco', vale ? String(focoMapa) : '0');
+  clientPoints.forEach(c => {
+    const el = c.marker && c.marker.getElement && c.marker.getElement();
+    if (el) el.classList.toggle('ponto-fora-da-rota', vale && !naViagem.has(c.id));
+  });
+  atualizarBotaoFoco(naViagem.size);
+}
+
 // Estado global do app (em memória — nada é persistido, recarregar a página zera tudo)
 let clientPoints = [];   // { id, name, lat, lng, marker } — todos os clientes carregados do .geojson
 let stops = [];          // subconjunto/ordem de clientPoints selecionados para esta viagem
@@ -3515,6 +3660,10 @@ function renderStopsList(){
   agendarSalvarDia();   // o planejamento do dia acompanha (v8.5.0)
   // Avulsa removida da viagem sai do mapa e da base em memória (v7.2.0)
   if (typeof limparAvulsasSoltas === 'function' && limparAvulsasSoltas()) renderChecklist();
+  // Quem entrou e quem saiu da viagem muda quais bolinhas ficam no mapa (v8.15.0).
+  // Fica aqui porque esta função é o ponto por onde TODA mudança na viagem passa
+  // — marcar, desmarcar, remover, reordenar, trocar de aba, retomar por link.
+  aplicarFocoNaRota();
   const section = document.getElementById('stopsSection');
   const list = document.getElementById('stopsList');
   section.hidden = !stops.length;
@@ -5024,6 +5173,15 @@ if (!modoCampoAtivo){
     b.addEventListener('click', () => aplicarModoLeve(!modoLeve(), true));
   });
   aplicarModoLeve(modoLeve(), false);   // acerta o ícone no estado do <head>
+
+  document.querySelectorAll('[data-foco-btn]').forEach(b => {
+    b.addEventListener('click', () => {
+      focoMapa = (focoMapa + 1) % 3;
+      try{ localStorage.setItem(CHAVE_FOCO, String(focoMapa)); }catch(e){}
+      aplicarFocoNaRota();
+    });
+  });
+  aplicarFocoNaRota();   // acerta o ícone no estado guardado
 }
 
 /* ---------------- Arrastar para reordenar (v3.8) ----------------

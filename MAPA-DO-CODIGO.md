@@ -62,6 +62,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | abas de técnico | `Um roteiro por técnico, em abas (v8.5.0)` | `renderAbas`, `trocarTecnico` |
 | efeito ao trocar de aba | `A passagem ao trocar de técnico (v8.14.0)` | `passagemLigada`, `animarTrocaDeAba`, `escalonarCascata` |
 | km do dia | `Quilometragem do dia (v8.8.0)` | `resumoDoDia`, `atualizarResumoDia` |
+| apagar/esconder bolinhas fora da viagem | `O que o mapa mostra dos clientes (v8.15.0)` | `aplicarFocoNaRota`, `atualizarBotaoFoco`, `RECADOS_FOCO` |
 | restaurar o planejamento | `O planejamento do dia sobrevive…` | `salvarDia`, `restaurarDia` |
 | carregar o `.umap` | `Upload / parse GeoJSON` | `lerUmap`, `importClients` |
 | checklist de clientes | `Checklist + stops UI` | `renderChecklist` |

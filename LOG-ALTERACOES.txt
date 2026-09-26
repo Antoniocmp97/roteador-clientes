@@ -6634,3 +6634,107 @@ MEDIDAS ANTERIORES (base sintética de 6 clientes / 12 unidades)
     relógio nenhum.
   Abrir aba e fechar aba: mesma passagem, classe entra e sai.
   Sem erro no console em nenhum dos casos.
+
+--------------------------------------------------------
+[26/09/2026] v8.15.0 — O que o mapa mostra dos clientes (três estados)
+--------------------------------------------------------
+PEDIDO DO USUÁRIO, EM DUAS PARTES
+  1. "Um botão (acredito que no header) que esconda as bolinhas no mapa que
+      representam as paradas, deixando somente as que pertencerem à rota
+      traçada, para uma visualização mais limpa da rota em si. Mas caso seja
+      necessário o botão mostra novamente as bolinhas."
+  2. Depois de ver a primeira forma rodando e das opções oferecidas:
+     "realmente a opção a) faz muito sentido" — apagar os de fora em vez de
+     sumir com eles. E, esclarecendo a opção b) que eu tinha entendido errado:
+     "apareceriam os pontos de todos os técnicos, como é hoje, porém os que não
+      fazem parte do que foi planejado ficariam como na opção a)".
+  A opção c) (esconder também as paradas já concluídas no campo) ficou em
+  STANDBY a pedido dele.
+
+O QUE FOI FEITO
+  Botão novo no cabeçalho, primeiro do bloco depois do divisor:
+  [disquete] [lixeira] | [FOCO] [leve] [janelas] [ímã] [vidro] [tema].
+  TRÊS estados, em ciclo — é o único botão do cabeçalho que não é de dois:
+    0  tudo à vista (padrão; nada muda)
+    1  os clientes fora da viagem APAGADOS (opacidade .18, ainda clicáveis)
+    2  os clientes fora da viagem ESCONDIDOS (opacidade 0, pointer-events:none)
+  Em todos, o que fica inteiro é a linha, os números, a origem e as paradas de
+  TODOS os técnicos. O ícone mostra o estado atual: pontos espalhados / a rota
+  com os vizinhos apagados em volta / a rota sozinha. Discreto no 0 e âmbar nos
+  dois filtrados. A escolha fica guardada (`hg_foco_rota`, "0" | "1" | "2").
+
+POR QUE TRÊS E NÃO DOIS
+  Apagar e esconder não respondem à mesma coisa. Apagado, o cliente vizinho
+  continua ali para ser clicado e entrar na viagem — e é isso que ataca a
+  desconfiança do "passei na porta de um cliente do roteiro" medida em
+  19/09/2026, porque o vizinho fica visível sem competir com a rota. Escondido,
+  a rota fica sozinha na tela, que foi o pedido original. Um clique passa de um
+  ao outro, e o estado 0 continua sendo o padrão que não muda nada.
+
+TRÊS DECISÕES QUE VALE REGISTRAR
+  1. O recorte é "está na viagem de ALGUM técnico", não "da aba aberta". O mapa
+     mostra todas as rotas ao mesmo tempo desde a v8.5.0 — esconder os pontos do
+     técnico 2 porque a aba do 1 está aberta apagaria metade do dia a cada
+     clique numa aba. É a mesma regra de dono de `limparAvulsasSoltas()`.
+  2. O recorte é a VIAGEM, não a rota traçada. Assim o botão já serve enquanto
+     se escolhe as paradas. Recortar pela rota faria o botão não fazer nada até
+     o traçado — e depois desfazer sozinho o efeito a cada parada acrescentada,
+     porque acrescentar desfaz a rota (v4.1).
+  3. SEM NENHUMA PARADA ESCOLHIDA O FOCO NÃO VALE. Seria um mapa vazio, sem nada
+     explicando o que aconteceu, logo depois de um clique num botão. Aí não há o
+     que limpar e a base fica inteira à vista; a dica do botão diz isso.
+
+COMO FOI FEITO
+  O ponto escondido CONTINUA no mapa, apagado — não é removido da camada.
+  Removê-lo e recolocá-lo a cada clique no checklist custaria 30 e tantas
+  operações do Leaflet por marcação, e quebraria o realce mapa<->lista da v6.7.0,
+  que conta com `marcadorDaParada()` achando a bolinha do cliente antes de a rota
+  existir (conferido: o realce continua acendendo).
+  `pointer-events:none` é obrigatório — um marcador a opacidade 0 continua
+  clicável, e o balão de um cliente invisível abriria do nada.
+  A suavidade vem da transição que `.leaflet-marker-icon` já tinha desde a
+  v8.14.0: não há classe de saída, nem espera de `transitionend`. Com o modo leve
+  a transição morre e o ponto simplesmente some, que é o certo.
+  O gancho é `renderStopsList()` — o ponto por onde TODA mudança na viagem passa
+  (marcar, desmarcar, remover, reordenar, trocar/abrir/fechar aba, retomar por
+  link, restaurar o dia, trocar de base).
+
+MEDIDAS E TESTES NA BASE REAL (BASETESTEGRUPO.umap: 23 camadas, 39 pontos;
+janela de 1400x860; dois técnicos; rota de verdade pelo OSRM, 7,8 km / 13 min)
+  Ciclo do botão: 0 (39 inteiras) -> 1 (34 a .18, clicáveis) -> 2 (34 a 0,
+    pointer-events "none") -> 0. Ícone e cor acompanham: --muted no 0 e
+    #F2A93C nos dois filtrados (medido depois de forçar o relógio das
+    transições, que fica parado no painel de preview).
+  Com 5 paradas no técnico 1: 34 de 39 bolinhas marcadas, e as 5 que sobram
+    inteiras são exatamente as da viagem.
+  ESTADO 1, o novo: o balão de um cliente apagado ABRE ao clique (é assim que
+    se inclui um vizinho da rota na viagem) e a regra :hover devolve a
+    opacidade inteira. O realce mapa<->lista não acende num ponto fora da
+    viagem — e nunca acendeu: `realcarPeloMarcador` só age quando o ponto está
+    em `stops`. Não é regressão.
+  Tema claro: a mesma regra vale (teal #12796E a .18 sobre o mapa claro).
+  Com o técnico 2 e mais 3 paradas: 8 visíveis nas DUAS abas — trocar de aba não
+    muda quem aparece, que é o item 1 acima.
+  Desligar devolve as 39. Acrescentar uma parada: 33. Tirar: 34 de volta.
+  Esvaziar a viagem: 0 escondidas (o botão continua ligado e a dica muda).
+  Fechar a aba do técnico 2: as 3 dele somem, 8 -> 5 visíveis.
+  Rota traçada: 31 escondidas, 8 visíveis (as 5 do técnico 1, debaixo dos
+    números, e as 3 do técnico 2). Números, linha e origem nunca somem.
+  Parada avulsa nascendo com o foco ligado: entra visível (está na viagem);
+    tirada da viagem, é apagada como manda a v7.2.0.
+  Base nova carregada com o foco ligado: stops zera, nada fica escondido.
+  Recarregar: a escolha volta ligada e o mapa abre inteiro (nada selecionado);
+    restaurando o dia guardado, as 31 apagam na hora.
+  Clique: `pointer-events` "none" em todas as escondidas; `elementFromPoint` no
+    centro de uma delas não devolve ela.
+  MODO LEVE: 1,2ms, zero animações, `transition: none`, e os dois estados
+    filtrados valendo na hora (medido: .18 no estado 1 e 0 + "none" no 2). O
+    botão CONTINUA visível no modo leve (diferente do vidro e das janelas) —
+    ele não custa desenho, tira.
+  CABEÇALHO: 65px de altura (uma linha) a 1400, 1366, 1200 e 1024, igual a
+    antes. O bloco de ações foi de 229 para 265px. Abaixo de ~430px ele passa a
+    cair para uma linha só dele (medido a 420px: 102 -> 144px de cabeçalho);
+    a 440 e acima não muda nada.
+  TELA ESTREITA (420px, empilhado): o botão CONTINUA à vista, ao contrário do
+    vidro e das janelas — lá o mapa ainda existe, em cima do painel.
+  Sem erro no console em nenhum dos casos.
