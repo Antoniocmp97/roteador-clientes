@@ -15,17 +15,27 @@ uma lista de clientes em GeoJSON. Feito para uso em Criciúma/SC.
 - Mostra todos os pontos no mapa
 - Define o ponto de partida por endereço digitado ou pela sua localização
 - Permite escolher quais clientes visitar na viagem
-- **Traçar nesta ordem** — calcula a rota respeitando a ordem que você definiu
-- **Otimizar ordem** — encontra automaticamente a melhor sequência de visitas
+- **Rota otimizada** — encontra automaticamente a melhor sequência de visitas
+- **Nesta ordem** — calcula a rota respeitando a ordem que você definiu
 - Mostra distância total, tempo estimado e o roteiro passo a passo
+- Marca paradas como prioritárias (★), que ficam fixas no início
+- Escolhe o tipo de serviço de cada parada (lista configurável)
+- Opcionalmente fecha o roteiro voltando para a origem
+- Divide o dia entre vários técnicos, em abas, com as rotas juntas no mapa
+- Gera um **link do roteiro** para mandar ao técnico: ele abre numa tela própria
+  de celular, com o mapa do trajeto, navegação por Waze/Maps e marcação do que
+  já foi feito
+- Tema claro/escuro e um **modo leve** para computador mais antigo
 
 ## Como usar
 
 1. Abra o link acima (funciona no computador e no celular)
 2. Carregue o backup completo do uMap (`.umap`) com seus clientes
-3. Digite o endereço de partida ou toque em 📍 para usar sua localização
+3. Defina o ponto de partida: digite o endereço, toque no alfinete para usar sua
+   localização, ou use o alvo para marcar o ponto exato clicando no mapa
 4. Marque os clientes que vai visitar
-5. Clique em **Otimizar ordem** (ou **Traçar nesta ordem**, se já sabe a sequência)
+5. Clique em **Rota otimizada** (ou **Nesta ordem**, se já sabe a sequência)
+6. Se for mandar para alguém na rua, gere o link do roteiro e envie
 
 ## Formato do arquivo de clientes
 
@@ -41,7 +51,7 @@ um cliente** e os pontos dentro dela são as **filiais**:
   "layers": [
     {
       "type": "FeatureCollection",
-      "_umap_options": { "name": "LABORATORIO BURIGO" },
+      "_umap_options": { "name": "LABORATORIO EXEMPLO" },
       "features": [
         { "type": "Feature",
           "geometry": { "type": "Point", "coordinates": [-49.3697, -28.6775] },
@@ -79,7 +89,7 @@ Arquivo HTML único, sem build e sem dependências instaladas.
 
 | Função | Serviço |
 |---|---|
-| Mapa | [Leaflet](https://leafletjs.com/) + tiles CARTO |
+| Mapa | [Leaflet](https://leafletjs.com/) + ladrilhos [Esri](https://www.esri.com/) Dark/Light Gray Canvas |
 | Rotas e otimização | [OSRM](http://project-osrm.org/) |
 | Busca de endereços | [Nominatim](https://nominatim.openstreetmap.org/) (OpenStreetMap) |
 

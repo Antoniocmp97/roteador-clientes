@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 26/09/2026 — v8.16.0 (o trajeto do dia na tela do campo)
+> **Última atualização:** 26/09/2026 — v8.16.1 (primeira revisão `.Verify`)
 
 ---
 
@@ -1233,7 +1233,7 @@ completo.
   "layers": [
     {
       "type": "FeatureCollection",
-      "_umap_options": { "name": "LABORATORIO BURIGO" },
+      "_umap_options": { "name": "LABORATORIO EXEMPLO" },
       "features": [
         { "type": "Feature",
           "geometry": { "type": "Point", "coordinates": [-49.3697, -28.6775] },
@@ -1265,9 +1265,9 @@ verdade num array `layers` aninhado dentro dela.
 
 ```json
 { "type": "FeatureCollection", "features": [],
-  "properties": { "name": "PMNV", "group": true },
+  "properties": { "name": "PMEX", "group": true },
   "layers": [ { "type": "FeatureCollection", "features": [...],
-                "properties": { "name": "PREFEITURA MUNICIPAL NOVA VENEZA - EDUCAÇÃO" } } ] }
+                "properties": { "name": "PREFEITURA EXEMPLO - EDUCACAO" } } ] }
 ```
 
 ⚠️ Ler só o primeiro nível fazia essas camadas **e todos os pontos delas
@@ -1539,6 +1539,47 @@ Regras de trabalho vigentes:
    justamente para quem mais precisa do modo leve. Na prática: nada pode
    depender de `transitionend`, de `animationend`, de uma animação terminar,
    nem do mapa estar em tela cheia. **Testar nos dois estados.**
+3. **`.Verify` do usuário pede uma revisão completa** (combinado em
+   26/09/2026, nos mesmos moldes do `.haga`).
+   ⚠️ **O escopo é o REPOSITÓRIO INTEIRO e o que está no ar — não só o
+   `index.html`** (o usuário fez questão de deixar isso claro). Ou seja, os dez
+   arquivos versionados: `index.html`, `CLAUDE.md`, `MAPA-DO-CODIGO.md`,
+   `LOG-ALTERACOES.txt`, `README.md`, `.gitignore`, `.claude/launch.json`,
+   `Exemplos/exemplo.umap` e os dois ícones em `Exemplos/icones/`. Mais a
+   **cópia publicada** no GitHub Pages.
+   As frentes:
+   - **Bugs e falhas no código**: análise mecânica do `index.html` — funções
+     declaradas × chamadas, ids × uso, classes × uso, variáveis de topo ×
+     leitura, temporizadores e observadores com parada garantida,
+     `addEventListener` acumulando — e leitura dirigida ao que ela apontar.
+   - **`MAPA-DO-CODIGO.md`**: linha a linha, se a seção citada ainda existe com
+     aquele nome e se as funções listadas ainda são as que fazem o trabalho.
+   - **Documentação**: se o que este documento afirma ainda é verdade no
+     código; se o `README.md` ainda descreve o app como ele é; se
+     `LOG-ALTERACOES.txt`, a constante `VERSAO`, a tabela de versões e o backup
+     da versão atual estão coerentes entre si.
+   - **Os arquivos de apoio**: se o `.gitignore` ainda barra tudo que é dado
+     real (o repositório é PÚBLICO — esta é a conferência que não pode falhar),
+     se o `Exemplos/exemplo.umap` ainda cobre as três variantes de nome de
+     camada e a camada vazia, e se o `.claude/launch.json` ainda sobe o
+     servidor que este documento manda usar.
+   - **O que está publicado**: se a `VERSAO` servida pelo GitHub Pages é a do
+     `main`, se o repositório está limpo (nada de dado real esperando commit) e
+     se o site abre sem erro de console nas **duas** telas.
+   - **Funcionalidade**: se o que está documentado como funcionando de fato
+     funciona, testado nos dois estados do modo leve (regra 2) e nas duas telas
+     — escritório e campo, esta última por um link de roteiro de verdade.
+   ⚠️ **Conferir a documentação não é zelo, é a parte que já pegou erro.** A
+   revisão de 24/09/2026 achou um bug real (★ e tipo de serviço compartilhados
+   entre técnicos, corrigido na v8.9.0) **e uma afirmação errada neste próprio
+   arquivo** — a chave `hg_alturas_modulos` estava descrita como removida e
+   continuava em uso. Este documento é a memória do projeto: quando ele mente, a
+   mentira vira decisão errada na sessão seguinte.
+   ⚠️ **`.Verify` não autoriza publicar.** Defasagem de documentação e do mapa
+   do código é corrigida direto (é texto, risco baixo); defeito de comportamento
+   é corrigido e relatado, mas o commit continua esperando o `.haga` — vale a
+   regra 1. O resultado da revisão vai para o `LOG-ALTERACOES.txt`, como o da
+   de 24/09.
 
 Concluído:
 - Tipo de serviço por parada — ✅ implementado na v1.9
@@ -1665,6 +1706,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 104 | **v8.14.0** — Passagem ao trocar de técnico: o painel sai junto e volta em cascata |
 | 105 | **v8.15.0** — O que o mapa mostra dos clientes: um botão apaga ou esconde as bolinhas de fora da viagem |
 | 106 | **v8.16.0** — O trajeto do dia na tela do campo (link v10 com a geometria simplificada) |
+| 107 | **v8.16.1** — Primeira revisão `.Verify`: nomes reais fora dos arquivos versionados, mapa do código e README em dia |
 
 ---
 
@@ -1732,7 +1774,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.16.0
+8.16.1
 ```
 
 ### Onde o número aparece
@@ -1863,3 +1905,4 @@ os backups locais são conveniência, não garantia.
 | 8.14.0 | 25/09/2026 | Saída + cascata ao trocar de técnico, no painel e no mapa |
 | 8.15.0 | 26/09/2026 | O que o mapa mostra dos clientes: tudo / fora da viagem apagado / fora da viagem escondido |
 | 8.16.0 | 26/09/2026 | O trajeto do dia na tela do campo, com o desenho da rota dentro do link |
+| 8.16.1 | 26/09/2026 | Revisão `.Verify`: saneamento dos nomes reais, correções no mapa do código e no README |

@@ -1,8 +1,9 @@
 # Mapa do código — `index.html`
 
-> Onde cada coisa mora e o que liga o quê. Feito em 24/09/2026, na v8.8.0
-> (6.446 linhas). Os números de linha envelhecem; os **títulos de seção** não —
-> procure pelo título quando a linha não bater.
+> Onde cada coisa mora e o que liga o quê. Feito em 24/09/2026 na v8.8.0;
+> conferido linha a linha e atualizado em 26/09/2026 na v8.16.1. Os números de
+> linha envelhecem; os **títulos de seção** não — procure pelo título quando a
+> linha não bater.
 >
 > Este documento responde "quero mexer em X, onde encosto?". O **porquê** de
 > cada decisão está no `CLAUDE.md`, e o histórico no `LOG-ALTERACOES.txt`.
@@ -13,17 +14,19 @@
 
 | Camada | Tamanho | Onde |
 |---|---|---|
-| CSS | 1.426 linhas | um `<style>` no `<head>` |
-| Markup | 473 linhas | `<body>`: duas telas inteiras |
-| JS | 4.548 linhas | um `<script>` no fim do `<body>` |
+| CSS | 1527 linhas | um `<style>` no `<head>` |
+| Markup | 513 linhas | `<body>`: duas telas inteiras |
+| JS | 5032 linhas | um `<script>` no fim do `<body>` |
 
-**36% do arquivo são comentários** (130 KB de 365 KB). É proposital: eles são a
+**40% do arquivo são comentários** (~159 KB de 392 KB). É proposital: eles são a
 memória do projeto. Não afetam o desempenho — o GitHub Pages serve comprimido, e
 o navegador descarta comentário no parse.
 
-⚠️ **Duas telas no mesmo arquivo.** `.app` é o escritório; `#telaCampo` é a tela
-do técnico. Quem decide qual aparece é `modoCampoAtivo`, calculado uma vez a
-partir do `#` da URL. Quase todo o JS está dentro de `if (!modoCampoAtivo){...}`.
+⚠️ **Duas telas no mesmo arquivo.** `.app` é o escritório; **`#modoCampo`** é a
+tela do técnico. Quem decide qual aparece é `modoCampoAtivo`, calculado uma vez
+a partir do `#` da URL. O que é só do escritório fica em **oito blocos**
+`if (!modoCampoAtivo){...}` espalhados pelo script — o resto (funções, leitura
+do link, tela do campo) é comum às duas telas.
 
 ---
 
@@ -93,7 +96,7 @@ originLatLng     [lat, lng] da origem
 originMarker     o pino da origem no mapa
 routeLine        a polyline traçada
 stopMarkers[]    os marcadores numerados
-ultimoResumo     { d: metros, t: segundos }
+ultimoResumo     { d: metros, t: segundos, g: trajeto simplificado (v8.16.0) }
 idRoteiro        o rid, que o link leva
 ```
 
@@ -125,6 +128,8 @@ map              o Leaflet
 | `hg_janelas` | janelas livres ligadas |
 | `hg_ima` | ímã de alinhamento |
 | `hg_leve` | **modo leve** |
+| `hg_foco_rota` | o que o mapa mostra dos clientes: `0` tudo / `1` apagado / `2` escondido |
+| `hg_campo_mapa` | a faixa de mapa da tela do campo (no aparelho de quem abriu o link) |
 | `hg_base_clientes` | a última base `.umap` carregada |
 | `hg_origem_padrao` | a origem que volta pronta |
 | `hg_tipos_servico` | a lista de tipos |
@@ -136,13 +141,19 @@ map              o Leaflet
 | `hg_dia_planejado` | o planejamento do dia (oferecido ao abrir) |
 | `hg_link_compativel` | formato do link (legível x comprimido) |
 | `hg_prog_r_<rid>` | progresso do campo, por roteiro |
+| `hg_progresso_<codigo>` | idem, para link antigo sem `rid` (só leitura, convertido na 1ª abertura) |
 
 ---
 
-## 5. Os quatro atributos do `<html>` e o que cada um liga
+## 5. Os atributos do `<html>` e o que cada um liga
 
-O CSS inteiro dos modos pendura nesses quatro. Nenhum deles tem JS decidindo
-layout — quem desenha é o CSS.
+O CSS inteiro dos modos pendura neles. Nenhum tem JS decidindo layout — quem
+desenha é o CSS.
+
+⚠️ Os **quatro primeiros** são aplicados pelo script do `<head>`, antes da
+primeira pintura, porque mudam o layout e a tela saltaria. O **`data-foco`**
+(v8.15.0) é de outra categoria: só existe depois que há marcadores no mapa, e é
+escrito por `aplicarFocoNaRota()`.
 
 | Atributo | Valores | Liga |
 |---|---|---|
@@ -150,6 +161,7 @@ layout — quem desenha é o CSS.
 | `data-vidro` | `1` / `0` | mapa em tela cheia + `backdrop-filter`, ou colunas em fila |
 | `data-janelas` | `1` / `0` | colunas absolutas com puxador, ou fila |
 | `data-leve` | `1` / `0` | **manda nos dois acima** e mata transições, animações e sombras |
+| `data-foco` | `0` / `1` / `2` | quanto as bolinhas fora da viagem apagam: nada, `.18`, ou somem |
 
 ⚠️ **`data-leve` não apaga a escolha dos outros.** Ligado, ele força
 `data-vidro=0` e `data-janelas=0` sem tocar no `localStorage`; ao sair,
@@ -182,12 +194,14 @@ arquivo .umap
 ### 6.2 Do escritório ao campo
 
 ```
-montarRoteiro()        monta o texto do formato v9 (10 grupos separados por ~)
+montarRoteiro()        monta o texto do formato v10 (11 grupos separados por ~;
+                       o 11º é o trajeto, para o mapa da tela do campo)
   → comprime (gzip nativo) ou deixa legível, conforme hg_link_compativel
   → link "…/#z=" ou "…/#r="
   → [WhatsApp]
   → outra máquina abre: modoCampoAtivo = true
-  → lerRoteiroCompacto()  entende v5 a v9
+  → lerRoteiroCompacto()  entende v5 a v10 (sem o 11º grupo, o mapa fica só com
+                          os pontos)
   → desenharCampo()       cartão da vez, faixas das concluídas, linhas das outras
   → progresso em hg_prog_r_<rid>, por COORDENADA da parada
 ```

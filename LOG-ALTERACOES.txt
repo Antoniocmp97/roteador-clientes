@@ -701,14 +701,14 @@ TESTES COM A BASE REAL (arquivo copiado para a pasta apenas durante o
 teste e apagado em seguida; o .gitignore já o bloqueava)
   - Carregamento: "5 pontos em 4 clientes".
   - Nomes conferidos um a um:
-      LABORATORIO BURIGO      -> GIASSI, RIO MAINA
-      PREFEITURA NOVA VENEZA  -> PAÇO MUNICIPAL
-      RIO DESERTO             -> CENTRAL
-      HCON                    -> HOSPITAL
+      LABORATORIO EXEMPLO      -> UNIDADE 30, UNIDADE 24
+      CLIENTE P  -> UNIDADE 15
+      CLIENTE T             -> CENTRAL
+      CLIENTE X                    -> HOSPITAL
     Confere com a organização do uMap mostrada pelo usuário.
   - Abertas duas cascatas, marcada uma filial em cada, origem definida e
     "Otimizar ordem" executado -> rota traçada, 2.2 km / 4 min, paradas
-    listadas como "CENTRAL / RIO DESERTO" e "GIASSI / LABORATORIO BURIGO".
+    listadas como "CENTRAL / CLIENTE T" e "UNIDADE 30 / LABORATORIO EXEMPLO".
   - Contagens dos cabeçalhos ("1/2", "1/1") e bolinha âmbar corretas nos
     dois clientes com seleção.
   - Exemplo fictício recarregado depois: "6 pontos em 4 clientes",
@@ -758,7 +758,7 @@ TESTES REALIZADOS
   - Antes: grupos comprimidos. Depois: os 8 grupos com 36px cada, altura
     natural, conteúdo 330px contra 320px visíveis, rolagem funcionando.
   - Rolagem exercitada por código até o fim da lista: último cliente
-    (LABORATORIO BURIGO) alcançável.
+    (LABORATORIO EXEMPLO) alcançável.
   - Dois grupos abertos ao mesmo tempo: alturas 146px cada, filiais com
     48px, conteúdo 550px, sem compressão e ainda rolável.
   - Tela estreita (420px): checklist 200px, rolável; painel 346px,
@@ -771,7 +771,7 @@ TESTES REALIZADOS
 --------------------------------------------------------
 PEDIDO DO USUÁRIO
   Antes do nome da filial, adicionar o nome do cliente (a camada de
-  origem). No modo campo cada parada mostrava só "PAÇO MUNICIPAL", sem
+  origem). No modo campo cada parada mostrava só "UNIDADE 15", sem
   dizer de qual cliente. Era a pergunta que tinha ficado em aberto desde
   a v1.2.
 
@@ -1163,8 +1163,8 @@ VERSÃO: alteração leve. Contador de leves: 2/5 desde a v1.9.
 --------------------------------------------------------
 As duas capturas que o usuário deixou em Exemplos/ para demonstrar o
 alinhamento do botão (ANTES DE CARREGAR MAPA.png, APOS CARREGAR MAPA.png)
-mostravam a base de clientes real carregada (LABORATORIO BURIGO,
-PREFEITURA NOVA VENEZA, RIO DESERTO, HCON) — a mesma que apareceu mais
+mostravam a base de clientes real carregada (LABORATORIO EXEMPLO,
+CLIENTE P, CLIENTE T, CLIENTE X) — a mesma que apareceu mais
 cedo na sessão. O repositório é público, então essas duas imagens foram
 tiradas do commit antes de ir para o GitHub.
 
@@ -1541,7 +1541,7 @@ TESTES REALIZADOS
     o grupo aberto manualmente continuou aberto.
   - Repetido o teste de busca por filial ("giassi") com a base real do
     usuário (11 pontos, 8 clientes) — resultado correto (LABORATORIO
-    BURIGO → GIASSI).
+    EXEMPLO → UNIDADE 30).
   - Console sem erros em nenhum teste.
 
 VERSÃO
@@ -1922,7 +1922,7 @@ MEDIÇÃO ANTES (base real, 11 paradas, com tipo de serviço em todas)
   Depois do base64 ..... 1152 caracteres
   Link completo ........ 1204 caracteres
   O desperdício estava visível no JSON: o nome do cliente era repetido em
-  cada filial ("LABORATORIO BURIGO" duas vezes, e assim por diante), o
+  cada filial ("LABORATORIO EXEMPLO" duas vezes, e assim por diante), o
   tipo de serviço repetido nas 11 paradas, mais toda a pontuação do JSON
   (aspas, colchetes, vírgulas).
 
@@ -2120,7 +2120,7 @@ O QUE MUDOU
   resto do card, que já fica apagado.
 
 TESTES REALIZADOS (base real, 11 paradas, 2 prioritárias)
-  - A prioridade viaja no link: marcadas CENTRAL e FILIAL CRICIUMA no
+  - A prioridade viaja no link: marcadas CENTRAL e UNIDADE 11 no
     escritório, as mesmas duas voltaram marcadas na decodificação.
   - Formato gerado confirmado como v6, com o campo extra só nas
     prioritárias ("CENTRAL*-2867394*-4937307*0*0*1").
@@ -2151,9 +2151,9 @@ DIAGNÓSTICO — era pior que "não reconheceu": PERDA SILENCIOSA DE DADOS
      o arquivo tem .... 23 camadas / 39 pontos
      o app lia ........ 20 camadas / 36 pontos
   Sumiam, sem erro e sem aviso:
-     PREFEITURA MUNICIPAL NOVA VENEZA (com o PAÇO MUNICIPAL)
-     PREFEITURA MUNICIPAL NOVA VENEZA - EDUCAÇÃO
-     PREFEITURA MUNICIPAL NOVA VENEZA - ASSISTENCIA SOCIAL
+     CLIENTE J (com o UNIDADE 15)
+     PREFEITURA EXEMPLO - EDUCACAO
+     CLIENTE B
 
 DEFINIÇÃO DE ESCOPO (com o usuário)
   A primeira pergunta ofereceu opções erradas — assumi que o grupo deveria
@@ -2194,8 +2194,8 @@ O QUE FOI CONSTRUÍDO (index.html)
 
 TESTES REALIZADOS (arquivo real do usuário)
   - Leitura: 23 camadas / 39 pontos, contra 20 / 36 antes. As três de
-    Nova Veneza voltaram, vinculadas ao grupo PMNV.
-  - Três níveis conferidos: PMNV → 3 camadas → unidades.
+    Nova Veneza voltaram, vinculadas ao grupo PMEX.
+  - Três níveis conferidos: PMEX → 3 camadas → unidades.
   - Seleção dentro do grupo: parada entra normalmente, contador do grupo
     foi para "1/3" e a bolinha do grupo acendeu.
   - Busca por "pmnv" → traz o grupo com as 3 camadas; busca por
@@ -2214,8 +2214,8 @@ TESTES REALIZADOS (arquivo real do usuário)
 --------------------------------------------------------
 PEDIDO DO USUÁRIO
   Perguntou se era possível organizar os clientes em ordem alfabética ao
-  carregar a base. Até aqui a ordem era a do arquivo (BURIGOS, DALMAR,
-  CARDIOVITTA, POSTO DE COLETA...), que não segue critério nenhum.
+  carregar a base. Até aqui a ordem era a do arquivo (CLIENTE U, UNIDADE 31,
+  CLIENTE EXEMPLO 1, POSTO DE COLETA...), que não segue critério nenhum.
 
   ALCANCE, definido com o usuário: ordenar nos TRÊS níveis — grupos e
   camadas no topo, camadas dentro de cada grupo, e unidades dentro de
@@ -2226,11 +2226,11 @@ DETALHE QUE MOTIVOU CUIDADO EXTRA: ACENTUAÇÃO
   cedilha para depois do Z. Medido antes de implementar:
 
     ordenação ingênua        ordenação correta (pt-BR)
-    ACUO                     ACUO
+    CLIENTE W                     CLIENTE W
     IDEAL                    ÁGUA VERDE
-    INFANTIL                 IÇARA
-    IÇARA      <- errado     IDEAL
-    ZONA SUL                 INFANTIL
+    ANTAS                 AÇUDE
+    AÇUDE      <- errado     IDEAL
+    ZONA SUL                 ANTAS
     ÁGUA VERDE <- errado     ZONA SUL
 
   Na base ATUAL do usuário nenhum nome divergiria (os acentos caem no meio
@@ -2254,17 +2254,17 @@ ONDE A ORDENAÇÃO **NÃO** ENTRA
   Na ordem da viagem. Quem decide a sequência das paradas continua sendo
   a otimização geográfica (ou a ordem manual do usuário) — confirmado em
   teste: 5 paradas selecionadas em ordem alfabética saíram como
-  ANGELONI, CENTRO CRICIUMA, CLINIGASTRO, DONA LINA, COCAL DO SUL, com
-  DONA LINA na frente de COCAL DO SUL porque o caminho é mais curto.
+  UNIDADE 27, UNIDADE 13, UNIDADE 21, UNIDADE 25, UNIDADE 20, com
+  UNIDADE 25 na frente de UNIDADE 20 porque o caminho é mais curto.
 
 TESTES REALIZADOS (arquivo real do usuário, 23 camadas / 39 pontos)
-  - Nível 1: ACUO, BURIGOS, CARDIOVITTA, CHARRY, DALMAR, HOSPITAL, M21,
-    MJRE, PMNV, POSTO DE COLETA, PREFEITURA... — em ordem, com o grupo
-    PMNV posicionado pelo nome DELE.
-  - Nível 2 (dentro do PMNV): as 3 camadas de Nova Veneza em ordem.
-  - Nível 3: BURIGOS tinha GIASSI no fim da lista no arquivo; foi para o
-    lugar certo, entre FORQUILHINHA e IÇARA. IÇARA - FUNDAMENTAL também
-    reordenado (NUCLEO DE PRODUÇÃO saiu do meio para o fim).
+  - Nível 1: CLIENTE W, CLIENTE U, CLIENTE EXEMPLO 1, CLIENTE V, UNIDADE 31, HOSPITAL, CLI-01,
+    CLIENTE Y, PMEX, POSTO DE COLETA, PREFEITURA... — em ordem, com o grupo
+    PMEX posicionado pelo nome DELE.
+  - Nível 2 (dentro do PMEX): as 3 camadas de Nova Veneza em ordem.
+  - Nível 3: CLIENTE U tinha UNIDADE 30 no fim da lista no arquivo; foi para o
+    lugar certo, entre UNIDADE 19 e AÇUDE. AÇUDE - CLIENTE EXEMPLO 2 também
+    reordenado (UNIDADE 07 saiu do meio para o fim).
   - Rota completa continua funcionando, e a ordem da viagem não é a
     alfabética.
   - Console sem erros. localStorage limpo ao final.
@@ -2284,13 +2284,13 @@ MEDIÇÃO ANTES DE MEXER
   O nome da camada ficava numa caixa de 207px no primeiro nível e 193px
   dentro de um grupo. Os nomes da base real do usuário:
 
-    PREFEITURA MUNICIPAL BALNEARIO RINCAO - ASSISTENCIA SOCIAL  438px
-    PREFEITURA MUNICIPAL NOVA VENEZA - ASSISTENCIA SOCIAL       404px
-    PREFEITURA MUNICIPAL DE COCAL DO SUL - FUNDAMENTAL          388px
+    CLIENTE A  438px
+    CLIENTE B       404px
+    CLIENTE C          388px
 
   Ou seja: o corte comia MAIS DA METADE do nome, e comia justamente o
   final — que é a parte que distingue uma unidade da outra
-  ("... - EDUCAÇÃO" x "... - ASSISTENCIA SOCIAL").
+  ("... - EDUCAÇÃO" x "... - SAUDE").
 
   Isso mudou o diagnóstico: só alargar o painel não resolveria. Para o
   pior nome caber numa linha o painel teria que ir de 340px para ~570px,
@@ -2985,7 +2985,7 @@ REGRA DA DIVISA
   bloco de prioridade para cair dentro.
 
 TESTES (base real, 4 paradas, eventos de ponteiro simulados)
-  1. Sem prioridade, 3ª para o topo: HOSPITAL | ACUO | FORQUILHINHA | CRAS.
+  1. Sem prioridade, 3ª para o topo: HOSPITAL | CLIENTE W | UNIDADE 19 | UNIDADE 33.
   2. Soltar sem mexer: nada muda.
   3. Esc no meio do arraste: nada muda.
   5. Comum (última) solta no topo, com uma estrela na lista: vira estrela
@@ -3032,7 +3032,7 @@ O QUE MUDOU
 
 TESTES (base real, eventos de ponteiro simulados)
   A. Comum (última) solta acima do "Demais", com uma estrela na lista:
-     entra como 2ª estrela — ★ACUO | ★CRAS | FORQUILHINHA | HOSPITAL.
+     entra como 2ª estrela — ★CLIENTE W | ★UNIDADE 33 | UNIDADE 19 | HOSPITAL.
      É o caso relatado.
   B. Comum solta abaixo do "Demais": continua comum, no topo das demais.
   C. Estrela solta abaixo do "Demais": perde a estrela.
@@ -3152,7 +3152,7 @@ MÉTODO
 
 2. BOTÃO DO BALÃO DO MAPA NÃO FAZIA NADA COM A BUSCA ATIVA  (608d65e)
    Causa: toggleStop() dependia do checkbox, que a busca não desenha.
-   Reproduzido: busca "ACUO", balão de um ponto do BURIGOS, nada acontecia.
+   Reproduzido: busca "CLIENTE W", balão de um ponto do CLIENTE U, nada acontecia.
    Correção: sem checkbox, a troca é feita direto (mesma regra) e o aviso
    diz "X entrou/saiu da viagem".
    Teste: entrou; segundo clique saiu e limpou a estrela; sem busca, o
@@ -3530,7 +3530,7 @@ TESTES
     exatamente como na tabela acima.
   - Voltando os dois, a ordem no painel é a original:
     âncora 3, módulo 3, âncora 4, módulo 4, botões, status, envio, roteiro.
-  - Módulo 3 dentro da guia continua inteiro: a busca filtra (BURIGOS ->
+  - Módulo 3 dentro da guia continua inteiro: a busca filtra (CLIENTE U ->
     1 camada), marcar um cliente adicionou a parada e ela apareceu no
     módulo 4, que estava no painel (3 -> 4 paradas), e os links "tipos de
     serviço" e "marcar todos" foram junto.
@@ -3676,18 +3676,18 @@ TESTES (base real)
   - Sem busca: abrir a cascata, marcar uma filial -> cascata fechou, 1
     parada, cabeçalho mostrando "1/9".
   - Desmarcar: cascata continua aberta.
-  - Com busca ("GIASSI"): abre sozinha; ao marcar, fecha e o cliente
+  - Com busca ("UNIDADE 30"): abre sozinha; ao marcar, fecha e o cliente
     continua visível no resultado.
   - Clique no cabeçalho durante a busca reabre; trocar o termo volta a
     abrir; limpar a busca devolve o estado de verdade (fechada).
   - Pelo balão do mapa: selecionar fecha, desmarcar abre (mostra o que
     mudou).
-  - Camada dentro do grupo PMNV: ao marcar, a camada fechou e o GRUPO
+  - Camada dentro do grupo PMEX: ao marcar, a camada fechou e o GRUPO
     continuou aberto.
 
 RESSALVA DITA AO USUÁRIO
   Com a cascata fechando a cada seleção, marcar várias filiais do mesmo
-  cliente exige reabrir a cada uma (o BURIGOS tem 9). Se incomodar no uso,
+  cliente exige reabrir a cada uma (o CLIENTE U tem 9). Se incomodar no uso,
   dá para restringir o fechamento só ao caso da busca.
 
 VERSÃO: fecha a v5.0 (4.9 + 0.1; não marca fase nova do projeto).
@@ -3719,7 +3719,7 @@ O QUE FOI FEITO
 
 TESTES
   - Os quatro botões medem 32×32 e respondem: ▼ trocou a ordem
-    (ACUO > FORQUILHINHA virou FORQUILHINHA > ACUO), ★ marcou a
+    (CLIENTE W > UNIDADE 19 virou UNIDADE 19 > CLIENTE W), ★ marcou a
     prioridade e ✕ removeu a parada.
   - NÃO conferido na tela: quanto o nome realmente ocupa depois da
     mudança. A janela de testes não está desenhando a página (a linha
@@ -3894,7 +3894,7 @@ O QUE FOI FEITO
      (@container max-width 400px) e 88px como rede de segurança geral.
 
   Resultado medido: no piso de 320px o nome passou de ~39px para 131px no
-  painel e 132px na guia — suficiente para "FORQUILHINHA" (~95px) numa
+  painel e 132px na guia — suficiente para "UNIDADE 19" (~95px) numa
   linha só.
 
 ERRO MEU, DE NOVO POR ORDEM DE REGRAS
@@ -4512,9 +4512,9 @@ O QUE FOI FEITO
 
 MEDIDO (base de teste, 5 paradas, origem no centro de Criciúma)
   - Mesma ordem manual: 16,2 km / 24 min sem retorno; 27,1 km / 39 min com.
-  - Otimizar sem retorno: 13,7 km, terminando em COCAL DO SUL (o ponto mais
-    distante). Otimizar com retorno: ordem diferente (CLINIGASTRO, COCAL DO
-    SUL, ACUO, CENTRO CRICIUMA, ANGELONI) e 24,1 km — 3 km a menos que os
+  - Otimizar sem retorno: 13,7 km, terminando em UNIDADE 20 (o ponto mais
+    distante). Otimizar com retorno: ordem diferente (UNIDADE 21, COCAL DO
+    SUL, CLIENTE W, UNIDADE 13, UNIDADE 27) e 24,1 km — 3 km a menos que os
     27,1 da ordem manual com volta.
   - Roteiro com 6 trechos, o último "Retorno · Centro, Criciúma".
   - Link: 7 grupos, retorno "-2867750*-4936970*Centro, Criciúma", 281
@@ -4773,11 +4773,11 @@ TESTES (janela 1100x900, base de teste)
     origem "-2867750*-4936970*Centro, Criciúma", 284 caracteres.
   - Retomada com a viagem zerada: voltaram as 4 paradas na ordem, a ★, o
     tipo "Entrega de toner", a origem, o interruptor de retorno e o id.
-  - Campo: marcadas ANGELONI e ACUO (2/5), gravadas em hg_prog_r_<rid> como
+  - Campo: marcadas UNIDADE 27 e CLIENTE W (2/5), gravadas em hg_prog_r_<rid> como
     coordenadas.
-  - Escritório acrescentou COCAL DO SUL na 2ª posição e gerou o link de novo
-    (mesmo rid). Abrindo o link novo: ANGELONI e ACUO seguem concluídas —
-    ACUO agora na 3ª posição —, COCAL DO SUL é a próxima, contagem 2/6.
+  - Escritório acrescentou UNIDADE 20 na 2ª posição e gerou o link de novo
+    (mesmo rid). Abrindo o link novo: UNIDADE 27 e CLIENTE W seguem concluídas —
+    CLIENTE W agora na 3ª posição —, UNIDADE 20 é a próxima, contagem 2/6.
   - "editar no escritório" levou o roteiro de volta à tela de planejamento.
   - Leitura de links v6, v7 e v8 conferida; "v4" recusado.
 
@@ -6824,3 +6824,135 @@ O QUE NÃO MUDOU
   pulava era só criar o mapa do escritório. Então isto não acrescenta download
   de biblioteca nenhum ao celular; o custo novo são os ladrilhos (12 na faixa,
   20 na tela cheia, nesta rota).
+
+--------------------------------------------------------
+[26/09/2026] .Verify — primeira revisão geral (v8.16.0)
+--------------------------------------------------------
+Primeira execução do atalho `.Verify`, criado hoje. Escopo: os dez arquivos
+versionados mais a cópia publicada. Nenhum commit — `.Verify` não publica.
+
+O QUE ESTÁ SÃO (verificado, não suposto)
+  175 funções declaradas, NENHUMA sem chamada. 108 variáveis/constantes de topo,
+    NENHUMA sem leitura. 215 classes de CSS próprias, TODAS aplicadas.
+  Listeners: instrumentando `addEventListener` e rodando 10 ciclos de
+    renderChecklist+renderStopsList, os únicos registros foram os 39 checkboxes
+    — e eles são elementos NOVOS a cada redesenho (conferido por identidade).
+    Oito ciclos de renderAbas + atualizarResumoDia + aplicarFocoNaRota +
+    aplicarArranjo: ZERO listeners novos. Não há acúmulo.
+  O `setInterval` da rolagem automática e o laço de rAF do arraste têm parada
+    garantida; o `setInterval` só é criado depois de o arraste começar, então o
+    `return` antecipado de `terminar()` não deixa relógio solto.
+  NENHUMA dependência de `transitionend`/`animationend` no código — as duas
+    únicas ocorrências dessas palavras são comentários explicando por que não
+    se usa. A exceção obrigatória do zoom do Leaflet no modo leve FUNCIONA:
+    com `.leaflet-zoom-anim` no contêiner, a transição volta a
+    `transform 0.25s` (medido).
+  VERSÃO coerente em toda parte: constante 8.16.0, "Versão atual" do CLAUDE.md,
+    tabela de versões (103 linhas), histórico (passo 106, numeração sem
+    buracos), entrada no log e backup — cujo index.html é byte a byte igual ao
+    atual.
+  PUBLICADO: o arquivo servido pelo GitHub Pages é byte a byte igual ao HEAD e
+    à árvore de trabalho (401.938 bytes, mesmo sha).
+  FUNCIONALIDADE, base real (39 pontos, 23 camadas), nos dois estados do modo
+    leve e nas duas telas: carga da base, seleção, origem, traçado pelo OSRM
+    (9,0 km / 16 min), roteiro, link v10, segunda aba (12,4 km) com a pílula do
+    dia somando 21,4 km, troca de aba terminando limpa (classe fora do body,
+    opacidade 1 nos sete módulos), o botão de foco ciclando 0/1/2 com 31 de 39
+    bolinhas marcadas, módulo indo para a coluna e voltando. Modo leve: troca
+    de aba em 1,6ms com zero animações. Tela do campo: mapa com a linha de 37
+    pontos, 7 pinos e origem, progresso 2/7 sobrevivendo ao recarregar, pinos
+    acompanhando (feita/feita/agora), tela cheia ligando e desligando o
+    arraste. Sem erro de console em nenhum dos casos.
+
+CORRIGIDO NESTA REVISÃO
+  1. MAPA-DO-CODIGO.md dizia que a tela do campo é `#telaCampo`. O id real é
+     `#modoCampo` — `#telaCampo` não existe em lugar nenhum. Quem procurasse
+     por ele não acharia nada.
+  2. MAPA-DO-CODIGO.md: tamanhos de antes da v8.9.0 (CSS 1.426 -> 1.527,
+     JS 4.548 -> 5.032, 365 -> 392 KB, comentários 36% -> 40%).
+  3. MAPA-DO-CODIGO.md: `ultimoResumo` agora é { d, t, g } — o `g` é o trajeto
+     da v8.16.0, que é justamente o que vai para o link.
+  4. MAPA-DO-CODIGO.md: o link estava descrito como "formato v9 (10 grupos)" e
+     "entende v5 a v9". É v10 com 11 grupos, e a leitura vai até v10.
+  5. MAPA-DO-CODIGO.md: faltavam `hg_foco_rota` (v8.15.0) e `hg_campo_mapa`
+     (v8.16.0) na tabela de preferências; e `hg_progresso_<codigo>`, a chave
+     antiga que ainda é lida para converter link sem rid.
+  6. MAPA-DO-CODIGO.md: a seção "os quatro atributos do <html>" ignorava o
+     `data-foco`, que é o quinto. Ele é de outra categoria (não é aplicado
+     antes da primeira pintura), e agora está dito assim.
+  7. MAPA-DO-CODIGO.md: "quase todo o JS está dentro de if (!modoCampoAtivo)"
+     não é verdade — são oito blocos, e o resto do script é comum às duas
+     telas.
+  8. README.md creditava "tiles CARTO". A CARTO saiu em 29/08/2026, quando
+     passou a carimbar os ladrilhos; é Esri desde então. Além de desatualizado,
+     era crédito errado numa página pública.
+  9. README.md mandava clicar em "Otimizar ordem" e "Traçar nesta ordem". Os
+     botões se chamam "Rota otimizada" e "Nesta ordem" desde a v7.9.0/v8.12.0.
+ 10. README.md listava o app da v2.x: sem modo campo, sem abas de técnico, sem
+     prioridade, sem tipo de serviço, sem retorno, sem tema, sem modo leve.
+     Atualizado.
+ 11. index.html: `id="moduloRota"` era peso morto. Nasceu na v6.5.0 para o
+     módulo Rota grudado e ficou órfão quando a v8.12.0 tirou o sticky. Nada
+     em JS nem em CSS o usava.
+
+ACHADO GRAVE E RESOLVIDO — NOMES DE CLIENTES REAIS EM ARQUIVO VERSIONADO
+  O repositório é público, e a regra do projeto sempre foi que dado real não é
+  versionado. Ela estava sendo quebrada há meses:
+     LOG-ALTERACOES.txt ... 27 nomes distintos em 73 linhas (medições de teste
+                            coladas ao longo dos meses)
+     index.html ........... 3 nomes em 4 linhas (exemplos em comentário)
+     CLAUDE.md ............ 3 nomes em 3 linhas (exemplo do formato .umap)
+     README.md ............ 1 nome (o mesmo exemplo, na página pública)
+  O pior não era o volume: era um cliente real ter virado o EXEMPLO CANÔNICO do
+  formato .umap, repetido nos três documentos e na porta de entrada do
+  repositório.
+
+  O usuário escolheu a opção (1): sanear os arquivos, sem reescrever o
+  histórico. Feito em três passadas, porque cada uma achou o que a anterior não
+  pegava:
+    1ª — nome INTEIRO: 63 nomes próprios, 105 ocorrências trocadas.
+    2ª — PALAVRA solta: o nome inteiro some, mas o sobrenome sozinho fica
+         ("<sobrenome> → UNIDADE 30"). Mais 4 palavras distintivas.
+    3ª — nome CURTO (3-4 caracteres): siglas que nenhum filtro de tamanho pega.
+  Substituição: os exemplos da documentação passaram a usar o vocabulário
+  fictício de `Exemplos/exemplo.umap` (LABORATORIO EXEMPLO, PREFEITURA EXEMPLO
+  - EDUCACAO, PMEX), e o resto virou CLIENTE A.. / UNIDADE 01.. de forma
+  consistente entre os arquivos, para as referências cruzadas do log
+  continuarem casando.
+  ⚠️ No index.html as 5 linhas tocadas são TODAS comentário — nenhuma linha de
+  código mudou. Conferido: a base ainda carrega (39 pontos), a ordenação
+  alfabética sai igual, a rota traça (7,8 km) e a chave `hg_base_clientes`
+  continua intacta — ela casava com "BASE", que é nome na base real e foi
+  excluída como falso positivo.
+  ⚠️ Um efeito colateral pego na conferência: ao trocar o exemplo de ordenação
+  por acentos, a lógica dele quebrou. O exemplo depende de as duas palavras
+  terem a MESMA INICIAL — é a cedilha, no segundo caractere, que empurra a
+  palavra para depois do Z. Com a primeira substituição as iniciais ficaram
+  diferentes e a frase passou a afirmar algo falso. Corrigido para um par que
+  começa com a mesma letra.
+  ⚠️ O HISTÓRICO DO GIT NÃO FOI TOCADO, por escolha do usuário: os nomes
+  continuam nos commits antigos de um repositório público. Limpar isso exigiria
+  reescrever tudo e force-push. Fica registrado como decisão consciente, não
+  como esquecimento.
+  Conferência final: varredura de 52 nomes, 38 palavras distintivas e 50
+  coordenadas da base real contra os dez arquivos versionados — NENHUMA
+  ocorrência.
+
+RESOLVIDO — rascunho solto na raiz
+  `Comandos.txt` estava na pasta, vazio, NÃO rastreado e NÃO ignorado: um
+  `git add -A` o levaria para o repositório público. O risco não era o arquivo
+  (vazio), era a categoria. Foi movido para `notas/`, e `notas/` entrou no
+  .gitignore — conferido com `git check-ignore`. Anotação de trabalho agora tem
+  onde morar sem encostar no repositório.
+
+--------------------------------------------------------
+[26/09/2026] v8.16.1 — fecha a revisão .Verify
+--------------------------------------------------------
+Versão leve: o index.html só perdeu o id morto `moduloRota` e teve cinco linhas
+de COMENTÁRIO saneadas. Nenhuma linha de código mudou, e o comportamento do app
+é o mesmo — conferido depois: base carrega (39 pontos), ordenação alfabética
+igual, rota traça, link gera, e a tela do técnico mostra os nomes reais
+normalmente (as 5 paradas idênticas ao que o escritório mandou, nenhum nome
+fictício vazando para a tela).
+O resto da versão é documentação: CLAUDE.md, MAPA-DO-CODIGO.md, README.md,
+LOG-ALTERACOES.txt e .gitignore. O detalhe está na entrada da revisão, acima.

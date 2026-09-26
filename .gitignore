@@ -38,6 +38,11 @@ COMPARACAO-*.html
 # Ficam só na máquina; o Git já é o histórico oficial.
 backups/
 
+# --- Bloco de notas de quem trabalha na pasta ---
+# Qualquer rascunho solto na raiz entra no próximo "git add -A" e vai parar num
+# repositório PÚBLICO. Anotação de trabalho mora aqui, e esta pasta não sobe.
+notas/
+
 # --- Arquivos compactados ---
 *.zip
 

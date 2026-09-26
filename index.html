@@ -915,7 +915,7 @@
   /* O nome quebra linha em vez de ser cortado com "…". Medido em 08/09/2026 na
      base real: o maior nome precisa de 438px e a caixa tinha 207px — o corte
      comia mais da metade, justamente o final, que é o que distingue uma unidade
-     da outra ("… - EDUCAÇÃO" / "… - ASSISTENCIA SOCIAL"). Com a divisória, quem
+     da outra ("… - EDUCAÇÃO" / "… - SAUDE"). Com a divisória, quem
      tem monitor largo abre o painel e o nome cabe numa linha; quem está numa
      tela menor lê em duas linhas, mas lê inteiro. */
   .grupo-nome{flex:1;min-width:0;white-space:normal;line-height:1.3;overflow-wrap:anywhere;}
@@ -1825,7 +1825,7 @@
       <!-- Ações: calcular rota respeitando a ordem atual, ou deixar o OSRM otimizar a ordem.
            Ganhou título na v5.7, porque virou módulo e precisava de onde pegar. -->
       <section class="modulo-movel" data-modulo="m5">
-      <div class="modulo-corpo" id="moduloRota">
+      <div class="modulo-corpo">
         <div class="field-label">
           <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Rota</span>
         </div>
@@ -2086,7 +2086,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.16.0';
+const VERSAO = '8.16.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -3220,7 +3220,7 @@ function loadFile(file){
 }
 
 // Extrai do .umap a lista de clientes, cada um com suas filiais:
-//   [{ cliente: 'LABORATORIO BURIGO', pontos: [{name, lat, lng, id}, ...] }, ...]
+//   [{ cliente: 'LABORATORIO EXEMPLO', pontos: [{name, lat, lng, id}, ...] }, ...]
 //
 // O nome da camada muda de lugar conforme a versão/instalação do uMap:
 //   properties.name    — umap.hotosm.org (é o que a base real usa, verificado
@@ -3284,8 +3284,8 @@ function lerUmap(data){
 // Ordena a base em ordem alfabética, nos três níveis (grupo → camada → unidade).
 //
 // Usa Intl.Collator com 'pt-BR' em vez do sort() padrão: a comparação padrão é
-// byte a byte, o que joga acentos e cedilha para depois do Z ("IÇARA" cairia
-// depois de "INFANTIL", "ÁGUA VERDE" depois de "ZONA SUL"). Com a base atual
+// byte a byte, o que joga acentos e cedilha para depois do Z ("AÇUDE" cairia
+// depois de "ANTAS", "ÁGUA VERDE" depois de "ZONA SUL"). Com a base atual
 // isso ainda não aparece, mas apareceria no primeiro cliente cadastrado com
 // acento inicial. numeric:true também põe "FILIAL 2" antes de "FILIAL 10".
 //
@@ -6187,7 +6187,7 @@ function prepararEnvio(distance, duration, geometry){
 // FORMATO v5 — compacto. O v3 (JSON) gerava links de ~1200 caracteres para 11
 // paradas, o que incomodava ao mandar por WhatsApp. Três mudanças cortaram 39%:
 //   1. Nomes de cliente e de tipo de serviço viram TABELAS, citadas por índice.
-//      Antes "LABORATORIO BURIGO" era repetido em cada filial daquele cliente.
+//      Antes "LABORATORIO EXEMPLO" era repetido em cada filial daquele cliente.
 //   2. Separadores (~ | *) no lugar da pontuação do JSON (aspas, colchetes).
 //   3. Coordenadas como inteiros e por DIFERENÇA da parada anterior: paradas
 //      vizinhas ficam a poucos milésimos de grau, então "1664" no lugar de
