@@ -2086,7 +2086,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.16.1';
+const VERSAO = '8.17.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2909,13 +2909,85 @@ function paddingDoMapa(base = 40){
    rodado ou não: quando ela não roda (aba sem pintura, ou um segundo clique
    interrompendo o voo), só o pan valia e a parada ia parar na borda — medido
    x=8 numa área visível de 676px. Calculando o centro, o ponto cai no meio da
-   área visível nos dois casos (medido: x=338 de 676). */
+   área visível nos dois casos (medido: x=338 de 676).
+
+   ⚠️ **REDE DE SEGURANÇA (v8.17.0, relatado pelo usuário: "ao dar o zoom em
+   qualquer parada que esteja dentro da ordem de viagem parece que a tela não
+   acompanha muito bem").** O centro calculado estava certo — o que falhava era
+   o `setView` ANIMADO não chegar ao fim. Medido na base real, seis paradas
+   clicadas em sequência: com `animate:false` o ponto cai em (464, 328), o alvo
+   exato, e o zoom vai a 16 nas seis; com `animate:true`, o mapa não se mexe —
+   o zoom fica em 15 e a parada para entre 69 e 250px do alvo.
+   É a mesma família das armadilhas das v6.5/v6.9/v8.0.0/v8.1.0: a animação é
+   um enfeite que não pode ser o único caminho até o resultado. Agora o destino
+   é conferido depois, e aplicado de uma vez se não chegou.
+   ⚠️ A conferência **desiste se a pessoa arrastou o mapa** nesse meio tempo: a
+   vontade de quem está mexendo vence a correção automática. É por isso que
+   existe `arrastouDepois`, e não um simples "aplique sempre".
+   ⚠️ **No modo leve nem se tenta animar**: lá a animação não é bem-vinda, e o
+   clique fica instantâneo — que é o comportamento certo na máquina fraca, onde
+   o borrão do vidro entra e sai a cada `movestart`/`moveend` e faz justamente a
+   tela "não acompanhar". */
+/* ⚠️ **É VOO (`flyTo`), E NÃO `setView` ANIMADO** (v8.17.1, relatado pelo
+   usuário: "tem uma animação que parece um delay meio travado"). O `setView`
+   animado do Leaflet tenta um zoom animado de 0,25s e **desiste quando o
+   destino está longe**, caindo num salto instantâneo — daí o "nada, nada,
+   PULO". O `flyTo` sempre anima, em arco, perto ou longe: é o mesmo recurso do
+   efeito ao traçar (v8.0.0), só que curto.
+   ⚠️ **A tolerância da rede é em PIXEL, e isso foi um defeito meu na v8.17.0.**
+   Eu comparava o centro em graus com 1e-7 (~1cm). Medido: o Leaflet erra
+   **0,42 pixel** ao aplicar um centro mesmo SEM animação nenhuma — ou seja,
+   `chegou` dava falso SEMPRE, e a rede disparava um `setView` seco no fim de
+   toda ida. Era essa a "animação travada": o voo terminava e, um tempo depois,
+   vinha o solavanco. Comparando em pixel com folga de 2, ela só dispara quando
+   o mapa de fato não chegou.
+   ⚠️ **São dois relógios, e os dois precisam existir.** O curto (140ms) pega o
+   caso "a animação nem começou" — aba sem pintura, ou o navegador engasgando —
+   e resolve na hora, sem fazer ninguém esperar o voo inteiro. O longo pega o
+   "começou e parou no meio". Um só não cobre os dois sem escolher entre
+   demorar à toa ou cortar o voo pela metade. */
+const DUR_VOO_PARADA = 0.55;          // segundos de voo até a parada clicada
+let relogioCentralizar = null, relogioCentralizar2 = null, arrastouDepois = false;
+
 function centralizarVisivel(latlng, zoom, animar){
   const folga = folgaDasColunas();
-  if (!folga){ map.setView(latlng, zoom, { animate: animar }); return; }
-  const centro = map.unproject(map.project(latlng, zoom).add([folga / 2, 0]), zoom);
-  map.setView(centro, zoom, { animate: animar });
+  // O destino, já com o deslocamento dos cartões descontado
+  const centro = folga
+    ? map.unproject(map.project(latlng, zoom).add([folga / 2, 0]), zoom)
+    : L.latLng(latlng[0], latlng[1]);
+
+  clearTimeout(relogioCentralizar); clearTimeout(relogioCentralizar2);
+  arrastouDepois = false;
+  if (!(animar && !modoLeve())){ map.setView(centro, zoom, { animate: false }); return; }
+
+  const partida = map.getCenter(), zoomPartida = map.getZoom();
+  map.flyTo(centro, zoom, { duration: DUR_VOO_PARADA, easeLinearity: .25 });
+
+  // Chegou = o destino está no meio do contêiner, com folga de 2px
+  const chegou = () => {
+    if (map.getZoom() !== zoom) return false;
+    const p = map.latLngToContainerPoint(centro), meio = map.getSize().divideBy(2);
+    return Math.abs(p.x - meio.x) <= 2 && Math.abs(p.y - meio.y) <= 2;
+  };
+  const resolverNaMarra = () => {
+    if (arrastouDepois || chegou()) return;
+    map.stop();                                   // corta o voo pela metade
+    map.setView(centro, zoom, { animate: false });
+  };
+  // (a) o voo nem saiu do lugar: não faz sentido esperar o resto dele
+  relogioCentralizar = setTimeout(() => {
+    if (arrastouDepois || chegou()) return;
+    const parado = map.getZoom() === zoomPartida
+                && map.getCenter().equals(partida, 1e-9);
+    if (parado) resolverNaMarra();
+  }, 140);
+  // (b) saiu, mas parou no meio do caminho
+  relogioCentralizar2 = setTimeout(resolverNaMarra, DUR_VOO_PARADA * 1000 + 220);
 }
+/* Só um gesto de verdade dispara `dragstart` no Leaflet — `setView` não —,
+   então isto distingue "a pessoa pegou o mapa" de "o app moveu o mapa". É o que
+   faz a rede de segurança de `centralizarVisivel()` saber quando calar a boca. */
+if (map) map.on('dragstart', () => { arrastouDepois = true; });
 
 // Ícone de bolinha simples (usado para clientes e para o marcador de origem, cor varia por chamada)
 function dot(color){

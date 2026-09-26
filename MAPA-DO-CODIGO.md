@@ -77,6 +77,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | origem | `Origin` / `Origem padrão salva` | `setOrigin`, `lerOrigemPadrao` |
 | traçar / otimizar | `Routing` | `drawResult`, `prepararEnvio` |
 | efeito ao traçar | `Efeito ao traçar a rota (v8.0.0)` | `efeitoLigado`, `animarNumero` |
+| clicar na parada e ir até ela | `Centraliza um ponto na parte visível` | `centralizarVisivel`, `verParadaNoMapa`, `DUR_VOO_PARADA` |
 | mover módulos entre colunas | `Arrastar um módulo pela alça…` | `destinoDoModulo`, `moverModulo` |
 | ordem em que os módulos nascem | `MODULOS` / `ORDEM_PADRAO` | `arranjoNormal` |
 | alturas dentro das colunas | `Espaço dividido entre os módulos 3 e 4` | `alturasGuardadas`, `atualizarModulosNasColunas` |
@@ -229,7 +230,11 @@ mudou stops, origem, retorno, ou trocou a base
    pausa `requestAnimationFrame` e as transições/animações. `moveend` pode não
    chegar, `setView` animado não aplica, `getComputedStyle` devolve o último
    valor confirmado. Toda animação do app tem rede de `setTimeout`.
-   *Já mordeu nas v6.5, v6.9, v8.0.0, v8.1.0, v8.4.2 e v8.7.0.*
+   *Já mordeu nas v6.5, v6.9, v8.0.0, v8.1.0, v8.4.2, v8.7.0 e v8.17.0.*
+   ⚠️ A da **v8.17.0** é a mais instrutiva: o clique na parada tinha o centro
+   calculado certo, mas o `setView` **animado** era o único caminho até lá. Não
+   basta a conta estar certa — o caminho até o resultado também não pode
+   depender da animação.
 2. **`#map` nunca pode ser `position:static`.** Os painéis do Leaflet se ancoram
    no primeiro ancestral posicionado; static faz eles vazarem por cima do painel.
 3. **`display:contents` não muda a árvore do HTML** — o seletor precisa descer

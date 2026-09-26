@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 26/09/2026 — v8.16.1 (primeira revisão `.Verify`)
+> **Última atualização:** 26/09/2026 — v8.17.1 (a ida até a parada ficou suave)
 
 ---
 
@@ -812,9 +812,50 @@ sem dependências instaladas. Abre direto no navegador.
 - **Clicar na parada leva o mapa até ela** (v6.9.0): clique no nome ou no número
   centraliza o mapa na parada com zoom 16, abre o balão e acende o marcador. O
   zoom **nunca afasta** (se já estiver mais perto, só centraliza). Alça e botões
-  mantêm a função deles. ⚠️ Em aba de segundo plano o `setView` animado do Leaflet
-  não chega a ser aplicado (relógio de quadros pausado) — é artefato de teste,
-  não do app
+  mantêm a função deles.
+  ⚠️ **CORRIGIDO NA v8.17.0** (relatado pelo usuário: "ao dar o zoom em qualquer
+  parada que esteja dentro da ordem de viagem parece que a tela não acompanha
+  muito bem. Preciso que o zoom e foco passe a ser o ponto clicado"). O centro
+  calculado sempre esteve certo — o que falhava era o **`setView` animado não
+  chegar ao fim**, e ele era o **único** caminho até o resultado. Medido na base
+  real, seis paradas clicadas em sequência: com `animate:false` o ponto cai no
+  alvo exato e o zoom vai a 16 nas seis; com `animate:true` (como o app fazia), o
+  mapa **não se mexe** — o zoom fica em 15 e a parada para entre **69 e 250px**
+  do alvo. Depois da correção: **erro de 1 pixel** nas seis, zoom 16 em todas.
+  ⚠️ **A lição é a regra do projeto aplicada a um lugar que tinha escapado**: a
+  animação não pode ser o único caminho até o resultado. `centralizarVisivel()`
+  agora confere o destino 420ms depois e aplica de uma vez se não chegou — a
+  mesma rede de `setTimeout` das v6.5/v6.9/v8.0.0/v8.1.0.
+  ⚠️ **A conferência desiste se a pessoa arrastou o mapa** nesse meio tempo
+  (`arrastouDepois`, ligado no `dragstart`, que o Leaflet só dispara em gesto de
+  verdade — `setView` não dispara). Sem isso a correção puxaria o mapa de volta
+  debaixo da mão de quem está olhando outra coisa.
+  ⚠️ **A v8.17.0 nasceu com um defeito próprio, corrigido na v8.17.1** (relatado
+  na hora: "tem uma animação que parece um delay meio travado"). A rede comparava
+  o centro **em graus, com 1e-7** (~1cm). Medido: o Leaflet erra **0,42 pixel**
+  ao aplicar um centro mesmo **sem animação nenhuma** — ou seja, "chegou" dava
+  falso SEMPRE e a rede disparava um `setView` seco no fim de toda ida. A
+  animação rodava e, um tempo depois, vinha o solavanco. Agora a comparação é
+  **em pixel, com folga de 2**: medido no mesmo ponto, a regra antiga dá `false`
+  e a nova dá `true`, e a rede não dispara nenhuma vez com o mapa já no lugar.
+  **Lição: tolerância em unidade de mundo para julgar coisa de tela é armadilha
+  — o número parece pequeno e é quinze vezes menor que o erro do próprio
+  Leaflet.**
+  ⚠️ **E a ida virou VOO (`flyTo`), não `setView` animado.** O `setView` animado
+  tenta um zoom de 0,25s e **desiste quando o destino está longe**, caindo num
+  salto instantâneo — o "nada, nada, PULO" que também pesava na sensação de
+  travado. O `flyTo` sempre anima, em arco, perto ou longe; é o mesmo recurso do
+  efeito ao traçar (v8.0.0), só que curto (`DUR_VOO_PARADA`, 0,55s).
+  ⚠️ **São dois relógios, e os dois precisam existir**: o de 140ms pega "a
+  animação nem começou" e resolve na hora, sem fazer ninguém esperar o voo
+  inteiro; o de 770ms pega "começou e parou no meio". Um só teria de escolher
+  entre demorar à toa e cortar o voo pela metade.
+  ⚠️ **No modo leve nem se tenta animar**, e o clique fica instantâneo (medido:
+  1,8ms). É o comportamento certo na máquina fraca — lá o borrão do vidro entra e
+  sai a cada `movestart`/`moveend`, e é isso que faz a tela "não acompanhar".
+  ⚠️ O que **não** mudou: com o zoom bloqueado (v7.3.0) o mapa continua parado e
+  só o balão abre; e a parada avulsa recém-criada continua levando o mapa até
+  ela mesmo bloqueado (testados os dois)
 - **Botão que bloqueia e libera esse zoom** (v7.3.0, pedido do usuário): lupa no
   **título do módulo 4**, à direita — no módulo em que o clique acontece, então
   ela acompanha o módulo quando ele muda de coluna. Liberado (padrão) é a lupa
@@ -1707,6 +1748,8 @@ de arquitetura, para retomar quando fizer sentido):
 | 105 | **v8.15.0** — O que o mapa mostra dos clientes: um botão apaga ou esconde as bolinhas de fora da viagem |
 | 106 | **v8.16.0** — O trajeto do dia na tela do campo (link v10 com a geometria simplificada) |
 | 107 | **v8.16.1** — Primeira revisão `.Verify`: nomes reais fora dos arquivos versionados, mapa do código e README em dia |
+| 108 | **v8.17.0** — Correção: o clique na parada nem sempre chegava ao ponto (a animação era o único caminho) |
+| 109 | **v8.17.1** — A ida até a parada vira voo em arco, e a rede de segurança para de dar solavanco |
 
 ---
 
@@ -1774,7 +1817,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.16.1
+8.17.1
 ```
 
 ### Onde o número aparece
@@ -1906,3 +1949,5 @@ os backups locais são conveniência, não garantia.
 | 8.15.0 | 26/09/2026 | O que o mapa mostra dos clientes: tudo / fora da viagem apagado / fora da viagem escondido |
 | 8.16.0 | 26/09/2026 | O trajeto do dia na tela do campo, com o desenho da rota dentro do link |
 | 8.16.1 | 26/09/2026 | Revisão `.Verify`: saneamento dos nomes reais, correções no mapa do código e no README |
+| 8.17.0 | 26/09/2026 | Correção: o clique na parada passa a chegar sempre ao ponto clicado, com rede de segurança |
+| 8.17.1 | 26/09/2026 | A ida até a parada em voo suave; a rede deixa de disparar a toa (tolerância em pixel) |

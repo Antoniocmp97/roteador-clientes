@@ -6956,3 +6956,99 @@ normalmente (as 5 paradas idênticas ao que o escritório mandou, nenhum nome
 fictício vazando para a tela).
 O resto da versão é documentação: CLAUDE.md, MAPA-DO-CODIGO.md, README.md,
 LOG-ALTERACOES.txt e .gitignore. O detalhe está na entrada da revisão, acima.
+
+--------------------------------------------------------
+[26/09/2026] v8.17.0 — o clique na parada chega ao ponto
+--------------------------------------------------------
+RELATO DO USUÁRIO
+  "Ao dar o zoom em qualquer parada que esteja dentro da ordem de viagem parece
+   que a tela não acompanha muito bem. Preciso que o zoom e foco passe a ser o
+   ponto clicado."
+
+O DIAGNÓSTICO (medido, não suposto)
+  A conta do centro deslocado estava CERTA. O que falhava era o `setView`
+  ANIMADO não chegar ao fim — e ele era o ÚNICO caminho até o resultado.
+  Base real, seis paradas clicadas em sequência, vidro ligado, folga de 352px,
+  alvo em (464, 328):
+     animate:true  (como o app fazia) -> zoom preso em 15, parada entre 69 e
+                                         250px do alvo, nas seis
+     animate:false (mesma conta)      -> (464, 328) exato e zoom 16, nas seis
+  Ou seja: não era erro de cálculo, era dependência de animação — a armadilha
+  que já mordeu nas v6.5, v6.9, v8.0.0, v8.1.0, v8.4.2 e v8.7.0, e contra a
+  qual existe regra no CLAUDE.md desde 24/09.
+
+A CORREÇÃO
+  `centralizarVisivel()` guarda o destino, manda o `setView` e, 420ms depois,
+  CONFERE: se o mapa não chegou (zoom diferente, ou centro a mais de 1e-7 de
+  grau), aplica de uma vez, sem animação.
+  · Desiste se a pessoa ARRASTOU o mapa nesse meio tempo (`arrastouDepois`,
+    ligado no `dragstart` — que o Leaflet só dispara em gesto de verdade,
+    nunca em `setView`). Sem isso a correção puxaria o mapa de volta debaixo da
+    mão de quem já estava olhando outra coisa.
+  · No MODO LEVE nem tenta animar: o clique fica instantâneo. É o certo na
+    máquina fraca, onde o borrão do vidro entra e sai a cada movestart/moveend
+    e é justamente isso que faz a tela "não acompanhar".
+  · O centro deslocado passou a ser calculado nos DOIS casos (com e sem folga),
+    em vez de haver um caminho curto para folga 0 — menos um lugar por onde a
+    lógica pode divergir.
+
+MEDIDAS DEPOIS
+  Seis paradas em sequência, vidro ligado: erro de 1 PIXEL no pior caso, zoom 16
+    em todas (antes: 69 a 250px de erro e zoom parado em 15).
+  Vidro desligado (folga 0): erro de 1px.
+  Empilhado a 420px (mapa de 420x315): erro de 1px.
+  MODO LEVE: 1,8ms, sem animação, no alvo.
+  Dois cliques rápidos seguidos: vale o último, no alvo.
+  Arraste durante os 420ms: a correção desiste e o mapa fica onde a pessoa
+    soltou — conferido comparando o centro antes e depois.
+  Zoom bloqueado (v7.3.0): o mapa NÃO se mexe e o balão abre, como antes.
+  Parada avulsa recém-criada pelo campo: leva o mapa até ela mesmo com o zoom
+    bloqueado, e cai no alvo exato — a exceção da v7.3.0 continua de pé.
+  Sem erro de console.
+
+⚠️ ERRO MEU NO TESTE, PARA NÃO REPETIR
+  Testei a avulsa chamando `criarParadaAvulsa()` direto e conclui que estava
+  quebrada (o ponto caiu em -1827, 2706). Quem leva o mapa até ela é
+  `adicionarAvulsaPeloCampo()`, o chamador. A função de criar não mexe no mapa,
+  e nunca mexeu.
+
+--------------------------------------------------------
+[26/09/2026] v8.17.1 — a ida até a parada ficou suave
+--------------------------------------------------------
+RELATO DO USUÁRIO, logo depois de testar a v8.17.0
+  "Centralizou, porém tem uma animação que parece um delay meio travado.
+   Suavize a animação."
+
+O DEFEITO ERA DA PRÓPRIA v8.17.0
+  A rede de segurança que eu tinha acabado de escrever comparava o centro
+  EM GRAUS, com tolerância de 1e-7 (~1cm). Medido: o Leaflet erra 0,42 PIXEL ao
+  aplicar um centro mesmo SEM animação nenhuma (diferença de 1,6e-6 de latitude
+  e 9,1e-6 de longitude). Ou seja, "chegou" dava FALSO sempre, e a rede
+  disparava um `setView` seco 420ms depois de TODA ida. O voo rodava e, um tempo
+  depois, vinha o solavanco — exatamente o "delay meio travado".
+  ⚠️ LIÇÃO: tolerância em unidade de mundo para julgar coisa de tela é
+  armadilha. 1e-7 grau "parece" apertado o suficiente e é quinze vezes menor que
+  o erro de arredondamento do próprio Leaflet.
+
+DUAS MUDANÇAS
+  1. A conferência passou a ser EM PIXEL, com folga de 2: o destino tem de estar
+     no meio do contêiner. Medido no mesmo ponto: a regra antiga devolve `false`
+     (com o mapa no lugar certo!) e a nova devolve `true`. Com o mapa já no
+     destino, a rede não dispara nenhuma vez — antes disparava em todas.
+  2. A ida virou VOO (`flyTo`, 0,55s) no lugar do `setView` animado. O `setView`
+     animado tenta um zoom de 0,25s e DESISTE quando o destino está longe,
+     caindo num salto instantâneo: o "nada, nada, PULO". O `flyTo` sempre anima,
+     em arco, perto ou longe — é o mesmo recurso do efeito ao traçar (v8.0.0),
+     só que curto.
+  E a rede virou DOIS relógios: 140ms para "o voo nem saiu do lugar" (resolve na
+  hora, sem esperar o voo inteiro) e 770ms para "saiu e parou no meio". Um só
+  teria de escolher entre demorar à toa e cortar o voo pela metade.
+
+MEDIDAS
+  Seis paradas em sequência: erro de 1 pixel no pior caso, zoom 16 em todas.
+  Com o mapa já no destino: ZERO disparos da rede (antes: um por clique).
+  Arraste durante o voo: a rede desiste, o mapa fica onde foi solto.
+  Dois cliques em 80ms: vale o último, no alvo, sem sobra do voo anterior.
+  MODO LEVE: 1,6ms, sem voo nenhum, no alvo.
+  Zoom bloqueado (v7.3.0): mapa parado, balão abre.
+  Sem erro de console.
