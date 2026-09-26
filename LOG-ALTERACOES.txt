@@ -6412,3 +6412,114 @@ TESTES (base sintética de 39 clientes / 78 pontos)
   Tela de 375px: nada muda — ali as listas usam max-height (200px) e a correção
     nem roda; o valor guardado fica intacto.
   Sem erro no console.
+
+--------------------------------------------------------
+[25/09/2026] v8.12.0 — O modulo Rota rola como os outros; botao mais limpo
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  "Realmente a questão do scroll no módulo Rota está me incomodando, aquele
+  background não me agrada, precisa ficar fluido igual os outros."
+  E, junto: "troque o nome do botão Otimizar e traçar para: Rota otimizada.
+  Tire a cor de background, deixando o botão mais limpo."
+
+O QUE SAIU
+  O módulo Rota deixou de ser `sticky`. Ele rola como qualquer outro módulo.
+  Com isso saíram, de uma vez:
+   · a regra `position:sticky; top:0; bottom:0` (painel e colunas);
+   · o fundo do estado grudado, nas quatro variantes que ele tinha acumulado
+     (vidro/tema escuro, tema claro, sem vidro e o fio do modo leve);
+   · o `padding:16px 0` com `margin:-16px 0` que cobria o respiro da coluna;
+   · o modo compacto (esconder a opção de retorno e o status, encolher o resumo);
+   · a sentinela e a margem negativa de -14px que ela precisava;
+   · a função atualizarRotaGrudada() e TODA a escuta dela: `scroll` em `main`
+     na fase de captura, `resize`, um ResizeObserver e três MutationObserver.
+  Ao todo: 159 linhas a menos.
+
+⚠️ O QUE SE PERDE, DE PROPÓSITO
+  A v6.5 (sugestão de layout 5) existia porque os botões de traçar ficavam
+  abaixo da dobra com a base carregada. Isso volta a acontecer: com a lista
+  cheia, é preciso rolar até o módulo Rota. Foi a troca que o usuário pediu, e
+  vale registrar para o caso de o assunto voltar — o caminho seria repor a
+  visibilidade SEM um fundo que flutua sobre a lista.
+
+⚠️ DE BRINDE: O SUSPEITO DE DESEMPENHO FOI JUNTO
+  A revisão de 24/09 tinha deixado em aberto exatamente isto: "o módulo Rota
+  grudado escuta `scroll` em `main` na fase de captura, então qualquer rolagem
+  de qualquer lista dispara atualizarRotaGrudada(), que lê duas caixas. Em
+  máquina fraca isso pode pesar ao rolar o checklist." O item se resolveu
+  sozinho — não há mais nada escutando rolagem no app.
+  ⚠️ Continua sem medição: aqui o problema não reproduz. O que dá para afirmar
+  é que o código saiu.
+
+O BOTÃO
+  "Otimizar e traçar" -> "Rota otimizada", e sem o preenchimento âmbar.
+  A hierarquia da v7.9.0 continua de pé por dois outros caminhos: ele é o dobro
+  da largura do vizinho (medido: 185px contra 105px) e usa o âmbar, que é a cor
+  forte do app, contra o teal do alternativo. É a mesma forma que o usuário
+  escolheu para os botões de navegação da tela do campo na v7.8.0 — "sem cor,
+  porém o contorno com a cor laranja".
+  Entrou nas duas listas de "caixas de dentro" (a do vidro, a 80%, e a do modo
+  sem vidro, sólida), como o .secondary já estava.
+
+TESTES
+  Varredura da rolagem inteira do painel: ZERO posições com fundo ou sombra no
+    módulo Rota (antes ele pintava em quase todas).
+  O mesmo numa coluna: zero anomalias, `position: static`.
+  Respiro entre módulos: 14px em todos os seis vãos do painel, inclusive antes
+    e depois da Rota — a margem negativa da sentinela não fazia falta.
+  Botão: "Rota otimizada", texto e borda em rgb(242,169,60), 185px contra os
+    105px do "Nesta ordem"; no tema claro, rgb(201,130,26).
+  Otimizar continua funcionando: 11,8 km e "Ordem otimizada e rota traçada."
+  Conferido com vidro, sem vidro, no MODO LEVE e nos dois temas.
+  Sem erro no console.
+
+--------------------------------------------------------
+[25/09/2026] v8.13.0 — A Rota nasce logo abaixo da Origem
+--------------------------------------------------------
+
+PEDIDO DO USUÁRIO
+  Depois de aprovar a v8.12.0: "pensei em algo que pode resolver a questão de
+  ter que descer até a parte inferior para achar o botão, podemos botar o
+  módulo para vir como padrão logo abaixo do Origem".
+  É a resposta ao custo que a v8.12.0 assumiu de propósito ao tirar o sticky —
+  e é uma solução melhor do que a que saiu: em vez de um módulo flutuando sobre
+  a lista, ele simplesmente nasce onde se enxerga.
+
+O QUE FOI FEITO
+  A ordem padrão do painel deixou de ser a dos apelidos (m1..m7) e virou
+  m1, m2, m5, m3, m4, m6, m7 — ou seja, Clientes, Origem, ROTA, Selecionar
+  paradas, Ordem da viagem, Enviar para o campo, Roteiro.
+  Entrou numa constante própria (ORDEM_PADRAO), separada de ORDEM_MODULOS, que
+  continua sendo só a lista de apelidos para iterar.
+  ⚠️ O MARKUP do <body> foi reordenado junto: a section do módulo 5 subiu para
+  depois da do módulo 2. Assim a primeira pintura já sai certa, sem depender de
+  aplicarArranjo() reordenar o DOM no arranque.
+  ⚠️ O duplo clique (que põe o módulo "na posição da numeração" ao trocar de
+  coluna) passou a usar ORDEM_PADRAO também — senão ele devolveria a Rota para
+  baixo do módulo 4.
+  ⚠️ Um módulo novo em MODULOS que alguém esqueça de listar em ORDEM_PADRAO
+  entra no fim, em vez de sumir da tela.
+
+RETROCOMPATIBILIDADE
+  Arranjo salvo antes disto abre exatamente como foi salvo — inclusive com a
+  ordem antiga — e o disquete NÃO acende. Testado com um arranjo gravado à mão
+  no formato antigo (m1..m7): voltou m1,m2,m3,m4,m5,m6,m7 e o disquete apagado.
+  A lixeira ("voltar ao normal") é que passa a devolver a ordem nova.
+
+LIMPEZA JUNTO
+  Saiu um `try{ }catch(e){}` VAZIO que estava logo antes de const MODULOS —
+  resquício de alguma edição antiga, achado agora ao mexer ali.
+
+MEDIDAS E TESTES (janela de 1280x830, base sintética de 39 clientes)
+  Sem rota: ordem na tela m1, m2, m5, m3 (os outros três ainda escondidos), e o
+    botão "Rota otimizada" a 143px do topo do painel.
+  COM rota traçada e os sete módulos visíveis: ordem m1,m2,m5,m3,m4,m6,m7, o
+    botão a 142px do topo e VISÍVEL SEM ROLAR, mesmo com o painel rolando.
+  Disquete não acende em nenhum dos dois — a ordem nova é o padrão, não uma
+    alteração pendente.
+  Arranjo salvo antigo: abre na ordem dele, disquete apagado.
+  Lixeira: devolve m1,m2,m5,m3,m4,m6,m7.
+  Mover m5 e m3 para a coluna e trazer de volta: a ordem padrão se refaz.
+  Modo leve: mesma ordem, botão a 185px, "Rota otimizada" em âmbar.
+  Sem erro no console.

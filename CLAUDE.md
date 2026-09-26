@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 25/09/2026 — v8.11.0 (teto dos puxadores de altura)
+> **Última atualização:** 25/09/2026 — v8.13.0 (a Rota nasce logo abaixo da Origem)
 
 ---
 
@@ -163,13 +163,9 @@ sem dependências instaladas. Abre direto no navegador.
   ⚠️ Em tela estreita (≤760px) **o vidro sai de cena**: volta o empilhado de
   antes, mapa em cima e painel embaixo, e `folgaDasColunas()` devolve 0.
   ⚠️ A divisória de largura perdeu o fundo sólido: sobre o mapa, ela cortaria a
-  imagem em duas. ⚠️ **O módulo Rota também perdeu o fundo fixo**: ele tinha
-  `background:var(--panel)` desde a v6.5 para tapar a lista que rola por baixo
-  quando está grudado, e sobre o vidro isso virava um bloco escuro dentro do
-  cartão em qualquer posição (relatado pelo usuário, com print). Agora o fundo
-  entra **só enquanto ele flutua**, com o material do cartão (92% + blur 10px) —
-  parado no lugar dele não há nada passando por baixo. A marca `grudado` é
-  espelhada na section (`rota-grudada`) porque, nas colunas, quem gruda é ela.
+  imagem em duas. ⚠️ O módulo Rota também perdeu o fundo fixo aqui, e o assunto voltou mais
+  três vezes até a **v8.12.0 tirar o sticky inteiro**. O histórico fica no
+  `LOG-ALTERACOES.txt`; nada disso está mais no código.
   ⚠️ **E a folga de 120px da v7.1.0 passou a valer só para a borda de baixo**:
   em cima ela fazia o módulo **nascer grudado** quando estava na primeira
   posição e a coluna não tinha rolado (a sentinela fica em `c.top + h - 16`, por
@@ -213,11 +209,6 @@ sem dependências instaladas. Abre direto no navegador.
     custaria mais caro que tê-lo deixado ligado. ⚠️ E há rede de segurança de
     2,5s, pela armadilha de sempre (v6.5/v6.9/v8.0.0): em aba sem pintura o
     `moveend` pode não chegar, e o vidro ficaria congelado para sempre.
-  · **O módulo Rota grudado perdeu o `backdrop-filter`** de vez: o que está
-    atrás dele é o próprio cartão, que **já vem borrado** — borrão aninhado em
-    borrão, o caso mais caro que existe, para não mudar nada que se veja. A
-    tinta subiu de 92% para 94%. Sem vidro ele volta a ser **opaco**, senão
-    sobraria um fantasma da lista rolando por baixo.
   · **Interruptor no cabeçalho** (`hg_vidro`, ícone de camadas ao lado do tema,
     riscado e em âmbar quando desligado — o mesmo idioma da lupa do módulo 4):
     desligado, o app volta ao **layout de antes da v8.1.0**, com o painel opaco
@@ -230,18 +221,12 @@ sem dependências instaladas. Abre direto no navegador.
     `prefers-reduced-transparency` do sistema — o "efeitos de transparência" do
     Windows. ⚠️ A regra vive dentro de `@media (min-width:761px)`: em tela
     estreita quem manda é o empilhado, e os dois modos dão o mesmo layout.
-  ⚠️ **O fundo do módulo Rota grudado tem de incluir o VÉU do cartão**
-  (v8.10.0, relatado pelo usuário: "às vezes ao dar scroll fica com um fundo à
-  mostra"). O fundo dele pinta **acima** do `inset 0 0 0 2000px rgba(0,0,0,.18)`
-  do cartão, então uma tinta de 94% de `--panel` saía com a cor da tinta **sem**
-  o véu: medido, **rgb(22,35,42)** contra os **rgb(18,28,34)** do cartão em
-  volta — uma laje mais clara atravessando a coluna. A conta agora é tinta de
-  94% sobre `--map-bg`, e o resultado a **82% sobre preto** (os mesmos 18%); no
-  tema claro, **65% sobre branco**. Medido depois: **diferença 0 nos dois**.
-  ⚠️ E ficou **opaco** — a 94% a lista ainda passava 6% por baixo, que é
-  justamente o que o fundo existe para tapar. ⚠️ No modo leve a sombra dele
-  vira um **fio de 1px**, e não some como a dos outros: ali ela é o único sinal
-  de que a lista está passando por baixo.
+  ⚠️ **Lição que sobreviveu à v8.10.0**, mesmo com o sticky fora: o fundo de um
+  filho pinta **acima** do véu do cartão (`inset 0 0 0 2000px rgba(0,0,0,.18)`),
+  então uma tinta de 94% de `--panel` sai com a cor **sem** o véu — medido,
+  rgb(22,35,42) contra os rgb(18,28,34) do cartão em volta. Quem precisar casar
+  com o cartão tem de pôr o véu na conta: tinta sobre `--map-bg`, e o resultado
+  a 82% sobre preto (65% sobre branco no tema claro).
   ⚠️ **O `#map` nunca pode virar `position:static`** (v8.3.0, relatado com
   print: "com o vidro desligado o mapa fica por cima"). Os painéis do Leaflet —
   ladrilhos, marcadores, traçado — são `position:absolute` e se ancoram no
@@ -484,6 +469,15 @@ sem dependências instaladas. Abre direto no navegador.
   na tela **mapa · coluna 3 · coluna 2 · painel**. Os sete módulos — Clientes,
   Origem, Selecionar paradas, Ordem da viagem, Rota (botões + status),
   Enviar para o campo e Roteiro — têm alça no título.
+  ⚠️ **A ordem em que eles nascem no painel não é a dos apelidos** desde a
+  v8.13.0: é `ORDEM_PADRAO` = **m1, m2, m5, m3, m4, m6, m7** — Clientes, Origem,
+  **Rota**, Selecionar paradas, Ordem da viagem, Enviar, Roteiro. `ORDEM_MODULOS`
+  continua sendo só a lista de apelidos, para iterar. O **markup do `<body>`
+  segue a mesma ordem**, para a primeira pintura já sair certa. E o **duplo
+  clique** (que joga o módulo "na posição da numeração" ao trocar de coluna) usa
+  `ORDEM_PADRAO` também — senão devolveria a Rota para baixo do módulo 4.
+  ⚠️ Arranjo salvo antes disso abre **como foi salvo**, com a ordem antiga, e o
+  disquete não acende; só a lixeira devolve a ordem nova.
   ⚠️ **Os títulos deixaram de ser numerados na v7.5.1** (ponto 6 da revisão de
   design, escolha do usuário entre numerar todos ou tirar): a sequência na tela
   era "1, 2, 3, 4, Rota, 5, Roteiro" e, com os módulos móveis desde a v6.0, o
@@ -612,31 +606,43 @@ sem dependências instaladas. Abre direto no navegador.
 - **Paradas prioritárias** (★): as marcadas ficam fixas no início, na ordem
   escolhida, e "Otimizar ordem" reordena só as demais — para quando é preciso
   passar num lugar antes do resto do roteiro
-- **Otimizar e traçar** — OSRM Trip API recalcula a melhor sequência, reordena a
+- **Rota otimizada** — OSRM Trip API recalcula a melhor sequência, reordena a
   lista e traça (`source=first`, `roundtrip=false`). É o **botão principal** do
-  módulo Rota desde a v7.9.0 (ponto 4 da revisão de design): âmbar e com o dobro
-  da largura do vizinho. O nome diz o **resultado**, não a mecânica
+  módulo Rota desde a v7.9.0 (ponto 4 da revisão de design). O nome diz o
+  **resultado**, não a mecânica — chamava-se "Otimizar e traçar" até a v8.12.0,
+  quando o usuário pediu o nome curto e **sem o preenchimento âmbar** ("tire a
+  cor de background, deixando o botão mais limpo").
+  ⚠️ A hierarquia continua de pé por dois outros caminhos: ele é o **dobro da
+  largura** do vizinho (medido: 185px contra 105px) e usa o **âmbar**, a cor
+  forte do app, contra o teal do alternativo. É a mesma forma que o usuário
+  escolheu para os botões de navegação da tela do campo na v7.8.0
 - **Nesta ordem** — rota respeitando a ordem que está na lista (OSRM Route API),
   sem reordenar. Virou a **alternativa** (contorno teal, estreita): traçar na
   ordem escolhida à mão é o caso especial, não o uso normal.
   ⚠️ O **Enter no campo de origem** continua disparando este, e não o principal:
   quem digita um endereço e aperta Enter não espera que a ordem das paradas mude
   sozinha
-- **Módulo Rota sempre visível** (v6.5.0, sugestão de layout 5): o módulo gruda na
-  coluna em que estiver — `position:sticky` com **top:0 e bottom:0**, então fica
-  preso na base enquanto o lugar natural dele está abaixo e no topo depois de
-  rolar por ele. Vale no painel e nas colunas, com o módulo em qualquer posição.
-  Enquanto grudado fica compacto (classe `grudado`, calculada por uma sentinela
-  logo depois do corpo): título, botões e o resumo km/min; a opção de retorno e o
-  status voltam no lugar natural. ⚠️ **Folga de 120px para soltar** (v7.1.0): sem
-  ela isto oscilava — compacto encolhe ~80px, a sentinela reaparece, solta, cresce
-  e gruda de novo, e o painel ficava piscando (relatado pelo usuário). O
-  observador de mudanças olha só painel e colunas; em `main` os ladrilhos do mapa
-  disparavam verificações à toa. ⚠️ O título **fica**: a alça mora nele, e sem ela
-  não dá para mover o módulo grudado. ⚠️ Dois tropeços registrados: `display:contents`
-  não muda a árvore do HTML (o seletor precisa descer pela `section`), e a marca
-  não pode ser atualizada dentro de `requestAnimationFrame` — o navegador pausa o
-  relógio quando a aba não está desenhando
+- **O módulo Rota rola como os outros** (v8.12.0, pedido do usuário: "a questão
+  do scroll no módulo Rota está me incomodando, aquele background não me agrada,
+  precisa ficar fluido igual os outros"). ⚠️ **Isto desfez a v6.5.0**, que o
+  deixava `sticky` — preso na base da coluna com o resto rolando por baixo.
+  Saíram juntos: a regra sticky, o **fundo do estado grudado nas quatro
+  variantes** que ele acumulou (vidro escuro, tema claro, sem vidro e o fio do
+  modo leve), o `padding:16px 0`/`margin:-16px 0`, o modo compacto, a sentinela
+  com a margem de -14px, e `atualizarRotaGrudada()` com toda a escuta dela.
+  **159 linhas a menos.** Medido depois: zero posições de rolagem com fundo ou
+  sombra, e 14px de respiro em todos os seis vãos do painel.
+  ⚠️ **O custo disso durou uma versão.** A v6.5 existia porque os botões de
+  traçar ficavam abaixo da dobra com a base carregada, e tirar o sticky trouxe
+  isso de volta. O usuário resolveu na **v8.13.0** com uma ideia melhor do que
+  a original: em vez de um módulo flutuando sobre a lista, a **Rota passou a
+  nascer logo abaixo da Origem**. Medido: o botão a 142px do topo do painel,
+  visível sem rolar mesmo com os sete módulos abertos.
+  ⚠️ **De brinde, o suspeito de desempenho foi junto**: a revisão de 24/09 tinha
+  deixado em aberto o `scroll` em `main` na fase de captura, que disparava duas
+  leituras de caixa a cada rolagem de qualquer lista. Não há mais nada
+  escutando rolagem no app. Continua **sem medição** — aqui o problema não
+  reproduz; o que dá para afirmar é que o código saiu
 - **Voltar para a origem no fim** (v6.3): interruptor no módulo Rota, guardado no
   navegador (`hg_voltar_origem`), **ligado por padrão**. A origem entra como último
   ponto do traçado, o otimizador fecha o círculo (`destination=last`, com a origem
@@ -1268,12 +1274,12 @@ alcançados pela classe `.versao`); e duas linhas apagam chaves de
 `localStorage` aposentadas na v4.4/v4.9, que já não existem em máquina nenhuma
 há meses.
 
-**3. Ponto a vigiar, não medido.** O módulo Rota grudado escuta `scroll` em
-`main` na **fase de captura**, então qualquer rolagem de qualquer lista dispara
-`atualizarRotaGrudada()`, que lê duas caixas. Em máquina fraca isso pode pesar
-ao rolar o checklist. Não dá para medir aqui (o problema não reproduz nesta
-máquina) e o código tem um aviso explicando por que não usa
-`requestAnimationFrame` — mexer nisso exige o teste na máquina do trabalho.
+**3. Ponto a vigiar.** ✅ **Resolvido na v8.12.0**, por tabela: o módulo Rota
+deixou de ser sticky a pedido do usuário, e com ele saiu a escuta de `scroll`
+em `main` na fase de captura — que disparava duas leituras de caixa a cada
+rolagem de qualquer lista. Não há mais nada escutando rolagem no app.
+⚠️ Continua **sem medição**: aqui o problema não reproduz. O que dá para
+afirmar é que o código saiu.
 
 **4. Comentários são 36% do arquivo** (130 KB de 365 KB). Fica registrado como
 fato, não como problema: o GitHub Pages serve comprimido e o navegador descarta
@@ -1434,6 +1440,8 @@ de arquitetura, para retomar quando fizer sentido):
 | 99 | **v8.9.0** — A parada é do técnico, não da base (★ e tipo deixam de ser compartilhados) |
 | 100 | **v8.10.0** — O módulo Rota grudado deixa de virar uma laje mais clara |
 | 101 | **v8.11.0** — Os puxadores de altura ganham teto (nenhum módulo maior que o painel) |
+| 102 | **v8.12.0** — O módulo Rota rola como os outros (fim do sticky) e o botão principal fica sem preenchimento |
+| 103 | **v8.13.0** — A Rota nasce logo abaixo da Origem: os botões de traçar ficam à vista sem rolar |
 
 ---
 
@@ -1501,7 +1509,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.11.0
+8.13.0
 ```
 
 ### Onde o número aparece
@@ -1627,3 +1635,5 @@ os backups locais são conveniência, não garantia.
 | 8.9.0 | 24/09/2026 | A parada é do técnico, não da base; limpeza de peso morto |
 | 8.10.0 | 24/09/2026 | Correção: o fundo do módulo Rota grudado não batia com o cartão |
 | 8.11.0 | 25/09/2026 | Correção: puxadores de altura sem teto deixavam o módulo passar do painel |
+| 8.12.0 | 25/09/2026 | Fim do módulo Rota grudado; botão "Rota otimizada" sem preenchimento |
+| 8.13.0 | 25/09/2026 | Ordem padrão do painel com a Rota logo abaixo da Origem |

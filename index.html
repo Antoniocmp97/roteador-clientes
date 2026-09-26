@@ -465,6 +465,7 @@
   .guia input[type="text"], .console input[type="text"],
   .guia .tipos-painel, .console .tipos-painel,
   .guia .go-btn.secondary, .console .go-btn.secondary,
+  .guia .go-btn.principal, .console .go-btn.principal,
   .guia .btn-lista, .console .btn-lista,
   .guia .btn-icon, .console .btn-icon{
       background:color-mix(in srgb, var(--panel-2) 80%, transparent);
@@ -496,14 +497,6 @@
   :root[data-leve="1"] .guia, :root[data-leve="1"] .console,
   :root[data-leve="1"] .modulo-movel,
   :root[data-leve="1"] .retomar-dia{box-shadow:none !important;}
-  /* ⚠️ O módulo Rota grudado é a exceção: a sombra dele não é enfeite, é o
-     único sinal de que a lista está passando POR BAIXO. Sem nada, ele vira uma
-     laje sem borda no meio da coluna. Vira um fio de 1px, que não tem desfoque
-     nenhum para repintar (v8.10.0). */
-  :root[data-leve="1"] #moduloRota.grudado,
-  :root[data-leve="1"] .guia > .modulo-movel.rota-grudada{
-    box-shadow:0 -1px 0 var(--line), 0 1px 0 var(--line) !important;
-  }
   /* Os dois que o modo leve já força saem de cena (o ímã some junto com as
      janelas, pela regra dele) */
   :root[data-leve="1"] .vidro-btn,
@@ -634,14 +627,11 @@
     :root[data-vidro="0"] .guia input[type="text"], :root[data-vidro="0"] .console input[type="text"],
     :root[data-vidro="0"] .guia .tipos-painel, :root[data-vidro="0"] .console .tipos-painel,
     :root[data-vidro="0"] .guia .go-btn.secondary, :root[data-vidro="0"] .console .go-btn.secondary,
+    :root[data-vidro="0"] .guia .go-btn.principal,  :root[data-vidro="0"] .console .go-btn.principal,
     :root[data-vidro="0"] .guia .btn-lista,    :root[data-vidro="0"] .console .btn-lista,
     :root[data-vidro="0"] .guia .btn-icon,     :root[data-vidro="0"] .console .btn-icon{
         background:var(--panel-2);
     }
-    /* Sem vidro, o módulo Rota grudado volta a ser opaco: é ele que tapa a
-       lista rolando por baixo, e a 94% sobraria um fantasma do texto passando */
-    :root[data-vidro="0"] #moduloRota.grudado,
-    :root[data-vidro="0"] .guia > .modulo-movel.rota-grudada{background:var(--panel);}
   }
 
   /* Divisória arrastável entre o mapa e o painel */
@@ -1050,6 +1040,15 @@
   .go-btn:hover{background:var(--amber-claro);}
   .go-btn.secondary{background:var(--panel-2);color:var(--teal);border:1px solid var(--teal);}
   .go-btn.secondary:hover{background:var(--teal-hover);}
+  /* ⚠️ O botão principal perdeu o preenchimento âmbar na v8.12.0 (pedido do
+     usuário: "tire a cor de background, deixando o botão mais limpo"). A
+     hierarquia da v7.9.0 continua de pé por dois outros caminhos: ele é o dobro
+     da largura do vizinho (flex:2 contra flex:1) e usa o âmbar, que é a cor
+     forte do app, contra o teal do alternativo. É a mesma forma que o usuário
+     escolheu para os botões de navegação da tela do campo na v7.8.0 — "sem
+     cor, porém o contorno com a cor laranja". */
+  .go-btn.principal{background:var(--panel-2); color:var(--amber); border:1px solid var(--amber);}
+  .go-btn.principal:hover{background:var(--amber-fraco);}
   .btn-row{display:flex;gap:8px;}
   .btn-row .go-btn{flex:1;}
   /* Hierarquia (v7.9.0, ponto 4 da revisão de design): os dois tinham a mesma
@@ -1069,89 +1068,8 @@
      do cartão. Mesma regra que a linha de avisos do módulo Clientes usa desde a
      v7.4.0. */
   #status:empty{display:none;}
-  /* Módulo Rota grudado na base (v6.5, sugestão de layout 5): os botões de
-     traçar a rota são a ação principal e ficavam abaixo da dobra
-     com a base carregada. Agora o módulo fica colado no fim da coluna em que
-     estiver — painel ou coluna auxiliar —, e o resto rola por baixo.
-     No painel o módulo é filho direto da coluna rolável (a section é
-     display:contents), então quem gruda é o .modulo-corpo; nas colunas quem
-     gruda é a própria section. O fundo e o padding negativo cobrem os 16px de
-     respiro da coluna, senão o conteúdo apareceria por baixo. */
-  /* ⚠️ display:contents não muda a árvore do HTML: o seletor tem que descer
-     pela section (.console > section > .modulo-corpo), e não direto no corpo. */
-  .console > .modulo-movel[data-modulo="m5"] > .modulo-corpo,
-  .guia > .modulo-movel[data-modulo="m5"]{
-    /* top E bottom: gruda na base enquanto o lugar natural dele está abaixo, e
-       no topo depois de passar por ele — assim os botões ficam visíveis com o
-       módulo em qualquer posição da coluna. */
-    position:sticky; top:0; bottom:0; z-index:3;
-  }
-  /* ⚠️ O fundo entra SÓ quando ele está flutuando de verdade (v8.1.0). Até a
-     v8.0.0 ele era fixo e sólido (var(--panel)): sobre o vidro isso virava um
-     bloco mais escuro dentro do cartão, em qualquer posição do módulo —
-     relatado pelo usuário com print. Parado no lugar dele não há nada passando
-     por baixo, então não precisa de fundo nenhum; grudado, ele ganha o mesmo
-     material do cartão, forte o bastante para a lista não vazar através. */
-  #moduloRota.grudado,
-  .guia > .modulo-movel.rota-grudada{
-    /* ⚠️ O padding com margem negativa também é só do estado grudado (v8.1.0):
-       ele existe para o módulo cobrir os 16px de respiro da coluna enquanto
-       flutua. Parado no lugar, a margem negativa puxava o módulo de baixo 16px
-       para cima — com a linha de status vazia sumindo, o de baixo passou a
-       quase encostar (relatado pelo usuário). Solto, vale o gap de 14px da
-       coluna, como em qualquer outro módulo. */
-    padding:16px 0; margin:-16px 0;
-    /* ⚠️ Sem backdrop-filter desde a v8.2.0: o que está atrás deste módulo é o
-       próprio cartão de vidro, que JÁ vem borrado. Era um segundo borrão em
-       cima do primeiro — um passe a mais por quadro, aninhado dentro do
-       primeiro (o caso mais caro que existe), para não mudar nada que se veja.
-       ⚠️ OPACO, e com o VÉU na conta (v8.10.0, relatado pelo usuário: "às vezes
-       ao dar scroll fica com um fundo à mostra"). O fundo deste módulo pinta
-       ACIMA do véu do cartão — aquele `inset 0 0 0 2000px rgba(0,0,0,.18)` que
-       segura a leitura sobre o mapa. Com uma tinta de 94% de --panel ele saía
-       com a cor da tinta SEM o véu: medido, rgb(22,35,42) contra os
-       rgb(18,28,34) do cartão em volta. Diferença de 11 num fundo escuro — uma
-       laje mais clara atravessando a coluna, que é o que o usuário viu.
-       A conta agora fecha: tinta de 94% sobre o fundo do mapa, e esse resultado
-       a 82% sobre preto — os mesmos 18% do véu. Medido depois: bate exato.
-       ⚠️ Ser opaco também mata o fantasma que sobrava: a 94% a lista passava 6%
-       por baixo enquanto rolava.
-       ⚠️ O gradiente do cartão (84%→94%) faz a cor variar um pouco ao longo da
-       coluna, mas no topo a diferença dá 2 — abaixo do que se enxerga. Um valor
-       só serve para a coluna inteira. */
-    background:color-mix(in srgb,
-               color-mix(in srgb, var(--panel) 94%, var(--map-bg)) 82%, #000);
-    box-shadow:0 -10px 14px -12px var(--sombra), 0 10px 14px -12px var(--sombra);
-  }
 
-  /* No tema claro o véu do cartão é BRANCO a 35%, então a conta é a outra
-     ponta. Ali a diferença já era pequena (medido: 2), mas deixar as duas
-     fórmulas explícitas evita que a do escuro seja aplicada no claro — ela
-     acinzentaria o módulo em 18%. */
-  :root[data-tema="claro"] #moduloRota.grudado,
-  :root[data-tema="claro"] .guia > .modulo-movel.rota-grudada{
-    background:color-mix(in srgb,
-               color-mix(in srgb, var(--panel) 94%, var(--map-bg)) 65%, #fff);
-  }
 
-  /* A sentinela é um item de layout do painel (a section é display:contents),
-     então ela comia um segundo gap de 14px: o módulo abaixo da Rota ficava com
-     28px de respiro contra os 14 dos outros. A margem negativa cancela esse
-     segundo gap SEM mover a sentinela — a conta do "grudado" depende da posição
-     dela, e mexer nela deslocaria o limiar (v8.1.0). */
-  .console > .modulo-movel[data-modulo="m5"] > #sentinelaRota{margin-bottom:-14px;}
-
-  /* Enquanto está grudado o módulo fica compacto: título, botões e resultado.
-     A opção de retorno e o status voltam quando ele chega ao lugar dele — senão
-     um bloco de 235px ficaria flutuando por cima da lista de paradas.
-     ⚠️ O título FICA: é nele que mora a alça, e sem ela não daria para tirar o
-     módulo do lugar enquanto estivesse grudado. */
-  #moduloRota.grudado > .opcao-rota,
-  #moduloRota.grudado > #status{display:none;}
-  #moduloRota.grudado > .field-label{margin-bottom:6px;}
-  #moduloRota.grudado > .resumo-rota{margin-top:10px; padding:8px 14px;}
-  #moduloRota.grudado > .resumo-rota .row{font-size:16px;}
-  #moduloRota.grudado > .resumo-rota .row + .row{font-size:11.5px;}
 
   /* Opção "voltar para a origem" (v6.3), no módulo Rota */
   .opcao-rota{display:flex; align-items:center; gap:7px; margin-top:10px; cursor:pointer;
@@ -1723,6 +1641,33 @@
       </div>
       </section>
 
+      <!-- Ações: calcular rota respeitando a ordem atual, ou deixar o OSRM otimizar a ordem.
+           Ganhou título na v5.7, porque virou módulo e precisava de onde pegar. -->
+      <section class="modulo-movel" data-modulo="m5">
+      <div class="modulo-corpo" id="moduloRota">
+        <div class="field-label">
+          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Rota</span>
+        </div>
+        <div class="btn-row">
+          <button class="go-btn principal" id="optimizeBtn"
+                  title="O app escolhe a melhor sequência e já traça a rota. As paradas prioritárias continuam fixas na frente.">Rota otimizada</button>
+          <button class="go-btn secondary alternativa" id="routeBtn"
+                  title="Traça na ordem que está na lista, sem reordenar nada">Nesta ordem</button>
+        </div>
+        <!-- Voltar para a origem (v6.3): entra como último ponto da viagem -->
+        <label class="opcao-rota" title="A volta entra na distância, no tempo, no mapa e no roteiro do campo">
+          <input type="checkbox" id="voltarOrigem">
+          <span>Voltar para a origem no fim</span>
+        </label>
+        <!-- Resumo da rota (v6.2): veio do topo do Roteiro para junto dos botões -->
+        <div class="resumo-rota" id="resumoRota" hidden>
+          <div class="row"><span id="distVal">--</span><span id="timeVal">--</span></div>
+          <div class="row"><span>distância total</span><span>tempo estimado</span></div>
+        </div>
+        <div class="status" id="status"></div>
+      </div>
+      </section>
+
       <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
       <section class="modulo-movel" data-modulo="m3">
       <div class="modulo-corpo">
@@ -1842,36 +1787,6 @@
       </div>
       </section>
 
-      <!-- Ações: calcular rota respeitando a ordem atual, ou deixar o OSRM otimizar a ordem.
-           Ganhou título na v5.7, porque virou módulo e precisava de onde pegar. -->
-      <section class="modulo-movel" data-modulo="m5">
-      <div class="modulo-corpo" id="moduloRota">
-        <div class="field-label">
-          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Rota</span>
-        </div>
-        <div class="btn-row">
-          <button class="go-btn principal" id="optimizeBtn"
-                  title="O app escolhe a melhor sequência e já traça a rota. As paradas prioritárias continuam fixas na frente.">Otimizar e traçar</button>
-          <button class="go-btn secondary alternativa" id="routeBtn"
-                  title="Traça na ordem que está na lista, sem reordenar nada">Nesta ordem</button>
-        </div>
-        <!-- Voltar para a origem (v6.3): entra como último ponto da viagem -->
-        <label class="opcao-rota" title="A volta entra na distância, no tempo, no mapa e no roteiro do campo">
-          <input type="checkbox" id="voltarOrigem">
-          <span>Voltar para a origem no fim</span>
-        </label>
-        <!-- Resumo da rota (v6.2): veio do topo do Roteiro para junto dos botões -->
-        <div class="resumo-rota" id="resumoRota" hidden>
-          <div class="row"><span id="distVal">--</span><span id="timeVal">--</span></div>
-          <div class="row"><span>distância total</span><span>tempo estimado</span></div>
-        </div>
-        <div class="status" id="status"></div>
-      </div>
-      <!-- Sentinela: marca o lugar natural do módulo. Quando ela fica abaixo da
-           área visível, é porque o módulo está grudado na base (v6.5). -->
-      <div id="sentinelaRota" aria-hidden="true"></div>
-      </section>
-
       <!-- Passo 5: gerar o link do roteiro para mandar a quem vai a campo.
            Só aparece depois que uma rota foi traçada com sucesso. -->
       <section class="modulo-movel" data-modulo="m6">
@@ -1972,7 +1887,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.11.0';
+const VERSAO = '8.13.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -3944,9 +3859,6 @@ if (!modoCampoAtivo){
      a pedido do usuário, agora com botão em vez de gravação automática.)
    - Em tela estreita (layout empilhado) as colunas não existem: os módulos
      ficam no painel e o arranjo espera a tela alargar de novo. */
-try{
-}catch(e){}
-
 const MODULOS = {
   m1: { titulo:'Clientes' },
   m2: { titulo:'Origem' },
@@ -3957,6 +3869,22 @@ const MODULOS = {
   m7: { titulo:'Roteiro',                 elastico:true, espera:'Aparece depois de traçar a rota.' }
 };
 const ORDEM_MODULOS = Object.keys(MODULOS);
+/* A ordem em que os módulos NASCEM no painel (v8.13.0, pedido do usuário:
+   "podemos botar o módulo [Rota] para vir como padrão logo abaixo do Origem").
+   ⚠️ Não é a ordem dos apelidos: a Rota (m5) sobe para a terceira posição.
+   Resolve o custo que a v8.12.0 assumiu ao tirar o `sticky` — os botões de
+   traçar tinham voltado para baixo da dobra com a base carregada. Agora eles
+   nascem à vista, sem nada flutuando sobre a lista.
+   ⚠️ O markup do <body> segue esta mesma ordem, para a primeira pintura já sair
+   certa; `aplicarArranjo()` continua sendo quem manda, mas não precisa mais
+   reordenar nada no arranque.
+   Um módulo novo em MODULOS que alguém esqueça de listar aqui entra no fim, em
+   vez de sumir da tela. */
+const ORDEM_PADRAO = (() => {
+  const desejada = ['m1', 'm2', 'm5', 'm3', 'm4', 'm6', 'm7'];
+  return [...desejada.filter(k => MODULOS[k]),
+          ...ORDEM_MODULOS.filter(k => !desejada.includes(k))];
+})();
 
 const COLUNAS = {
   g1: { el:'guiaLateral', divisor:'divisorGuia',  chave:'hg_largura_guia',  css:'--guia-w',  nome:'coluna 2' },
@@ -3966,7 +3894,7 @@ const COLUNAS = {
 function arranjoNormal(){
   const local = {};
   ORDEM_MODULOS.forEach(k => local[k] = 'painel');
-  return { local, ordem:[...ORDEM_MODULOS], pesos:{}, fixas:{}, janelas:{} };
+  return { local, ordem:[...ORDEM_PADRAO], pesos:{}, fixas:{}, janelas:{} };
 }
 let arranjo = arranjoNormal();   // o que está na tela agora
 
@@ -4003,14 +3931,16 @@ const mesmoLugar = (a, b) =>
 /* Resultado de pôr o módulo na coluna `local`:
    - antesDe = chave de outro módulo: entra logo acima dele;
    - antesDe = null: entra no fim da coluna;
-   - antesDe = undefined (duplo clique): entra na posição da numeração, acima
-     do primeiro módulo da coluna com número maior. */
+   - antesDe = undefined (duplo clique): entra na posição PADRÃO, acima do
+     primeiro módulo da coluna que vem depois dele em ORDEM_PADRAO. Era "a
+     posição da numeração" até a v8.13.0, quando a ordem padrão deixou de ser
+     a dos apelidos. */
 function simularMovimento(a, chave, local, antesDe){
   const b = { local:{ ...a.local, [chave]: local }, ordem: a.ordem.filter(k => k !== chave) };
   let ref = antesDe;
   if (antesDe === undefined){
-    const n = ORDEM_MODULOS.indexOf(chave);
-    ref = b.ordem.find(k => b.local[k] === local && ORDEM_MODULOS.indexOf(k) > n) || null;
+    const n = ORDEM_PADRAO.indexOf(chave);
+    ref = b.ordem.find(k => b.local[k] === local && ORDEM_PADRAO.indexOf(k) > n) || null;
   }
   const i = ref ? b.ordem.indexOf(ref) : -1;
   if (i >= 0) b.ordem.splice(i, 0, chave); else b.ordem.push(chave);
@@ -4449,7 +4379,7 @@ function arranjoGuardado(){
     // Arranjo salvo antes da v6.0 não tem ordem: fica a da numeração
     if (Array.isArray(g.ordem)){
       const validas = g.ordem.filter((k, i) => ORDEM_MODULOS.includes(k) && g.ordem.indexOf(k) === i);
-      a.ordem = [...validas, ...ORDEM_MODULOS.filter(k => !validas.includes(k))];
+      a.ordem = [...validas, ...ORDEM_PADRAO.filter(k => !validas.includes(k))];
     }
     canonizarArranjo(a);
     return a;
@@ -5635,69 +5565,6 @@ if (!modoCampoAtivo){
   };
 }
 
-/* Módulo Rota grudado na base (v6.5, sugestão de layout 5). A marca "grudado"
-   deixa o módulo compacto enquanto ele está flutuando; some quando ele chega ao
-   lugar natural. Vale em qualquer coluna: o container é descoberto na hora. */
-function atualizarRotaGrudada(){
-  const corpo = document.getElementById('moduloRota');
-  const sentinela = document.getElementById('sentinelaRota');
-  if (!corpo || !sentinela) return;
-  const cont = corpo.closest('.console, .guia');
-  if (!cont) return;
-  // Grudado = o lugar natural do módulo (a sentinela) está fora da parte
-  // visível da coluna: abaixo do fim dela (módulo preso na base) ou acima do
-  // começo (preso no topo, depois de rolar por ele).
-  //
-  // ⚠️ FOLGA (v7.1.0). Sem ela isto oscilava: ao grudar, o módulo fica compacto
-  // e encolhe ~80px; a sentinela sobe junto e volta a aparecer, o que "solta" o
-  // módulo, que cresce e empurra a sentinela para fora de novo — o painel ficava
-  // piscando (relatado pelo usuário em 15/09/2026). Para SOLTAR, agora, a
-  // sentinela precisa entrar bem na área visível: mais do que a diferença de
-  // altura entre os dois estados.
-  const FOLGA = 120;
-  const c = cont.getBoundingClientRect();
-  const sy = sentinela.getBoundingClientRect().top;
-  const h = corpo.getBoundingClientRect().height;
-  const jaGrudado = corpo.classList.contains('grudado');
-  const margem = jaGrudado ? FOLGA : 0;
-  /* ⚠️ A folga vale só para a borda DE BAIXO (v8.1.0, pelo print do usuário).
-     No topo ela sobrava: com o módulo na primeira posição e a coluna sem rolar,
-     a sentinela fica em c.top + h - 16 (os 16px vêm do padding/margem negativa
-     que o módulo usa para cobrir o respiro da coluna), e a conta antiga exigia
-     c.top + h + 120 — ou seja, ele nascia "grudado" parado no lugar dele. Antes
-     isso só ligava o modo compacto à toa (o "Voltar para a origem no fim"
-     sumia); com o vidro passou a pintar um bloco escuro dentro do cartão.
-     A oscilação que a folga resolveu na v7.1.0 é só de baixo: lá o módulo
-     encolhe ao grudar e a sentinela reaparece. No topo, encolher move a
-     sentinela e o h na mesma medida, então a comparação não oscila — só
-     precisa da tolerância dos 16px. */
-  const dentro = sy < c.bottom - 1 - margem && sy > c.top + h - 20;
-
-  const grudado = !dentro;
-  corpo.classList.toggle('grudado', grudado);
-  // Nas colunas quem gruda é a section, não o corpo: ela precisa da marca para
-  // receber o fundo (ver a regra .guia > .modulo-movel.rota-grudada)
-  const secao = corpo.closest('.modulo-movel');
-  if (secao) secao.classList.toggle('rota-grudada', grudado);
-}
-if (!modoCampoAtivo){
-  // Sem requestAnimationFrame de propósito: o navegador o pausa quando a aba não
-  // está desenhando, e a marca ficava presa (mesmo tropeço da v5.7). São duas
-  // medidas por chamada, barato o bastante para rodar direto.
-  const agendar = () => atualizarRotaGrudada();
-  // Rolagem de qualquer coluna, mudança de tamanho da janela e qualquer mexida
-  // no painel (lista redesenhada, módulo movido) mudam o estado
-  document.querySelector('main').addEventListener('scroll', agendar, true);
-  window.addEventListener('resize', agendar);
-  new ResizeObserver(agendar).observe(document.querySelector('.console'));
-  // Observa só o painel e as colunas: em main entrariam também os ladrilhos do
-  // mapa, que o Leaflet troca o tempo todo — era chamada à toa a cada arraste
-  ['.console', '#guiaLateral', '#guiaExtra'].forEach(sel => {
-    const el = document.querySelector(sel);
-    if (el) new MutationObserver(agendar).observe(el, { childList:true, subtree:true });
-  });
-  atualizarRotaGrudada();
-}
 
 // Botão "Traçar nesta ordem": chama a OSRM Route API respeitando a ordem atual de `stops`.
 // Monta a string de coordenadas "lng,lat;lng,lat;..." (origem primeiro, depois cada parada,

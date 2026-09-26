@@ -70,8 +70,8 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | origem | `Origin` / `Origem padrão salva` | `setOrigin`, `lerOrigemPadrao` |
 | traçar / otimizar | `Routing` | `drawResult`, `prepararEnvio` |
 | efeito ao traçar | `Efeito ao traçar a rota (v8.0.0)` | `efeitoLigado`, `animarNumero` |
-| módulo Rota grudado | `atualizarRotaGrudada` | idem |
 | mover módulos entre colunas | `Arrastar um módulo pela alça…` | `destinoDoModulo`, `moverModulo` |
+| ordem em que os módulos nascem | `MODULOS` / `ORDEM_PADRAO` | `arranjoNormal` |
 | alturas dentro das colunas | `Espaço dividido entre os módulos 3 e 4` | `alturasGuardadas`, `atualizarModulosNasColunas` |
 | link do roteiro | `Identificador do roteiro` / `Compressão do link` | `montarRoteiro`, `lerRoteiroCompacto` |
 | retomar pelo link | `Retomar um roteiro a partir do link` | `retomarRoteiro` |
