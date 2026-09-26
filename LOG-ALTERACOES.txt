@@ -6738,3 +6738,89 @@ janela de 1400x860; dois técnicos; rota de verdade pelo OSRM, 7,8 km / 13 min)
   TELA ESTREITA (420px, empilhado): o botão CONTINUA à vista, ao contrário do
     vidro e das janelas — lá o mapa ainda existe, em cima do painel.
   Sem erro no console em nenhum dos casos.
+
+--------------------------------------------------------
+[26/09/2026] v8.16.0 — O trajeto do dia na tela do campo
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  "Pensei em adicionar um preview do mapa para a tela externa, no caso da rota
+   feita para aquele dia. Assim o técnico teria uma noção do trajeto que fará."
+
+O QUE FOI FEITO
+  1. O LINK passa a levar o TRAJETO (formato v10, 11º grupo).
+  2. A TELA DO CAMPO ganha uma faixa de mapa de 160px entre o cabeçalho e a
+     lista, com a rota desenhada, os números das paradas e a origem. Toque
+     amplia para tela cheia; "Ocultar" troca a faixa por uma barra, e a escolha
+     fica guardada no aparelho (hg_campo_mapa).
+  3. Os pinos acompanham o dia: a parada da vez acende, a concluída apaga e
+     fica teal — o mesmo estado que a lista já mostrava, agora no mapa.
+
+A DECISÃO DO TAMANHO (medida, não chutada)
+  A geometria crua do OSRM não cabe num link. Numa rota REAL de 10 paradas e
+  52,8 km (base BASETESTEGRUPO, origem no centro de Criciúma):
+      geometria crua ................ 1417 pontos → link de 4160 caracteres
+      simplificada a 15m ............  187 pontos → 1316
+      simplificada a 30m (adotada) ..  139 pontos → 1186
+      simplificada a 120m ...........   57 pontos →  838
+      link de hoje, sem trajeto ...............     518
+  Adotado Douglas-Peucker a 30m. Na faixa de 340px mostrando uma rota de 50km,
+  um pixel vale ~150m: o desvio fica abaixo de meio pixel, e mesmo ampliando
+  até a rua o erro é de poucos pixels. O ida-e-volta pelo link erra 0,56m no
+  pior ponto — é só o arredondamento de 5 casas decimais.
+  Pior caso de tamanho, o link COMPATÍVEL (sem compressão): 1553 caracteres.
+
+ARMADILHA RESOLVIDA — os separadores dentro do trajeto
+  A codificação polyline gera caracteres de 63 a 126, e essa faixa INCLUI `~` e
+  `|`, que são justamente os separadores do link. Sem escapar, um trajeto com o
+  caractere errado partiria o link ao meio e o roteiro chegaria corrompido ao
+  celular. Passa por escSep, como os nomes. Medido nesta rota: 17 ocorrências,
+  que custaram 34 caracteres a mais (577 → 611 no grupo).
+
+ARMADILHA RESOLVIDA — zona morta na carga
+  As camadas de ladrilho do mapa do campo são declaradas LÁ EM CIMA, junto das
+  do escritório, e não na seção do mapa do campo. Motivo: `aplicarTema()` roda
+  na CARGA e lê as quatro; com o `let` declarado depois dele, a zona morta
+  derrubaria o app inteiro ao abrir — nas duas telas.
+
+TRÊS ESCOLHAS DE COMPORTAMENTO
+  · A faixa fica ENTRE o cabeçalho e a lista. Não dentro da lista, que é
+    reescrita inteira a cada toque (o mapa seria destruído e recriado a cada
+    parada marcada); e não dentro do cabeçalho, que é sticky — assim ela rola
+    para fora quando o técnico desce o roteiro, em vez de comer 160px o dia
+    inteiro.
+  · O mapa da faixa nasce com TODA a interação desligada. Mapa arrastável
+    dentro de lista que rola rouba o gesto vertical e trava a tela.
+  · zoomSnap 0 (zoom fracionário). Com os degraus inteiros, o fitBounds escolhe
+    o degrau que CABE e sobra tela vazia: medido na tela cheia de 375x812, a
+    rota ocupava 199x166 centrada, com 323px de folga em cima e embaixo. Sem
+    degraus, ela encosta na borda (331x276, folga de 22 que é o padding).
+
+MEDIDAS E TESTES (celular de 375x812, base real, rota de verdade pelo OSRM)
+  Faixa: cabeçalho 116px + faixa 160px, e a etiqueta "Agora" com o cartão da
+    parada da vez AINDA cabem sem rolar — que é o que a v7.7.0 conquistou.
+  Enquadramento: na faixa (345x158) a rota sai 136x114 com folga de 22 na
+    altura; na tela cheia (375x812), 331x276 com folga de 22 na largura. Os dois
+    encostam na borda limitante.
+  Tela cheia: arrastar e pinça LIGAM ao ampliar e DESLIGAM ao fechar.
+  Progresso: concluir a parada 1 deixa o pino 1 "feita" e o 2 "agora"; contagem
+    1/11. Ocultar tira 131px da página (1240 → 1109) e fica guardado.
+  Tema: os ladrilhos do mapa do campo trocam junto com o do escritório.
+  MODO LEVE: transição "none" nos ladrilhos, mapa vivo, tela cheia funcionando
+    com o mesmo enquadramento.
+  LINK ANTIGO (v9, montado de propósito a partir do v10): abre normalmente, sem
+    a linha, só com os 11 pinos e a origem; a dica passa a dizer "paradas do
+    dia". O progresso continua, porque o rid é o mesmo.
+  RETOMAR no escritório com um link v10: 10 paradas, origem, retorno e rid de
+    volta — o 11º grupo não atrapalha a leitura.
+  Troca de aba: o trajeto vive em `ultimoResumo.g`, que já é guardado por
+    técnico — sai e volta inteiro, e o link gerado depois ainda o traz.
+  UMA PARADA SÓ: fitBounds com maxZoom 16, senão a caixa de tamanho zero levaria
+    o mapa ao zoom máximo e o técnico veria uma calçada ampliada.
+  Sem erro no console em nenhum dos casos.
+
+O QUE NÃO MUDOU
+  O Leaflet já estava carregado na tela do campo — é o mesmo arquivo único, e a
+  biblioteca entra antes da divisão entre as duas telas. O que o modo campo
+  pulava era só criar o mapa do escritório. Então isto não acrescenta download
+  de biblioteca nenhum ao celular; o custo novo são os ladrilhos (12 na faixa,
+  20 na tela cheia, nesta rota).

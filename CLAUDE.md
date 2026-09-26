@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 26/09/2026 — v8.15.0 (o que o mapa mostra dos clientes)
+> **Última atualização:** 26/09/2026 — v8.16.0 (o trajeto do dia na tela do campo)
 
 ---
 
@@ -889,6 +889,78 @@ sem dependências instaladas. Abre direto no navegador.
   **Formato v9** (v8.6.0): 10º grupo = **nome do técnico**. Os nove anteriores
   não mudaram de posição nem de significado, e a leitura trata v8 e v9 juntos
   onde eles são iguais (rid, retorno e origem moram nos mesmos grupos).
+  **Formato v10** (v8.16.0): 11º grupo = **o trajeto**, para o mapa da tela do
+  campo. Os dez anteriores seguem iguais; v5 a v9 continuam abrindo, sem a
+  linha.
+- **O trajeto do dia na tela do campo** (v8.16.0, pedido do usuário: "um preview
+  do mapa para a tela externa, no caso da rota feita para aquele dia — assim o
+  técnico teria uma noção do trajeto que fará"). Até aqui a tela do campo era,
+  de propósito, "sem mapa": a ordem das paradas, navegação e marcação. Faltava a
+  **visão do dia** — se o roteiro sobe para Nova Veneza e volta, ou se fecha um
+  laço dentro de Criciúma, a lista não diz. Agora uma **faixa de 160px** entre o
+  cabeçalho e a lista mostra a rota desenhada, os números das paradas e a
+  origem; **toque amplia para tela cheia**; "Ocultar" troca a faixa por uma
+  barra e a escolha fica guardada no aparelho (`hg_campo_mapa`). Os pinos
+  **acompanham o dia**: a parada da vez acende, a concluída apaga e fica teal.
+  ⚠️ **O Leaflet já estava carregado ali** — é o mesmo arquivo único, e a
+  biblioteca entra antes da divisão entre as duas telas; o que o modo campo
+  pulava era só criar o mapa do escritório. Então isto **não acrescenta
+  download de biblioteca** ao celular: o custo novo são os ladrilhos (12 na
+  faixa, 20 na tela cheia, na rota medida).
+  ⚠️ **A faixa fica ENTRE o cabeçalho e a lista**, e isso é decisão, não acaso.
+  Dentro da lista não pode: ela é reescrita inteira (`innerHTML`) a cada toque,
+  e o mapa seria destruído e recriado a cada parada marcada. Dentro do
+  cabeçalho também não: ele é `sticky`, e a faixa comeria 160px o dia inteiro.
+  Onde está, ela **rola para fora** quando o técnico desce o roteiro. Medido a
+  375×812: cabeçalho 116 + faixa 160, e a etiqueta "Agora" com o cartão da
+  parada da vez **ainda cabem sem rolar** — que é o que a v7.7.0 conquistou.
+  ⚠️ **O mapa da faixa nasce com TODA a interação desligada** (arrastar, pinça,
+  rodinha, duplo toque, teclado). Mapa arrastável dentro de lista que rola rouba
+  o gesto vertical e trava a tela — é o defeito clássico de mapa embutido em
+  celular. Quem quer mexer toca e vai para a tela cheia, onde tudo religa (e
+  desliga de novo ao fechar).
+  ⚠️ **`zoomSnap: 0`** (zoom fracionário) não é luxo: com os degraus inteiros o
+  `fitBounds` escolhe o degrau que **cabe**, e sobra tela vazia — medido na tela
+  cheia de 375×812, a rota ocupava 199×166 centrada, com **323px de folga** em
+  cima e embaixo. Sem degraus ela encosta na borda (331×276).
+  ⚠️ **`maxZoom:16` no enquadramento**: com uma parada só, a caixa tem tamanho
+  zero e o Leaflet iria ao zoom máximo — o técnico abriria o link e veria uma
+  calçada ampliada, sem referência nenhuma. 16 é também o último zoom com
+  imagem de verdade do Esri nesta região.
+  ⚠️ **Nenhum `fitBounds` anima**, pelos dois motivos de sempre: o modo leve
+  mata transições, e tela que não pinta nunca termina animação.
+  ⚠️ **O crédito ao Esri e ao OpenStreetMap é exigência de licença e fica** —
+  mas vira etiqueta de canto, porque a faixa clara padrão do Leaflet tomava a
+  base inteira de uma caixa de 160px. O selo "Leaflet" sai (`setPrefix(false)`):
+  esse é autopromoção da biblioteca, não obrigação.
+  ⚠️ **As camadas de ladrilho do mapa do campo são declaradas junto das do
+  escritório**, lá no topo, e não na seção do mapa do campo: `aplicarTema()`
+  roda na **carga** e lê as quatro, e com o `let` depois dele a zona morta
+  derrubaria o app inteiro ao abrir, nas duas telas
+- **O trajeto viaja dentro do link** (v8.16.0, formato v10): 11º grupo, a
+  geometria da rota em **polyline** (precisão 5), **simplificada** por
+  Douglas-Peucker a **30 m**. Os dez grupos anteriores não mudaram de posição
+  nem de significado, e link v5–v9 continua abrindo — só mostra o mapa **sem a
+  linha**, com os pontos do dia.
+  ⚠️ **A geometria crua não cabe.** Medido numa rota real de 10 paradas e
+  52,8 km: 1417 pontos, e o link iria de **518 para 4160** caracteres. A 30 m
+  sobram **139 pontos** e o link fica em **1186** (o compatível, sem compressão,
+  em 1553). A 15 m seriam 1316; a 120 m, 838.
+  ⚠️ **30 m foi escolhido pela tela, não pelo gosto**: numa faixa de 340px
+  mostrando uma rota de 50 km, um pixel vale ~150 m, então o desvio fica abaixo
+  de meio pixel. O ida-e-volta pelo link erra **0,56 m** no pior ponto — só o
+  arredondamento das 5 casas.
+  ⚠️ **A codificação polyline gera caracteres de 63 a 126, e essa faixa inclui
+  `~` e `|`** — justamente os separadores do link. Sem escapar (`escSep`), um
+  trajeto com o caractere errado **partiria o link ao meio** e o roteiro
+  chegaria corrompido ao celular. Medido nesta rota: 17 ocorrências, 34
+  caracteres a mais.
+  ⚠️ **O trajeto mora em `ultimoResumo.g`**, e não numa variável nova: o resumo
+  já é guardado por técnico e já morre em `invalidarRota()`. Um trajeto que
+  sobrevivesse à rota desfeita mandaria para o campo o desenho de um caminho que
+  não é mais o do dia.
+  ⚠️ O simplificador usa **geometria plana** e tolerância em graus. Em 50 km de
+  Criciúma isso erra fração de metro; **não usar para distância**
 - **Retomar um roteiro pelo link** (v6.8.0, pedido do usuário: "meia hora depois
   surge mais uma parada"): colar o link no **módulo 1** (v6.8.1, sempre à mão — o
   campo do módulo 5 só existe depois de uma rota traçada; desde a v7.4.0 fica num
@@ -1277,7 +1349,8 @@ repositório é público (ver `.gitignore`).
   a opção de voltar para a origem, o zoom ao clicar na parada, **o que o mapa
   mostra dos clientes** (v8.15.0), o vidro ligado
   ou desligado, as janelas livres ligadas ou desligadas, o ímã de alinhamento
-  delas, **o modo leve** (v8.7.0), **o planejamento do dia** (v8.5.0, restaurado
+  delas, **a faixa de mapa da tela do campo** (v8.16.0, no aparelho de quem
+  abriu o link), **o modo leve** (v8.7.0), **o planejamento do dia** (v8.5.0, restaurado
   só se a pessoa aceitar), a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
   botão), o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
@@ -1591,6 +1664,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 103 | **v8.13.0** — A Rota nasce logo abaixo da Origem: os botões de traçar ficam à vista sem rolar |
 | 104 | **v8.14.0** — Passagem ao trocar de técnico: o painel sai junto e volta em cascata |
 | 105 | **v8.15.0** — O que o mapa mostra dos clientes: um botão apaga ou esconde as bolinhas de fora da viagem |
+| 106 | **v8.16.0** — O trajeto do dia na tela do campo (link v10 com a geometria simplificada) |
 
 ---
 
@@ -1658,7 +1732,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.15.0
+8.16.0
 ```
 
 ### Onde o número aparece
@@ -1788,3 +1862,4 @@ os backups locais são conveniência, não garantia.
 | 8.13.0 | 25/09/2026 | Ordem padrão do painel com a Rota logo abaixo da Origem |
 | 8.14.0 | 25/09/2026 | Saída + cascata ao trocar de técnico, no painel e no mapa |
 | 8.15.0 | 26/09/2026 | O que o mapa mostra dos clientes: tudo / fora da viagem apagado / fora da viagem escondido |
+| 8.16.0 | 26/09/2026 | O trajeto do dia na tela do campo, com o desenho da rota dentro do link |

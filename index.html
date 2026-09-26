@@ -1316,6 +1316,74 @@
   .campo-preenche{height:100%;background:var(--teal);border-radius:5px;transition:width .25s;width:0%;}
   .campo-contagem{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);white-space:nowrap;}
 
+  /* ---- Preview do trajeto (v8.16.0, pedido do usuário: "um preview do mapa
+     para a tela externa, da rota feita para aquele dia, assim o técnico teria
+     uma noção do trajeto que fará") ----
+     ⚠️ A faixa fica ENTRE o cabeçalho e a lista, e NÃO dentro dela: a lista é
+     reescrita inteira (`innerHTML`) a cada toque, e um mapa do Leaflet ali
+     dentro seria destruído e recriado a cada parada marcada.
+     ⚠️ E fica FORA do cabeçalho, que é `sticky`: assim ela rola para fora
+     quando o técnico desce a lista, em vez de comer 160px de tela o dia
+     inteiro. Medido num celular de 375x812: cabeçalho 118 + faixa 160 + a
+     etiqueta "Agora" e o cartão da parada da vez ainda cabem sem rolar.
+     ⚠️ A ALTURA É FIXA em 160px, e não uma proporção: o Leaflet precisa de um
+     contêiner com altura real no momento em que o mapa é criado, senão nasce
+     com 0 de altura e nenhum ladrilho é pedido. */
+  .campo-mapa{position:relative; margin:14px 14px 0; height:160px; flex:none;
+       border:1px solid var(--line); border-radius:12px; overflow:hidden;
+       background:var(--map-bg);}
+  .campo-mapa-tela{position:absolute; inset:0;}
+  /* Camada transparente que recebe o toque e abre o mapa em tela cheia. Existe
+     para o mapa da faixa poder ficar com TODA a interação desligada: um mapa
+     arrastável dentro de uma lista que rola rouba o gesto de rolagem e trava a
+     tela — é o defeito clássico de mapa embutido em celular. */
+  .campo-mapa-toque{position:absolute; inset:0; background:transparent; border:none;
+       cursor:pointer; padding:0; z-index:500;}
+  .campo-mapa-chip{position:absolute; top:8px; right:8px; z-index:501;
+       background:var(--panel); color:var(--text); border:1px solid var(--line) !important;
+       border-radius:8px; padding:7px 11px; font-size:12.5px; font-weight:600;
+       font-family:'Inter',sans-serif; cursor:pointer;}
+  /* ⚠️ A dica mora embaixo à ESQUERDA, e isso levou duas tentativas. No rodapé
+     ela batia na atribuição do Leaflet, que era uma faixa larga; subi para o
+     topo e aí ela cobriu um pino da rota (o 9, no alto à esquerda, num teste
+     com a base real). Com a atribuição virando etiqueta de canto à direita, o
+     rodapé esquerdo ficou livre — e embaixo não há pino, porque o
+     enquadramento sempre deixa a rota centrada. */
+  .campo-mapa-dica{position:absolute; left:8px; bottom:8px; z-index:501;
+       background:var(--panel); color:var(--muted); border:1px solid var(--line);
+       border-radius:8px; padding:5px 9px; font-size:11.5px; pointer-events:none;}
+  /* ⚠️ O crédito ao Esri e ao OpenStreetMap é EXIGÊNCIA DE LICENÇA e não pode
+     sair — mas o desenho padrão do Leaflet é uma faixa clara de 11px que, numa
+     caixa de 160px de altura, tomava a base inteira e passava por cima da dica.
+     Aqui ele vira uma etiqueta discreta no canto, na paleta do tema. O selo
+     "Leaflet", esse sim, sai (`prefix:false` no JS): é autopromoção da
+     biblioteca, não obrigação de licença. */
+  .campo-mapa .leaflet-control-attribution{
+       background:rgba(0,0,0,.42); color:var(--muted); font-size:9.5px;
+       padding:2px 6px; border-radius:6px 0 0 0;}
+  .campo-mapa .leaflet-control-attribution a{color:var(--muted);}
+  :root[data-tema="claro"] .campo-mapa .leaflet-control-attribution{background:rgba(255,255,255,.62);}
+  /* Barra que fica no lugar da faixa quando ela é ocultada. A escolha é guardada
+     no aparelho: quem não quer o mapa não o vê de novo a cada link que chega. */
+  .campo-mapa-barra{margin:14px 14px 0; flex:none; display:flex; align-items:center;
+       justify-content:center; gap:8px; background:var(--panel); color:var(--muted);
+       border:1px solid var(--line) !important; border-radius:10px; padding:11px;
+       font-size:13.5px; font-weight:600; font-family:'Inter',sans-serif; cursor:pointer;}
+  .campo-mapa-barra svg{width:16px; height:16px; fill:none; stroke:currentColor;
+       stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round;}
+  /* Tela cheia: o mesmo mapa, agora com a interação ligada. Sai do fluxo em vez
+     de crescer no lugar, senão a lista embaixo saltaria junto. */
+  .campo-mapa.cheio{position:fixed; inset:0; margin:0; height:auto; z-index:60;
+       border:none; border-radius:0;}
+  .campo-mapa.cheio .campo-mapa-toque{display:none;}
+  .campo-mapa.cheio .campo-mapa-dica{display:none;}
+  .campo-mapa.cheio .campo-mapa-chip{top:14px; right:14px; padding:12px 16px; font-size:14px;}
+  /* Pino do mapa do campo. Reaproveita .brand-icon do escritório; o que muda é
+     o estado: a parada da vez acende, a concluída apaga e fica teal. */
+  .campo-pin{width:22px; height:22px; font-size:11px; background:var(--amber);}
+  .campo-pin.feita{background:var(--teal); opacity:.5;}
+  .campo-pin.agora{box-shadow:0 0 0 3px var(--amber-fraco), 0 0 10px var(--amber);}
+
   /* Lista de paradas: cada card é um alvo de toque grande, com o essencial visível de cara */
   .campo-lista{flex:1;padding:14px 14px 40px;display:flex;flex-direction:column;gap:12px;}
 
@@ -1986,6 +2054,24 @@
     </div>
   </header>
 
+  <!-- Preview do trajeto do dia (v8.16.0). Fica aqui, entre o cabeçalho e a
+       lista, porque a lista é reescrita inteira a cada toque e porque assim a
+       faixa rola para fora quando o técnico desce o roteiro. Só aparece quando
+       o link traz roteiro válido. -->
+  <div class="campo-mapa" id="campoMapa" hidden>
+    <div class="campo-mapa-tela" id="campoMapaTela"></div>
+    <button type="button" class="campo-mapa-toque" id="campoMapaToque"
+            aria-label="Ampliar o mapa do trajeto"></button>
+    <span class="campo-mapa-dica" id="campoMapaDica">toque para ampliar</span>
+    <button type="button" class="campo-mapa-chip" id="campoMapaChip">Ocultar</button>
+  </div>
+  <button type="button" class="campo-mapa-barra" id="campoMapaBarra" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 6.5l6-2.5 6 2.5 6-2.5v13l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13M15 6.5v13"/>
+    </svg>
+    Ver o trajeto no mapa
+  </button>
+
   <div class="campo-lista" id="campoLista" role="main"></div>
 
 </div>
@@ -2000,7 +2086,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.15.0';
+const VERSAO = '8.16.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2030,6 +2116,10 @@ function aplicarTema(tema, salvar){
   // então a posição, o zoom e a rota traçada continuam onde estavam.
   if (camadaBase)    camadaBase.setUrl(urlTile(TILES[tema].base));
   if (camadaRotulos) camadaRotulos.setUrl(urlTile(TILES[tema].rot));
+  // O mapa da tela do campo troca junto (v8.16.0) — é o mesmo interruptor de
+  // tema, e ele existe nas duas telas desde a v3.3
+  if (camadaBaseCampo)    camadaBaseCampo.setUrl(urlTile(TILES[tema].base));
+  if (camadaRotulosCampo) camadaRotulosCampo.setUrl(urlTile(TILES[tema].rot));
   if (salvar){ try{ localStorage.setItem(CHAVE_TEMA, tema); }catch(e){ /* segue sem persistir */ } }
 }
 
@@ -2066,6 +2156,11 @@ const TILES = {
 const urlTile = servico => ESRI + servico + '/MapServer/tile/{z}/{y}/{x}';
 let map = null;
 let camadaBase = null, camadaRotulos = null;
+/* As camadas do mapa da TELA DO CAMPO (v8.16.0) moram aqui em cima, junto das
+   do escritório, e não lá embaixo com o resto do mapa do campo. Motivo: o
+   `aplicarTema()` logo abaixo roda na CARGA e lê as quatro — com a declaração
+   depois dele, um `let` em zona morta derrubaria o app inteiro ao abrir. */
+let camadaBaseCampo = null, camadaRotulosCampo = null;
 if (!modoCampoAtivo) {
   map = L.map('map', { zoomControl: true }).setView([-28.6775, -49.3697], 13);
   // className põe a classe no contêiner da camada, então o filtro do CSS vale
@@ -5889,7 +5984,7 @@ async function tracarNaOrdemAtual(mensagemOk){
   const r = data.routes[0];
   drawResult(r.distance, r.duration, r.geometry, r.legs);
   setStatus(mensagemOk, true);
-  prepararEnvio(r.distance, r.duration);
+  prepararEnvio(r.distance, r.duration, r.geometry);
 }
 
 document.getElementById('routeBtn').onclick = async () => {
@@ -6071,8 +6166,14 @@ function retomarRoteiro(texto){
 
 // Chamada depois de uma rota traçada com sucesso (routeBtn ou optimizeBtn):
 // guarda o resumo e revela a seção "Enviar para o campo"
-function prepararEnvio(distance, duration){
-  ultimoResumo = { d: Math.round(distance), t: Math.round(duration) };
+function prepararEnvio(distance, duration, geometry){
+  /* O trajeto entra no resumo, e não numa variável nova, porque o resumo já é
+     guardado por técnico (salvarNoTecnico) e já morre junto com a rota em
+     invalidarRota(). Um trajeto que sobrevivesse à rota desfeita mandaria para
+     o campo o desenho de um caminho que não é mais o do dia. */
+  const bruto = (geometry && geometry.coordinates) ? geometry.coordinates.map(c => [c[1], c[0]]) : [];
+  ultimoResumo = { d: Math.round(distance), t: Math.round(duration),
+                   g: bruto.length ? simplificarLinha(bruto, TOLERANCIA_TRAJETO) : null };
   atualizarResumoDia();   // entrou mais uma rota no dia (v8.8.0)
   document.getElementById('envioSection').style.display = 'block';
   document.getElementById('linkPronto').style.display = 'none';
@@ -6100,6 +6201,92 @@ function prepararEnvio(distance, duration){
 
 // Os três separadores (e o próprio %) são escapados nos nomes — um cliente
 // chamado "A|B" quebraria o link em silêncio, o pior tipo de falha aqui.
+/* ---------------- O trajeto dentro do link (v8.16.0) ----------------
+   Pedido do usuário: um preview do mapa na tela do campo, "assim o técnico
+   teria uma noção do trajeto que fará". O link já levava as PARADAS; o desenho
+   da rota, não — e sem ele o preview seria um punhado de pontos soltos, que não
+   mostra por onde se passa.
+
+   ⚠️ A geometria crua do OSRM não cabe: medido numa rota real de 10 paradas e
+   52,8 km, são 1417 pontos, e o link iria de 518 para 4160 caracteres. Por isso
+   ela é SIMPLIFICADA (Douglas-Peucker) antes de entrar. A 30m de tolerância
+   sobram 139 pontos e o link fica em ~1150 — o dobro do de hoje, e ainda um
+   terço de um limite de URL que preocupe.
+   ⚠️ 30m foi escolhido pela tela, não pelo gosto: numa faixa de 340px mostrando
+   uma rota de 50km, um pixel vale ~150m, então o desvio fica abaixo de meio
+   pixel. Mesmo ampliando o mapa até a rua o erro é de poucos pixels, e o que se
+   quer ali é reconhecer o caminho, não navegar por ele — quem navega é o Waze.
+   ⚠️ A tolerância é em GRAUS e a conta é plana. Em 50km de Criciúma isso erra
+   uma fração de metro; não use este simplificador para distância. */
+const TOLERANCIA_TRAJETO = 30 / 111000;   // ~30 metros, em graus
+
+function simplificarLinha(ps, tol){
+  if (ps.length < 3) return ps;
+  // Distância ao quadrado de um ponto ao SEGMENTO (não à reta infinita)
+  const dist2 = (p, a, b) => {
+    let x = a[0], y = a[1], dx = b[0] - x, dy = b[1] - y;
+    if (dx || dy){
+      const t = ((p[0] - x) * dx + (p[1] - y) * dy) / (dx * dx + dy * dy);
+      if (t > 1){ x = b[0]; y = b[1]; } else if (t > 0){ x += dx * t; y += dy * t; }
+    }
+    dx = p[0] - x; dy = p[1] - y;
+    return dx * dx + dy * dy;
+  };
+  // Douglas-Peucker com pilha própria: uma rota urbana passa de mil pontos, e a
+  // versão recursiva estouraria a pilha do navegador em rotas longas
+  const fica = new Array(ps.length).fill(false);
+  fica[0] = fica[ps.length - 1] = true;
+  const pilha = [[0, ps.length - 1]];
+  while (pilha.length){
+    const [i, j] = pilha.pop();
+    let pior = 0, k = -1;
+    for (let m = i + 1; m < j; m++){
+      const d = dist2(ps[m], ps[i], ps[j]);
+      if (d > pior){ pior = d; k = m; }
+    }
+    if (k > 0 && pior > tol * tol){ fica[k] = true; pilha.push([i, k], [k, j]); }
+  }
+  return ps.filter((_, i) => fica[i]);
+}
+
+/* Codificação "polyline" do Google/OSRM, precisão 5 (~1,1m). Cada coordenada
+   entra como DIFERENÇA da anterior, em zigue-zague, cinco bits por caractere.
+   ⚠️ Os caracteres gerados vão de 63 a 126, e essa faixa INCLUI `~` e `|`, que
+   são justamente os separadores do link. Por isso o resultado passa por escSep
+   antes de entrar no grupo — sem isso um trajeto com o caractere errado partiria
+   o link ao meio e o roteiro chegaria corrompido ao celular. */
+function codificarLinha(ps){
+  let out = '', la = 0, ln = 0;
+  const pedaco = v => {
+    v = v < 0 ? ~(v << 1) : (v << 1);
+    let t = '';
+    while (v >= 0x20){ t += String.fromCharCode((0x20 | (v & 0x1f)) + 63); v >>= 5; }
+    return t + String.fromCharCode(v + 63);
+  };
+  for (const p of ps){
+    const a = Math.round(p[0] * 1e5), b = Math.round(p[1] * 1e5);
+    out += pedaco(a - la) + pedaco(b - ln);
+    la = a; ln = b;
+  }
+  return out;
+}
+
+function decodificarLinha(txt){
+  const ps = []; let i = 0, la = 0, ln = 0;
+  const pedaco = () => {
+    let r = 0, turno = 0, b;
+    do { b = txt.charCodeAt(i++) - 63; r |= (b & 0x1f) << turno; turno += 5; } while (b >= 0x20);
+    return (r & 1) ? ~(r >> 1) : (r >> 1);
+  };
+  try{
+    while (i < txt.length){ la += pedaco(); ln += pedaco(); ps.push([la / 1e5, ln / 1e5]); }
+  }catch(e){ return []; }
+  // Link truncado no meio gera coordenada sem sentido: melhor nenhum trajeto do
+  // que um risco atravessando o oceano
+  return ps.every(p => isFinite(p[0]) && isFinite(p[1]) && Math.abs(p[0]) <= 90 && Math.abs(p[1]) <= 180)
+    ? ps : [];
+}
+
 const escSep   = t => String(t).replace(/%/g,'%25').replace(/~/g,'%7E').replace(/\|/g,'%7C').replace(/\*/g,'%2A');
 const unescSep = t => String(t).replace(/%2A/g,'*').replace(/%7C/g,'|').replace(/%7E/g,'~').replace(/%25/g,'%');
 
@@ -6135,10 +6322,15 @@ function montarRoteiro(){
     ? [Math.round(originLatLng[0] * 1e5), Math.round(originLatLng[1] * 1e5), escSep(rotuloOrigem())].join('*')
     : '';
   const tecnico = (tecnicos[tecnicoAtivo] || {}).nome || '';
-  return ['9', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
+  // FORMATO v10 (v8.16.0): 11º grupo = o TRAJETO, simplificado e em polyline,
+  //   para a tela do campo desenhar o caminho no preview do mapa. Os dez
+  //   anteriores não mudaram de posição nem de significado.
+  const trajeto = (ultimoResumo && ultimoResumo.g && ultimoResumo.g.length)
+    ? escSep(codificarLinha(ultimoResumo.g)) : '';
+  return ['10', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
           ultimoResumo ? ultimoResumo.d : '', ultimoResumo ? ultimoResumo.t : '',
           (voltarParaOrigem() && originLatLng) ? '1' : '', idDoRoteiro(), origem,
-          escSep(tecnico)].join('~');
+          escSep(tecnico), trajeto].join('~');
 }
 
 /* ---------------- Compressão do link (v2.7) ---------------- */
@@ -6203,14 +6395,14 @@ function lerRoteiroJson(json){
 
 function lerRoteiroCompacto(texto){
   const [ver, clientesRaw, tiposRaw, paradasRaw, d, t, retornoRaw, ridRaw, origemRaw,
-         tecnicoRaw] = texto.split('~');
+         tecnicoRaw, trajetoRaw] = texto.split('~');
   // v6 acrescentou a prioridade como 6º campo da parada; v7, o retorno como 7º
   // grupo (com a coordenada dentro); v8, o identificador do roteiro e a origem
   // em grupos próprios; v9, o nome do técnico. Em links antigos os campos
   // simplesmente não vêm.
-  if (!['5','6','7','8','9'].includes(ver)) return null; // formato desconhecido: link inválido
+  if (!['5','6','7','8','9','10'].includes(ver)) return null; // formato desconhecido: link inválido
   // Do v8 em diante o rid, o retorno e a origem moram nos mesmos grupos
-  const v8ouMais = ver === '8' || ver === '9';
+  const v8ouMais = ['8','9','10'].includes(ver);
   const clientes = clientesRaw ? clientesRaw.split('|').map(unescSep) : [];
   const tipos    = tiposRaw    ? tiposRaw.split('|').map(unescSep)    : [];
   let la = 0, ln = 0;
@@ -6240,9 +6432,13 @@ function lerRoteiroCompacto(texto){
   // tela do campo o mostra, navega e marca como concluído sem código separado
   if (temRetorno && origem) s.push([origem.nome, origem.lat, origem.lng, 'RETORNO', '', false, true]);
 
+  // O trajeto só existe do v10 em diante; link antigo simplesmente não tem, e a
+  // tela do campo mostra o mapa só com os pontos
+  const traj = (ver === '10' && trajetoRaw) ? decodificarLinha(unescSep(trajetoRaw)) : [];
   return { v: Number(ver), s, d: d ? Number(d) : null, t: t ? Number(t) : null,
            rid: (v8ouMais && ridRaw) ? ridRaw : null, origem, retorno: temRetorno,
-           tecnico: (ver === '9' && tecnicoRaw) ? unescSep(tecnicoRaw) : '' };
+           tecnico: (['9','10'].includes(ver) && tecnicoRaw) ? unescSep(tecnicoRaw) : '',
+           traj };
 }
 
 // Botão "Gerar link do roteiro": monta o link completo (URL atual + #r=...) e mostra
@@ -6454,6 +6650,158 @@ async function ativarModoCampo(){
   // uma que marcou por engano. Também não é salva.
   const abertos = new Set();
   desenharCampo(roteiro, codigo, feitos, confirmando, abertos);
+
+  // O mapa vem depois da lista: ele lê o progresso que ela acabou de calcular
+  montarMapaCampo(roteiro);
+  atualizarPinosCampo(roteiro, feitos, roteiro.s.findIndex(p => !feitos.has(chaveDaParada(p))));
+
+  document.getElementById('campoMapaToque').onclick = alternarMapaCheio;
+  document.getElementById('campoMapaChip').onclick = () => {
+    const caixa = document.getElementById('campoMapa');
+    if (caixa.classList.contains('cheio')){ alternarMapaCheio(); return; }
+    caixa.hidden = true;
+    document.getElementById('campoMapaBarra').hidden = false;
+    try{ localStorage.setItem(CHAVE_MAPA_CAMPO, '0'); }catch(e){}
+  };
+  document.getElementById('campoMapaBarra').onclick = () => {
+    try{ localStorage.setItem(CHAVE_MAPA_CAMPO, '1'); }catch(e){}
+    montarMapaCampo(roteiro);
+    atualizarPinosCampo(roteiro, feitos, roteiro.s.findIndex(p => !feitos.has(chaveDaParada(p))));
+  };
+}
+
+/* ---------------- O mapa da tela do campo (v8.16.0) ----------------
+   Pedido do usuário: "um preview do mapa para a tela externa, no caso da rota
+   feita para aquele dia — assim o técnico teria uma noção do trajeto que fará".
+
+   Até aqui a tela do campo era, de propósito, "sem mapa": uma lista de paradas
+   na ordem certa. O que faltava era a VISÃO DO DIA — se o roteiro sobe para
+   Nova Veneza e volta, ou se fecha um laço dentro de Criciúma, a lista não diz.
+
+   ⚠️ O Leaflet JÁ ESTÁ CARREGADO aqui: é o mesmo arquivo único, e a biblioteca
+   entra antes da divisão entre as duas telas. O que o modo campo pulava era
+   apenas criar o mapa do escritório. Então isto não acrescenta nenhum download
+   de biblioteca ao celular — só os ladrilhos.
+   ⚠️ O mapa da faixa nasce com TODA a interação desligada (arrastar, pinça,
+   rodinha, duplo toque, teclado). Um mapa arrastável dentro de uma lista que
+   rola rouba o gesto vertical e trava a tela — é o defeito clássico de mapa
+   embutido em celular. Quem quiser mexer toca e vai para a tela cheia, onde a
+   interação é ligada de volta.
+   ⚠️ Nenhum `fitBounds` anima (`animate:false`), pelos dois motivos de sempre:
+   o modo leve mata transições, e uma tela que não está pintando nunca termina
+   uma animação — e aí o mapa ficaria preso no enquadramento errado. */
+let mapaCampo = null;   // as camadas dele são declaradas junto das do escritório
+let pinosCampo = [], linhaCampo = null, pinoOrigemCampo = null;
+const CHAVE_MAPA_CAMPO = 'hg_campo_mapa';
+
+function mapaCampoVisivel(){
+  try{ return localStorage.getItem(CHAVE_MAPA_CAMPO) !== '0'; }catch(e){ return true; }
+}
+
+// O pino de uma parada no mapa do campo. O número é o mesmo da lista, e o
+// estado acompanha o progresso do dia: a da vez acende, a concluída apaga.
+function pinoCampo(rotulo, estado){
+  return L.divIcon({ className:'', iconSize:[22,22], iconAnchor:[11,11],
+    html:`<div class="brand-icon num campo-pin ${estado}">${rotulo}</div>` });
+}
+
+function enquadrarMapaCampo(){
+  if (!mapaCampo) return;
+  const camadas = [linhaCampo, ...pinosCampo, pinoOrigemCampo].filter(Boolean);
+  if (!camadas.length) return;
+  mapaCampo.invalidateSize();
+  /* ⚠️ maxZoom 16 e não o 19 do mapa: com UMA parada só (ou todas no mesmo
+     quarteirão) a caixa do enquadramento tem tamanho zero, e aí o Leaflet vai
+     ao zoom máximo — o técnico abriria o link e veria uma calçada ampliada,
+     sem nenhuma referência de onde aquilo fica. 16 é também o último zoom em
+     que o Esri tem imagem de verdade nesta região. */
+  mapaCampo.fitBounds(L.featureGroup(camadas).getBounds(),
+                      { padding:[22, 22], maxZoom:16, animate:false });
+}
+
+function montarMapaCampo(roteiro){
+  const caixa = document.getElementById('campoMapa');
+  const barra = document.getElementById('campoMapaBarra');
+  if (!caixa || !barra) return;
+
+  const mostrar = mapaCampoVisivel();
+  caixa.hidden = !mostrar;
+  barra.hidden = mostrar;
+
+  // ⚠️ O mapa só é criado quando a faixa está VISÍVEL: o Leaflet mede o
+  // contêiner ao nascer, e num elemento `hidden` ele nasceria com altura 0 e
+  // não pediria ladrilho nenhum.
+  if (mostrar && !mapaCampo){
+    mapaCampo = L.map('campoMapaTela', {
+      zoomControl:false, attributionControl:true,
+      // O crédito fica; o selo "Leaflet" na frente dele, não (ver o CSS)
+      dragging:false, touchZoom:false, scrollWheelZoom:false,
+      doubleClickZoom:false, boxZoom:false, keyboard:false, tap:false,
+      /* ⚠️ zoomSnap 0 = zoom FRACIONÁRIO, e aqui ele não é luxo. Com os degraus
+         inteiros de sempre, o `fitBounds` tem de escolher o degrau que CABE, e
+         numa caixa estreita como a faixa (ou alta como a tela cheia) sobra até
+         metade da tela vazia em volta da rota — medido na tela cheia de 375x812:
+         a rota ocupava 199x166, centrada, com 323px de folga em cima e embaixo.
+         Sem degraus, o enquadramento encosta na borda. O preço é o ladrilho
+         redimensionado, que num preview não incomoda. */
+      zoomSnap:0
+    }).setView([-28.6775, -49.3697], 12);
+    mapaCampo.attributionControl.setPrefix(false);
+    camadaBaseCampo = L.tileLayer(urlTile(TILES[temaAtual()].base), {
+      attribution:'&copy; Esri &copy; OpenStreetMap contributors',
+      maxZoom:19, maxNativeZoom:16, className:'camada-base'
+    }).addTo(mapaCampo);
+    camadaRotulosCampo = L.tileLayer(urlTile(TILES[temaAtual()].rot), {
+      maxZoom:19, maxNativeZoom:16, className:'camada-rotulos'
+    }).addTo(mapaCampo);
+
+    // O trajeto só vem em link do formato v10 em diante. Sem ele o mapa mostra
+    // os pontos do dia — menos do que o pedido, mas ainda diz onde é o dia, e é
+    // o que acontece com um link gerado antes desta versão.
+    if (roteiro.traj && roteiro.traj.length > 1){
+      linhaCampo = L.polyline(roteiro.traj, { color:'#F2A93C', weight:4, opacity:.9 }).addTo(mapaCampo);
+    }
+    if (roteiro.origem){
+      pinoOrigemCampo = L.marker([roteiro.origem.lat, roteiro.origem.lng], { icon: dot('#F2A93C') })
+        .addTo(mapaCampo).bindPopup(escaparHtml(roteiro.origem.nome || 'Origem'));
+    }
+    roteiro.s.forEach((p, i) => {
+      const m = L.marker([p[1], p[2]], { icon: pinoCampo(p[6] ? '↩' : (i + 1), '') })
+        .addTo(mapaCampo).bindPopup(`${p[6] ? '↩' : i + 1}. ${escaparHtml(p[0])}`);
+      pinosCampo.push(m);
+    });
+    // Sem o trajeto no link, a dica do canto mentiria menos assim
+    const dica = document.getElementById('campoMapaDica');
+    if (dica && !linhaCampo) dica.textContent = 'paradas do dia · toque para ampliar';
+    enquadrarMapaCampo();
+  }else if (mostrar && mapaCampo){
+    enquadrarMapaCampo();
+  }
+}
+
+// Acompanha o progresso: a parada da vez acende, a concluída apaga
+function atualizarPinosCampo(roteiro, feitos, indiceProximo){
+  if (!mapaCampo) return;
+  pinosCampo.forEach((m, i) => {
+    const p = roteiro.s[i];
+    const estado = feitos.has(chaveDaParada(p)) ? 'feita' : (i === indiceProximo ? 'agora' : '');
+    m.setIcon(pinoCampo(p[6] ? '↩' : (i + 1), estado));
+  });
+}
+
+function alternarMapaCheio(){
+  const caixa = document.getElementById('campoMapa');
+  const chip = document.getElementById('campoMapaChip');
+  if (!caixa || !mapaCampo) return;
+  const cheio = !caixa.classList.contains('cheio');
+  caixa.classList.toggle('cheio', cheio);
+  chip.textContent = cheio ? 'Fechar' : 'Ocultar';
+  // Na tela cheia o mapa vira um mapa de verdade; na faixa, uma figura
+  ['dragging','touchZoom','scrollWheelZoom','doubleClickZoom','boxZoom','keyboard']
+    .forEach(h => { if (mapaCampo[h]) cheio ? mapaCampo[h].enable() : mapaCampo[h].disable(); });
+  // ⚠️ invalidateSize antes de enquadrar: o contêiner acabou de mudar de
+  // tamanho e o Leaflet ainda acha que tem 160px de altura.
+  enquadrarMapaCampo();
 }
 
 // Redesenha a lista de paradas e a barra de progresso a partir do estado atual
@@ -6490,6 +6838,8 @@ function desenharCampo(roteiro, codigo, feitos, confirmando, abertos){
   // O "próximo" é a primeira parada ainda não concluída, na ordem do roteiro —
   // é ela que ganha o destaque visual (borda âmbar)
   const indiceProximo = roteiro.s.findIndex(p => !feitos.has(chaveDaParada(p)));
+
+  atualizarPinosCampo(roteiro, feitos, indiceProximo);
 
   const lista = document.getElementById('campoLista');
   const banner = feitas === total

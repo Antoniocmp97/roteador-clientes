@@ -63,6 +63,8 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | efeito ao trocar de aba | `A passagem ao trocar de técnico (v8.14.0)` | `passagemLigada`, `animarTrocaDeAba`, `escalonarCascata` |
 | km do dia | `Quilometragem do dia (v8.8.0)` | `resumoDoDia`, `atualizarResumoDia` |
 | apagar/esconder bolinhas fora da viagem | `O que o mapa mostra dos clientes (v8.15.0)` | `aplicarFocoNaRota`, `atualizarBotaoFoco`, `RECADOS_FOCO` |
+| mapa da tela do campo | `O mapa da tela do campo (v8.16.0)` | `montarMapaCampo`, `atualizarPinosCampo`, `alternarMapaCheio`, `enquadrarMapaCampo` |
+| o trajeto dentro do link | `O trajeto dentro do link (v8.16.0)` | `simplificarLinha`, `codificarLinha`, `decodificarLinha` |
 | restaurar o planejamento | `O planejamento do dia sobrevive…` | `salvarDia`, `restaurarDia` |
 | carregar o `.umap` | `Upload / parse GeoJSON` | `lerUmap`, `importClients` |
 | checklist de clientes | `Checklist + stops UI` | `renderChecklist` |
