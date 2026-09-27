@@ -530,8 +530,6 @@
                  0 10px 30px rgba(21,34,41,.18);
   }
   /* As caixas de dentro acompanham: sólidas, virariam blocos boiando no vidro */
-  .guia .check-row, .console .check-row,
-  .guia .stop-row, .console .stop-row,
   .guia .resumo-rota, .console .resumo-rota,
   .guia input[type="text"], .console input[type="text"],
   .guia .tipos-painel, .console .tipos-painel,
@@ -692,8 +690,6 @@
     :root[data-vidro="0"] .divisor{background:var(--ink);}
     /* E as caixas de dentro voltam a ser sólidas: a 80% elas mostrariam o
        painel opaco atrás, que é uma cor diferente da que elas deveriam ter */
-    :root[data-vidro="0"] .guia .check-row,    :root[data-vidro="0"] .console .check-row,
-    :root[data-vidro="0"] .guia .stop-row,     :root[data-vidro="0"] .console .stop-row,
     :root[data-vidro="0"] .guia .resumo-rota,  :root[data-vidro="0"] .console .resumo-rota,
     :root[data-vidro="0"] .guia input[type="text"], :root[data-vidro="0"] .console input[type="text"],
     :root[data-vidro="0"] .guia .tipos-painel, :root[data-vidro="0"] .console .tipos-painel,
@@ -917,15 +913,32 @@
      Relatado pelo usuário em 14/09/2026. Agora a caixa fica do tamanho
      ajustado, com ou sem busca. Só antes de carregar a base ela se ajusta ao
      aviso, para não abrir o site com um vão vazio. */
-  .checklist{display:flex;flex-direction:column;gap:6px;height:var(--altura-checklist, 320px);overflow-y:auto;padding-right:2px;}
+  /* ⚠️ **SEM GAP, porque agora quem separa é o fio** (v8.22.0, ponto 4 da
+     revisão de layout). Cada linha de cliente era um cartão com borda, fundo e
+     6px de respiro; numa coluna de 340px isso dava **34 caixas com borda**, e
+     o nome de uma unidade podia ficar dentro de **quatro molduras encaixadas**
+     (cartão de vidro › módulo › cliente › unidade). Borda é uma afirmação —
+     "isto é uma coisa separada" —, e quando tudo tem borda nada está agrupado.
+     Agrupar é justamente o trabalho deste módulo. */
+  .checklist{display:flex;flex-direction:column;gap:0;height:var(--altura-checklist, 320px);overflow-y:auto;padding-right:2px;}
   .checklist.sem-base{height:auto;}
   .checklist > *{flex:none;}
-  .check-row{display:flex;align-items:flex-start;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:13px;}
+  /* A unidade também deixou de ser caixa (v8.22.0): dentro da cascata ela já
+     está marcada pelo filete à esquerda, e uma caixa ali seria a terceira
+     moldura em volta do mesmo nome. O realce de passar o mouse passou a ser o
+     que mostra a área de clique — antes era a borda que fazia isso. */
+  .check-row{display:flex;align-items:flex-start;gap:8px;border-radius:6px;padding:6px 8px;font-size:13px;}
+  .check-row:hover{background:var(--hover);}
   .check-row input{margin-top:2px;accent-color:var(--teal);}
   /* Checklist agrupado por cliente (camada do uMap). O cabeçalho abre e fecha
      a cascata de filiais; começa fechado para dar visão geral da carteira. */
-  .grupo{border:1px solid var(--line);border-radius:7px;background:var(--panel-2);overflow:hidden;}
-  .grupo-head{display:flex;align-items:center;gap:8px;padding:9px 10px;cursor:pointer;
+  /* ⚠️ O fio fica no CLIENTE e não no cabeçalho, para a cascata aberta ficar
+     do lado de dentro da mesma linha de lista (v8.22.0). O último não leva
+     fio: risco solto no fim da lista é sujeira, não separação. */
+  .grupo{border-bottom:1px solid var(--line);}
+  .grupo:last-child{border-bottom:none;}
+  .grupo-head{display:flex;align-items:center;gap:8px;padding:9px 6px;cursor:pointer;
+              border-radius:6px;
               user-select:none;font-size:13px;font-weight:600;color:var(--text);}
   .grupo-head:hover{background:var(--hover);}
   /* Chevron de traço desde a v8.4.2. Era o caractere ▶, que ficou para trás
@@ -965,21 +978,30 @@
   .grupo-umap.tem-selecao .grupo-seta{color:var(--amber);}
   .grupo.tem-selecao .grupo-cont,
   .grupo-umap.tem-selecao .grupo-cont{color:var(--amber); font-weight:700;}
-  .grupo-corpo{display:none;padding:0 8px 8px 8px;flex-direction:column;gap:6px;}
+  /* ⚠️ **O filete é o mesmo recurso que o grupo do uMap já usava desde a
+     v2.9** ("sem caixa dentro de caixa... lê melhor do que bordas aninhadas num
+     painel de 340px"). A v8.22.0 só levou a mesma decisão um nível abaixo, para
+     a cascata de unidades — ela já estava tomada e escrita, e valia aqui. */
+  .grupo-corpo{display:none;padding:0 0 8px 7px;margin:0 0 2px 7px;
+               border-left:2px solid var(--line);flex-direction:column;gap:2px;}
   .grupo-corpo > *{flex:none;}
   .grupo.aberto .grupo-corpo{display:flex;}
-  .grupo-corpo .check-row{background:var(--panel);}
 
   /* Nível do GRUPO do uMap (acima da camada). Sem caixa dentro de caixa: barra
      de cabeçalho + um filete à esquerda marcando o que pertence ao grupo, que
      lê melhor do que bordas aninhadas num painel de 340px. */
-  .grupo-umap{display:flex; flex-direction:column;}
+  /* O cabeçalho do grupo continua sendo uma caixa: ele é o topo de um bloco, e
+     não uma linha de lista. O bloco inteiro é que ganhou o fio de separação e o
+     respiro, no lugar do gap que saiu do checklist (v8.22.0). */
+  .grupo-umap{display:flex; flex-direction:column; padding:6px 0;
+              border-bottom:1px solid var(--line);}
+  .grupo-umap:last-child{border-bottom:none;}
   .grupo-umap-head{display:flex; align-items:flex-start; gap:8px; padding:9px 10px; cursor:pointer;
                    user-select:none; font-size:13px; font-weight:700; color:var(--text);
                    background:var(--panel-2); border:1px solid var(--line); border-radius:7px;}
   .grupo-umap-head:hover{background:var(--hover);}
   .grupo-umap.aberto .grupo-seta{transform:rotate(90deg);}
-  .grupo-umap-corpo{display:none; flex-direction:column; gap:6px;
+  .grupo-umap-corpo{display:none; flex-direction:column; gap:0;
                     margin:6px 0 0 5px; padding-left:7px; border-left:2px solid var(--line);}
   .grupo-umap.aberto .grupo-umap-corpo{display:flex;}
   .grupo-umap-corpo > *{flex:none;}
@@ -996,7 +1018,8 @@
      inline — mesma ideia da largura do painel (--painel-w). */
   /* Altura fixa pelo mesmo motivo do .checklist: com poucas paradas a caixa
      encolhia e o puxador do módulo 4 não tinha o que puxar. */
-  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;height:var(--altura-paradas, 240px);overflow-y:auto;position:relative;}
+  /* Sem gap: quem separa é o fio, como no checklist desde a v8.22.0 */
+  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;height:var(--altura-paradas, 240px);overflow-y:auto;position:relative;}
 
   /* Divisória entre os módulos 3 (Selecionar paradas) e 4 (Ordem da viagem).
      Puxar para CIMA faz o 4 crescer e o 3 encolher na mesma medida; para baixo,
@@ -1035,7 +1058,25 @@
   body.altura-arrastando{cursor:ns-resize; user-select:none;}
   body.altura-arrastando .divisor-modulos::before{background:var(--amber);}
   .stops > *{flex:none;}
-  .stop-row{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;}
+  /* ⚠️ **A Ordem da viagem segue a mesma lógica do checklist** (v8.22.1,
+     pedido do usuário logo depois de ver a v8.22.0 rodando: "o módulo de ordem
+     de viagem precisa seguir a mesma lógica"). Eu tinha deixado este módulo de
+     fora na v8.22.0 argumentando que uma parada é um OBJETO QUE SE ARRASTA e
+     que o cartão é o que a faz parecer pegável. O usuário discordou, e tem
+     razão: **consistência no painel inteiro pesa mais** do que essa distinção,
+     e quem diz "isto se arrasta" é a ALÇA, que tem destaque âmbar próprio
+     desde a v6.1.6 — não a borda.
+     ⚠️ **O fio vai em cima (`border-top`), e não embaixo.** É o que permite
+     apagá-lo na primeira linha e na linha logo depois de um cabeçalho
+     ("Prioritárias · nesta ordem" / "Demais") com um seletor só — o CSS não
+     sabe selecionar "o irmão anterior".
+     ⚠️ **O cartão volta ENQUANTO a parada está sendo arrastada** (ver
+     `.stop-row.arrastando`): aí ela é mesmo um objeto na mão, e uma linha sem
+     caixa flutuando com sombra pareceria defeito. */
+  .stop-row{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding:8px 6px;font-size:13px;}
+  .stop-row:first-child{border-top:none;}
+  .stop-grupo + .stop-row{border-top:none;}
+  .stop-row:hover{background:var(--hover);}
   .stop-row .n{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;width:16px;flex-shrink:0;}
 
   /* Arrastar para reordenar (v3.8), como nas listas do celular.
@@ -1078,8 +1119,11 @@
      durante o arraste — quem mostra o destino é o indicador âmbar. Mexer nas
      outras mudaria as posições que servem de referência e a linha ficaria
      pulando para frente e para trás na divisa entre duas paradas. */
-  .stop-row.arrastando{position:relative; z-index:5; border-color:var(--amber);
-                       box-shadow:0 6px 18px var(--sombra);}
+  /* ⚠️ Aqui o cartão VOLTA (v8.22.1): a parada saiu da lista e está na mão. É
+     também o que separa visualmente a linha que se move das que ficaram. */
+  .stop-row.arrastando{position:relative; z-index:5;
+                       background:var(--panel-2); border:1px solid var(--amber);
+                       border-radius:7px; box-shadow:0 6px 18px var(--sombra);}
   .indicador-soltar{position:absolute; left:2px; right:2px; height:2px; border-radius:1px;
                     background:var(--amber); pointer-events:none; list-style:none; z-index:6;}
   body.arrastando-parada, body.arrastando-parada *{cursor:grabbing !important;}
@@ -1105,8 +1149,12 @@
   .stop-row button svg{width:14px; height:14px; fill:none; stroke:currentColor;
                        stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round;}
   .stop-row button svg.cheia{fill:currentColor;}
-  /* Paradas prioritárias (★): ficam fixas na ordem escolhida, à frente das demais */
-  .stop-row.prioritaria{border-color:var(--amber-dim);}
+  /* Paradas prioritárias (★): ficam fixas na ordem escolhida, à frente das demais.
+     ⚠️ A borda âmbar-escura que marcava a linha SAIU na v8.22.1, junto com o
+     cartão, e não foi substituída: ela era o TERCEIRO sinal da mesma coisa —
+     a parada já está dentro do bloco "Prioritárias · nesta ordem" e já tem a
+     ★ acesa em âmbar. É a mesma lição da v8.4.2, quando a bolinha da calha do
+     checklist saiu por repetir o que o contador já dizia. */
   .stop-row .btn-fixar{color:var(--muted);}
   .stop-row.prioritaria .btn-fixar{color:var(--amber);}
   /* Coluna estreita (v6.2): a parada fica numa linha só, sem as setas ▲▼.
@@ -1122,10 +1170,13 @@
   /* O texto já vem em caixa normal do JS ("Prioritárias · nesta ordem",
      "Demais"): era o CSS que o punha em caixa alta (v8.21.0). O corpo sobe de
      9,5 para 10,5px porque a Inter é mais estreita que a mono no mesmo corpo. */
+  /* O respiro que o `gap` da lista dava passou para cá, agora que a lista não
+     tem gap (v8.22.1). O primeiro cabeçalho não leva respiro em cima. */
   .stop-grupo{
     font-family:'Inter',sans-serif; font-size:10.5px; font-weight:600; letter-spacing:.2px;
-    color:var(--muted); padding:4px 2px 0; list-style:none;
+    color:var(--muted); padding:14px 2px 4px; list-style:none;
   }
+  .stop-grupo:first-child{padding-top:2px;}
 
   /* Botões do módulo Rota: "Otimizar e traçar" (âmbar, principal) e
      "Nesta ordem" (secundário, mais estreito) */
@@ -1257,7 +1308,12 @@
      elemento de fora é do Leaflet e carrega a posição do marcador. */
   .marcador-destacado .brand-icon{transform:scale(1.6);
               box-shadow:0 0 0 3px var(--amber-fraco), 0 0 12px var(--amber);}
-  .stop-row.realcada{border-color:var(--amber); background:var(--hover);}
+  /* ⚠️ O realce vindo do mapa (v6.7.0) perdeu a borda âmbar junto com o cartão,
+     e precisava de outro portador — o fundo sozinho é fraco demais numa lista
+     que rola. Entrou uma **barra âmbar por dentro**, com `inset box-shadow`:
+     ela não ocupa espaço, então não empurra o texto nem muda a altura da linha
+     (que é medida durante o arraste). */
+  .stop-row.realcada{background:var(--hover); box-shadow:inset 3px 0 0 var(--amber);}
   /* ---- O que o mapa mostra dos clientes (v8.15.0) ----
      O JS marca com `ponto-fora-da-rota` quem não está na viagem de técnico
      nenhum; QUANTO isso apaga é decidido aqui, pelo estado no `<html>`. Assim
@@ -2175,7 +2231,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.21.0';
+const VERSAO = '8.22.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 

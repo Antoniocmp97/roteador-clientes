@@ -1,7 +1,7 @@
 # Mapa do código — `index.html`
 
 > Onde cada coisa mora e o que liga o quê. Feito em 24/09/2026 na v8.8.0;
-> conferido linha a linha na v8.16.1 e atualizado em 27/09/2026 na v8.21.0. Os números de
+> conferido linha a linha na v8.16.1 e atualizado em 27/09/2026 na v8.22.1. Os números de
 > linha envelhecem; os **títulos de seção** não — procure pelo título quando a
 > linha não bater.
 >
@@ -75,6 +75,8 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | restaurar o planejamento | `O planejamento do dia sobrevive…` | `salvarDia`, `restaurarDia` |
 | carregar o `.umap` | `Upload / parse GeoJSON` | `lerUmap`, `importClients` |
 | checklist de clientes | `Checklist + stops UI` | `renderChecklist` |
+| a aparência de linha do checklist | `.checklist` / `.grupo` / `.check-row` no CSS | (regra) fio entre linhas, filete na cascata — sem cartão por linha (v8.22.0) |
+| a aparência de linha da ordem da viagem | `.stops` / `.stop-row` no CSS | (regra) fio em `border-top`; o cartão só em `.arrastando` (v8.22.1) |
 | lista de paradas (ordem) | `Arrastar para reordenar (v3.8)` | `renderStopsList` |
 | tipos de serviço | `Configuração dos tipos de serviço` | `renderTiposPainel` |
 | parada avulsa | `Parada avulsa (v7.0.0)` | `criarParadaAvulsa`, `novoPontoAvulso` |
@@ -246,21 +248,26 @@ mudou stops, origem, retorno, ou trocou a base
    calculado certo, mas o `setView` **animado** era o único caminho até lá. Não
    basta a conta estar certa — o caminho até o resultado também não pode
    depender da animação.
-2. **Largura da tela lida ao vivo em coisa que o disquete compara.**
+2. **O arraste da parada usa `setPointerCapture`,** então `pointermove` e
+   `pointerup` são escutados na **alça**, não na janela. Teste que dispara
+   esses eventos em `window` vê o arraste COMEÇAR (a classe e o indicador são
+   criados no `pointerdown`) e nunca terminar — parece um bug que não existe.
+   *Descoberto testando a v8.22.1.*
+3. **Largura da tela lida ao vivo em coisa que o disquete compara.**
    `aplicarArranjo()` roda a cada `resize` e chama `atualizarBotaoArranjo()`,
    que compara a tela com `arranjoGuardado() || arranjoNormal()`. Se o "normal"
    depender da largura **atual**, arrastar a janela muda a referência e o
    disquete acende sozinho, sem ninguém ter mexido em nada. Por isso
    `abreEmDuasColunas` é decidido **uma vez, na abertura** (v8.19.0), como a
    geometria padrão das janelas livres já era desde a v8.4.0.
-3. **`#map` nunca pode ser `position:static`.** Os painéis do Leaflet se ancoram
+4. **`#map` nunca pode ser `position:static`.** Os painéis do Leaflet se ancoram
    no primeiro ancestral posicionado; static faz eles vazarem por cima do painel.
-4. **`display:contents` não muda a árvore do HTML** — o seletor precisa descer
+5. **`display:contents` não muda a árvore do HTML** — o seletor precisa descer
    pela `section`.
-5. **Regra de elemento vence em silêncio.** `header{align-items:baseline}`
+6. **Regra de elemento vence em silêncio.** `header{align-items:baseline}`
    chegou na tela do campo e zerou a barra de progresso por meses.
-6. **`offsetTop` num elemento sticky já vem com o deslocamento embutido.**
-7. **O id de um ponto da base é `c<camada>_<feature>`** — reordenar uma camada
+7. **`offsetTop` num elemento sticky já vem com o deslocamento embutido.**
+8. **O id de um ponto da base é `c<camada>_<feature>`** — reordenar uma camada
    no uMap muda todos. Casar parada guardada é sempre por **coordenada**.
 
 ---

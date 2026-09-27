@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 27/09/2026 — v8.21.0 (a monoespaçada volta a ser dos números)
+> **Última atualização:** 27/09/2026 — v8.22.1 (a Ordem da viagem segue a mesma lógica)
 
 ---
 
@@ -53,6 +53,67 @@ sem dependências instaladas. Abre direto no navegador.
 - Checklist com **cascata de três níveis** quando o uMap tem grupos:
   **Grupo → Camada → Unidades**. Camadas sem grupo continuam no primeiro nível,
   lado a lado com os grupos
+- **O checklist é uma LISTA, e não uma pilha de cartões** (v8.22.0, ponto 4 da
+  revisão de layout de 26/09/2026). Cada cliente era um cartão com borda, fundo
+  e 6px de respiro, e cada unidade dentro dele era outro. Medido: o nome de uma
+  unidade ficava dentro de **duas caixas com borda** (cliente e unidade), dentro
+  do cartão de vidro. Agora o cliente é uma **linha de lista separada por um
+  fio**, e a cascata aberta se marca por um **filete à esquerda**.
+  ⚠️ **Borda é uma afirmação** — "isto aqui é uma coisa separada". Quando tudo
+  tem borda, nada está agrupado; e agrupar é justamente o trabalho deste módulo,
+  que existe para mostrar cliente → filial.
+  ⚠️ **O filete não é invenção: é o recurso que o nível do GRUPO do uMap já
+  usava desde a v2.9**, com a decisão escrita no CSS ("sem caixa dentro de
+  caixa... lê melhor do que bordas aninhadas num painel de 340px"). Esta versão
+  só levou a mesma decisão um nível abaixo, para a cascata de unidades.
+  ⚠️ **O `gap` do checklist foi a ZERO**, e isso é parte da mudança, não um
+  descuido: quem separa agora é o fio. Com gap e fio ao mesmo tempo a lista
+  ficaria mais frouxa do que era com cartão.
+  ⚠️ **Quem marca a área de clique passou a ser o `:hover`**, que antes era
+  coadjuvante da borda. As três linhas clicáveis ganharam a regra
+  (`.grupo-head`, `.grupo-umap-head`, `.check-row`). ⚠️ E o sinal de "tem
+  parada escolhida aqui dentro" **não mudou**: continua sendo a seta e o
+  contador acendendo em âmbar, da v8.4.2 — conferido depois.
+  ⚠️ **A `.check-row` teve de sair das duas listas de "caixas de dentro" do
+  vidro** (`.console .check-row` a 80% de `--panel-2`, e a variante do vidro
+  desligado). Elas têm especificidade maior que a regra nova e teriam devolvido
+  o fundo do cartão. Conferido nos dois estados do vidro: fundo transparente.
+  ⚠️ **A "Ordem da viagem" tinha ficado de fora, e o usuário desfez isso na
+  v8.22.1**: *"ficou bom, mas para ficar melhor o módulo de ordem de viagem
+  precisa seguir a mesma lógica"*. Meu argumento era que uma parada ali é um
+  **objeto que se arrasta** e que o cartão é o que a faz parecer pegável. Ele
+  tem razão: **consistência no painel inteiro pesa mais** que essa distinção, e
+  quem diz "isto se arrasta" é a **alça**, que tem destaque âmbar próprio desde
+  a v6.1.6 — não a borda. O módulo virou lista igual, com uma diferença que
+  aproveita o meu argumento em vez de descartá-lo: **o cartão volta enquanto a
+  parada está sendo arrastada**, que é quando ela é mesmo um objeto na mão.
+  ⚠️ **O cartão da parada carregava TRÊS estados pela cor da borda**, e cada um
+  precisou de destino antes de ele sair:
+  · **arrastando** (borda âmbar + sombra) → o cartão **volta**, com fundo,
+    borda âmbar e raio. Uma linha sem caixa flutuando com sombra pareceria
+    defeito, e é também o que separa a linha que se move das que ficaram.
+  · **prioritária** (borda âmbar-escura) → **saiu e não foi substituída**: era
+    o terceiro sinal da mesma coisa. A parada já está dentro do bloco
+    "Prioritárias · nesta ordem" e já tem a ★ acesa em âmbar. É a mesma lição
+    da v8.4.2, quando a bolinha da calha saiu por repetir o contador.
+  · **realçada pelo mapa** (v6.7.0, borda âmbar + fundo) → virou uma **barra
+    âmbar por dentro** (`inset box-shadow`), porque o fundo sozinho é fraco
+    demais numa lista que rola. Inset não ocupa espaço: não empurra o texto nem
+    muda a altura da linha — e a altura é medida durante o arraste.
+  ⚠️ **O fio vai em `border-top`, e não embaixo**: é o que permite apagá-lo na
+  primeira linha e na linha logo depois de um cabeçalho de bloco com um seletor
+  só (`.stop-grupo + .stop-row`) — o CSS não sabe selecionar "o irmão
+  anterior". O respiro que o `gap` dava passou para o `padding` dos cabeçalhos.
+  ⚠️ **O ganho de altura aqui é pequeno, e isto não era sobre altura**: 5
+  paradas sem prioritárias foram de **253,5 para 233,5px** (4px por parada). O
+  pedido era consistência.
+  ⚠️ **O cabeçalho do grupo do uMap continua sendo uma caixa**: ele é o topo de
+  um bloco, não uma linha de lista. Quem ganhou o fio e o respiro foi o bloco
+  inteiro.
+  ⚠️ Medido na base de teste (13 clientes, 27 unidades, tudo aberto): a lista
+  foi de **1845px para 1591px — 254px a menos, 14%**. Molduras fechadas visíveis
+  no escritório: **35 → 26**. Com os 39 clientes da base real o ganho é maior,
+  porque ele é por linha (7px de borda e respiro que saíram de cada uma).
 - **A calha do checklist tem uma marca só** (v8.4.2, relatado pelo usuário com
   print: "está me parecendo redundante o ponto e a seta"). ⚠️ O instinto estava
   certo, o alvo não: a seta e a bolinha **não** faziam a mesma coisa — a seta
@@ -1716,11 +1777,12 @@ tinham razão uma a uma — cada versão acrescentou um tamanho de letra, um uso
 | 1 | **11 tamanhos de letra** num vão de 3,5px (10 · 10,5 · 11 · 11,5 · 12 · 12,5 · 13 · 13,5), e nada entre 13,5 e 19. Meio pixel dá **altura de linha idêntica** e 0,3px por caractere. E "distância total" (13px) é maior que o título do módulo (11px) | em aberto — **deixar por último e sozinho numa versão**: altura de letra mexe em altura de módulo, que mexe nos pesos guardados |
 | 2 | **22 elementos de texto em âmbar** contra 4 em teal, fazendo cinco trabalhos (título, contador, número, resultado, ação, link). Contraste do título 4,66:1; o do contador **4,36:1, abaixo do mínimo da AA**, no menor corpo do app | em aberto — barato em código, mas é escolha de identidade |
 | 3 | **36 elementos em JetBrains Mono** contra 33 em Inter. Os 6 títulos acumulam mono + CAIXA ALTA + entreletra 1,5px + 11px, tudo junto, no elemento mais repetido do painel | ✅ **feito na v8.21.0** — 36 elementos em mono viram 23, e todos são número ou código |
-| 4 | **34 caixas com borda** numa coluna de 340px, aninhadas até 4 molduras em volta de um nome | em aberto — mexe em área de clique e em altura de lista |
+| 4 | **34 caixas com borda** numa coluna de 340px, aninhadas até 4 molduras em volta de um nome | ✅ **feito na v8.22.0** — o nome da unidade sai de dentro de 2 molduras, e a lista encolhe 14%. ⚠️ A conta "4 molduras" da revisão somava o cartão de vidro e o módulo, que não têm borda de verdade; medindo só as bordas do DOM eram **2** |
 | 5 | **31% do painel fora da vista a 1920×1080** (1442px de conteúdo em 991px), com 17,7% da largura em painel e 1568px de mapa parado; **53% fora da vista na TV de 1366** | ✅ **feito na v8.19.0** (só a parte de 1920; a TV continua em aberto) |
 | 6 | **Módulo Rota com 510px**, dos quais **122px (42% do bloco de envio)** são três explicações lidas uma vez na vida | ✅ **feito na v8.20.0** — envio de 290 para 169px, módulo Rota de 510 para 390px |
 
-Ordem recomendada para o resto: **2 → 4 → 1**.
+Ordem recomendada para o resto: **1**, com o **2** fora da fila por enquanto
+(o usuário pediu para deixá-lo de lado em 27/09/2026, sem descartar).
 
 **Material de trabalho na pasta, fora do repositório** (padrão `COMPARACAO-*.html`
 no `.gitignore`), para apagar quando não servirem mais:
@@ -1930,6 +1992,8 @@ de arquitetura, para retomar quando fizer sentido):
 | 111 | **v8.19.0** — Ponto 5 da revisão de layout: acima de 1600px a coluna 2 já nasce aberta, e o painel para de rolar |
 | 112 | **v8.20.0** — Ponto 6: embaixo do link fica só o "?", e as três explicações vão para o painel que ele abre |
 | 113 | **v8.21.0** — Ponto 3: a monoespaçada volta a ser dos números; todo rótulo do escritório passa para Inter, em caixa normal |
+| 114 | **v8.22.0** — Ponto 4: o checklist vira lista — fio entre as linhas e filete na cascata, no lugar de um cartão por cliente |
+| 115 | **v8.22.1** — A Ordem da viagem segue a mesma lógica (pedido do usuário); o cartão volta só enquanto a parada é arrastada |
 
 ---
 
@@ -1997,7 +2061,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.21.0
+8.22.1
 ```
 
 ### Onde o número aparece
@@ -2135,3 +2199,5 @@ os backups locais são conveniência, não garantia.
 | 8.19.0 | 26/09/2026 | Acima de 1600px o padrão passa a ser duas colunas: 31% de painel fora da vista viram 0% |
 | 8.20.0 | 27/09/2026 | O bloco de envio devolve 121px ao painel: embaixo do link sobra só o "?" |
 | 8.21.0 | 27/09/2026 | Rótulos em Inter e caixa normal; a mono fica só nos números (36 elementos em mono viram 23) |
+| 8.22.0 | 27/09/2026 | Checklist sem cartão por linha: a lista encolhe 14% e o nome da unidade sai de dentro de duas molduras |
+| 8.22.1 | 27/09/2026 | A Ordem da viagem também vira lista; o cartão só existe enquanto a parada está sendo arrastada |

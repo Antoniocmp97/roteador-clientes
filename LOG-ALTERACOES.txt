@@ -7311,3 +7311,117 @@ O QUE FICOU DE FORA, DE PROPÓSITO
     do campo.
   A TELA DO CAMPO inteira: teve revisão própria em 17-19/09 e não foi medida
     nesta. Conferido que nenhuma das classes tocadas aparece no markup dela.
+
+--------------------------------------------------------
+[27/09/2026] v8.22.0 — ponto 4: o checklist vira lista
+--------------------------------------------------------
+O QUE A REVISÃO TINHA MEDIDO
+  34 elementos com borda numa coluna de 340px, com molduras aninhadas em volta
+  do nome de uma unidade.
+  ⚠️ CORREÇÃO DA MINHA PRÓPRIA CONTA: a revisão falou em "até 4 molduras", mas
+  ali eu estava somando o cartão de vidro e o módulo, que não têm borda de
+  verdade (o cartão tem um fio de luz de box-shadow). Medindo as bordas do DOM,
+  o nome de uma unidade estava dentro de DUAS caixas: o cliente e a unidade.
+  O problema continua sendo real — só a contagem é que estava inflada.
+
+A MUDANÇA
+  O cliente deixou de ser cartão e virou LINHA DE LISTA, separada por um fio.
+  A cascata aberta se marca por um FILETE à esquerda, e a unidade dentro dela
+  perdeu a caixa também.
+  ⚠️ O filete não é invenção: é o recurso que o nível do GRUPO DO UMAP já usava
+  desde a v2.9, com a decisão escrita no próprio CSS ("sem caixa dentro de
+  caixa... lê melhor do que bordas aninhadas num painel de 340px"). Esta versão
+  só levou a mesma decisão um nível abaixo.
+  ⚠️ O `gap` do checklist foi a ZERO de propósito: quem separa agora é o fio.
+  Com gap E fio a lista ficaria mais frouxa do que era com cartão.
+
+TRÊS CUIDADOS
+  1. Quem marca a ÁREA DE CLIQUE passou a ser o `:hover`, que antes era
+     coadjuvante da borda. As três linhas clicáveis ganharam a regra:
+     .grupo-head, .grupo-umap-head e .check-row.
+  2. A `.check-row` teve de SAIR das duas listas de "caixas de dentro" do vidro
+     (`.console .check-row` a 80% de --panel-2, e a variante do vidro
+     desligado). Elas têm especificidade maior e teriam devolvido o fundo.
+     Conferido nos dois estados do vidro: fundo transparente nos dois.
+  3. O sinal de "tem parada escolhida aqui dentro" NÃO mudou: continua sendo a
+     seta e o contador acendendo em âmbar (v8.4.2). Conferido depois.
+
+O QUE FICOU DE FORA, DE PROPÓSITO
+  A "Ordem da viagem". Uma parada ali é um OBJETO QUE SE ARRASTA, com alça e
+  botões próprios, e o cartão é o que a faz parecer pegável — argumento
+  diferente do de uma lista de nomes que se lê. O checklist é lista para
+  varrer; a ordem da viagem é conjunto de coisas para manipular.
+  O cabeçalho do grupo do uMap continua sendo caixa: é o topo de um bloco, não
+  uma linha de lista.
+
+MEDIDAS
+  base de teste (13 clientes, 27 unidades), com TUDO aberto:
+    altura da lista  1845px -> 1591px   (-254px, -14%)
+  molduras fechadas visíveis no escritório: 35 -> 26
+  molduras em volta do nome de uma unidade: 2 -> 0
+  linha do cliente 35px · unidade 30px
+  ⚠️ Com os 39 clientes da base real o ganho é maior: ele é POR LINHA (7px de
+  borda e respiro que saíram de cada uma).
+  vidro ligado e desligado: linha e unidade transparentes, fio igual
+  MODO LEVE: nada a animar, lista igual
+  busca ativa: fios certos, e o ÚLTIMO da lista sem fio (0px)
+  375px: sem rolagem horizontal
+  Sem erro de console.
+
+--------------------------------------------------------
+[27/09/2026] v8.22.1 — a Ordem da viagem segue a mesma lógica
+--------------------------------------------------------
+PEDIDO DO USUÁRIO, logo depois de ver a v8.22.0 rodando
+  "Ficou bom, mas acredito que para ficar melhor, o módulo de ordem de viagem
+   na tela do escritório precisa seguir a mesma lógica."
+
+⚠️ ELE DESFEZ UMA DECISÃO MINHA, E ESTAVA CERTO
+  Na v8.22.0 eu deixei este módulo de fora argumentando que uma parada ali é um
+  OBJETO QUE SE ARRASTA e que o cartão é o que a faz parecer pegável.
+  Consistência no painel inteiro pesa mais que essa distinção — e quem diz
+  "isto se arrasta" é a ALÇA, que tem destaque âmbar próprio desde a v6.1.6,
+  não a borda.
+  O argumento não foi jogado fora: virou o comportamento do arraste (abaixo).
+
+O CARTÃO CARREGAVA TRÊS ESTADOS PELA COR DA BORDA
+  Cada um precisou de destino antes de ele sair:
+  1. ARRASTANDO (borda âmbar + sombra)
+     -> o cartão VOLTA, com fundo, borda âmbar e raio. Ali a parada é mesmo um
+        objeto na mão, e uma linha sem caixa flutuando com sombra pareceria
+        defeito. É também o que separa a linha que se move das que ficaram.
+  2. PRIORITÁRIA (borda âmbar-escura)
+     -> SAIU e não foi substituída: era o TERCEIRO sinal da mesma coisa. A
+        parada já está dentro do bloco "Prioritárias · nesta ordem" e já tem a
+        ★ acesa em âmbar. Mesma lição da v8.4.2 (a bolinha da calha saiu por
+        repetir o que o contador já dizia).
+  3. REALÇADA PELO MAPA (v6.7.0, borda âmbar + fundo)
+     -> virou uma BARRA ÂMBAR POR DENTRO (inset box-shadow). O fundo sozinho é
+        fraco demais numa lista que rola. Inset não ocupa espaço: não empurra o
+        texto nem muda a altura da linha — e a altura é medida durante o
+        arraste.
+
+DETALHE DE CSS QUE VALE LEMBRAR
+  O fio vai em `border-top`, e não embaixo: é o que permite apagá-lo na
+  primeira linha e na linha logo depois de um cabeçalho de bloco com um seletor
+  só (`.stop-grupo + .stop-row`). O CSS não sabe selecionar "o irmão anterior".
+  O respiro que o `gap` dava passou para o `padding` dos cabeçalhos de bloco.
+
+MEDIDAS
+  5 paradas, sem prioritárias:  253,5px -> 233,5px   (-20px, 4px por parada)
+  5 paradas em dois blocos (★ + demais): 299,5 -> 282,5px  (-17px)
+  ⚠️ O ganho de altura é PEQUENO, e isto não era sobre altura. O pedido era
+  consistência: o painel inteiro passou a ler como lista.
+  ARRASTE testado de ponta a ponta: a parada da 1ª posição foi para a 3ª, o
+    cartão apareceu durante, o indicador âmbar apareceu, e classe, indicador e
+    a marca no body saíram todos no fim.
+  vidro ligado e desligado: linha transparente nos dois, fio igual
+  MODO LEVE: igual
+  375px: sem rolagem horizontal, linha de 46px
+  Sem erro de console.
+
+⚠️ ERRO MEU NO TESTE, PARA NÃO REPETIR
+  A primeira simulação do arraste disparava `pointermove`/`pointerup` em
+  `window` e parecia que o arraste travava no meio. O arraste usa
+  `setPointerCapture`, então esses eventos são escutados na ALÇA. Disparando
+  nela, funciona. A classe e o indicador são criados no `pointerdown`, então
+  eles aparecem mesmo quando o resto nunca chega — foi isso que me enganou.
