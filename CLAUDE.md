@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 26/09/2026 — v8.19.0 (numa tela larga, a coluna 2 já nasce aberta)
+> **Última atualização:** 27/09/2026 — v8.20.0 (o bloco de envio perde 121px de explicação permanente)
 
 ---
 
@@ -1077,6 +1077,48 @@ sem dependências instaladas. Abre direto no navegador.
   ⚠️ **Sem segundo título dentro do cartão**: um "ENVIAR PARA O CAMPO" embaixo
   de "ROTA" seria justamente a poluição que o pedido queria tirar. O fio basta,
   e o texto do botão já diz o que ele faz.
+  **(3) Embaixo do link ficou só o "?"** (v8.20.0, ponto 6 da revisão de
+  layout). O bloco de envio tinha **290px**, e **122px (42%)** eram texto:
+  "mande este link para quem vai fazer as visitas…", a saída "não abriu no
+  celular de alguém?" e a opção "sempre gerar link compatível". As três foram
+  para um painel atrás do **"?"**, na mesma caixa dos painéis de tipos, avulsa e
+  retomar. Medido: bloco de envio **290px → 169px** e o módulo Rota inteiro
+  **510px → 390px**.
+  ⚠️ **Duas são instrução de PRIMEIRA VEZ e a terceira é CONFIGURAÇÃO.** Quem
+  manda roteiro todo dia já sabe o que o link faz; e configuração de aparelho da
+  equipe não pertence ao lado do botão que se aperta todo dia.
+  ⚠️ **NENHUMA frase sobrou embaixo do link**, e isso foi correção do usuário
+  dentro da própria versão: a primeira forma deixava ali uma linha de estado
+  ("Mande para quem vai fazer as visitas."), e ele cortou na hora — *"remova a
+  escrita… deixe somente o '?' e a janela que ele abre"*. Estava certo: o botão
+  logo acima já diz "Gerar link do roteiro", e Compartilhar/Copiar dizem o
+  resto. Era o mesmo vício que a revisão estava consertando, repetido por mim
+  no conserto dele.
+  ⚠️ **Mas o ESTADO do formato não podia sumir junto, e foi para o ícone.**
+  Esconder a opção "sempre gerar link compatível" **ligada** sem dizer isso em
+  lugar nenhum seria pior do que o problema que a versão resolve: a pessoa
+  geraria links longos sem saber por quê. Então o próprio **"?" acende em
+  âmbar** quando o link na tela é o compatível, com a explicação na dica do
+  mouse — o mesmo idioma de todo estado de ícone no app (a lupa do zoom, o ímã,
+  o vidro, o foco do mapa).
+  ⚠️ **O aceso lê o LINK QUE ESTÁ NA TELA, e não a preferência guardada.** Foi
+  defeito meu, pego no teste desta própria versão: com a preferência desligada e
+  a saída avulsa "gerar link compatível" usada uma vez, o aviso ficaria errado.
+  O prefixo manda — `#r=` é o compatível, `#z=` o comprimido. De brinde, isto
+  acerta também o navegador sem compressão nenhuma, em que o link sai compatível
+  sem ninguém ter pedido. Por isso `atualizarResumoDoEnvio()` é chamada em
+  `gerarLinkDoRoteiro()` **e** em `carregarDoTecnico()` (trocar de aba restaura
+  o link de outro técnico, que pode ser de outro formato).
+  ⚠️ **O aceso NÃO é "painel aberto"**: abrir o painel já se vê sozinho, logo
+  abaixo, e gastar a mesma cor nas duas coisas apagaria o recado que importa.
+  ⚠️ **O risco assumido é de DESCOBERTA**: quem precisar do "gerar link
+  compatível" num aparelho antigo tem de achar o "?". Aceitável porque a falha
+  **nunca é descoberta aqui** — ela chega horas depois, pela pessoa que está na
+  rua, e a essa altura o link já saiu da tela de qualquer forma. O que resolve
+  de verdade é a opção guardada, que passa a valer para todo roteiro seguinte.
+  ⚠️ O painel abre e fecha **só na sessão**, como os de tipos, avulsa e retomar:
+  é ajuda, e ajuda não deve reabrir sozinha todo dia. Medido no modo leve: 0ms,
+  zero animações.
 
 - **Retomar um roteiro pelo link** (v6.8.0, pedido do usuário: "meia hora depois
   surge mais uma parada"): colar o link no **módulo 1** (v6.8.1, sempre à mão;
@@ -1646,9 +1688,9 @@ tinham razão uma a uma — cada versão acrescentou um tamanho de letra, um uso
 | 3 | **36 elementos em JetBrains Mono** contra 33 em Inter. Os 6 títulos acumulam mono + CAIXA ALTA + entreletra 1,5px + 11px, tudo junto, no elemento mais repetido do painel | em aberto — barato e reversível; é o que mais muda a sensação de leitura |
 | 4 | **34 caixas com borda** numa coluna de 340px, aninhadas até 4 molduras em volta de um nome | em aberto — mexe em área de clique e em altura de lista |
 | 5 | **31% do painel fora da vista a 1920×1080** (1442px de conteúdo em 991px), com 17,7% da largura em painel e 1568px de mapa parado; **53% fora da vista na TV de 1366** | ✅ **feito na v8.19.0** (só a parte de 1920; a TV continua em aberto) |
-| 6 | **Módulo Rota com 510px**, dos quais **122px (42% do bloco de envio)** são três explicações lidas uma vez na vida | em aberto — devolve 122px ao painel e reforça o ponto 5 |
+| 6 | **Módulo Rota com 510px**, dos quais **122px (42% do bloco de envio)** são três explicações lidas uma vez na vida | ✅ **feito na v8.20.0** — envio de 290 para 169px, módulo Rota de 510 para 390px |
 
-Ordem recomendada para o resto: **6 → 3 → 2 → 4 → 1**.
+Ordem recomendada para o resto: **3 → 2 → 4 → 1**.
 
 **Material de trabalho na pasta, fora do repositório** (padrão `COMPARACAO-*.html`
 no `.gitignore`), para apagar quando não servirem mais:
@@ -1856,6 +1898,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 109 | **v8.17.1** — A ida até a parada vira voo em arco, e a rede de segurança para de dar solavanco |
 | 110 | **v8.18.0** — O Roteiro nasce fechado, e "Enviar para o campo" entra no módulo Rota (de sete módulos para seis) |
 | 111 | **v8.19.0** — Ponto 5 da revisão de layout: acima de 1600px a coluna 2 já nasce aberta, e o painel para de rolar |
+| 112 | **v8.20.0** — Ponto 6: embaixo do link fica só o "?", e as três explicações vão para o painel que ele abre |
 
 ---
 
@@ -1923,7 +1966,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.19.0
+8.20.0
 ```
 
 ### Onde o número aparece
@@ -2059,3 +2102,4 @@ os backups locais são conveniência, não garantia.
 | 8.17.1 | 26/09/2026 | A ida até a parada em voo suave; a rede deixa de disparar a toa (tolerância em pixel) |
 | 8.18.0 | 26/09/2026 | O Roteiro nasce fechado; "Enviar para o campo" vira parte do módulo Rota e o campo de retomar repetido sai |
 | 8.19.0 | 26/09/2026 | Acima de 1600px o padrão passa a ser duas colunas: 31% de painel fora da vista viram 0% |
+| 8.20.0 | 27/09/2026 | O bloco de envio devolve 121px ao painel: embaixo do link sobra só o "?" |

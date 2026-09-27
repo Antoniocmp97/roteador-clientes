@@ -1306,6 +1306,22 @@
   .retomar-linha input{min-width:0; font-size:12px;}
   .retomar-linha .go-btn{flex:none; padding:8px 12px; font-size:12.5px;}
   .envio-dica{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:8px;}
+  /* A linha do "?" (v8.20.0, ponto 6 da revisão de layout de 26/09/2026).
+     Embaixo do link não sobrou TEXTO NENHUM: as três explicações de antes
+     somavam 122px dos 290px do bloco de envio, e eram instrução de primeira vez
+     ocupando espaço de todo dia. Ficou só o botão, encostado à direita.
+     ⚠️ A primeira forma desta versão ainda deixava uma frase ali ("Mande para
+     quem vai fazer as visitas."), e o usuário a cortou na hora — com razão: o
+     botão logo acima já diz "Gerar link do roteiro", e Compartilhar/Copiar
+     dizem o resto. Era o mesmo vício que a revisão estava consertando. */
+  .envio-resumo{display:flex; justify-content:flex-end; margin-top:6px;}
+  /* Formato compatível: o próprio "?" acende, como todo estado de ícone no app
+     (a lupa do zoom, o ímã, o vidro, o foco do mapa). Ver o comentário do JS. */
+  .btn-titulo.compat{color:var(--amber); border-color:var(--amber-dim);
+                     background:var(--amber-fraco);}
+  /* O painel do "?" é a mesma caixa dos painéis de tipos, avulsa e retomar */
+  .envio-ajuda{margin-top:8px; margin-bottom:0;}
+  .envio-ajuda .envio-dica:first-child{margin-top:0;}
 
   /* ==========================================================
      MODO CAMPO — tela cheia, separada do modo escritório.
@@ -1888,22 +1904,40 @@
               <button class="go-btn" id="compartilharBtn">Compartilhar</button>
               <button class="go-btn secondary" id="copiarBtn">Copiar</button>
             </div>
-            <div class="envio-dica">
-              Mande este link para quem vai fazer as visitas. Ao abrir, a pessoa
-              vê o roteiro na ordem certa, com botão de navegação em cada parada.
+            <!-- Só o "?" (v8.20.0). O que está dentro do painel é explicação de
+                 primeira vez e configuração de aparelho da equipe — nenhuma das
+                 duas merece espaço permanente na coluna mais disputada do app.
+                 E embaixo do link não ficou frase nenhuma: o botão acima já diz
+                 o que faz. O estado do formato vai no próprio ícone. -->
+            <div class="envio-resumo">
+              <button class="btn-titulo" id="envioAjudaBtn" type="button"
+                      aria-expanded="false" aria-controls="envioAjuda"
+                      aria-label="Sobre o link do roteiro">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"/>
+                  <path d="M9.7 9.4a2.4 2.4 0 1 1 3.2 2.3c-.7.3-1 .9-1 1.5v.4"/>
+                  <path d="M12 16.7v.01"/>
+                </svg>
+              </button>
             </div>
-            <!-- Saída para celular antigo: o link comprimido depende de um recurso
-                 que só existe em navegadores de 2023 para cá -->
-            <div class="envio-dica" id="linkCompativel" style="display:none;">
-              Não abriu no celular de alguém?
-              <button class="link-btn" id="linkCompativelBtn">gerar link compatível</button>
+            <div class="tipos-painel envio-ajuda" id="envioAjuda" style="display:none;">
+              <div class="envio-dica">
+                Mande este link para quem vai fazer as visitas. Ao abrir, a pessoa
+                vê o roteiro na ordem certa, com botão de navegação em cada parada.
+              </div>
+              <!-- Saída para celular antigo: o link comprimido depende de um recurso
+                   que só existe em navegadores de 2023 para cá -->
+              <div class="envio-dica" id="linkCompativel" style="display:none;">
+                Não abriu no celular de alguém?
+                <button class="link-btn" id="linkCompativelBtn">gerar link compatível</button>
+              </div>
+              <!-- Se algum aparelho da equipe não abre o formato compacto, marcar aqui
+                   evita ter que lembrar do botão acima a cada roteiro -->
+              <label class="envio-dica" style="display:flex;gap:6px;align-items:center;cursor:pointer;">
+                <input type="checkbox" id="sempreCompativel">
+                <span>Sempre gerar link compatível (mais longo, abre em qualquer celular)</span>
+              </label>
             </div>
-            <!-- Se algum aparelho da equipe não abre o formato compacto, marcar aqui
-                 evita ter que lembrar do botão acima a cada roteiro -->
-            <label class="envio-dica" style="display:flex;gap:6px;align-items:center;cursor:pointer;">
-              <input type="checkbox" id="sempreCompativel">
-              <span>Sempre gerar link compatível (mais longo, abre em qualquer celular)</span>
-            </label>
           </div>
         </div>
       </div>
@@ -2111,7 +2145,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.19.0';
+const VERSAO = '8.20.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2412,6 +2446,7 @@ function carregarDoTecnico(t){
   document.getElementById('envioSection').style.display = p.envio || 'none';
   document.getElementById('linkPronto').style.display = p.linkPronto || 'none';
   document.getElementById('linkCampo').value = p.link || '';
+  atualizarResumoDoEnvio();   // o link restaurado pode ser de outro formato
   setStatus('');
   esconderOpcoesEndereco();
   renderStopsList();
@@ -6665,6 +6700,7 @@ async function gerarLinkDoRoteiro(forcarCompativel){
   document.getElementById('linkPronto').style.display = 'block';
   // O aviso de compatibilidade só faz sentido enquanto o link for o comprimido
   document.getElementById('linkCompativel').style.display = (prefixo === '#z=') ? 'block' : 'none';
+  atualizarResumoDoEnvio();   // a linha diz em que formato ESTE link saiu
   return url;
 }
 
@@ -6711,6 +6747,61 @@ chkCompat.onchange = async () => {
     await gerarLinkDoRoteiro(sempreCompativel());
   }
 };
+
+/* ---------------- A linha de estado do link e o painel do "?" (v8.20.0) -------
+   Ponto 6 da revisão de layout de 26/09/2026. Medido na v8.19.0, com o link
+   gerado: o bloco de envio tinha **290px**, e **122px (42%)** eram três
+   explicações — o texto de "mande este link…", a saída "não abriu no celular?"
+   e a opção "sempre gerar link compatível". As três são boas e foram escritas
+   por bons motivos, mas duas são instrução de PRIMEIRA VEZ e a terceira é
+   CONFIGURAÇÃO, e as três ocupavam espaço permanente na coluna mais disputada
+   do app. Agora ficam atrás do "?", e no lugar delas fica uma linha só.
+
+   ⚠️ **A linha que fica é de ESTADO, não de enfeite.** Esconder a opção
+   "sempre compatível" sem dizer que ela está LIGADA seria pior que o problema:
+   a pessoa geraria links longos sem saber por quê. Por isso o texto muda com a
+   preferência guardada, e é ele que responde "em que formato este link saiu?".
+
+   ⚠️ **O risco assumido é de DESCOBERTA**: quem precisar do "gerar link
+   compatível" num aparelho antigo tem de achar o "?". Aceitável porque a falha
+   nunca é descoberta aqui — ela chega horas depois, pela pessoa que está na rua,
+   e aí o link já saiu da tela de qualquer jeito. O que resolve de verdade é a
+   opção guardada, que passa a valer para todo roteiro seguinte.
+
+   ⚠️ O painel abre e fecha só na sessão, como os de tipos, avulsa e retomar —
+   é ajuda, e ajuda não deve reabrir sozinha todo dia. */
+/* O estado do formato mora no PRÓPRIO "?", e não numa frase embaixo do link.
+   ⚠️ Ele existe porque esconder a opção "sempre gerar link compatível" **ligada**
+   sem dizer isso em lugar nenhum seria pior do que o problema que esta versão
+   resolve: a pessoa geraria links longos sem saber por quê. Aceso em âmbar, o
+   ícone diz "este link não saiu no formato de sempre — clique para ver".
+   É o mesmo idioma de todo estado de ícone no app: a lupa do zoom, o ímã, o
+   vidro e o foco do mapa acendem exatamente assim.
+   ⚠️ **Lê o LINK QUE ESTÁ NA TELA, e não a preferência guardada.** Defeito meu,
+   pego no teste desta própria versão: com a preferência desligada e a saída
+   avulsa "gerar link compatível" usada uma vez, o aviso ficaria errado. O
+   prefixo manda — `#r=` é o legível/compatível, `#z=` o comprimido. De brinde,
+   isto acerta também o navegador sem compressão nenhuma, em que o link sai
+   compatível sem ninguém ter pedido.
+   ⚠️ O aceso NÃO é o "painel aberto": abrir o painel já se vê sozinho, logo
+   abaixo, e gastar a mesma cor nas duas coisas apagaria o recado que importa. */
+function atualizarResumoDoEnvio(){
+  const b = document.getElementById('envioAjudaBtn');
+  if (!b) return;
+  const compat = (document.getElementById('linkCampo').value || '').includes('#r=');
+  b.classList.toggle('compat', compat);
+  b.title = compat
+    ? 'Formato compatível — este link abre em qualquer celular, e é mais longo. Clique para ver as opções.'
+    : 'Sobre o link do roteiro — e a saída para celular que não abre o link';
+}
+document.getElementById('envioAjudaBtn').onclick = () => {
+  const painel = document.getElementById('envioAjuda');
+  const abrindo = painel.style.display === 'none';
+  painel.style.display = abrindo ? 'flex' : 'none';
+  document.getElementById('envioAjudaBtn')
+          .setAttribute('aria-expanded', abrindo ? 'true' : 'false');
+};
+atualizarResumoDoEnvio();
 
 // Botão "Compartilhar": usa o menu nativo de compartilhamento do celular (WhatsApp,
 // e-mail, etc.) quando disponível; em desktop, onde não existe, cai para copiar

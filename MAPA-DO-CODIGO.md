@@ -1,7 +1,7 @@
 # Mapa do código — `index.html`
 
 > Onde cada coisa mora e o que liga o quê. Feito em 24/09/2026 na v8.8.0;
-> conferido linha a linha na v8.16.1 e atualizado em 26/09/2026 na v8.19.0. Os números de
+> conferido linha a linha na v8.16.1 e atualizado em 27/09/2026 na v8.20.0. Os números de
 > linha envelhecem; os **títulos de seção** não — procure pelo título quando a
 > linha não bater.
 >
@@ -85,6 +85,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | ordem em que os módulos nascem | `MODULOS` / `ORDEM_PADRAO` | `arranjoNormal` |
 | padrão de uma ou duas colunas | `O padrão de abertura depende do TAMANHO DA TELA` | `LARGURA_DUAS_COLUNAS`, `abreEmDuasColunas`, `textoDoArranjoNormal` |
 | abrir/fechar o Roteiro | `O Roteiro nasce fechado (v8.18.0)` | `roteiroAberto`, `aplicarRoteiroRecolhido` |
+| o "?" do envio e o aviso de formato | `O estado do formato mora no PRÓPRIO "?"` | `atualizarResumoDoEnvio` |
 | alturas dentro das colunas | `Espaço dividido entre os módulos 3 e 4` | `alturasGuardadas`, `atualizarModulosNasColunas` |
 | link do roteiro | `Identificador do roteiro` / `Compressão do link` | `montarRoteiro`, `lerRoteiroCompacto` |
 | retomar pelo link | `Retomar um roteiro a partir do link` | `retomarRoteiro` |

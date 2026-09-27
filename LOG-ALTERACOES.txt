@@ -7168,3 +7168,78 @@ MEDIDAS DEPOIS
   que o CSS esconde abaixo de 761px — parece que sumiram. Disparando um `resize`
   à mão (ou arrastando a janela de verdade) tudo volta ao lugar na hora. O
   ouvinte do app está certo; quem não avisou foi o emulador.
+
+--------------------------------------------------------
+[27/09/2026] v8.20.0 — ponto 6: embaixo do link fica só o "?"
+--------------------------------------------------------
+O QUE A REVISÃO TINHA MEDIDO
+  Bloco de envio com 290px, dos quais 122px (42%) eram três textos:
+    52px  "Mande este link para quem vai fazer as visitas. Ao abrir..."
+    35px  "Não abriu no celular de alguém? gerar link compatível"
+    35px  "Sempre gerar link compatível (mais longo, abre em qualquer celular)"
+  Duas são instrução de PRIMEIRA VEZ; a terceira é CONFIGURAÇÃO. Nenhuma
+  merecia espaço permanente na coluna mais disputada do app.
+
+A MUDANÇA
+  As três foram para um painel atrás do "?", na mesma caixa dos painéis de
+  tipos, avulsa e retomar. Embaixo do link não sobrou TEXTO NENHUM: só o botão,
+  encostado à direita.
+
+⚠️ CORREÇÃO DO USUÁRIO DENTRO DA PRÓPRIA VERSÃO
+  A minha primeira forma ainda deixava uma frase ali ("Mande para quem vai
+  fazer as visitas.") como linha de estado. Ele cortou na hora: "remova a
+  escrita... deixe somente o '?' e a janela que ele abre".
+  Estava certo. O botão logo acima já diz "Gerar link do roteiro", e
+  Compartilhar/Copiar dizem o resto — era o mesmo vício que a revisão estava
+  consertando, repetido por mim dentro do conserto.
+
+O ESTADO DO FORMATO NÃO SUMIU JUNTO: FOI PARA O ÍCONE
+  Esconder a opção "sempre gerar link compatível" LIGADA sem dizer isso em
+  lugar nenhum seria pior que o problema. Então o próprio "?" ACENDE EM ÂMBAR
+  quando o link na tela é o compatível, e a dica do mouse explica. É o mesmo
+  idioma de todo estado de ícone no app: a lupa do zoom, o ímã, o vidro e o
+  foco do mapa acendem exatamente assim.
+  ⚠️ O aceso NÃO é "painel aberto": abrir o painel já se vê sozinho, logo
+  abaixo, e gastar a mesma cor nas duas coisas apagaria o recado que importa.
+
+⚠️ DEFEITO MEU, PEGO NO TESTE DESTA PRÓPRIA VERSÃO
+  A primeira forma do aviso lia a PREFERÊNCIA guardada. Com a preferência
+  desligada e a saída avulsa "gerar link compatível" usada uma vez, o aviso
+  ficaria errado — e um aviso de estado que mente é pior que nenhum.
+  Corrigido: ele lê o LINK QUE ESTÁ NA TELA, pelo prefixo (#r= compatível,
+  #z= comprimido). De brinde, acerta também o navegador sem compressão, em que
+  o link sai compatível sem ninguém ter pedido.
+  Por isso `atualizarResumoDoEnvio()` é chamada em `gerarLinkDoRoteiro()` E em
+  `carregarDoTecnico()` — trocar de aba restaura o link de outro técnico, que
+  pode ser de outro formato.
+
+O RISCO ASSUMIDO
+  É de DESCOBERTA: quem precisar do "gerar link compatível" tem de achar o "?".
+  Aceitável porque a falha nunca é descoberta aqui — ela chega horas depois,
+  pela pessoa que está na rua, e a essa altura o link já saiu da tela. O que
+  resolve de verdade é a opção guardada, que vale para todo roteiro seguinte.
+
+MEDIDAS
+  bloco de envio: 290px -> 169px  (-121px, -42%)
+  módulo Rota:    510px -> 390px  (-120px, -24%)
+  linha do "?": 18px, e ZERO caractere de texto embaixo do link
+  painel aberto: envio volta a 352px (e fecha de novo em 169px)
+  o "?" aceso: cor #F2A93C, fundo #2a1f0e, borda #B87F26; apagado: #B87F26
+  saída avulsa "gerar link compatível": link de #z= para #r=, o ícone acende,
+    e a saída some de dentro do painel (ela só vale enquanto o link é comprimido)
+  checkbox "sempre compatível": liga -> #r=, desliga -> #z=, e o link já na
+    tela é regerado, como antes
+  trocar de aba e voltar: link e aviso voltam iguais
+  MODO LEVE: 0ms, zero animações
+  na coluna 2 e a 375px: sem rolagem horizontal, painel abre
+  varredura mecânica: nenhum getElementById sem id, nenhuma função sem uso
+  Sem erro de console.
+
+⚠️ ARMADILHA Nº 1 DO PROJETO, DE NOVO, NO TESTE
+  Medindo a cor do ícone aceso, `getComputedStyle` devolvia o âmbar ESCURO —
+  como se a regra não valesse. A regra estava certa: o painel do navegador de
+  teste não estava pintando, então as transições de `.btn-titulo` ficavam
+  PARADAS no meio do caminho e a cor lida era a intermediária.
+  Prova: um clone do botão, sem transição em curso, computava o âmbar certo; e
+  `getAnimations().forEach(a => a.finish())` devolveu o valor final correto.
+  Nada no app depende dessa transição terminar — quem manda é a classe.
