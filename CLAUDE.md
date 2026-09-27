@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 26/09/2026 — v8.18.0 (o Roteiro nasce fechado; um módulo a menos)
+> **Última atualização:** 26/09/2026 — v8.19.0 (numa tela larga, a coluna 2 já nasce aberta)
 
 ---
 
@@ -620,6 +620,41 @@ sem dependências instaladas. Abre direto no navegador.
   `ORDEM_PADRAO` também — senão devolveria a Rota para baixo do módulo 4.
   ⚠️ Arranjo salvo antes disso abre **como foi salvo**, com a ordem antiga, e o
   disquete não acende; só a lixeira devolve a ordem nova.
+  ⚠️ **O PADRÃO DE ABERTURA depende do tamanho da tela desde a v8.19.0**
+  (ponto 5 da revisão de layout de 26/09/2026). Acima de **1600px** de largura,
+  **Selecionar paradas** e **Ordem da viagem** nascem na **coluna 2**; abaixo
+  disso, tudo no painel como sempre. Medido na v8.18.0, a 1920×1080 com rota
+  traçada e link gerado: o painel pedia **1442px** e tinha **991px** — **451px
+  (31%) fora da vista** — enquanto ocupava **17,7% da largura**, com 1568px de
+  mapa parado ao lado. Depois: **nada rola**, nem painel nem coluna, e o mapa
+  fica com **1189px**.
+  ⚠️ **A solução já existia desde a v5.7; o que faltava era o padrão.** As
+  colunas sempre funcionaram — quem abria numa tela de 1920 é que recebia um
+  layout de tela estreita e rolava metade do painel sem descobrir que bastava
+  arrastar dois módulos para o lado. Um padrão é uma opinião sobre o caso mais
+  comum, e a opinião estava errada para tela grande.
+  ⚠️ **A decisão é tomada UMA VEZ, na abertura, e congelada em
+  `abreEmDuasColunas`.** Não é zelo: `aplicarArranjo()` roda a cada `resize` e
+  chama `atualizarBotaoArranjo()`, que compara a tela com
+  `arranjoGuardado() || arranjoNormal()`. Lendo a largura ao vivo, arrastar a
+  janela por cima de 1600px mudaria a referência e o **disquete acenderia
+  sozinho** — a mesma armadilha que a v8.4.0 documenta para as janelas livres.
+  Testado: 1920 → 1400 → 1920 não reorganiza nada e não acende nada.
+  ⚠️ **`arranjoNormal()` passou a canonizar o que devolve**, e isso é
+  obrigatório: `descreverArranjo()` compara o JSON da tela (sempre canonizado)
+  com o do normal. Sem canonizar, a ordem sairia `m1 m2 m5 m3 m4 m7` contra
+  `m1 m2 m5 m7 m3 m4` e o disquete **nasceria aceso**.
+  ⚠️ **Quem salvou arranjo continua mandando** — isto é só o fallback. E quem
+  não gostar do padrão faz o de sempre: arrasta e salva. Testado.
+  ⚠️ **A lixeira mudou de texto, não de comportamento**: "voltar ao normal"
+  sempre significou "o arranjo padrão", e acima de 1600px o padrão agora inclui
+  a coluna 2. Prometer "tudo no painel" ali seria mentira, então o título do
+  botão e o `confirm()` são montados a partir de `textoDoArranjoNormal()`.
+  ⚠️ **1600 e não 1366**: a 1366 o mapa cairia para ~626px, e a TV deixou de
+  guiar o layout em 11/09/2026 (decisão 6). A 1600 sobram 869px de mapa
+  (medido). **Isto não resolve os 53% de painel fora da vista da TV** — lá
+  continua valendo arrastar à mão e salvar. O número é um só:
+  `LARGURA_DUAS_COLUNAS`.
   ⚠️ **Os títulos deixaram de ser numerados na v7.5.1** (ponto 6 da revisão de
   design, escolha do usuário entre numerar todos ou tirar): a sequência na tela
   era "1, 2, 3, 4, Rota, 5, Roteiro" e, com os módulos móveis desde a v6.0, o
@@ -1596,6 +1631,25 @@ comentário no parse. Eles são a memória do projeto.
   nome que aparece: **renomear o repositório muda o endereço do GitHub Pages e
   quebra todos os links de roteiro já enviados à equipe**.
 
+**Revisão de layout (26/09/2026), a pedido do usuário: "elabore um review com
+um olhar de um designer sênior".** Seis pontos, todos medidos no app rodando
+(`getComputedStyle`/`getBoundingClientRect`) a 1920×1080 e 1366×768, montados
+lado a lado em `COMPARACAO-LAYOUT.html` (fora do repositório). O que a revisão
+mostra não é defeito de funcionamento: é o efeito **somado** de decisões que
+tinham razão uma a uma — cada versão acrescentou um tamanho de letra, um uso do
+âmbar, uma caixa e uma explicação, e ninguém olhava o total.
+
+| # | O que foi medido | Situação |
+|---|---|---|
+| 1 | **11 tamanhos de letra** num vão de 3,5px (10 · 10,5 · 11 · 11,5 · 12 · 12,5 · 13 · 13,5), e nada entre 13,5 e 19. Meio pixel dá **altura de linha idêntica** e 0,3px por caractere. E "distância total" (13px) é maior que o título do módulo (11px) | em aberto — **deixar por último e sozinho numa versão**: altura de letra mexe em altura de módulo, que mexe nos pesos guardados |
+| 2 | **22 elementos de texto em âmbar** contra 4 em teal, fazendo cinco trabalhos (título, contador, número, resultado, ação, link). Contraste do título 4,66:1; o do contador **4,36:1, abaixo do mínimo da AA**, no menor corpo do app | em aberto — barato em código, mas é escolha de identidade |
+| 3 | **36 elementos em JetBrains Mono** contra 33 em Inter. Os 6 títulos acumulam mono + CAIXA ALTA + entreletra 1,5px + 11px, tudo junto, no elemento mais repetido do painel | em aberto — barato e reversível; é o que mais muda a sensação de leitura |
+| 4 | **34 caixas com borda** numa coluna de 340px, aninhadas até 4 molduras em volta de um nome | em aberto — mexe em área de clique e em altura de lista |
+| 5 | **31% do painel fora da vista a 1920×1080** (1442px de conteúdo em 991px), com 17,7% da largura em painel e 1568px de mapa parado; **53% fora da vista na TV de 1366** | ✅ **feito na v8.19.0** (só a parte de 1920; a TV continua em aberto) |
+| 6 | **Módulo Rota com 510px**, dos quais **122px (42% do bloco de envio)** são três explicações lidas uma vez na vida | em aberto — devolve 122px ao painel e reforça o ponto 5 |
+
+Ordem recomendada para o resto: **6 → 3 → 2 → 4 → 1**.
+
 **Material de trabalho na pasta, fora do repositório** (padrão `COMPARACAO-*.html`
 no `.gitignore`), para apagar quando não servirem mais:
 `COMPARACAO-MODULO1.html` (as 5 propostas do módulo 1; a v7.4.0 saiu da "D"),
@@ -1607,7 +1661,10 @@ bolinha da calha: como era, contador acendendo e seta acendendo, na largura
 real do painel; a v8.4.2 saiu das duas últimas combinadas) e
 `COMPARACAO-TROCA-ABA.html` (banco de provas das passagens ao trocar de
 técnico: um painel só, um efeito de cada vez, em câmera lenta; a v8.14.0 saiu
-do "saída + cascata"). ⚠️ **A primeira versão dessa página não servia**, e o
+do "saída + cascata") e `COMPARACAO-LAYOUT.html` (os 6 pontos da revisão de
+layout acima, hoje × proposta na largura real do painel, com controle de
+ampliação — várias diferenças são de meio pixel e não se julgam a 1×).
+⚠️ **A primeira versão dessa página não servia**, e o
 defeito era meu: os quatro efeitos disparavam **ao mesmo tempo**, em quatro
 painéis — ninguém consegue olhar para quatro lugares em 180ms ("não consegui
 notar com nitidez a diferença real entre uma e outra"). Lição para as
@@ -1798,6 +1855,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 108 | **v8.17.0** — Correção: o clique na parada nem sempre chegava ao ponto (a animação era o único caminho) |
 | 109 | **v8.17.1** — A ida até a parada vira voo em arco, e a rede de segurança para de dar solavanco |
 | 110 | **v8.18.0** — O Roteiro nasce fechado, e "Enviar para o campo" entra no módulo Rota (de sete módulos para seis) |
+| 111 | **v8.19.0** — Ponto 5 da revisão de layout: acima de 1600px a coluna 2 já nasce aberta, e o painel para de rolar |
 
 ---
 
@@ -1865,7 +1923,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.18.0
+8.19.0
 ```
 
 ### Onde o número aparece
@@ -2000,3 +2058,4 @@ os backups locais são conveniência, não garantia.
 | 8.17.0 | 26/09/2026 | Correção: o clique na parada passa a chegar sempre ao ponto clicado, com rede de segurança |
 | 8.17.1 | 26/09/2026 | A ida até a parada em voo suave; a rede deixa de disparar a toa (tolerância em pixel) |
 | 8.18.0 | 26/09/2026 | O Roteiro nasce fechado; "Enviar para o campo" vira parte do módulo Rota e o campo de retomar repetido sai |
+| 8.19.0 | 26/09/2026 | Acima de 1600px o padrão passa a ser duas colunas: 31% de painel fora da vista viram 0% |

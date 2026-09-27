@@ -1,7 +1,7 @@
 # Mapa do código — `index.html`
 
 > Onde cada coisa mora e o que liga o quê. Feito em 24/09/2026 na v8.8.0;
-> conferido linha a linha na v8.16.1 e atualizado em 26/09/2026 na v8.18.0. Os números de
+> conferido linha a linha na v8.16.1 e atualizado em 26/09/2026 na v8.19.0. Os números de
 > linha envelhecem; os **títulos de seção** não — procure pelo título quando a
 > linha não bater.
 >
@@ -42,6 +42,9 @@ do link, tela do campo) é comum às duas telas.
    3.3 iniciarTecnicos()      → cria a aba 1; o estado dela SÃO as globais
    3.4 aplicarTema(...)
    3.5 arranjo = arranjoGuardado() || arranjoNormal()
+                                 ↑ o salvo manda; o normal é o fallback, e
+                                   acima de 1600px ele já põe m3 e m4 na
+                                   coluna 2 (abreEmDuasColunas, v8.19.0)
    3.6 aplicarArranjo()       → põe os módulos nas colunas ou nas janelas
    3.7 aplicarModoJanelas / aplicarIma / aplicarModoLeve  → acertam os ícones
    3.8 base guardada volta    → importClients() → oferecerRetomarDia()
@@ -80,6 +83,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | clicar na parada e ir até ela | `Centraliza um ponto na parte visível` | `centralizarVisivel`, `verParadaNoMapa`, `DUR_VOO_PARADA` |
 | mover módulos entre colunas | `Arrastar um módulo pela alça…` | `destinoDoModulo`, `moverModulo` |
 | ordem em que os módulos nascem | `MODULOS` / `ORDEM_PADRAO` | `arranjoNormal` |
+| padrão de uma ou duas colunas | `O padrão de abertura depende do TAMANHO DA TELA` | `LARGURA_DUAS_COLUNAS`, `abreEmDuasColunas`, `textoDoArranjoNormal` |
 | abrir/fechar o Roteiro | `O Roteiro nasce fechado (v8.18.0)` | `roteiroAberto`, `aplicarRoteiroRecolhido` |
 | alturas dentro das colunas | `Espaço dividido entre os módulos 3 e 4` | `alturasGuardadas`, `atualizarModulosNasColunas` |
 | link do roteiro | `Identificador do roteiro` / `Compressão do link` | `montarRoteiro`, `lerRoteiroCompacto` |
@@ -240,14 +244,21 @@ mudou stops, origem, retorno, ou trocou a base
    calculado certo, mas o `setView` **animado** era o único caminho até lá. Não
    basta a conta estar certa — o caminho até o resultado também não pode
    depender da animação.
-2. **`#map` nunca pode ser `position:static`.** Os painéis do Leaflet se ancoram
+2. **Largura da tela lida ao vivo em coisa que o disquete compara.**
+   `aplicarArranjo()` roda a cada `resize` e chama `atualizarBotaoArranjo()`,
+   que compara a tela com `arranjoGuardado() || arranjoNormal()`. Se o "normal"
+   depender da largura **atual**, arrastar a janela muda a referência e o
+   disquete acende sozinho, sem ninguém ter mexido em nada. Por isso
+   `abreEmDuasColunas` é decidido **uma vez, na abertura** (v8.19.0), como a
+   geometria padrão das janelas livres já era desde a v8.4.0.
+3. **`#map` nunca pode ser `position:static`.** Os painéis do Leaflet se ancoram
    no primeiro ancestral posicionado; static faz eles vazarem por cima do painel.
-3. **`display:contents` não muda a árvore do HTML** — o seletor precisa descer
+4. **`display:contents` não muda a árvore do HTML** — o seletor precisa descer
    pela `section`.
-4. **Regra de elemento vence em silêncio.** `header{align-items:baseline}`
+5. **Regra de elemento vence em silêncio.** `header{align-items:baseline}`
    chegou na tela do campo e zerou a barra de progresso por meses.
-5. **`offsetTop` num elemento sticky já vem com o deslocamento embutido.**
-6. **O id de um ponto da base é `c<camada>_<feature>`** — reordenar uma camada
+6. **`offsetTop` num elemento sticky já vem com o deslocamento embutido.**
+7. **O id de um ponto da base é `c<camada>_<feature>`** — reordenar uma camada
    no uMap muda todos. Casar parada guardada é sempre por **coordenada**.
 
 ---

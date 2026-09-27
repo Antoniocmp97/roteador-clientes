@@ -7112,3 +7112,59 @@ MEDIDAS E TESTES
     · varredura mecânica: nenhum getElementById sem id no markup, nenhuma
       função declarada sem uso.
     · SEM ERRO DE CONSOLE em nenhum dos caminhos.
+
+--------------------------------------------------------
+[26/09/2026] v8.19.0 — ponto 5 da revisão de layout: a coluna 2 nasce aberta
+--------------------------------------------------------
+O QUE A REVISÃO TINHA MEDIDO (v8.18.0)
+  1920x1080, base real, rota traçada e link gerado:
+    painel precisa de 1442px e tem 991px  ->  451px FORA DA VISTA (31%)
+    o painel ocupa 17,7% da largura; sobram 1568px de mapa parado ao lado
+  1366x768 (a TV): os mesmos 1442px em 679px  ->  763px fora da vista (53%)
+
+A MUDANÇA
+  Acima de 1600px de largura, "Selecionar paradas" (m3) e "Ordem da viagem"
+  (m4) NASCEM na coluna 2. Abaixo disso, nada muda.
+  ⚠️ A solução já existia desde a v5.7 — as colunas sempre funcionaram. O que
+  faltava era o PADRÃO. Quem abria numa tela de 1920 recebia um layout de tela
+  estreita e rolava metade do painel sem descobrir que bastava arrastar.
+
+TRÊS CUIDADOS, TODOS OBRIGATÓRIOS
+  1. A decisão é congelada na abertura (`abreEmDuasColunas`). `aplicarArranjo()`
+     roda a cada resize e chama `atualizarBotaoArranjo()`, que compara a tela
+     com o "normal": lendo a largura ao vivo, arrastar a janela por cima de
+     1600px acenderia o DISQUETE sozinho. Testado: 1920 -> 1400 -> 1920 não
+     reorganiza nada e não acende nada.
+  2. `arranjoNormal()` passou a CANONIZAR o que devolve. `descreverArranjo()`
+     compara o JSON da tela (sempre canonizado, ordem agrupada por coluna) com
+     o do normal. Sem isso sairia m1,m2,m5,m3,m4,m7 contra m1,m2,m5,m7,m3,m4 e
+     o disquete NASCERIA aceso.
+  3. O texto da lixeira virou `textoDoArranjoNormal()`. "Voltar ao normal"
+     sempre quis dizer "o arranjo padrão", e agora o padrão depende da tela —
+     prometer "tudo no painel" acima de 1600px seria mentira.
+
+POR QUE 1600 E NÃO 1366
+  A 1366 o mapa cairia para ~626px, e a TV deixou de guiar o layout em
+  11/09/2026 (decisão 6). A 1600 sobram 869px de mapa (medido).
+  ⚠️ ISTO NÃO RESOLVE os 53% da TV — lá continua valendo arrastar e salvar.
+
+MEDIDAS DEPOIS
+  1920x1080, rota traçada e link gerado:
+    painel NÃO rola (991 de 991) · coluna NÃO rola · mapa com 1189px
+    divisória de altura entre m3 e m4 montada na coluna · disquete apagado
+  1600x900: duas colunas, mapa com 869px, disquete apagado
+  1366x768: uma coluna, exatamente como antes
+  375x812:  empilhado, tudo no painel, sem rolagem horizontal
+  arranjo salvo com tudo no painel a 1920: o salvo VENCE, disquete apagado
+  lixeira a 1920: volta para duas colunas e apaga o salvo, com o texto certo
+  MODO LEVE ligado: coluna aberta, nada rola, folga 0, disquete apagado
+  JANELAS LIVRES ligadas: a coluna vira janela na posição padrão, sem acender
+  tela do campo: intocada (`abreEmDuasColunas` é guardado por !modoCampoAtivo)
+  Sem erro de console em nenhum caminho.
+
+⚠️ ARTEFATO DE TESTE, PARA NÃO ASSUSTAR NA PRÓXIMA VEZ
+  Emulando o redimensionamento pelo controle de viewport do navegador de teste,
+  o evento `resize` NÃO é disparado, e aí os módulos ficam dentro de uma coluna
+  que o CSS esconde abaixo de 761px — parece que sumiram. Disparando um `resize`
+  à mão (ou arrastando a janela de verdade) tudo volta ao lugar na hora. O
+  ouvinte do app está certo; quem não avisou foi o emulador.

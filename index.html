@@ -2111,7 +2111,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.18.0';
+const VERSAO = '8.19.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -4377,10 +4377,63 @@ const COLUNAS = {
   g2: { el:'guiaExtra',   divisor:'divisorGuia2', chave:'hg_largura_guia2', css:'--guia2-w', nome:'coluna 3' }
 };
 
+/* ---- O padrão de abertura depende do TAMANHO DA TELA (v8.19.0, ponto 5 da
+   revisão de layout de 26/09/2026) ----
+
+   Até aqui o padrão era um só: tudo no painel, em qualquer tela. Medido na
+   v8.18.0, numa janela de 1920×1080 com a base real e uma rota traçada: o
+   painel precisa de **1442px** e tem **991px**, ou seja **451px (31%) fora da
+   vista** — e ele ocupa **17,7% da largura**, com 1568px de mapa parado ao
+   lado. Na TV de 1366×768 são 763px fora da vista, 53%.
+   ⚠️ **A solução já existia desde a v5.7 e ninguém a via**: as colunas
+   funcionam e são arrastáveis. O que faltava era o *padrão*. Quem abria numa
+   tela de 1920 recebia um layout de tela estreita e rolava metade do painel
+   sem descobrir que bastava arrastar dois módulos para o lado. Um padrão é uma
+   opinião sobre o caso mais comum, e a opinião estava errada para telas
+   grandes.
+   Medido depois da mudança, a 1920×1080: painel **não rola**, coluna **não
+   rola**, e o mapa segue com 1189px — mais do que ele tinha antes do vidro.
+
+   ⚠️ **Por que 1600px, e não 1366.** Abrindo a coluna a 1366 o mapa cairia
+   para ~626px, e a TV deixou de guiar o layout em 11/09/2026 (decisão 6). A
+   1600 sobram ~860px de mapa. O número é um só e está aqui para ser ajustado.
+   ⚠️ **Isto NÃO resolve os 53% da TV de 1366** — lá continua valendo arrastar
+   os módulos à mão e salvar no disquete.
+
+   ⚠️ **A decisão é tomada UMA VEZ, na abertura, e congelada.** É obrigatório:
+   `aplicarArranjo()` roda a cada `resize` e chama `atualizarBotaoArranjo()`,
+   que compara a tela com `arranjoGuardado() || arranjoNormal()`. Se este
+   padrão lesse a largura ao vivo, arrastar a janela por cima de 1600px mudaria
+   a referência e o **disquete acenderia sozinho**, sem ninguém ter mexido em
+   nada — a mesma armadilha que a v8.4.0 já documenta para as janelas livres.
+   Congelado, redimensionar a janela nunca reorganiza módulo nem acende botão.
+
+   ⚠️ **Quem salvou arranjo continua mandando.** Isto é só o fallback de
+   `arranjoGuardado()`. E quem não gostar do padrão faz o de sempre: arrasta e
+   salva no disquete — o contrato da v5.7 não mudou. */
+const LARGURA_DUAS_COLUNAS = 1600;          // daqui para cima, a coluna 2 nasce aberta
+const MODULOS_DA_COLUNA_2 = ['m3', 'm4'];   // os dois módulos com lista longa
+const abreEmDuasColunas = !modoCampoAtivo &&
+      document.documentElement.clientWidth >= LARGURA_DUAS_COLUNAS;
+
+// Como descrever o "normal" para quem lê o botão da lixeira
+function textoDoArranjoNormal(){
+  return abreEmDuasColunas
+    ? 'Selecionar paradas e Ordem da viagem voltam para a coluna 2, o resto para o painel'
+    : 'todos os módulos voltam para o painel';
+}
+
 function arranjoNormal(){
   const local = {};
   ORDEM_MODULOS.forEach(k => local[k] = 'painel');
-  return { local, ordem:[...ORDEM_PADRAO], pesos:{}, fixas:{}, janelas:{} };
+  if (abreEmDuasColunas)
+    MODULOS_DA_COLUNA_2.forEach(k => { if (MODULOS[k]) local[k] = 'g1'; });
+  /* ⚠️ Canonizar aqui NÃO é zelo. `descreverArranjo()` compara o JSON da tela
+     com o do normal, e a tela sempre passa por `canonizarArranjo()` (que
+     agrupa a ordem por coluna). Sem canonizar, o normal sairia com a ordem de
+     `ORDEM_PADRAO` (m1 m2 m5 m3 m4 m7) contra a da tela (m1 m2 m5 m7 m3 m4) e
+     o disquete nasceria aceso. */
+  return canonizarArranjo({ local, ordem:[...ORDEM_PADRAO], pesos:{}, fixas:{}, janelas:{} });
 }
 let arranjo = arranjoNormal();   // o que está na tela agora
 
@@ -5339,9 +5392,14 @@ if (!modoCampoAtivo){
       atualizarBotaoArranjo();
     }, 1800);
   });
+  /* O texto diz o que vai acontecer DE VERDADE nesta tela: acima de 1600px o
+     normal inclui a coluna 2, e prometer "tudo no painel" seria mentira. */
+  document.getElementById('arranjoNormalBtn').title =
+    'Voltar ao normal — ' + textoDoArranjoNormal() + ', e o arranjo salvo é apagado';
   document.getElementById('arranjoNormalBtn').addEventListener('click', () => {
     if (arranjoGuardado() &&
-        !confirm('Voltar ao arranjo normal?\n\nTodos os módulos voltam para o painel e o arranjo salvo é apagado — o site passa a abrir com tudo no painel.')) return;
+        !confirm('Voltar ao arranjo normal?\n\n' + textoDoArranjoNormal().replace(/^t/, 'T') +
+                 ', e o arranjo salvo é apagado — o site passa a abrir assim.')) return;
     try{ localStorage.removeItem(CHAVE_ARRANJO); }catch(e){}
     arranjo = arranjoNormal();
     aplicarArranjo();
