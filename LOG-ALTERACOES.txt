@@ -7243,3 +7243,71 @@ MEDIDAS
   Prova: um clone do botão, sem transição em curso, computava o âmbar certo; e
   `getAnimations().forEach(a => a.finish())` devolveu o valor final correto.
   Nada no app depende dessa transição terminar — quem manda é a classe.
+
+--------------------------------------------------------
+[27/09/2026] v8.21.0 — ponto 3: a monoespaçada volta a ser dos números
+--------------------------------------------------------
+O QUE A REVISÃO TINHA MEDIDO
+  36 elementos em JetBrains Mono contra 33 em Inter, numa tela só. A mono tinha
+  virado a fonte PRINCIPAL do app, sem ninguém ter decidido isso.
+  E os 6 títulos de módulo somavam as quatro coisas que mais atrasam a leitura,
+  todas juntas: mono + CAIXA ALTA + entreletra de 1,5px + 11px — no elemento
+  mais repetido do painel, o que a pessoa relê toda vez que procura onde está.
+
+A REGRA QUE FICOU (uma frase)
+  Número, código e endereço em JetBrains Mono. Palavra em Inter.
+  A mono existe para alinhar dígito com dígito, e é a escolha certa no
+  "52.7 km", no "1/9", na coordenada, na URL e no selo de versão. O que ela não
+  faz bem é PALAVRA: todas as letras ocupam a mesma largura, e o desenho da
+  palavra — que é o que se reconhece ao bater o olho — desaparece.
+
+O QUE MUDOU DE FONTE
+  os 6 títulos de módulo (.field-label)
+  os links do próprio título (.link-btn: "Salvar como padrão")
+  os três rótulos do arraste de módulo (vão, etiqueta e alvo de coluna)
+  "Prioritárias · nesta ordem" / "Demais · o app otimiza" (.stop-grupo)
+  "Quilometragem aproximada", no cabeçalho
+  as legendas "distância total" / "tempo estimado" (o NÚMERO acima delas fica)
+  a linha de status e o aviso do upload — são frases inteiras
+  "Parada N · NOME" no Roteiro — carrega o nome do cliente, que é justamente o
+    que a mono lê pior, e a caixa alta forçada apagava a caixa que o nome tem
+    na base
+
+O QUE FICOU EM MONO (23 elementos, todos número ou código)
+  selo de versão · os números dos marcadores · os contadores do checklist
+  os números das paradas · o km e o min · a URL do link
+
+MEDIDAS
+  elementos em mono: 36 -> 23     elementos em Inter: 33 -> 42
+    (mesma condição da revisão: tela de 1920, base carregada, rota traçada,
+     Roteiro fechado)
+  largura dos rótulos, medida no MESMO texto, ajuste antigo x novo:
+    "Selecionar paradas"          146 -> 112px  (-33)
+    "Ordem da viagem"             122 -> 102px  (-19)
+    "Salvar como padrão"          146 -> 116px  (-29)
+    "Quilometragem aproximada"    194 -> 161px  (-34)
+    "Prioritárias · nesta ordem"  211 -> 148px  (-63)
+  pílula do cabeçalho: 249 -> 241px
+  cabeçalho: 65px a 1920 e a 1366 (uma linha, como antes); 107px a 1024, que
+    também é como já era — não houve regressão
+  MODO LEVE: fonte não é animação, nada muda
+  Sem erro de console.
+
+⚠️ DOIS TEXTOS PRECISARAM DE MAIÚSCULA INICIAL NO CÓDIGO
+  Era o `text-transform:uppercase` do CSS que os punha em caixa alta. Sem ele
+  ficariam todos minúsculos ao lado de um título capitalizado:
+    'salvar como padrão' / 'esquecer padrão'  ->  'Salvar como padrão' / ...
+    'quilometragem aproximada'                ->  'Quilometragem aproximada'
+    'nova coluna' (alvo de arraste)           ->  'Nova coluna'
+  ⚠️ O "gerar link compatível" ficou MINÚSCULO de propósito: ele vive no meio
+  de uma frase ("Não abriu no celular de alguém? gerar link compatível").
+
+O QUE FICOU DE FORA, DE PROPÓSITO
+  A COR dos títulos (âmbar): é o ponto 2 da revisão, escolha de identidade, e
+    espera decisão à parte. Misturar os dois tornaria impossível saber qual das
+    duas mudanças agradou ou incomodou.
+  A etiqueta de tipo de serviço: ali a caixa alta NORMALIZA um texto que o
+    próprio usuário digita na lista configurável, e a gêmea dela mora na tela
+    do campo.
+  A TELA DO CAMPO inteira: teve revisão própria em 17-19/09 e não foi medida
+    nesta. Conferido que nenhuma das classes tocadas aparece no markup dela.

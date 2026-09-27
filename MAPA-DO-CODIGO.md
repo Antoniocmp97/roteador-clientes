@@ -1,7 +1,7 @@
 # Mapa do código — `index.html`
 
 > Onde cada coisa mora e o que liga o quê. Feito em 24/09/2026 na v8.8.0;
-> conferido linha a linha na v8.16.1 e atualizado em 27/09/2026 na v8.20.0. Os números de
+> conferido linha a linha na v8.16.1 e atualizado em 27/09/2026 na v8.21.0. Os números de
 > linha envelhecem; os **títulos de seção** não — procure pelo título quando a
 > linha não bater.
 >
@@ -61,6 +61,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | Se você quer mexer em | Procure a seção | Função que faz o trabalho |
 |---|---|---|
 | tema claro/escuro | `Modo noturno (v3.3)` | `aplicarTema(tema, salvar)` |
+| qual fonte usar num texto novo | (regra, não função) | número/código/endereço = JetBrains Mono; palavra = Inter (v8.21.0) |
 | vidro ligado/desligado | `Vidro ligado ou desligado (v8.2.0)` | `aplicarVidro(lig, salvar)` |
 | **modo leve** | `Modo leve (v8.7.0)` | `aplicarModoLeve(lig, salvar)` |
 | janelas livres | `Janelas livres (v8.4.0)` | `aplicarModoJanelas`, `aplicarJanelas` |

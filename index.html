@@ -277,16 +277,16 @@
   .modulo-encaixe{flex:none; box-sizing:border-box; border:2px dashed var(--amber); border-radius:8px;
                   background:transparent;
                   display:flex; align-items:center; justify-content:center; overflow:hidden;
-                  font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.2px;
-                  text-transform:uppercase; color:var(--amber-dim); pointer-events:none;
+                  font-family:'Inter',sans-serif; font-size:11.5px; font-weight:600;
+                  letter-spacing:.3px; color:var(--amber-dim); pointer-events:none;
                   animation:encaixe-abrir .14s ease-out;}
   @keyframes encaixe-abrir{from{height:0; opacity:.2;}}
   /* Etiqueta com o nome do módulo, que acompanha o ponteiro */
   .modulo-fantasma{position:fixed; z-index:1001; pointer-events:none; white-space:nowrap;
                    background:var(--panel-2); border:1px solid var(--amber); border-radius:6px;
                    box-shadow:0 6px 18px var(--sombra); padding:5px 10px;
-                   font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.2px;
-                   text-transform:uppercase; color:var(--amber);}
+                   font-family:'Inter',sans-serif; font-size:11.5px; font-weight:600;
+                   letter-spacing:.3px; color:var(--amber);}
   /* Coluna que vai receber o módulo: contorno sobre ela, ou sobre o lugar onde
      a coluna nova vai aparecer. Só a borda, sem preenchimento (v6.1.2, pedido do
      usuário): o fundo âmbar cobria a coluna inteira e disputava atenção com o vão
@@ -294,8 +294,8 @@
   .alvo-coluna{position:fixed; z-index:1000; pointer-events:none; border:2px solid var(--amber);
                border-radius:6px; background:none;
                display:flex; align-items:flex-start; justify-content:center; padding-top:14px;
-               font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.2px;
-               text-transform:uppercase; color:var(--amber);}
+               font-family:'Inter',sans-serif; font-size:11.5px; font-weight:600;
+               letter-spacing:.3px; color:var(--amber);}
 
   /* Botões do arranjo, no cabeçalho */
   /* Disquete = salvar arranjo, lixeira = voltar ao normal (ícones desde a v5.7,
@@ -720,7 +720,22 @@
   body.redimensionando #map{pointer-events:none;}
   body.redimensionando .divisor::after{background:var(--amber);}
 
-  .field-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;color:var(--amber-dim);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+  /* ⚠️ **A monoespaçada é dos NÚMEROS** (v8.21.0, ponto 3 da revisão de layout
+     de 26/09/2026). Medido na v8.20.0, numa tela só: **36 elementos em
+     JetBrains Mono contra 33 em Inter** — a mono tinha virado a fonte
+     principal do app. Ela existe para uma coisa: fazer dígito alinhar com
+     dígito. É a escolha certa no `52.7 km`, no `1/9`, na coordenada, na URL e
+     no selo de versão, e ali ela FICA. O que ela não faz bem é *palavra*:
+     todas as letras ocupam a mesma largura, e o desenho da palavra — que é o
+     que se reconhece ao bater o olho — desaparece.
+     ⚠️ E estes títulos acumulavam as QUATRO coisas que mais atrasam a leitura,
+     todas de uma vez: **monoespaçada + CAIXA ALTA + entreletra de 1,5px +
+     11px**. Caixa alta já tira o contorno da palavra; entreletra aberta separa
+     as letras que o olho junta. Isso no elemento **mais repetido do painel**,
+     o que a pessoa relê toda vez que procura onde está.
+     ⚠️ A COR não mudou aqui de propósito: o âmbar dos títulos é o ponto 2 da
+     revisão, que é escolha de identidade e espera decisão à parte. */
+  .field-label{font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.3px;color:var(--amber-dim);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
   .field-label small{color:var(--muted);letter-spacing:0;text-transform:none;font-size:10.5px;}
   /* Até a v6.5 o título do módulo 3 era quebrado à força em duas linhas
      ("Selecionar" / "paradas"), porque dividia a linha com dois links. Com eles
@@ -783,7 +798,8 @@
   /* Desde a v7.4.0 esta linha serve só para AVISOS (erro de arquivo, confirmação
      de "esquecer base"). O estado normal — base carregada — virou o ✓ do título,
      então vazia ela não ocupa espaço nenhum. */
-  .file-status{font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--teal);margin-top:6px;min-height:14px;}
+  /* Frase, não dado: sai da mono (v8.21.0) */
+  .file-status{font-size:11.5px;font-family:'Inter',sans-serif;color:var(--teal);margin-top:6px;min-height:14px;}
   .file-status:empty{display:none;}
   /* Módulo 1 compacto (v6.2): com base carregada — o caso de todo dia — a caixa
      de upload de 122px some e fica uma linha: resumo à esquerda, "trocar base"
@@ -849,7 +865,10 @@
      "Selecionar paradas") — fonte, tamanho, cor e caixa alta iguais,
      sem sublinhado — para "tipos de serviço" e "marcar todos" lerem como
      parte do mesmo cabeçalho, não como um link solto e diferente. */
-  .link-btn{background:none;color:var(--amber-dim);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;padding:0;}
+  /* Mesmo ajuste do título, porque dividem a mesma linha: "Salvar como padrão"
+     fica ao lado de "Origem", e deixar um em mono-caixa-alta e o outro não
+     partiria o cabeçalho do módulo em dois idiomas (v8.21.0). */
+  .link-btn{background:none;color:var(--amber-dim);font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.3px;text-decoration:none;padding:0;}
 
   /* Checklist com um item por cliente carregado do .geojson */
   /* max-height define a altura da area rolavel. Os filhos precisam de flex:none,
@@ -1100,9 +1119,12 @@
     .stop-row .nm{min-width:120px;}
     .stop-row [data-act=up], .stop-row [data-act=down]{display:none;}
   }
+  /* O texto já vem em caixa normal do JS ("Prioritárias · nesta ordem",
+     "Demais"): era o CSS que o punha em caixa alta (v8.21.0). O corpo sobe de
+     9,5 para 10,5px porque a Inter é mais estreita que a mono no mesmo corpo. */
   .stop-grupo{
-    font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.1em;
-    text-transform:uppercase; color:var(--muted); padding:4px 2px 0; list-style:none;
+    font-family:'Inter',sans-serif; font-size:10.5px; font-weight:600; letter-spacing:.2px;
+    color:var(--muted); padding:4px 2px 0; list-style:none;
   }
 
   /* Botões do módulo Rota: "Otimizar e traçar" (âmbar, principal) e
@@ -1130,7 +1152,8 @@
   .btn-row .go-btn.alternativa{flex:1; font-size:12.5px;}
 
   /* Mensagem de status/erro exibida abaixo dos botões */
-  .status{font-size:12.5px;color:var(--danger);font-family:'JetBrains Mono',monospace;min-height:16px;}
+  /* Frase inteira ("Ordem otimizada e rota traçada."), não dado (v8.21.0) */
+  .status{font-size:12.5px;color:var(--danger);font-family:'Inter',sans-serif;min-height:16px;}
   /* Desde a v5.7 botões e status moram no mesmo módulo, fora do gap do painel */
   #status{margin-top:14px;}
   /* Vazio, não ocupa nada (v8.1.0, pelo print do usuário): o min-height de 16px
@@ -1153,7 +1176,10 @@
      painel, depois do "Gerar link". Some junto com a rota (invalidarRota). */
   .resumo-rota{margin-top:14px; border:1px solid var(--line); border-radius:8px; padding:12px 14px; background:var(--panel-2);}
   .resumo-rota .row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--amber);font-weight:700;}
-  .resumo-rota .row + .row{margin-top:2px;font-size:13px;color:var(--muted);font-weight:400;}
+  /* ⚠️ Só a LEGENDA sai da mono; o número acima dela fica (v8.21.0). O tamanho
+     de 13px não foi tocado aqui de propósito: quem cuida disso é o ponto 1 da
+     revisão, que mexe na escala inteira de uma vez. */
+  .resumo-rota .row + .row{margin-top:2px;font-family:'Inter',sans-serif;font-size:13px;color:var(--muted);font-weight:400;}
 
   /* Quilometragem do dia (v8.8.0): a soma de todas as abas, no CABEÇALHO, logo
      depois das abas (escolha do usuário; eu concordei pelo mesmo motivo que ele
@@ -1168,11 +1194,12 @@
   header .resumo-dia{flex:none; align-self:center; display:flex; align-items:baseline; gap:7px;
               padding:4px 11px; border-radius:999px;
               border:1px solid var(--line); background:var(--panel-2);}
-  /* ⚠️ O espaçamento entre letras é menor que o dos outros rótulos em caixa
-     alta do app (.09em): com 24 caracteres, cada centésimo de em vira largura
-     no cabeçalho, que é onde a briga por espaço acontece. */
-  header .resumo-dia .rotulo{font-family:'JetBrains Mono',monospace; font-size:10.5px;
-              letter-spacing:.04em; text-transform:uppercase; color:var(--muted);
+  /* ⚠️ Era o rótulo mais caro do app em largura: 24 caracteres em mono, caixa
+     alta e entreletra, dentro do cabeçalho, que é onde a briga por espaço
+     acontece — e por isso a entreletra já era menor que a dos outros. Em Inter,
+     caixa normal, ele encolhe sozinho (v8.21.0). */
+  header .resumo-dia .rotulo{font-family:'Inter',sans-serif; font-size:10.5px;
+              font-weight:600; letter-spacing:.2px; color:var(--muted);
               white-space:nowrap;}
   /* Âmbar, e não a cor do texto (pedido do usuário): é a mesma cor em que o
      módulo Rota escreve o km/min de cada rota, então os dois números do app que
@@ -1186,7 +1213,10 @@
   .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
   .steps > *{flex:none;}
   .steps li{font-size:12.5px;line-height:1.4;color:var(--text);padding-left:14px;border-left:2px solid var(--teal);}
-  .steps li.leg-header{border-left-color:var(--amber);color:var(--amber);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;}
+  /* ⚠️ Este carrega o NOME DO CLIENTE ("Parada 1 · …"), que é justamente o que
+     a mono lê pior — e a caixa alta forçada apagava a caixa que o nome tem na
+     base (v8.21.0). */
+  .steps li.leg-header{border-left-color:var(--amber);color:var(--amber);font-weight:600;font-family:'Inter',sans-serif;font-size:11.5px;letter-spacing:.2px;}
   /* Roteiro fechado por padrão (v8.18.0, pedido do usuário). O passo a passo é
      a parte mais longa do painel e a menos consultada — quem planeja olha a
      ordem e o km, não a instrução rua a rua. Fechado, o módulo fica do tamanho
@@ -2145,7 +2175,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.20.0';
+const VERSAO = '8.21.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2860,7 +2890,9 @@ function atualizarResumoDia(){
      do cálculo da rota no OSRM, não de odômetro — é o que se espera rodar, com
      o trânsito e os desvios do dia por cima. Quantas rotas são fica na dica: as
      abas ao lado já dizem isso, e repetir aqui gastaria largura no cabeçalho. */
-  el.querySelector('.rotulo').textContent = 'quilometragem aproximada';
+  /* ⚠️ Em maiúscula inicial desde a v8.21.0: era o `text-transform` do CSS
+     que punha o rótulo em caixa alta, e sem ele ele ficaria todo minúsculo. */
+  el.querySelector('.rotulo').textContent = 'Quilometragem aproximada';
   el.querySelector('.valor').textContent = `${(metros / 1000).toFixed(1)} km`;
   /* ⚠️ O TEMPO NÃO É SOMADO, e é por isso que ele fica só na dica: os técnicos
      saem ao mesmo tempo, então somar as durações não responde nada — quem
@@ -5107,7 +5139,7 @@ function iniciarMoverModulo(ev, chave, alca){
     if (!alvo.hidden){
       const r = destino.rect;
       Object.assign(alvo.style, { left:r.left + 'px', top:r.top + 'px', width:r.width + 'px', height:r.height + 'px' });
-      alvo.textContent = r.nova ? 'nova coluna' : '';
+      alvo.textContent = r.nova ? 'Nova coluna' : '';   // maiúscula inicial desde a v8.21.0 (ver .alvo-coluna)
     }
     posicionarEncaixe();
   };
@@ -5664,7 +5696,11 @@ function atualizarBotaoOrigemPadrao(){
   if (!btn) return;
   if (!originLatLng){ btn.style.display = 'none'; return; }
   btn.style.display = 'inline';
-  btn.textContent = origemAtualEhPadrao() ? 'esquecer padrão' : 'salvar como padrão';
+  /* ⚠️ Em maiúscula inicial desde a v8.21.0: até então era o `text-transform`
+     do CSS que punha tudo em caixa alta, e sem ele o rótulo ficaria todo em
+     minúscula ao lado do título "Origem". O "gerar link compatível" NÃO leva
+     maiúscula, porque ele vive no meio de uma frase. */
+  btn.textContent = origemAtualEhPadrao() ? 'Esquecer padrão' : 'Salvar como padrão';
 }
 
 document.getElementById('origemPadraoBtn').onclick = () => {

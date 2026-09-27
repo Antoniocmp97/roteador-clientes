@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 27/09/2026 — v8.20.0 (o bloco de envio perde 121px de explicação permanente)
+> **Última atualização:** 27/09/2026 — v8.21.0 (a monoespaçada volta a ser dos números)
 
 ---
 
@@ -1202,6 +1202,36 @@ nos dois temas, porque o preenchimento continua sendo a cor forte.
 Âmbar = origem, rota traçada e paradas numeradas. Teal = clientes não
 selecionados e estados de sucesso.
 
+**A monoespaçada é dos NÚMEROS** (v8.21.0, ponto 3 da revisão de layout de
+26/09/2026). A regra passou a ser uma frase: **número, código e endereço em
+JetBrains Mono; palavra em Inter.** Medido antes: **36 elementos em mono contra
+33 em Inter** numa tela só — a mono tinha virado a fonte principal do app, sem
+ninguém ter decidido isso. Depois: **23 em mono**, e todos os 23 são o selo de
+versão, os números dos marcadores, os contadores do checklist, os números das
+paradas e o km/min.
+⚠️ **O que a mono resolve é alinhamento de dígito**, e por isso ela fica onde
+há dígito. O que ela não faz bem é *palavra*: todas as letras ocupam a mesma
+largura, e o desenho da palavra — que é o que se reconhece ao bater o olho —
+desaparece. Os títulos de módulo ainda somavam as **quatro** coisas que mais
+atrasam a leitura, todas juntas: mono + CAIXA ALTA + entreletra de 1,5px +
+11px, no elemento **mais repetido do painel**.
+⚠️ **De brinde, todo rótulo encolheu** (medido no mesmo texto, ajuste antigo ×
+novo): "Selecionar paradas" **146 → 112px**, "Ordem da viagem" 122 → 102,
+"Salvar como padrão" 146 → 116, "Quilometragem aproximada" 194 → 161 (a pílula
+do cabeçalho foi de 249 para 241px) e "Prioritárias · nesta ordem" **211 →
+148px**. Num painel de 340px isso é espaço de verdade.
+⚠️ **Dois textos precisaram de maiúscula inicial no código**, porque até aqui
+era o `text-transform` do CSS que os punha em caixa alta e sem ele ficariam
+todos minúsculos: `'Salvar como padrão'`/`'Esquecer padrão'` e
+`'Quilometragem aproximada'` (mais o `'Nova coluna'` do alvo de arraste). O
+**"gerar link compatível" ficou minúsculo de propósito** — ele vive no meio de
+uma frase.
+⚠️ **A COR não mudou junto.** O âmbar dos títulos é o **ponto 2** da revisão,
+que é escolha de identidade e espera decisão à parte. ⚠️ Ficaram **fora**: a
+etiqueta de tipo de serviço (ali a caixa alta normaliza um texto que o próprio
+usuário digita, e a gêmea dela mora na tela do campo) e a **tela do campo
+inteira**, que teve revisão própria em 17–19/09 e não foi medida nesta.
+
 O escritório **não tem rodapé** (removido em 10/09/2026, a pedido do usuário).
 O crédito obrigatório ao OpenStreetMap e à Esri fica no canto do próprio mapa,
 no controle de atribuição do Leaflet (opção attribution da camada base) — é
@@ -1685,12 +1715,12 @@ tinham razão uma a uma — cada versão acrescentou um tamanho de letra, um uso
 |---|---|---|
 | 1 | **11 tamanhos de letra** num vão de 3,5px (10 · 10,5 · 11 · 11,5 · 12 · 12,5 · 13 · 13,5), e nada entre 13,5 e 19. Meio pixel dá **altura de linha idêntica** e 0,3px por caractere. E "distância total" (13px) é maior que o título do módulo (11px) | em aberto — **deixar por último e sozinho numa versão**: altura de letra mexe em altura de módulo, que mexe nos pesos guardados |
 | 2 | **22 elementos de texto em âmbar** contra 4 em teal, fazendo cinco trabalhos (título, contador, número, resultado, ação, link). Contraste do título 4,66:1; o do contador **4,36:1, abaixo do mínimo da AA**, no menor corpo do app | em aberto — barato em código, mas é escolha de identidade |
-| 3 | **36 elementos em JetBrains Mono** contra 33 em Inter. Os 6 títulos acumulam mono + CAIXA ALTA + entreletra 1,5px + 11px, tudo junto, no elemento mais repetido do painel | em aberto — barato e reversível; é o que mais muda a sensação de leitura |
+| 3 | **36 elementos em JetBrains Mono** contra 33 em Inter. Os 6 títulos acumulam mono + CAIXA ALTA + entreletra 1,5px + 11px, tudo junto, no elemento mais repetido do painel | ✅ **feito na v8.21.0** — 36 elementos em mono viram 23, e todos são número ou código |
 | 4 | **34 caixas com borda** numa coluna de 340px, aninhadas até 4 molduras em volta de um nome | em aberto — mexe em área de clique e em altura de lista |
 | 5 | **31% do painel fora da vista a 1920×1080** (1442px de conteúdo em 991px), com 17,7% da largura em painel e 1568px de mapa parado; **53% fora da vista na TV de 1366** | ✅ **feito na v8.19.0** (só a parte de 1920; a TV continua em aberto) |
 | 6 | **Módulo Rota com 510px**, dos quais **122px (42% do bloco de envio)** são três explicações lidas uma vez na vida | ✅ **feito na v8.20.0** — envio de 290 para 169px, módulo Rota de 510 para 390px |
 
-Ordem recomendada para o resto: **3 → 2 → 4 → 1**.
+Ordem recomendada para o resto: **2 → 4 → 1**.
 
 **Material de trabalho na pasta, fora do repositório** (padrão `COMPARACAO-*.html`
 no `.gitignore`), para apagar quando não servirem mais:
@@ -1899,6 +1929,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 110 | **v8.18.0** — O Roteiro nasce fechado, e "Enviar para o campo" entra no módulo Rota (de sete módulos para seis) |
 | 111 | **v8.19.0** — Ponto 5 da revisão de layout: acima de 1600px a coluna 2 já nasce aberta, e o painel para de rolar |
 | 112 | **v8.20.0** — Ponto 6: embaixo do link fica só o "?", e as três explicações vão para o painel que ele abre |
+| 113 | **v8.21.0** — Ponto 3: a monoespaçada volta a ser dos números; todo rótulo do escritório passa para Inter, em caixa normal |
 
 ---
 
@@ -1966,7 +1997,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.20.0
+8.21.0
 ```
 
 ### Onde o número aparece
@@ -2103,3 +2134,4 @@ os backups locais são conveniência, não garantia.
 | 8.18.0 | 26/09/2026 | O Roteiro nasce fechado; "Enviar para o campo" vira parte do módulo Rota e o campo de retomar repetido sai |
 | 8.19.0 | 26/09/2026 | Acima de 1600px o padrão passa a ser duas colunas: 31% de painel fora da vista viram 0% |
 | 8.20.0 | 27/09/2026 | O bloco de envio devolve 121px ao painel: embaixo do link sobra só o "?" |
+| 8.21.0 | 27/09/2026 | Rótulos em Inter e caixa normal; a mono fica só nos números (36 elementos em mono viram 23) |
