@@ -182,7 +182,7 @@
   .modulo-espera{display:none;}
   .guia-vazia{font-size:12px; color:var(--muted); font-style:italic;}
 
-  /* Nas colunas a section vira caixa. Módulos de tamanho natural (1, 2, Rota, 5)
+  /* Nas colunas a section vira caixa. Módulos de tamanho natural (1, 2, Rota)
      ocupam só o que precisam; os que têm lista (3, 4, Roteiro) são "elásticos"
      e dividem a sobra da coluna na proporção de --peso, que as divisórias de
      altura ajustam. Com peso igual, dividem meio a meio. */
@@ -191,6 +191,12 @@
   /* Altura fixa (v5.9): o peso vira a altura em pixels e a coluna para de
      esticar os módulos — o que sobrar fica vazio embaixo, ou a coluna rola */
   .guia.alturas-fixas .modulo-movel.elastico:not(.esperando){flex:none; height:calc(var(--peso, 300) * 1px);}
+  /* Recolhido (v8.18.0) o módulo elástico vira um título só: sai da divisão de
+     altura da coluna nos dois modos, senão um Roteiro fechado continuaria
+     segurando metade da coluna com uma lista que ninguém vê. Quem o tira da
+     conta das divisórias é `elasticosVisiveis()`; isto é só o tamanho. */
+  .guia .modulo-movel.elastico.recolhido,
+  .guia.alturas-fixas .modulo-movel.elastico.recolhido{flex:none; height:auto; min-height:0;}
   .guia .modulo-movel.esperando > .modulo-espera{display:block;}
   .guia .modulo-movel.elastico > .modulo-corpo{display:flex; flex-direction:column; flex:1 1 auto; min-height:0;}
   /* O Roteiro se esconde por classe (.show), não por hidden: a regra acima o
@@ -1181,6 +1187,20 @@
   .steps > *{flex:none;}
   .steps li{font-size:12.5px;line-height:1.4;color:var(--text);padding-left:14px;border-left:2px solid var(--teal);}
   .steps li.leg-header{border-left-color:var(--amber);color:var(--amber);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;}
+  /* Roteiro fechado por padrão (v8.18.0, pedido do usuário). O passo a passo é
+     a parte mais longa do painel e a menos consultada — quem planeja olha a
+     ordem e o km, não a instrução rua a rua. Fechado, o módulo fica do tamanho
+     do próprio título.
+     ⚠️ A margem do título sai do CSS, e não de um `style=` no markup: recolhido
+     ela tem de ir a zero, e um inline venceria a regra. */
+  #readout > .field-label{margin-bottom:10px;}
+  .readout.recolhido > .field-label{margin-bottom:0;}
+  .readout.recolhido #steps{display:none;}
+  /* O chevron aponta para onde o clique leva: para baixo abre, para cima fecha.
+     ⚠️ A rotação é enfeite puro — com o modo leve a transição morre e o ícone
+     simplesmente troca de lado, sem nada esperando `transitionend`. */
+  #roteiroAbrirBtn svg{transition:transform .15s;}
+  .readout:not(.recolhido) #roteiroAbrirBtn svg{transform:rotate(180deg);}
 
   .leaflet-container{background:var(--map-bg);font-family:'Inter',sans-serif;}
   /* Tema escuro do mapa (v3.2). Os ladrilhos continuam sendo os do Esri; o que
@@ -1277,6 +1297,11 @@
   /* Campo "Enviar para o campo": o input do link e a dica de uso */
   #linkCampo{width:100%;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);}
   /* Retomar um roteiro já enviado (v6.8.0) */
+  /* "Enviar para o campo" deixou de ser módulo e passou a morar dentro do
+     módulo Rota (v8.18.0, pedido do usuário: "acredito que há uma redundância,
+     acaba poluindo a tela"). Um fio separa "traçar" de "mandar" — um segundo
+     título dentro do mesmo cartão seria justamente a poluição que saiu. */
+  #envioSection{margin-top:14px; padding-top:14px; border-top:1px solid var(--line);}
   .retomar-linha{display:flex; gap:8px; align-items:stretch; margin-top:10px;}
   .retomar-linha input{min-width:0; font-size:12px;}
   .retomar-linha .go-btn{flex:none; padding:8px 12px; font-size:12.5px;}
@@ -1846,6 +1871,41 @@
           <div class="row"><span>distância total</span><span>tempo estimado</span></div>
         </div>
         <div class="status" id="status"></div>
+
+        <!-- Enviar para o campo (era o módulo m6 até a v8.17.1): gerar o link do
+             roteiro para mandar a quem vai a campo. Só aparece depois que uma
+             rota foi traçada com sucesso.
+             ⚠️ Virou parte do módulo Rota na v8.18.0. São o mesmo passo do dia —
+             traçou, manda —, e o módulo próprio custava um título, uma alça e
+             uma linha de "aparece depois" na coluna. O campo de retomar que
+             ficava aqui SAIU: o do módulo Clientes faz o mesmo e está sempre à
+             mão, enquanto este só existia depois de uma rota traçada. -->
+        <div id="envioSection" style="display:none;">
+          <button class="go-btn" id="gerarLinkBtn">Gerar link do roteiro</button>
+          <div id="linkPronto" style="display:none;margin-top:10px;">
+            <input type="text" id="linkCampo" readonly>
+            <div class="btn-row" style="margin-top:8px;">
+              <button class="go-btn" id="compartilharBtn">Compartilhar</button>
+              <button class="go-btn secondary" id="copiarBtn">Copiar</button>
+            </div>
+            <div class="envio-dica">
+              Mande este link para quem vai fazer as visitas. Ao abrir, a pessoa
+              vê o roteiro na ordem certa, com botão de navegação em cada parada.
+            </div>
+            <!-- Saída para celular antigo: o link comprimido depende de um recurso
+                 que só existe em navegadores de 2023 para cá -->
+            <div class="envio-dica" id="linkCompativel" style="display:none;">
+              Não abriu no celular de alguém?
+              <button class="link-btn" id="linkCompativelBtn">gerar link compatível</button>
+            </div>
+            <!-- Se algum aparelho da equipe não abre o formato compacto, marcar aqui
+                 evita ter que lembrar do botão acima a cada roteiro -->
+            <label class="envio-dica" style="display:flex;gap:6px;align-items:center;cursor:pointer;">
+              <input type="checkbox" id="sempreCompativel">
+              <span>Sempre gerar link compatível (mais longo, abre em qualquer celular)</span>
+            </label>
+          </div>
+        </div>
       </div>
       </section>
 
@@ -1968,52 +2028,17 @@
       </div>
       </section>
 
-      <!-- Passo 5: gerar o link do roteiro para mandar a quem vai a campo.
-           Só aparece depois que uma rota foi traçada com sucesso. -->
-      <section class="modulo-movel" data-modulo="m6">
-      <div id="envioSection" class="modulo-corpo" style="display:none;">
-        <div class="field-label">
-          <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Enviar para o campo</span>
-        </div>
-        <button class="go-btn" id="gerarLinkBtn">Gerar link do roteiro</button>
-        <!-- Retomar (v6.8.0): cola-se aqui o link já enviado para acrescentar
-             paradas sem o técnico perder o que já marcou -->
-        <div class="retomar-linha">
-          <input type="text" id="retomarLink" placeholder="Cole aqui um link já enviado para editá-lo">
-          <button class="go-btn secondary" id="retomarBtn" type="button">Retomar</button>
-        </div>
-        <div id="linkPronto" style="display:none;margin-top:10px;">
-          <input type="text" id="linkCampo" readonly>
-          <div class="btn-row" style="margin-top:8px;">
-            <button class="go-btn" id="compartilharBtn">Compartilhar</button>
-            <button class="go-btn secondary" id="copiarBtn">Copiar</button>
-          </div>
-          <div class="envio-dica">
-            Mande este link para quem vai fazer as visitas. Ao abrir, a pessoa
-            vê o roteiro na ordem certa, com botão de navegação em cada parada.
-          </div>
-          <!-- Saída para celular antigo: o link comprimido depende de um recurso
-               que só existe em navegadores de 2023 para cá -->
-          <div class="envio-dica" id="linkCompativel" style="display:none;">
-            Não abriu no celular de alguém?
-            <button class="link-btn" id="linkCompativelBtn">gerar link compatível</button>
-          </div>
-          <!-- Se algum aparelho da equipe não abre o formato compacto, marcar aqui
-               evita ter que lembrar do botão acima a cada roteiro -->
-          <label class="envio-dica" style="display:flex;gap:6px;align-items:center;cursor:pointer;">
-            <input type="checkbox" id="sempreCompativel">
-            <span>Sempre gerar link compatível (mais longo, abre em qualquer celular)</span>
-          </label>
-        </div>
-      </div>
-      </section>
-
       <!-- Resultado: distância/tempo totais + instruções passo a passo por parada -->
       <section class="modulo-movel" data-modulo="m7">
       <!-- Passo a passo. Distância e tempo foram para o módulo Rota na v6.2 -->
       <div class="readout modulo-corpo" id="readout">
-        <div class="field-label" style="margin-bottom:10px;">
+        <div class="field-label">
           <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Roteiro</span>
+          <!-- Abre e fecha o passo a passo (v8.18.0). Nasce FECHADO. -->
+          <button class="btn-titulo" id="roteiroAbrirBtn" type="button" aria-expanded="false"
+                  aria-controls="steps" aria-label="Passo a passo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+          </button>
         </div>
         <ul class="steps" id="steps"></ul>
       </div>
@@ -2086,7 +2111,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.17.1';
+const VERSAO = '8.18.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -3449,7 +3474,7 @@ function importClients(grupos, filename, salvoEm){
   // Link colado antes da base (v6.8.1): agora dá para casar as paradas
   if (linkPendente){
     const link = linkPendente; linkPendente = null;
-    setTimeout(() => { if (retomarRoteiro(link)){ document.getElementById('retomarLinkTopo').value = ''; document.getElementById('retomarLink').value = ''; fecharRetomarTopo(); } }, 0);
+    setTimeout(() => { if (retomarRoteiro(link)){ document.getElementById('retomarLinkTopo').value = ''; fecharRetomarTopo(); } }, 0);
   }
   // A viagem foi zerada acima (stops = []), mas a lista da seção 4 continuava
   // desenhada com as paradas da base anterior — linhas fantasmas, ainda
@@ -4327,8 +4352,7 @@ const MODULOS = {
   m3: { titulo:'Selecionar paradas', elastico:true },
   m4: { titulo:'Ordem da viagem',    elastico:true, espera:'Aparece quando houver paradas selecionadas.' },
   m5: { titulo:'Rota' },
-  m6: { titulo:'Enviar para o campo', espera:'Aparece depois de traçar a rota.' },
-  m7: { titulo:'Roteiro',                 elastico:true, espera:'Aparece depois de traçar a rota.' }
+  m7: { titulo:'Roteiro',            elastico:true, espera:'Aparece depois de traçar a rota.' }
 };
 const ORDEM_MODULOS = Object.keys(MODULOS);
 /* A ordem em que os módulos NASCEM no painel (v8.13.0, pedido do usuário:
@@ -4343,7 +4367,7 @@ const ORDEM_MODULOS = Object.keys(MODULOS);
    Um módulo novo em MODULOS que alguém esqueça de listar aqui entra no fim, em
    vez de sumir da tela. */
 const ORDEM_PADRAO = (() => {
-  const desejada = ['m1', 'm2', 'm5', 'm3', 'm4', 'm6', 'm7'];
+  const desejada = ['m1', 'm2', 'm5', 'm3', 'm4', 'm7'];
   return [...desejada.filter(k => MODULOS[k]),
           ...ORDEM_MODULOS.filter(k => !desejada.includes(k))];
 })();
@@ -4777,9 +4801,13 @@ function atualizarModulosNasColunas(){
     }
   });
 }
+/* ⚠️ Um módulo RECOLHIDO (v8.18.0) não é elástico: ele está do tamanho do
+   título, e deixá-lo na conta daria uma divisória de altura entre um título e
+   uma lista, e um peso guardado para um módulo sem nada para mostrar. */
 function elasticosVisiveis(coluna){
   return [...coluna.children].filter(el =>
-    el.classList.contains('modulo-movel') && MODULOS[el.dataset.modulo].elastico && !el.classList.contains('esperando'));
+    el.classList.contains('modulo-movel') && MODULOS[el.dataset.modulo].elastico
+    && !el.classList.contains('esperando') && !el.classList.contains('recolhido'));
 }
 
 // Pesos só valem dentro de uma coluna. Quando um módulo entra ou sai, a coluna
@@ -6003,6 +6031,48 @@ function drawResult(distance, duration, geometry, legs){
   document.getElementById('resumoRota').hidden = false;
 }
 
+/* ---------------- O Roteiro nasce fechado (v8.18.0) ----------------
+   Pedido do usuário: "o módulo do roteiro vem por padrão minimizado, sendo
+   opcional a abertura". O passo a passo é a parte mais longa do painel e a
+   menos consultada no escritório — quem planeja olha a ordem das paradas e o
+   km/min; a instrução rua a rua é do Waze, na mão de quem está dirigindo.
+   ⚠️ A escolha FICA GUARDADA, como todas as outras do app (tema, vidro, leve,
+   zoom da parada, foco do mapa): abrir uma vez não obriga a abrir de novo todo
+   dia. O padrão, sem escolha guardada, é fechado.
+   ⚠️ Não há classe de saída nem espera de animação: é `display` direto, e a
+   rotação do chevron é a única coisa animada — com o modo leve ela some e o
+   resto funciona igual.
+   ⚠️ Fechado, o módulo sai da divisão de altura da coluna (`elasticosVisiveis`).
+   Sem isso um Roteiro fechado seguraria metade da coluna com uma lista que
+   ninguém vê. */
+const CHAVE_ROTEIRO = 'hg_roteiro_aberto';
+function roteiroAberto(){
+  try{ return localStorage.getItem(CHAVE_ROTEIRO) === '1'; }catch(e){ return false; }
+}
+function aplicarRoteiroRecolhido(){
+  const aberto = roteiroAberto(), fechado = !aberto;
+  document.getElementById('readout').classList.toggle('recolhido', fechado);
+  vagaDoModulo('m7').classList.toggle('recolhido', fechado);
+  const b = document.getElementById('roteiroAbrirBtn');
+  b.classList.toggle('ativo', aberto);
+  b.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+  b.title = aberto
+    ? 'Fechar o passo a passo'
+    : 'Abrir o passo a passo — as instruções rua a rua de cada trecho';
+}
+if (!modoCampoAtivo){
+  aplicarRoteiroRecolhido();
+  document.getElementById('roteiroAbrirBtn').onclick = () => {
+    const abrir = !roteiroAberto();
+    try{
+      if (abrir) localStorage.setItem(CHAVE_ROTEIRO, '1');
+      else localStorage.removeItem(CHAVE_ROTEIRO);
+    }catch(e){}
+    aplicarRoteiroRecolhido();
+    atualizarModulosNasColunas();   // entra ou sai da divisão de altura da coluna
+  };
+}
+
 /* ---------------- Voltar para a origem (v6.3) ----------------
    Pedido do usuário em 15/09/2026: a viagem terminava na última parada, então o
    caminho de volta para a empresa não entrava no km nem no tempo — e a ordem
@@ -6545,13 +6615,16 @@ document.getElementById('gerarLinkBtn').onclick = () => {
   gerarLinkDoRoteiro(false);
 };
 
-// Os dois campos de retomar (módulo 1 e módulo 5) fazem o mesmo: o do módulo 1
-// está sempre à mão; o do módulo 5 fica junto do link recém-gerado.
-[['retomarBtn', 'retomarLink'], ['retomarTopoBtn', 'retomarLinkTopo']].forEach(([botao, campo]) => {
+/* Retomar um roteiro pelo link. ⚠️ Havia DOIS campos iguais até a v8.17.1 — um
+   no módulo Clientes e outro no "Enviar para o campo" — e o usuário apontou a
+   redundância ("acaba poluindo a tela"). Ficou o do módulo Clientes: ele está
+   sempre à mão, enquanto o outro só existia depois de uma rota traçada, que é
+   exatamente quando NÃO se precisa retomar nada. */
+(([botao, campo]) => {
   const b = document.getElementById(botao), c = document.getElementById(campo);
   b.onclick = () => { if (retomarRoteiro(c.value)){ c.value = ''; fecharRetomarTopo(); } };
   c.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); b.click(); } });
-});
+})(['retomarTopoBtn', 'retomarLinkTopo']);
 
 document.getElementById('linkCompativelBtn').onclick = async () => {
   await gerarLinkDoRoteiro(true);

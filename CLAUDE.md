@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 26/09/2026 — v8.17.1 (a ida até a parada ficou suave)
+> **Última atualização:** 26/09/2026 — v8.18.0 (o Roteiro nasce fechado; um módulo a menos)
 
 ---
 
@@ -604,12 +604,16 @@ sem dependências instaladas. Abre direto no navegador.
   **Em coluna de até 400px a parada fica em uma linha só** (v6.2): as setas ▲▼ saem
   e ★ ✕ ficam na linha do nome; em coluna mais larga as setas voltam
 - **Todos os módulos em até três colunas** (v4.4–v4.7; ampliado na v5.7): ordem
-  na tela **mapa · coluna 3 · coluna 2 · painel**. Os sete módulos — Clientes,
-  Origem, Selecionar paradas, Ordem da viagem, Rota (botões + status),
-  Enviar para o campo e Roteiro — têm alça no título.
+  na tela **mapa · coluna 3 · coluna 2 · painel**. Os **seis** módulos —
+  Clientes, Origem, Selecionar paradas, Ordem da viagem, Rota (botões, status e
+  o envio para o campo) e Roteiro — têm alça no título.
+  ⚠️ **Eram SETE até a v8.17.1**: o "Enviar para o campo" era o módulo `m6` e
+  virou parte do módulo Rota na v8.18.0 (ver o item próprio, mais abaixo). O
+  apelido `m6` **não foi reaproveitado** — o Roteiro continua sendo `m7`, como
+  em todo arranjo já salvo por aí.
   ⚠️ **A ordem em que eles nascem no painel não é a dos apelidos** desde a
-  v8.13.0: é `ORDEM_PADRAO` = **m1, m2, m5, m3, m4, m6, m7** — Clientes, Origem,
-  **Rota**, Selecionar paradas, Ordem da viagem, Enviar, Roteiro. `ORDEM_MODULOS`
+  v8.13.0: é `ORDEM_PADRAO` = **m1, m2, m5, m3, m4, m7** — Clientes, Origem,
+  **Rota**, Selecionar paradas, Ordem da viagem, Roteiro. `ORDEM_MODULOS`
   continua sendo só a lista de apelidos, para iterar. O **markup do `<body>`
   segue a mesma ordem**, para a primeira pintura já sair certa. E o **duplo
   clique** (que joga o módulo "na posição da numeração" ao trocar de coluna) usa
@@ -655,7 +659,7 @@ sem dependências instaladas. Abre direto no navegador.
   abaixo** do 3 (classe `sem-divisoria-34` no body); fora disso vale o puxador de
   cada um.
   Regras: a coluna 3 **só existe junto com a 2** — se a 2
-  esvazia, o conteúdo da 3 passa para ela. Módulo escondido (4 sem paradas, 5 e
+  esvazia, o conteúdo da 3 passa para ela. Módulo escondido (4 sem paradas,
   Roteiro sem rota) aparece na coluna como título + "aparece depois…", com alça
   própria; no painel continua só escondido.
   Estrutura: cada módulo é `<section class="modulo-movel" data-modulo="mN">` com um
@@ -775,7 +779,7 @@ sem dependências instaladas. Abre direto no navegador.
   isso de volta. O usuário resolveu na **v8.13.0** com uma ideia melhor do que
   a original: em vez de um módulo flutuando sobre a lista, a **Rota passou a
   nascer logo abaixo da Origem**. Medido: o botão a 142px do topo do painel,
-  visível sem rolar mesmo com os sete módulos abertos.
+  visível sem rolar mesmo com todos os módulos abertos.
   ⚠️ **De brinde, o suspeito de desempenho foi junto**: a revisão de 24/09 tinha
   deixado em aberto o `scroll` em `main` na fase de captura, que disparava duas
   leituras de caixa a cada rolagem de qualquer lista. Não há mais nada
@@ -1002,12 +1006,54 @@ sem dependências instaladas. Abre direto no navegador.
   não é mais o do dia.
   ⚠️ O simplificador usa **geometria plana** e tolerância em graus. Em 50 km de
   Criciúma isso erra fração de metro; **não usar para distância**
+- **O Roteiro nasce fechado, e "Enviar para o campo" virou parte da Rota**
+  (v8.18.0, dois pedidos do usuário na mesma mensagem: "o módulo do roteiro vem
+  por padrão minimizado, sendo opcional a abertura" e "pensei na possibilidade
+  de mesclar o módulo Rota com o módulo Enviar para o campo... acaba poluindo a
+  tela").
+  **(1) O Roteiro** ganhou um chevron no título e abre e fecha por ele. Fechado,
+  o módulo é **uma barra de 58px** em vez dos 278px da lista (medido no painel,
+  numa rota de 6 paradas com 60 instruções). A escolha fica guardada
+  (`hg_roteiro_aberto`) e o padrão, sem escolha nenhuma, é **fechado**.
+  ⚠️ **Por que fechado faz sentido**: o passo a passo é a parte mais longa do
+  painel e a menos consultada no escritório — quem planeja olha a ordem das
+  paradas e o km/min. A instrução rua a rua é do Waze, na mão de quem dirige.
+  ⚠️ **Fechado, o módulo sai da divisão de altura da coluna**
+  (`elasticosVisiveis()` passou a descartar `.recolhido`). Sem isso um Roteiro
+  fechado seguraria metade da coluna com uma lista que ninguém vê — medido: com
+  ele e o checklist na mesma coluna, fechado o checklist vai a 511px e some a
+  divisória; aberto, os dois voltam a 277/277.
+  ⚠️ **A margem do título saiu do markup para o CSS**: recolhido ela tem de ir a
+  zero, e um `style=` inline venceria a regra.
+  **(2) O "Enviar para o campo"** deixou de ser módulo (`m6`) e virou um bloco
+  dentro do módulo **Rota**, separado por um fio de 1px. São o mesmo passo do
+  dia — traçou, manda — e o módulo próprio custava um título, uma alça e uma
+  linha de "aparece depois" em cada coluna. **Junto saiu o campo de retomar
+  repetido** (ver o item de retomar, abaixo).
+  ⚠️ **O apelido `m6` não foi reaproveitado**, e isso não é preguiça: todo
+  arranjo salvo por aí ainda cita `m6`, e `arranjoGuardado()` monta o arranjo a
+  partir de `ORDEM_MODULOS` — a chave desconhecida é simplesmente ignorada.
+  Testado com um arranjo da v8.17.1 (m3+m4 na coluna 2, m6+m7 na coluna 3): o
+  m6 some, o resto fica onde estava e **o disquete não acende sozinho**.
+  ⚠️ **`#envioSection` continua sendo o mesmo id, mostrado e escondido por
+  `style.display`** — `prepararEnvio()`, `invalidarRota()`, `salvarNoTecnico()` e
+  `carregarDoTecnico()` não mudaram uma linha. O que saiu foi a `section`
+  em volta e a classe `.modulo-corpo`.
+  ⚠️ **Sem segundo título dentro do cartão**: um "ENVIAR PARA O CAMPO" embaixo
+  de "ROTA" seria justamente a poluição que o pedido queria tirar. O fio basta,
+  e o texto do botão já diz o que ele faz.
+
 - **Retomar um roteiro pelo link** (v6.8.0, pedido do usuário: "meia hora depois
-  surge mais uma parada"): colar o link no **módulo 1** (v6.8.1, sempre à mão — o
-  campo do módulo 5 só existe depois de uma rota traçada; desde a v7.4.0 fica num
-  **painel dobrável**, atrás do ícone de corrente do título, que abre com o foco no
-  campo e fecha sozinho quando a retomada dá certo) ou no módulo "Enviar para o
-  campo". Volta ordem, ★, tipo, origem e o interruptor de retorno;
+  surge mais uma parada"): colar o link no **módulo 1** (v6.8.1, sempre à mão;
+  desde a v7.4.0 fica num **painel dobrável**, atrás do ícone de corrente do
+  título, que abre com o foco no campo e fecha sozinho quando a retomada dá
+  certo). Volta ordem, ★, tipo, origem e o interruptor de retorno;
+  ⚠️ **Havia um segundo campo, igual, no "Enviar para o campo", e ele saiu na
+  v8.18.0** (o usuário apontou: "posso colar o link de um roteiro para editá-lo,
+  mas também é possível fazer isso apertando no botão do módulo Cliente — acaba
+  poluindo a tela"). Ficou o do módulo 1, que está sempre à mão: o outro só
+  existia **depois de uma rota traçada**, que é exatamente quando não se precisa
+  retomar nada;
   ⚠️ Havia um terceiro caminho até a v7.9.2: o atalho **"editar no escritório"**,
   no rodapé da tela do roteiro, que guardava o link no `sessionStorage`
   (`hg_retomar_roteiro`) e recarregava sem o `#`. Saiu junto com o rodapé, a
@@ -1388,7 +1434,8 @@ repositório é público (ver `.gitignore`).
 - **Persistência parcial.** Ficam salvos no navegador: a base de clientes, a
   origem padrão, a lista de tipos de serviço, a preferência de formato do link,
   a opção de voltar para a origem, o zoom ao clicar na parada, **o que o mapa
-  mostra dos clientes** (v8.15.0), o vidro ligado
+  mostra dos clientes** (v8.15.0), **o Roteiro aberto ou fechado** (v8.18.0),
+  o vidro ligado
   ou desligado, as janelas livres ligadas ou desligadas, o ímã de alinhamento
   delas, **a faixa de mapa da tela do campo** (v8.16.0, no aparelho de quem
   abriu o link), **o modo leve** (v8.7.0), **o planejamento do dia** (v8.5.0, restaurado
@@ -1750,6 +1797,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 107 | **v8.16.1** — Primeira revisão `.Verify`: nomes reais fora dos arquivos versionados, mapa do código e README em dia |
 | 108 | **v8.17.0** — Correção: o clique na parada nem sempre chegava ao ponto (a animação era o único caminho) |
 | 109 | **v8.17.1** — A ida até a parada vira voo em arco, e a rede de segurança para de dar solavanco |
+| 110 | **v8.18.0** — O Roteiro nasce fechado, e "Enviar para o campo" entra no módulo Rota (de sete módulos para seis) |
 
 ---
 
@@ -1817,7 +1865,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.17.1
+8.18.0
 ```
 
 ### Onde o número aparece
@@ -1951,3 +1999,4 @@ os backups locais são conveniência, não garantia.
 | 8.16.1 | 26/09/2026 | Revisão `.Verify`: saneamento dos nomes reais, correções no mapa do código e no README |
 | 8.17.0 | 26/09/2026 | Correção: o clique na parada passa a chegar sempre ao ponto clicado, com rede de segurança |
 | 8.17.1 | 26/09/2026 | A ida até a parada em voo suave; a rede deixa de disparar a toa (tolerância em pixel) |
+| 8.18.0 | 26/09/2026 | O Roteiro nasce fechado; "Enviar para o campo" vira parte do módulo Rota e o campo de retomar repetido sai |

@@ -1,7 +1,7 @@
 # Mapa do código — `index.html`
 
 > Onde cada coisa mora e o que liga o quê. Feito em 24/09/2026 na v8.8.0;
-> conferido linha a linha e atualizado em 26/09/2026 na v8.16.1. Os números de
+> conferido linha a linha na v8.16.1 e atualizado em 26/09/2026 na v8.18.0. Os números de
 > linha envelhecem; os **títulos de seção** não — procure pelo título quando a
 > linha não bater.
 >
@@ -14,11 +14,11 @@
 
 | Camada | Tamanho | Onde |
 |---|---|---|
-| CSS | 1527 linhas | um `<style>` no `<head>` |
-| Markup | 513 linhas | `<body>`: duas telas inteiras |
-| JS | 5032 linhas | um `<script>` no fim do `<body>` |
+| CSS | 1550 linhas | um `<style>` no `<head>` |
+| Markup | 501 linhas | `<body>`: duas telas inteiras |
+| JS | 5108 linhas | um `<script>` no fim do `<body>` |
 
-**40% do arquivo são comentários** (~159 KB de 392 KB). É proposital: eles são a
+**41% do arquivo são comentários** (~160 KB de 401 KB). É proposital: eles são a
 memória do projeto. Não afetam o desempenho — o GitHub Pages serve comprimido, e
 o navegador descarta comentário no parse.
 
@@ -80,6 +80,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | clicar na parada e ir até ela | `Centraliza um ponto na parte visível` | `centralizarVisivel`, `verParadaNoMapa`, `DUR_VOO_PARADA` |
 | mover módulos entre colunas | `Arrastar um módulo pela alça…` | `destinoDoModulo`, `moverModulo` |
 | ordem em que os módulos nascem | `MODULOS` / `ORDEM_PADRAO` | `arranjoNormal` |
+| abrir/fechar o Roteiro | `O Roteiro nasce fechado (v8.18.0)` | `roteiroAberto`, `aplicarRoteiroRecolhido` |
 | alturas dentro das colunas | `Espaço dividido entre os módulos 3 e 4` | `alturasGuardadas`, `atualizarModulosNasColunas` |
 | link do roteiro | `Identificador do roteiro` / `Compressão do link` | `montarRoteiro`, `lerRoteiroCompacto` |
 | retomar pelo link | `Retomar um roteiro a partir do link` | `retomarRoteiro` |
@@ -117,6 +118,8 @@ clientPoints[]   todos os pontos da base + as avulsas (cada um com .marker)
 gruposClientes[] a mesma base agrupada por camada, só para o checklist
 tecnicos[]       as abas; tecnicoAtivo é o índice da aberta
 arranjo          { local, ordem, pesos, fixas, janelas } — onde cada módulo está
+                 (SEIS: m1 m2 m3 m4 m5 m7 — o m6 "Enviar para o campo" virou
+                  parte do m5 na v8.18.0, e o apelido não foi reaproveitado)
 map              o Leaflet
 ```
 
@@ -136,6 +139,7 @@ map              o Leaflet
 | `hg_tipos_servico` | a lista de tipos |
 | `hg_voltar_origem` | o interruptor de retorno |
 | `hg_zoom_parada` | zoom ao clicar na parada |
+| `hg_roteiro_aberto` | o módulo Roteiro aberto (ausente = fechado, que é o padrão) |
 | `hg_largura_painel`, `hg_largura_guia`, `hg_largura_guia2` | larguras |
 | `hg_alturas_modulos` | alturas do checklist e das paradas no painel |
 | `hg_arranjo_modulos` | o arranjo salvo pelo disquete |
@@ -188,7 +192,8 @@ arquivo .umap
   → renderStopsList()  desenha a ordem da viagem (e agenda salvarDia)
   → routeBtn / optimizeBtn
   → drawResult()       polyline + marcadores numerados, na cor do técnico
-  → prepararEnvio()    guarda ultimoResumo e revela "Enviar para o campo"
+  → prepararEnvio()    guarda ultimoResumo e revela #envioSection, que desde a
+                       v8.18.0 mora DENTRO do módulo Rota (m5)
   → atualizarResumoDia()  soma os km de todas as abas
 ```
 

@@ -7052,3 +7052,63 @@ MEDIDAS
   MODO LEVE: 1,6ms, sem voo nenhum, no alvo.
   Zoom bloqueado (v7.3.0): mapa parado, balão abre.
   Sem erro de console.
+
+--------------------------------------------------------
+[26/09/2026] v8.18.0 — o Roteiro nasce fechado, e um módulo a menos
+--------------------------------------------------------
+PEDIDO DO USUÁRIO (duas coisas na mesma mensagem)
+  "O módulo do roteiro vem por padrão minimizado, sendo opcional a abertura."
+  "Pensei na possibilidade de mesclar o módulo Rota com o módulo Enviar para o
+   campo, e acredito que há uma redundância, pois posso colar o link de um
+   roteiro para editá-lo, mas também é possível fazer isso apertando no botão do
+   módulo Cliente. Acaba poluindo a tela."
+
+1. O ROTEIRO NASCE FECHADO
+  Chevron no título, que abre e fecha o passo a passo. A escolha fica guardada
+  (`hg_roteiro_aberto`); sem escolha nenhuma, o padrão é FECHADO.
+  Medido no painel, rota de 6 paradas com 60 instruções: 278px aberto, 58px
+  fechado.
+  · Fechado, o módulo SAI da divisão de altura da coluna: `elasticosVisiveis()`
+    passou a descartar `.recolhido`. Sem isso, um Roteiro fechado seguraria
+    metade da coluna com uma lista que ninguém vê. Medido com o checklist na
+    mesma coluna: fechado, o checklist vai a 511px e a divisória some; aberto,
+    os dois voltam a 277/277 com a divisória entre eles.
+  · A margem do título saiu do markup para o CSS — recolhido ela vai a zero, e
+    um `style=` inline venceria a regra.
+  · MODO LEVE: 3,1ms, ZERO animações, transição do chevron em 0s, e o ícone
+    continua virando de lado (é `transform`, aplicado na hora).
+
+2. "ENVIAR PARA O CAMPO" VIROU PARTE DO MÓDULO ROTA
+  O módulo `m6` deixou de existir. O bloco do link mora agora dentro do módulo
+  Rota, separado por um fio de 1px — sem segundo título, que seria justamente a
+  poluição que o pedido queria tirar. De sete módulos para SEIS.
+  · `#envioSection` continua sendo o mesmo id, mostrado e escondido por
+    `style.display`: `prepararEnvio()`, `invalidarRota()`, `salvarNoTecnico()` e
+    `carregarDoTecnico()` não mudaram uma linha.
+  · O apelido `m6` NÃO foi reaproveitado. Todo arranjo salvo por aí ainda cita
+    `m6`, e `arranjoGuardado()` monta o arranjo a partir de `ORDEM_MODULOS` —
+    chave desconhecida é ignorada. Testado com um arranjo da v8.17.1 (m3+m4 na
+    coluna 2, m6+m7 na coluna 3): o m6 some, o resto fica onde estava e o
+    DISQUETE NÃO ACENDE sozinho.
+
+3. O CAMPO DE RETOMAR REPETIDO SAIU
+  Havia dois campos idênticos: um no módulo Clientes (atrás do ícone de
+  corrente) e outro no "Enviar para o campo". Ficou o do módulo Clientes.
+  ⚠️ O motivo não é só "tinha dois": o do envio só existia DEPOIS de uma rota
+  traçada, que é exatamente quando não se precisa retomar nada. O do módulo 1
+  está sempre à mão, inclusive antes da base entrar (v6.8.1, link que espera).
+
+MEDIDAS E TESTES
+  Base real (39 pontos), 5-6 paradas, rota otimizada traçada:
+    · link gerado (606 caracteres) e retomado pelo campo do módulo 1 — 6 paradas
+      de volta, painel de retomar fechando sozinho.
+    · abas de técnico: o link e o "Enviar" do técnico 1 voltam inteiros ao
+      trocar de aba e voltar; o Roteiro fechado continua fechado (a escolha é
+      do app, não da aba).
+    · tela do campo aberta pelo link: 5 paradas + retorno, mapa do trajeto,
+      selo v8.18.0.
+    · arranjo antigo com m6: migra limpo, disquete apagado.
+    · tela estreita (375px): sem rolagem horizontal, Roteiro em 58px.
+    · varredura mecânica: nenhum getElementById sem id no markup, nenhuma
+      função declarada sem uso.
+    · SEM ERRO DE CONSOLE em nenhum dos caminhos.
