@@ -7425,3 +7425,76 @@ MEDIDAS
   `setPointerCapture`, então esses eventos são escutados na ALÇA. Disparando
   nela, funciona. A classe e o indicador são criados no `pointerdown`, então
   eles aparecem mesmo quando o resto nunca chega — foi isso que me enganou.
+
+--------------------------------------------------------
+[27/09/2026] v8.23.0 — ponto 1: a escala do escritório em três degraus
+--------------------------------------------------------
+RECALCULADO A PEDIDO DO USUÁRIO, na v8.22.1
+  Ele pediu para refazer a conta do ponto 1 depois das quatro versões do dia —
+  e fez bem: o diagnóstico continuava igual, mas o CUSTO tinha mudado.
+  Ainda eram 11 tamanhos, o mesmo conjunto de antes. O que mudou foi a
+  ocupação: o degrau de 11px, que tinha 9 elementos (os títulos de módulo),
+  passou a ter UM (o selo de versão), porque a v8.21.0 mandou os títulos para
+  11,5. O de 12 ficou com dois e o de 12,5 com três.
+  Ou seja: três degraus quase vazios, prontos para serem aposentados.
+
+A ESCALA QUE FICOU (escritório)
+  10,5  dado miúdo  — contador, cliente sob o nome da parada, número do
+                      marcador, etiqueta de tipo de serviço
+  11,5  rótulo      — títulos de módulo, links do título, dicas, legendas,
+                      URL do link, selo de versão
+  13    conteúdo    — tudo que se lê e se clica: nomes, botões, campos,
+                      status, passo a passo
+  + 20 para o número do resultado (km/min) e 19 para a marca, que é logotipo.
+  Medido com TUDO aberto (Roteiro, os três painéis dobráveis, a ajuda do envio,
+  dois técnicos, bloco de prioritárias): ZERO elementos fora desses valores.
+  18 em 10,5 · 23 em 11,5 · 125 em 13 · 2 em 19 · 2 em 20.
+
+O QUE ISSO DESFEZ
+  Oito degraus de texto num vão de 3,5px viraram três. Três dos saltos antigos
+  eram de 4% — invisíveis. Agora são de 9,5% e 13%.
+  NENHUM PAR DE MEIO PIXEL sobrou. Meio pixel dá altura de linha IDÊNTICA e
+  0,3px por caractere: custava um valor a mais para manter coerente e não
+  entregava hierarquia nenhuma.
+  A INVERSÃO morreu: a legenda "distância total" era 13px, MAIOR que o título
+  do módulo acima dela. Ela é rótulo, e foi para 11,5.
+
+⚠️ O RISCO QUE EU PREVI NA REVISÃO NÃO SE CONFIRMOU
+  Eu tinha escrito que este era "o mais certo em teoria e o mais arriscado na
+  prática: altura de letra mexe em altura de módulo, que mexe nos pesos
+  guardados", e que devia ficar por último e sozinho.
+  Medido ANTES de aplicar, injetando a escala no app rodando:
+    checklist 0 · linha do cliente 0 · cabeçalho 0 · módulo Origem 0
+    lista de paradas +3,2px · módulo Rota -3,7px · botão -0,6px
+  O motivo é o próprio trabalho do dia: os degraus que sobraram estavam quase
+  vazios, então quase não havia o que mover.
+  Depois de aplicar, a promessa da v8.19.0 continua de pé: a 1920 nem o painel
+  nem a coluna rolam, e o mapa fica com 1189px.
+
+DOIS ACHADOS DE FAXINA, NO CAMINHO
+  1. `.btn-icon` carregava `font-size:15px` desde antes da v7.9.0, quando o
+     conteúdo dele era EMOJI. Hoje é um <svg> com width/height próprios, e
+     aquele corpo não pintava nada — só aparecia como um degrau a mais ao medir
+     a escala. Removido.
+  2. `.stop-row .nm-tipo` estava em 9,5px: o menor corpo do app, num rótulo.
+     Foi para 10,5.
+
+⚠️ BUG ANTIGO ACHADO AO CONFERIR A TELA DO CAMPO
+  `.campo-pin{font-size:11px}` NUNCA valeu: o seletor tem uma classe só e
+  perdia para `.brand-icon.num`, que tem duas. O pino do mapa do campo saía com
+  o corpo do pino do escritório — 10px desde a v8.16.0, quando aquele mapa
+  nasceu, e 10,5 depois desta versão. Não era regressão da escala nova; era um
+  empate de especificidade que o pino sempre perdeu.
+  Corrigido com `.brand-icon.campo-pin`, e agora o pino tem os 11px que o CSS
+  dele sempre pediu.
+
+A TELA DO CAMPO CONTINUA FORA
+  Escala própria e maior, porque é lida em celular e no sol. Conferido depois:
+  selo 11px, técnico 11px, contagem 12,5px, nome da parada 17px — nada mudou.
+
+MEDIDAS FINAIS
+  cabeçalho 65px · linha do cliente 35px · linha da parada 47px
+  módulo Rota 384px (era 387,5) · botão principal 39px
+  375px: sem rolagem horizontal
+  MODO LEVE: fonte não é animação, nada muda
+  Sem erro de console, nas duas telas.

@@ -106,6 +106,10 @@
           font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;
           color:var(--muted);border:1px solid var(--line);border-radius:4px;
           padding:1px 5px;margin-left:8px;vertical-align:middle;letter-spacing:.02em;}
+  /* O selo do ESCRITÓRIO entra no degrau de rótulo (11,5) da v8.23.0. O da tela
+     do campo fica em 11px: aquela tela não foi medida na revisão de layout e
+     tem escala própria, maior, porque é lida em celular e no sol. */
+  header .mark .versao{font-size:11.5px;}
 
   /* Nome do técnico na tela do campo (v8.6.0, pedido do usuário): mesma pílula
      do selo de versão, ao lado dele, mas em âmbar — o selo de versão é
@@ -180,7 +184,7 @@
      O aviso de "aparece depois" só existe nas colunas. */
   .console > .modulo-movel{display:contents;}
   .modulo-espera{display:none;}
-  .guia-vazia{font-size:12px; color:var(--muted); font-style:italic;}
+  .guia-vazia{font-size:11.5px; color:var(--muted); font-style:italic;}
 
   /* Nas colunas a section vira caixa. Módulos de tamanho natural (1, 2, Rota)
      ocupam só o que precisam; os que têm lista (3, 4, Roteiro) são "elásticos"
@@ -395,7 +399,7 @@
   .aba{display:flex; align-items:center; gap:7px; flex:none; max-width:220px;
        padding:5px 6px 5px 10px; border-radius:999px; cursor:pointer; user-select:none;
        background:transparent; border:1px solid var(--line); color:var(--muted);
-       font-size:12.5px; transition:background .15s, color .15s, border-color .15s;}
+       font-size:13px; transition:background .15s, color .15s, border-color .15s;}
   .aba:hover{background:var(--hover); color:var(--text);}
   .aba.ativa{background:var(--panel-2); color:var(--text); font-weight:600; border-color:var(--panel-2);}
   /* Na aba aberta, o nome é campo: um clique já entra na edição com o texto
@@ -469,7 +473,7 @@
   .retomar-dia[hidden]{display:none;}
   .retomar-dia b{color:var(--amber);}
   .retomar-dia .texto{flex:1; min-width:0; line-height:1.4;}
-  .retomar-dia button{flex:none; font-family:'Inter',sans-serif; font-size:12.5px;
+  .retomar-dia button{flex:none; font-family:'Inter',sans-serif; font-size:13px;
        padding:6px 12px; border-radius:7px; cursor:pointer;}
   .retomar-dia .sim{background:var(--amber); color:#241705; border:none; font-weight:700;}
   .retomar-dia .nao{background:transparent; color:var(--muted); border:1px solid var(--line);}
@@ -742,14 +746,17 @@
   .tipos-painel{background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
                 padding:10px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;}
   .tipos-lista{display:flex; flex-wrap:wrap; gap:6px;}
-  .tipos-vazio{font-size:12px; color:var(--muted); font-style:italic;}
+  .tipos-vazio{font-size:11.5px; color:var(--muted); font-style:italic;}
   /* Painel da parada avulsa (v7.0.0) — mesma caixa do painel de tipos */
-  .avulsa-painel input[type="text"]{width:100%; font-size:12.5px;}
+  .avulsa-painel input[type="text"]{width:100%;}
   .tipo-chip{display:inline-flex; align-items:center; gap:3px; background:var(--panel);
              border:1px solid var(--line); border-radius:14px; padding:3px 4px 3px 10px;
-             font-size:12px; color:var(--text);}
+             font-size:13px; color:var(--text);}
+  /* ⚠️ O "×" era 15px — o maior corpo do painel, num botão de apagar dentro de
+     um chip. Alvo de toque se resolve com PADDING, não aumentando a letra
+     (v8.23.0). */
   .tipo-chip button{background:none; border:none; color:var(--muted); cursor:pointer;
-                     font-size:15px; line-height:1; padding:0 5px;}
+                     font-size:13px; line-height:1; padding:2px 7px;}
   .tipo-chip button:hover{color:var(--danger);}
   /* Altura FIXA nos dois — não deixado para o navegador calcular pela soma de
      padding+borda+linha de texto. Em alguns navegadores essa conta dá números
@@ -764,11 +771,11 @@
      pior ao carregar a base, quando a barra de rolagem do painel rouba ~15px. */
   .tipos-add input{flex:1 1 0; min-width:0; height:36px; box-sizing:border-box; background:var(--panel);
                     border:1px solid var(--line); border-radius:6px; padding:0 9px;
-                    color:var(--text); font-size:12.5px; font-family:'Inter',sans-serif;}
+                    color:var(--text); font-size:13px; font-family:'Inter',sans-serif;}
   .tipos-add input:focus{outline:1px solid var(--teal);}
   .tipo-add-btn{height:36px; box-sizing:border-box; flex:0 0 auto; background:var(--teal); color:#062420;
                 border:none; border-radius:6px; padding:0 12px; font-weight:700;
-                font-size:12.5px; font-family:'Inter',sans-serif; cursor:pointer;
+                font-size:13px; font-family:'Inter',sans-serif; cursor:pointer;
                 display:flex; align-items:center; justify-content:center;
                 user-select:none; white-space:nowrap;}
   .tipo-add-btn:active{background:var(--teal-escuro);}
@@ -778,14 +785,14 @@
      disso não faz sentido, o cliente nem entra na viagem. */
   .check-row-label{display:flex; align-items:flex-start; gap:8px; flex:1; min-width:0; cursor:pointer;}
   .tipo-select{flex-shrink:0; align-self:center; background:var(--panel); color:var(--text);
-               border:1px solid var(--line); border-radius:6px; font-size:11px; padding:4px 6px;
+               border:1px solid var(--line); border-radius:6px; font-size:11.5px; padding:4px 6px;
                font-family:'Inter',sans-serif; max-width:130px;}
 
   /* Área de arrastar-e-soltar (ou clicar) para carregar o .umap.
      Uma linha só desde a v7.4.0: a caixa de duas linhas (16px de padding) ocupava
      60px para uma ação que acontece uma vez por dia, e arrastar o arquivo em
      qualquer ponto do módulo já funciona desde a v6.2. */
-  .dropzone{border:1.5px dashed var(--line);border-radius:8px;padding:9px 12px;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s;
+  .dropzone{border:1.5px dashed var(--line);border-radius:8px;padding:9px 12px;text-align:center;font-size:13px;color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s;
             display:flex; align-items:center; justify-content:center; gap:8px;}
   .dropzone:hover,.dropzone.drag{border-color:var(--teal);background:var(--teal-hover);color:var(--text);}
   .dropzone strong{color:var(--text);}
@@ -822,7 +829,7 @@
   .origem-opcoes{display:flex; flex-direction:column; gap:4px; margin-top:6px;}
   .origem-opcao{
     text-align:left; background:var(--panel-2); border:1px solid var(--line) !important;
-    border-radius:6px; padding:7px 9px; font-size:11.5px; color:var(--text);
+    border-radius:6px; padding:7px 9px; font-size:13px; color:var(--text);
     line-height:1.35; cursor:pointer; font-family:'Inter',sans-serif;
   }
   .origem-opcao:hover{border-color:var(--teal) !important; background:var(--hover);}
@@ -833,7 +840,7 @@
      os botões para fora. Aqui é ainda mais apertado, são dois botões. */
   .origin-row input[type="text"]{min-width:0;}
   .origin-row .btn-icon{flex:0 0 auto;}
-  input[type="text"]{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:9px 10px;font-family:'Inter',sans-serif;font-size:13.5px;}
+  input[type="text"]{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:9px 10px;font-family:'Inter',sans-serif;font-size:13px;}
   input[type="text"]:focus{outline:none;border-color:var(--amber-dim);}
   /* appearance:none tira o estilo nativo do sistema operacional do <button>.
      Sem isso, alguns navegadores (sobretudo Chrome no Windows) reservam uma
@@ -847,8 +854,12 @@
   /* Ícones de traço, e não emoji (v7.9.0, ponto 5 da revisão de design): 🎯 e 📍
      mudavam de desenho entre o Windows do escritório e o Android da equipe, não
      acompanhavam a cor do tema e tinham peso visual diferente do resto. */
+  /* ⚠️ O `font-size:15px` que morava aqui saiu na v8.23.0: era resto de quando
+     o conteúdo do botão era EMOJI. Desde a v7.9.0 é um <svg> com width/height
+     próprios, e aquele corpo não pintava nada — só aparecia como um degrau a
+     mais quando se mede a escala do app. */
   .btn-icon{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;
-            padding:0 12px;font-size:15px;
+            padding:0 12px;
             display:flex; align-items:center; justify-content:center;}
   .btn-icon svg{width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8;
                 stroke-linecap:round; stroke-linejoin:round;}
@@ -898,7 +909,7 @@
   .btn-titulo.armado{color:var(--danger); border-color:var(--danger);}
   .titulo-acoes{display:flex; align-items:center; gap:2px;}
   /* ✓ da base carregada, no próprio título (v7.4.0) */
-  .ok-base{color:var(--teal); margin-left:6px; font-size:12px;}
+  .ok-base{color:var(--teal); margin-left:6px; font-size:13px;}
   /* Painel de retomar: mesma caixa dos painéis do módulo 3, mas no fim do módulo */
   .retomar-painel{margin-bottom:0; margin-top:10px;}
   /* Bloqueado é o estado escolhido de propósito: acende, como os ícones do módulo 3 */
@@ -1005,11 +1016,11 @@
                     margin:6px 0 0 5px; padding-left:7px; border-left:2px solid var(--line);}
   .grupo-umap.aberto .grupo-umap-corpo{display:flex;}
   .grupo-umap-corpo > *{flex:none;}
-  .stop-row .nm-cli{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .stop-row .nm-cli{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
   .stop-row .nm-tipo{display:inline-block; margin-top:3px; font-family:'JetBrains Mono',monospace;
-                      font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--teal);
+                      font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--teal);
                       background:var(--teal-fraco); border:1px solid var(--teal); border-radius:4px; padding:1px 6px;}
-  .empty-hint{font-size:12px;color:var(--muted);font-style:italic;}
+  .empty-hint{font-size:11.5px;color:var(--muted);font-style:italic;}
 
   /* Lista ordenável das paradas selecionadas (ordem da viagem) */
   /* position:relative: o indicador de "vai cair aqui" do arraste é posicionado
@@ -1180,7 +1191,11 @@
 
   /* Botões do módulo Rota: "Otimizar e traçar" (âmbar, principal) e
      "Nesta ordem" (secundário, mais estreito) */
-  .go-btn{background:var(--amber);color:#241705;font-weight:600;font-size:13.5px;border-radius:7px;padding:11px;text-align:center;}
+  /* ⚠️ Os dois botões do módulo Rota passaram a ter o MESMO corpo na v8.23.0.
+     A hierarquia entre eles nunca dependeu de meio pixel: a v8.12.0 já registra
+     que ela se sustenta na LARGURA (flex:2 contra flex:1, medido em 185 contra
+     105px) e na COR (âmbar contra teal). */
+  .go-btn{background:var(--amber);color:#241705;font-weight:600;font-size:13px;border-radius:7px;padding:11px;text-align:center;}
   .go-btn:hover{background:var(--amber-claro);}
   .go-btn.secondary{background:var(--panel-2);color:var(--teal);border:1px solid var(--teal);}
   .go-btn.secondary:hover{background:var(--teal-hover);}
@@ -1200,11 +1215,11 @@
      lista é o caso especial, quando a sequência foi escolhida à mão. O botão
      principal passou a dizer o RESULTADO ("Otimizar e traçar"), não a mecânica. */
   .btn-row .go-btn.principal{flex:2;}
-  .btn-row .go-btn.alternativa{flex:1; font-size:12.5px;}
+  .btn-row .go-btn.alternativa{flex:1;}
 
   /* Mensagem de status/erro exibida abaixo dos botões */
   /* Frase inteira ("Ordem otimizada e rota traçada."), não dado (v8.21.0) */
-  .status{font-size:12.5px;color:var(--danger);font-family:'Inter',sans-serif;min-height:16px;}
+  .status{font-size:13px;color:var(--danger);font-family:'Inter',sans-serif;min-height:16px;}
   /* Desde a v5.7 botões e status moram no mesmo módulo, fora do gap do painel */
   #status{margin-top:14px;}
   /* Vazio, não ocupa nada (v8.1.0, pelo print do usuário): o min-height de 16px
@@ -1218,7 +1233,7 @@
 
   /* Opção "voltar para a origem" (v6.3), no módulo Rota */
   .opcao-rota{display:flex; align-items:center; gap:7px; margin-top:10px; cursor:pointer;
-              font-size:12px; color:var(--muted); line-height:1.35;}
+              font-size:13px; color:var(--muted); line-height:1.35;}
   .opcao-rota input{accent-color:var(--teal); flex:none;}
   .opcao-rota:hover{color:var(--text);}
 
@@ -1230,7 +1245,10 @@
   /* ⚠️ Só a LEGENDA sai da mono; o número acima dela fica (v8.21.0). O tamanho
      de 13px não foi tocado aqui de propósito: quem cuida disso é o ponto 1 da
      revisão, que mexe na escala inteira de uma vez. */
-  .resumo-rota .row + .row{margin-top:2px;font-family:'Inter',sans-serif;font-size:13px;color:var(--muted);font-weight:400;}
+  /* ⚠️ Era **13px, maior que o título do módulo acima dela** — a parte menos
+     importante do bloco era a maior. A revisão de layout apontou essa inversão
+     no ponto 1, e ela só some aqui: a legenda é RÓTULO, e rótulo é 11,5 (v8.23.0). */
+  .resumo-rota .row + .row{margin-top:2px;font-family:'Inter',sans-serif;font-size:11.5px;color:var(--muted);font-weight:400;}
 
   /* Quilometragem do dia (v8.8.0): a soma de todas as abas, no CABEÇALHO, logo
      depois das abas (escolha do usuário; eu concordei pelo mesmo motivo que ele
@@ -1255,7 +1273,7 @@
   /* Âmbar, e não a cor do texto (pedido do usuário): é a mesma cor em que o
      módulo Rota escreve o km/min de cada rota, então os dois números do app que
      dizem distância falam a mesma língua. Troca com o tema, como todo o resto. */
-  header .resumo-dia .valor{font-family:'JetBrains Mono',monospace; font-size:13.5px;
+  header .resumo-dia .valor{font-family:'JetBrains Mono',monospace; font-size:13px;
               font-weight:700; color:var(--amber);}
 
   /* Painel de resultado: distância, tempo e roteiro passo a passo (escondido até haver uma rota) */
@@ -1263,7 +1281,7 @@
   .readout.show{display:block;}
   .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
   .steps > *{flex:none;}
-  .steps li{font-size:12.5px;line-height:1.4;color:var(--text);padding-left:14px;border-left:2px solid var(--teal);}
+  .steps li{font-size:13px;line-height:1.4;color:var(--text);padding-left:14px;border-left:2px solid var(--teal);}
   /* ⚠️ Este carrega o NOME DO CLIENTE ("Parada 1 · …"), que é justamente o que
      a mono lê pior — e a caixa alta forçada apagava a caixa que o nome tem na
      base (v8.21.0). */
@@ -1335,7 +1353,7 @@
   :root[data-foco="1"] .leaflet-marker-icon.ponto-fora-da-rota{opacity:.18;}
   :root[data-foco="1"] .leaflet-marker-icon.ponto-fora-da-rota:hover{opacity:1;}
   :root[data-foco="2"] .leaflet-marker-icon.ponto-fora-da-rota{opacity:0; pointer-events:none;}
-  .brand-icon.num{width:20px;height:20px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-family:'JetBrains Mono',monospace;}
+  .brand-icon.num{width:20px;height:20px;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-family:'JetBrains Mono',monospace;}
 
   /* ---- Efeito ao traçar a rota (v8.0.0, escolha do usuário numa página de
      comparação com os quatro efeitos lado a lado: "o conjunto todo me agradou") ----
@@ -1389,8 +1407,11 @@
      título dentro do mesmo cartão seria justamente a poluição que saiu. */
   #envioSection{margin-top:14px; padding-top:14px; border-top:1px solid var(--line);}
   .retomar-linha{display:flex; gap:8px; align-items:stretch; margin-top:10px;}
-  .retomar-linha input{min-width:0; font-size:12px;}
-  .retomar-linha .go-btn{flex:none; padding:8px 12px; font-size:12.5px;}
+  /* ⚠️ Estes três viviam em 12 e 12,5 e ficam ESCONDIDOS atrás de painéis
+     dobráveis. Se não entrassem na escala, devolveriam os dois degraus
+     aposentados assim que alguém abrisse um deles (v8.23.0). */
+  .retomar-linha input{min-width:0;}
+  .retomar-linha .go-btn{flex:none; padding:8px 12px;}
   .envio-dica{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:8px;}
   /* A linha do "?" (v8.20.0, ponto 6 da revisão de layout de 26/09/2026).
      Embaixo do link não sobrou TEXTO NENHUM: as três explicações de antes
@@ -1507,7 +1528,13 @@
   .campo-mapa.cheio .campo-mapa-chip{top:14px; right:14px; padding:12px 16px; font-size:14px;}
   /* Pino do mapa do campo. Reaproveita .brand-icon do escritório; o que muda é
      o estado: a parada da vez acende, a concluída apaga e fica teal. */
-  .campo-pin{width:22px; height:22px; font-size:11px; background:var(--amber);}
+  /* ⚠️ O seletor precisa de DUAS classes para vencer `.brand-icon.num`, que
+     também tem duas (achado ao medir a escala na v8.23.0). Com uma só, o
+     `font-size:11px` daqui NUNCA valeu: o pino do campo saía com o corpo do
+     pino do escritório — 10px até a v8.22.1, e 10,5 depois. Não era regressão
+     da escala nova; era um empate de especificidade que o pino perdia desde a
+     v8.16.0, quando o mapa do campo nasceu. */
+  .brand-icon.campo-pin{width:22px; height:22px; font-size:11px; background:var(--amber);}
   .campo-pin.feita{background:var(--teal); opacity:.5;}
   .campo-pin.agora{box-shadow:0 0 0 3px var(--amber-fraco), 0 0 10px var(--amber);}
 
@@ -2231,7 +2258,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.22.1';
+const VERSAO = '8.23.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 

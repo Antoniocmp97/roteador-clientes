@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 27/09/2026 — v8.22.1 (a Ordem da viagem segue a mesma lógica)
+> **Última atualização:** 27/09/2026 — v8.23.0 (a escala do escritório cai para três degraus de texto)
 
 ---
 
@@ -1293,6 +1293,43 @@ etiqueta de tipo de serviço (ali a caixa alta normaliza um texto que o próprio
 usuário digita, e a gêmea dela mora na tela do campo) e a **tela do campo
 inteira**, que teve revisão própria em 17–19/09 e não foi medida nesta.
 
+**A escala do escritório tem TRÊS degraus de texto** (v8.23.0, ponto 1 da
+revisão de layout, recalculado depois das quatro versões do dia):
+
+| degrau | para quê |
+|---|---|
+| **10,5px** | dado miúdo: contador do checklist, cliente sob o nome da parada, número do marcador, etiqueta de tipo |
+| **11,5px** | rótulo: títulos de módulo, links do título, dicas, legendas, URL do link, selo de versão |
+| **13px** | conteúdo: tudo que se lê e se clica — nomes, botões, campos, status, passo a passo |
+
+Mais **20px** para o número do resultado (km/min) e **19px** para a marca, que
+é logotipo. Com tudo aberto no escritório — Roteiro, os três painéis dobráveis,
+a ajuda do envio, dois técnicos e o bloco de prioritárias — **nenhum elemento
+fica fora desses cinco valores** (medido: 18 em 10,5 · 23 em 11,5 · 125 em 13).
+⚠️ **Antes eram oito degraus de texto num vão de 3,5px** (10 · 10,5 · 11 · 11,5
+· 12 · 12,5 · 13 · 13,5), com três saltos de **4%** — invisíveis. Agora os
+saltos são de **9,5% e 13%**, e **nenhum par de meio pixel sobrou**. Meio pixel
+dá altura de linha **idêntica** e 0,3px por caractere: custava um valor a mais
+para manter coerente e não entregava hierarquia nenhuma.
+⚠️ **A inversão que a revisão apontou morreu aqui**: a legenda "distância
+total" era **13px**, maior que o título do módulo acima dela. Ela é rótulo, e
+foi para 11,5.
+⚠️ **O risco que eu previ na revisão não se confirmou.** Eu tinha escrito que
+este era "o mais arriscado na prática: altura de letra mexe em altura de
+módulo, que mexe nos pesos guardados". Medido antes de aplicar, injetando a
+escala no app rodando: **checklist 0, linha do cliente 0, cabeçalho 0, módulo
+Origem 0**; a lista de paradas ganhou 3,2px e o módulo Rota perdeu 3,7px. O
+motivo é o próprio trabalho do dia — os degraus que sobraram estavam quase
+vazios, então quase não havia o que mover. A promessa da v8.19.0 continua de
+pé: a 1920 nada rola e o mapa fica com 1189px.
+⚠️ **Dois achados de faxina, no caminho**: o `.btn-icon` carregava
+`font-size:15px` desde antes da v7.9.0, quando o conteúdo dele era **emoji** —
+hoje é um `<svg>` com tamanho próprio, e aquele corpo não pintava nada. E o
+`.stop-row .nm-tipo` estava em **9,5px**, o menor corpo do app, num rótulo.
+⚠️ **A tela do campo continua fora**, com escala própria e maior (o nome da
+parada tem 17px): ela é lida em celular e no sol. Conferido depois: selo 11px,
+técnico 11px, contagem 12,5px, nome 17px — nada mudou lá.
+
 O escritório **não tem rodapé** (removido em 10/09/2026, a pedido do usuário).
 O crédito obrigatório ao OpenStreetMap e à Esri fica no canto do próprio mapa,
 no controle de atribuição do Leaflet (opção attribution da camada base) — é
@@ -1774,15 +1811,15 @@ tinham razão uma a uma — cada versão acrescentou um tamanho de letra, um uso
 
 | # | O que foi medido | Situação |
 |---|---|---|
-| 1 | **11 tamanhos de letra** num vão de 3,5px (10 · 10,5 · 11 · 11,5 · 12 · 12,5 · 13 · 13,5), e nada entre 13,5 e 19. Meio pixel dá **altura de linha idêntica** e 0,3px por caractere. E "distância total" (13px) é maior que o título do módulo (11px) | em aberto — **deixar por último e sozinho numa versão**: altura de letra mexe em altura de módulo, que mexe nos pesos guardados |
+| 1 | **11 tamanhos de letra** num vão de 3,5px (10 · 10,5 · 11 · 11,5 · 12 · 12,5 · 13 · 13,5), e nada entre 13,5 e 19. Meio pixel dá **altura de linha idêntica** e 0,3px por caractere. E "distância total" (13px) é maior que o título do módulo (11px) | ✅ **feito na v8.23.0** — três degraus de texto (10,5 · 11,5 · 13). ⚠️ O risco que eu previ NÃO se confirmou: medido, o maior deslocamento foi de 3,7px |
 | 2 | **22 elementos de texto em âmbar** contra 4 em teal, fazendo cinco trabalhos (título, contador, número, resultado, ação, link). Contraste do título 4,66:1; o do contador **4,36:1, abaixo do mínimo da AA**, no menor corpo do app | em aberto — barato em código, mas é escolha de identidade |
 | 3 | **36 elementos em JetBrains Mono** contra 33 em Inter. Os 6 títulos acumulam mono + CAIXA ALTA + entreletra 1,5px + 11px, tudo junto, no elemento mais repetido do painel | ✅ **feito na v8.21.0** — 36 elementos em mono viram 23, e todos são número ou código |
 | 4 | **34 caixas com borda** numa coluna de 340px, aninhadas até 4 molduras em volta de um nome | ✅ **feito na v8.22.0** — o nome da unidade sai de dentro de 2 molduras, e a lista encolhe 14%. ⚠️ A conta "4 molduras" da revisão somava o cartão de vidro e o módulo, que não têm borda de verdade; medindo só as bordas do DOM eram **2** |
 | 5 | **31% do painel fora da vista a 1920×1080** (1442px de conteúdo em 991px), com 17,7% da largura em painel e 1568px de mapa parado; **53% fora da vista na TV de 1366** | ✅ **feito na v8.19.0** (só a parte de 1920; a TV continua em aberto) |
 | 6 | **Módulo Rota com 510px**, dos quais **122px (42% do bloco de envio)** são três explicações lidas uma vez na vida | ✅ **feito na v8.20.0** — envio de 290 para 169px, módulo Rota de 510 para 390px |
 
-Ordem recomendada para o resto: **1**, com o **2** fora da fila por enquanto
-(o usuário pediu para deixá-lo de lado em 27/09/2026, sem descartar).
+**Sobra só o ponto 2**, que o usuário pediu para deixar de lado em 27/09/2026,
+sem descartar. Os outros cinco estão publicados.
 
 **Material de trabalho na pasta, fora do repositório** (padrão `COMPARACAO-*.html`
 no `.gitignore`), para apagar quando não servirem mais:
@@ -1994,6 +2031,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 113 | **v8.21.0** — Ponto 3: a monoespaçada volta a ser dos números; todo rótulo do escritório passa para Inter, em caixa normal |
 | 114 | **v8.22.0** — Ponto 4: o checklist vira lista — fio entre as linhas e filete na cascata, no lugar de um cartão por cliente |
 | 115 | **v8.22.1** — A Ordem da viagem segue a mesma lógica (pedido do usuário); o cartão volta só enquanto a parada é arrastada |
+| 116 | **v8.23.0** — Ponto 1: a escala do escritório vai de oito degraus de texto para três (10,5 · 11,5 · 13) |
 
 ---
 
@@ -2061,7 +2099,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.22.1
+8.23.0
 ```
 
 ### Onde o número aparece
@@ -2201,3 +2239,4 @@ os backups locais são conveniência, não garantia.
 | 8.21.0 | 27/09/2026 | Rótulos em Inter e caixa normal; a mono fica só nos números (36 elementos em mono viram 23) |
 | 8.22.0 | 27/09/2026 | Checklist sem cartão por linha: a lista encolhe 14% e o nome da unidade sai de dentro de duas molduras |
 | 8.22.1 | 27/09/2026 | A Ordem da viagem também vira lista; o cartão só existe enquanto a parada está sendo arrastada |
+| 8.23.0 | 27/09/2026 | Escala tipográfica do escritório em três degraus de texto; some a inversão da legenda do km |
