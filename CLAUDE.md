@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 27/09/2026 — v8.23.0 (a escala do escritório cai para três degraus de texto)
+> **Última atualização:** 28/09/2026 — v8.23.2 (mesma língua, e o traço do ícone volta a ser claro)
 
 ---
 
@@ -308,7 +308,9 @@ sem dependências instaladas. Abre direto no navegador.
   problema não reproduz. O que dá para afirmar é o que saiu do caminho —
   durante um arraste, de até **três borrões** para **nenhum**
 - **Modo leve** (v8.7.0; ✅ **validado pelo usuário na máquina do trabalho em
-  25/09/2026** — "utilizei o modo desempenho no trabalho e deu certo"; relatado
+  25/09/2026** — "utilizei o modo desempenho no trabalho e deu certo" — e
+  **revalidado em 28/09/2026**, já com as seis versões da revisão de layout por
+  cima: "modo leve com bom desempenho"; relatado
   depois de testar a v8.2.0 no trabalho: "ficou menos travado, mas notei que antes ficava mais fluido. Tem
   como criar um botão onde desativa tudo que possa deixar o site mais travado
   para computadores mais antigos?"). Um interruptor no cabeçalho (`hg_leve`,
@@ -594,7 +596,19 @@ sem dependências instaladas. Abre direto no navegador.
   (que terminam em 1016) e os botões (que começam em 1149).
   ⚠️ **"Aproximada" é a parte que importa**: o número vem do cálculo da rota no
   OSRM, não de odômetro — é o que se espera rodar, antes do trânsito e dos
-  desvios do dia. O rótulo levou três tentativas: nasceu "DIA" (curto demais),
+  desvios do dia.
+  ⚠️ **PRIMEIRA MEDIÇÃO DE CAMPO, 28/09/2026**: o app previu **27 km** e o
+  usuário rodou **31 km** — **15% a mais**. Ele mesmo apontou a causa principal:
+  *"precisei fazer pequenos quadrados para estacionar"*. São três coisas
+  somadas: (1) as manobras, que o traçado porta-a-porta não conhece; (2) o
+  caminho real diferir do calculado, que é o que a análise de 19/09/2026 já
+  tinha medido entre Waze e OSRM; e (3) o próprio **odômetro**, que em carro de
+  série costuma ler 2 a 5% alto. Para uma estimativa feita antes de sair, 15% é
+  erro normal.
+  ⚠️ **Um ponto não faz média.** Se a diferença se repetir perto de 15% ao longo
+  de semanas, aí é fator sistemático e cabe um **ajuste configurável** — mas só
+  vale a pena se o número for usado para combustível ou reembolso. Não
+  implementar antes de ter a série. O rótulo levou três tentativas: nasceu "DIA" (curto demais),
   passou por "total do dia / a percorrer / percorrido" e o usuário trouxe o que
   ficou. ⚠️ Em português é **quilometragem**, com "qu" — só a abreviação "km"
   leva k. ⚠️ Quantas rotas são fica na dica do mouse: as abas ao lado já dizem.
@@ -1292,6 +1306,39 @@ que é escolha de identidade e espera decisão à parte. ⚠️ Ficaram **fora**
 etiqueta de tipo de serviço (ali a caixa alta normaliza um texto que o próprio
 usuário digita, e a gêmea dela mora na tela do campo) e a **tela do campo
 inteira**, que teve revisão própria em 17–19/09 e não foi medida nesta.
+
+**Os botões de ícone falam UMA língua só** (v8.23.1, relatado pelo usuário
+depois de um dia de uso: *"os botões do módulo selecionar paradas está com a
+coloração diferente dos botões do módulo origem"*). Ele viu a cor, mas eram
+**três** diferenças: cor do ícone (`--text` no Origem contra `--muted` no
+Selecionar paradas), **largura** (43px contra 38) e o desenho (17px/traço 1,8
+contra 18px/1,7). Agora `.btn-icon` e `.btn-lista` têm os mesmos valores:
+**34×36px, ícone de 16px com traço 1,7, `--text` em repouso**, borda teal com
+fundo `--hover` ao passar o mouse, e âmbar quando ligados.
+⚠️ **A v8.23.1 unificou para BAIXO — os dois apagados — e o usuário corrigiu na
+v8.23.2**: *"se ficar com os traços do ícone dentro do botão na cor branca vai
+ficar bom"*. Ele tem razão: apagados, os ícones ficavam discretos demais para
+controles que se usam todo dia. O argumento de que **o campo de texto é o
+carro-chefe continua de pé** — só que quem passou a carregá-lo é o **tamanho**
+(34px, contra os 43 e 38 de antes), e não a cor.
+⚠️ **Por isso o `:hover` trocou de portador.** Com o ícone já claro em repouso,
+clarear mais não diz nada; o hover passou a ser a **borda teal + o fundo
+`--hover`**, o mesmo idioma das linhas do checklist desde a v8.22.0.
+⚠️ **Medido**: os três botões comiam 138px dos 328px da linha de busca. Depois,
+o campo de busca foi de **190 para 202px** (58% → 62% da linha) e o de origem
+de **206 para 224px**.
+⚠️ **O ícone acompanha o tema**, porque é `--text` e não uma cor fixa: claro no
+tema escuro (`#E7EEF2`) e escuro no tema claro (`#152229`). Conferido nos dois.
+⚠️ **ARMADILHA NO TESTE, de novo a nº 1**: medindo logo depois de trocar o tema,
+`getComputedStyle` devolveu a cor do tema ANTERIOR — o painel não estava
+pintando e a transição de `color` ficou parada no meio. Um clone sem transição
+em curso, e `getAnimations().forEach(a => a.finish())`, deram o valor certo.
+⚠️ **No toque eles voltam a 40px** (`@media (pointer:coarse)`), como a alça da
+parada já fazia desde a v5.2: 34px é confortável com mouse e pequeno demais com
+o dedo.
+⚠️ **O comportamento do 📍 NÃO foi tocado** — só cor e tamanho. A regra de não
+mexer naquele botão sem testar na máquina real do usuário vale para a
+**geolocalização**, que continua exatamente como estava desde a v3.7.
 
 **A escala do escritório tem TRÊS degraus de texto** (v8.23.0, ponto 1 da
 revisão de layout, recalculado depois das quatro versões do dia):
@@ -2032,6 +2079,8 @@ de arquitetura, para retomar quando fizer sentido):
 | 114 | **v8.22.0** — Ponto 4: o checklist vira lista — fio entre as linhas e filete na cascata, no lugar de um cartão por cliente |
 | 115 | **v8.22.1** — A Ordem da viagem segue a mesma lógica (pedido do usuário); o cartão volta só enquanto a parada é arrastada |
 | 116 | **v8.23.0** — Ponto 1: a escala do escritório vai de oito degraus de texto para três (10,5 · 11,5 · 13) |
+| 117 | **v8.23.1** — Os botões de ícone do Origem e do Selecionar paradas passam a ter a mesma cor e o mesmo tamanho, menores |
+| 118 | **v8.23.2** — O traço do ícone volta a ser claro nos dois (pedido do usuário); quem carrega a hierarquia passa a ser o tamanho |
 
 ---
 
@@ -2099,7 +2148,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.23.0
+8.23.2
 ```
 
 ### Onde o número aparece
@@ -2240,3 +2289,5 @@ os backups locais são conveniência, não garantia.
 | 8.22.0 | 27/09/2026 | Checklist sem cartão por linha: a lista encolhe 14% e o nome da unidade sai de dentro de duas molduras |
 | 8.22.1 | 27/09/2026 | A Ordem da viagem também vira lista; o cartão só existe enquanto a parada está sendo arrastada |
 | 8.23.0 | 27/09/2026 | Escala tipográfica do escritório em três degraus de texto; some a inversão da legenda do km |
+| 8.23.1 | 28/09/2026 | Botões de ícone unificados (cor, largura e desenho) e menores; o campo de texto ganha espaço |
+| 8.23.2 | 28/09/2026 | O ícone volta ao claro em repouso; o hover passa a ser borda teal + fundo, já que clarear não diria nada |

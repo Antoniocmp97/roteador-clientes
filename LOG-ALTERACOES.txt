@@ -7498,3 +7498,104 @@ MEDIDAS FINAIS
   375px: sem rolagem horizontal
   MODO LEVE: fonte não é animação, nada muda
   Sem erro de console, nas duas telas.
+
+--------------------------------------------------------
+[28/09/2026] v8.23.1 — os botões de ícone falam uma língua só
+--------------------------------------------------------
+TRÊS RELATOS DO USUÁRIO DEPOIS DE UM DIA DE USO REAL
+
+1. QUILOMETRAGEM: previsto 27 km, rodado 31 km (+15%)
+   NÃO É DEFEITO, e ele mesmo apontou a causa principal: "precisei fazer
+   pequenos quadrados para estacionar". Três coisas somadas:
+     · as manobras, que o traçado porta-a-porta não conhece
+     · o caminho real diferir do calculado (análise de 19/09: Waze escolhe por
+       trânsito ao vivo, o app calcula a ordem com tempo livre)
+     · o próprio ODÔMETRO, que em carro de série lê 2 a 5% alto
+   É a primeira medição de campo do número, e ficou registrada no CLAUDE.md.
+   ⚠️ Um ponto não faz média. Se a diferença se repetir perto de 15% por
+   semanas, aí é fator sistemático e cabe um ajuste configurável — mas só se o
+   número for usado para combustível ou reembolso. NÃO implementar antes de ter
+   a série.
+
+2. MODO LEVE: "bom desempenho". Segunda validação na máquina do trabalho, agora
+   com as seis versões da revisão de layout por cima. Registrado no CLAUDE.md.
+
+3. BOTÕES DE ÍCONE — foi o que virou código nesta versão.
+   "Os botões do módulo selecionar paradas está com a coloração diferente dos
+    botões do módulo origem. Também quero diminuir um pouco o tamanho dos
+    botões modulo selecionar paradas, acredito que nesse modo em específico, a
+    barra de busca que é o carro chefe."
+
+O QUE ESTAVA DIFERENTE (medido, eram TRÊS coisas e não uma)
+                      Origem (.btn-icon)    Selecionar paradas (.btn-lista)
+  cor do ícone        #E7EEF2 (claro)       #7C93A0 (apagado)   <- o que ele viu
+  largura             43px                  38px
+  desenho             17px / traço 1,8      18px / traço 1,7
+  hover               só a borda            cor + borda
+  foco por teclado    não tinha             tinha
+
+A DECISÃO: UNIFICAR PARA BAIXO
+  Os dois viraram 34x36px, ícone de 16px com traço 1,7, --muted em repouso,
+  clareando para --text com borda teal no hover, âmbar quando ligados, e com
+  o mesmo anel de foco por teclado.
+  ⚠️ Para BAIXO porque quem manda nos dois módulos é o CAMPO DE TEXTO — a busca
+  no 3, o endereço no 2. O ícone é alternativa, não ação principal. Ele disse
+  isso do módulo 3 e vale igual no 2.
+
+MEDIDAS
+  os três botões comiam 138px dos 328px da linha de busca
+  campo de busca:  190 -> 202px   (58% -> 62% da linha)
+  campo de origem: 206 -> 224px
+  os cinco botões (2 do Origem, 3 do módulo 3, 1 do painel da avulsa) agora
+    medem 34x36 e têm a mesma cor: rgb(124,147,160)
+  estados ligados idênticos nos dois: #F2A93C sobre #2a1f0e
+  no toque (375px, pointer:coarse): os dois vão a 40px, sem rolagem horizontal
+  Sem erro de console.
+
+⚠️ DE BRINDE
+  O estado `.armado` do 🎯 ficou MAIS evidente: antes ia de claro para âmbar,
+  agora vai de apagado para âmbar.
+
+⚠️ O QUE NÃO FOI TOCADO
+  O COMPORTAMENTO do 📍. Só cor e tamanho. A regra do projeto de não mexer
+  naquele botão sem testar na máquina real do usuário vale para a
+  GEOLOCALIZAÇÃO, que continua exatamente como estava desde a v3.7.
+
+--------------------------------------------------------
+[28/09/2026] v8.23.2 — o traço do ícone volta a ser claro
+--------------------------------------------------------
+PEDIDO DO USUÁRIO, vendo a v8.23.1 rodando
+  "Gostei, mas acho que se ficar com os traços do ícone dentro do botão na cor
+   branca vai ficar bom."
+
+ELE ESTÁ CERTO, E EU TINHA IDO LONGE DEMAIS
+  Na v8.23.1 eu unifiquei os dois botões PARA BAIXO (os dois em --muted),
+  argumentando que o campo de texto é o carro-chefe dos dois módulos.
+  O argumento continua de pé — mas quem passou a carregá-lo é o TAMANHO (34px,
+  contra os 43 e 38 de antes), não a cor. Apagados, os ícones ficavam discretos
+  demais para controles que se usam todo dia.
+
+O QUE MUDOU
+  .btn-icon e .btn-lista voltam a --text em repouso, nos dois módulos.
+  ⚠️ E o :hover TROCOU DE PORTADOR: com o ícone já claro, clarear mais não diz
+  nada. Agora é borda teal + fundo --hover, o mesmo idioma das linhas do
+  checklist desde a v8.22.0.
+  Tamanho, desenho, foco por teclado e estado ligado ficam como na v8.23.1.
+
+MEDIDAS
+  os cinco botões (2 do Origem, 3 do módulo 3, 1 do painel da avulsa):
+    34x36px, ícone 16px/1,7, traço rgb(231,238,242) no tema escuro
+  ligado (.ativo / .armado): #F2A93C sobre #2a1f0e, idêntico nos dois
+  tema CLARO: o ícone vai para rgb(21,34,41) — acompanha --text, não é cor fixa
+  no toque (375px): os dois a 40px, sem rolagem horizontal
+  Sem erro de console.
+
+⚠️ ARMADILHA Nº 1 NO TESTE, PELA SEGUNDA VEZ EM DOIS DIAS
+  Medindo a cor do ícone logo depois de trocar o tema, `getComputedStyle`
+  devolveu a cor do tema ANTERIOR: o painel do navegador de teste não estava
+  pintando e a transição de `color` ficou PARADA no meio do caminho.
+  Cheguei a achar que o ícone não acompanhava o tema — não era verdade.
+  Prova: um clone sem transição em curso computou a cor certa, e
+  `getAnimations().forEach(a => a.finish())` devolveu o valor final.
+  É a mesma pegadinha da v8.20.0 (a cor do "?" aceso). Vale a regra: ao medir
+  COR num elemento com `transition`, terminar as animações antes de ler.

@@ -858,12 +858,32 @@
      o conteúdo do botão era EMOJI. Desde a v7.9.0 é um <svg> com width/height
      próprios, e aquele corpo não pintava nada — só aparecia como um degrau a
      mais quando se mede a escala do app. */
+/* ⚠️ **MESMA LÍNGUA DO `.btn-lista`** desde a v8.23.1 (relatado pelo usuário
+   depois de um dia de uso: "os botões do módulo selecionar paradas está com a
+   coloração diferente dos botões do módulo origem"). Ele viu a cor, mas eram
+   TRÊS diferenças: cor do ícone (`--text` claro aqui, `--muted` apagado lá),
+   largura (43px contra 38) e o próprio desenho (17px/traço 1,8 contra
+   18px/1,7).
+   ⚠️ **A v8.23.1 unificou para BAIXO (os dois apagados) e o usuário corrigiu
+   na v8.23.2**: "se ficar com os traços do ícone dentro do botão na cor branca
+   vai ficar bom". Ficaram os dois em `--text`. O argumento de que o campo de
+   texto é o carro-chefe continua de pé — quem passou a carregá-lo é o
+   TAMANHO (34px em vez de 43/38), não a cor. Apagados, os ícones ficavam
+   discretos demais para um controle que se usa todo dia.
+   ⚠️ **Por isso o `:hover` mudou de portador**: com o ícone já claro em
+   repouso, clarear mais não diz nada. Agora o hover é a **borda teal + o fundo
+   `--hover`**, que é o mesmo idioma das linhas do checklist.
+   ⚠️ O comportamento do 📍 **não foi tocado** — só cor e tamanho. A regra do
+   projeto de não mexer naquele botão sem testar na máquina real vale para a
+   geolocalização, que continua exatamente como estava. */
   .btn-icon{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;
-            padding:0 12px;
-            display:flex; align-items:center; justify-content:center;}
-  .btn-icon svg{width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8;
+            flex:none; width:34px;
+            display:flex; align-items:center; justify-content:center;
+            transition:color .15s, border-color .15s, background .15s;}
+  .btn-icon svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.7;
                 stroke-linecap:round; stroke-linejoin:round;}
-  .btn-icon:hover{border-color:var(--teal);}
+  .btn-icon:hover{border-color:var(--teal); background:var(--hover);}
+  .btn-icon:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
   .btn-icon.armado{border-color:var(--amber);color:var(--amber);background:var(--amber-fraco);}
   /* Enquanto o modo "escolher no mapa" está armado, o cursor vira mira sobre o mapa */
   #map.escolhendo{cursor:crosshair;}
@@ -885,12 +905,14 @@
   /* Linha da busca com os dois ícones do módulo 3 (v6.6) */
   .busca-linha{display:flex; align-items:stretch; gap:8px; margin-bottom:8px;}
   .busca-clientes{width:100%; min-width:0;}
-  .btn-lista{flex:none; width:38px; display:flex; align-items:center; justify-content:center;
+  /* 38px → 34px na v8.23.1, a pedido do usuário. Os três botões ocupavam 138px
+     dos 308px da linha, e sobrava pouco mais da metade para a busca. */
+  .btn-lista{flex:none; width:34px; display:flex; align-items:center; justify-content:center;
              background:var(--panel-2); border:1px solid var(--line); border-radius:6px;
-             color:var(--muted); transition:color .15s, border-color .15s;}
-  .btn-lista svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.7;
+             color:var(--text); transition:color .15s, border-color .15s, background .15s;}
+  .btn-lista svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.7;
                  stroke-linecap:round; stroke-linejoin:round;}
-  .btn-lista:hover{color:var(--text); border-color:var(--teal);}
+  .btn-lista:hover{border-color:var(--teal); background:var(--hover);}
   .btn-lista:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
   /* Ligado = painel de tipos aberto, ou todos os clientes marcados */
   .btn-lista.ativo{color:var(--amber); border-color:var(--amber-dim); background:var(--amber-fraco);}
@@ -1118,6 +1140,9 @@
   .stop-row .alca:hover::before{opacity:1;}
   /* No dedo, alvo maior */
   @media (pointer:coarse){ .stop-row .alca{flex:0 1 74px; min-width:37px; padding:0 14px; margin-left:-14px;} }
+  /* No toque eles voltam a crescer — 34px é confortável com mouse e pequeno
+     demais com o dedo. Mesma ideia da alça da parada, logo acima (v8.23.1). */
+  @media (pointer:coarse){ .btn-lista, .btn-icon{width:40px;} }
   /* Em coluna estreita a alça volta para 27px: com 54px fixos, quem cedia era o
      nome da parada, que chegava a 44px e quebrava letra a letra — foi o que o
      usuário viu como "bugado" ao estreitar o painel.
@@ -2258,7 +2283,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.23.0';
+const VERSAO = '8.23.2';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
