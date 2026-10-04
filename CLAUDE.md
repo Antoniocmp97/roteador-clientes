@@ -1723,6 +1723,15 @@ operação — ver `.gitignore`):
   fragmento da URL (ADR-01) — ✅ implementado na Fase 1.
 
 Ainda em aberto:
+- **MÉTRICAS E RELATÓRIOS — a próxima fase, planejada em 28/09/2026.** O plano
+  inteiro está em **`PLANO-METRICAS.md`** (versionado): as três fases, o que já
+  foi medido, a escolha do backend (**Cloudflare Workers + D1**) e as decisões
+  que travam cada etapa. ⚠️ **Ler aquele arquivo antes de começar qualquer coisa
+  desta frente** — ele guarda números que não precisam ser remedidos e duas
+  armadilhas conhecidas. ⚠️ A Fase B **revisa o ADR-01** (dado de cliente passa
+  a sair da máquina) e derruba a **decisão 5** da seção 4 (arquivo único). Ponto
+  de retorno: tag `v8.23.2` no commit `e789131` e
+  `backups/MARCO_v8.23.2_2026-09-28_antes-das-metricas/`
 - Troca do OSRM público antes do uso diário sério (Fase 4)
 - Revisar a decisão de manter arquivo único (Fase 3, ponto de decisão, não iniciado)
 
@@ -2171,6 +2180,25 @@ essas cópias existem **apenas nesta máquina**. Numa próxima troca de computad
 elas se perdem se a pasta não for copiada junto. A rede de segurança real
 continua sendo o Git, que guarda todas as versões no GitHub de qualquer forma —
 os backups locais são conveniência, não garantia.
+
+**Antes de uma mudança estrutural, o marco é diferente** (criado em 28/09/2026,
+antes da fase de métricas, a pedido do usuário: *"faça uma marcação do projeto
+atual, pois acredito que será realizada uma alteração importante"*). São duas
+coisas, e as duas juntas:
+
+1. uma **tag anotada** no commit (`git tag -a v8.23.2`), que é a única das duas
+   que **sobrevive a troca de máquina**, porque vai para o GitHub;
+2. uma pasta `backups/MARCO_vX.Y.Z_AAAA-MM-DD_apelido/` com **os dez arquivos
+   versionados**, e não só o `index.html`.
+
+⚠️ **Os dez e não um**: numa mudança estrutural o projeto pode **ganhar
+arquivos** (a fase de métricas pode acrescentar uma função de servidor, por
+exemplo), e aí um backup do `index.html` sozinho não reconstrói nada. O
+`LEIA-ME.txt` do marco traz o hash do commit, o nome da tag e os três caminhos
+de volta — `git checkout`, `git revert` e `git reset --hard`.
+
+⚠️ **Marco não substitui o backup de versão**: ele é raro, por fase, e o de
+versão continua sendo a cada número fechado.
 
 ### Versões existentes
 
