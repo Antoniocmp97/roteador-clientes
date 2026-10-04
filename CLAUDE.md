@@ -1728,7 +1728,8 @@ Ainda em aberto:
   foi medido, a escolha do backend (**Cloudflare Workers + D1**) e as decisões
   que travam cada etapa. ⚠️ **Ler aquele arquivo antes de começar qualquer coisa
   desta frente** — ele guarda números que não precisam ser remedidos e duas
-  armadilhas conhecidas. ⚠️ A Fase B **revisa o ADR-01** (dado de cliente passa
+  armadilhas conhecidas. A **Fase B (o servidor)** está detalhada passo a passo
+  em **`PLANO-SERVIDOR.md`**, pronta para implementar. ⚠️ A Fase B **revisa o ADR-01** (dado de cliente passa
   a sair da máquina) e derruba a **decisão 5** da seção 4 (arquivo único). Ponto
   de retorno: tag `v8.23.2` no commit `e789131` e
   `backups/MARCO_v8.23.2_2026-09-28_antes-das-metricas/`

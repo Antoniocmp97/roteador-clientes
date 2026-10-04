@@ -126,6 +126,10 @@ deles até a Fase B. O que a Fase A entrega é outra coisa:
 
 ### FASE B — Juntar as duas metades
 
+> ✅ **DETALHADA EM 04/10/2026, passo a passo, em `PLANO-SERVIDOR.md`** — com o
+> esquema do banco, o Worker inteiro, a autenticação resolvida e a ordem de
+> execução. Ler aquele arquivo antes de começar o B.
+
 | | o que faz |
 |---|---|
 | **B1** | Escolher o backend — **decidido: Cloudflare Workers + D1** (seção 4) |
