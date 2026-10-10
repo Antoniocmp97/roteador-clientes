@@ -1,0 +1,23 @@
+v8.23.2 - 28/09/2026 - o traco do icone volta a ser claro
+
+O QUE MUDOU
+  .btn-icon e .btn-lista voltam a --text em repouso (a v8.23.1 tinha posto os
+  dois em --muted). Pedido do usuario: "os tracos do icone dentro do botao na
+  cor branca".
+  O :hover trocou de portador: era clarear o icone, agora e borda teal + fundo
+  --hover - com o icone ja claro, clarear mais nao diria nada.
+
+O QUE NAO FAZER SEM SABER
+  - A hierarquia "o campo de texto e o carro-chefe" continua valendo; quem a
+    carrega agora e o TAMANHO (34px), nao a cor.
+  - A cor e --text, nao um branco fixo: e o que faz o icone acompanhar o tema
+    claro (la ele vira #152229).
+  - No toque os botoes voltam a 40px (@media pointer:coarse).
+
+⚠️ AO MEDIR COR NO NAVEGADOR DE TESTE
+  Terminar as animacoes antes de ler (getAnimations().forEach(a=>a.finish())).
+  O painel nao pinta, a transition fica parada no meio e getComputedStyle
+  devolve a cor ANTIGA. Isso ja enganou duas vezes: aqui e na v8.20.0.
+
+ONDE MEXER
+  index.html - .btn-icon, .btn-lista e os respectivos :hover.

@@ -1,0 +1,27 @@
+v8.17.0 - 26/09/2026 - o clique na parada chega ao ponto
+
+O QUE MUDOU
+  Clicar numa parada da "Ordem da viagem" agora leva o mapa ao ponto SEMPRE.
+  `centralizarVisivel()` confere o destino 420ms depois do setView e aplica de
+  uma vez se a animacao nao entregou.
+
+POR QUE
+  Relato do usuario: "a tela nao acompanha muito bem". A conta do centro estava
+  certa; o setView ANIMADO e que nao chegava ao fim, e era o unico caminho.
+  Medido: com animate:true o zoom ficava preso em 15 e a parada parava entre 69
+  e 250px do alvo; com animate:false caia no alvo exato. Depois da correcao:
+  1 pixel de erro.
+
+O QUE NAO FAZER SEM SABER
+  - A correcao DESISTE se a pessoa arrastou o mapa (arrastouDepois, ligado no
+    dragstart). Tirar isso faz o mapa ser puxado de volta debaixo da mao dela.
+  - No modo leve nao se anima: o clique e instantaneo, de proposito.
+  - Com o zoom bloqueado (v7.3.0) o mapa continua parado e so o balao abre.
+  - A avulsa recem-criada continua levando o mapa ate ela mesmo bloqueado.
+  - Quem move o mapa ao criar avulsa e adicionarAvulsaPeloCampo(), nao
+    criarParadaAvulsa().
+
+ONDE MEXER
+  index.html - `centralizarVisivel()` e o listener de dragstart logo abaixo
+               dela; `verParadaNoMapa()` e quem chama no clique.
+  O prazo da rede e um numero so: os 420ms do setTimeout.

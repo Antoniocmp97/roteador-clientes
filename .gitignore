@@ -34,9 +34,31 @@ ARQUITETURA-E-REQUISITOS.html
 # de referência embutida). São material de trabalho, não fazem parte do app.
 COMPARACAO-*.html
 
-# --- Pontos de restauração (backups locais) ---
-# Ficam só na máquina; o Git já é o histórico oficial.
-backups/
+# --- Pontos de restauração (backups) ---
+# A pasta é IGNORADA por padrão e só as pastas listadas abaixo sobem. Motivo: as
+# cópias de antes da v8.16.1 (e o MARCO_v8.23.2) trazem nomes de clientes reais
+# em comentários e LEIA-ME, e o repositório é PÚBLICO. A limpeza de 26/09/2026
+# saneou os arquivos da raiz, não os backups.
+# ⚠️ Backup novo NÃO sobe sozinho: varrer por nome real (contra os .umap reais
+# locais) e só então acrescentar a linha "!backups/<pasta>/" aqui.
+backups/*
+!backups/v1.0_2026-08-22_fase-1-modo-campo/
+!backups/v1.1_2026-08-29_tiles-esri/
+!backups/v8.16.1_2026-09-26_revisao-verify/
+!backups/v8.17.0_2026-09-26_clique-chega-ao-ponto/
+!backups/v8.17.1_2026-09-26_ida-suave-ate-a-parada/
+!backups/v8.18.0_2026-09-26_roteiro-fechado-e-um-modulo-a-menos/
+!backups/v8.19.0_2026-09-26_coluna-2-nasce-aberta/
+!backups/v8.20.0_2026-09-27_envio-enxuto/
+!backups/v8.21.0_2026-09-27_mono-so-nos-numeros/
+!backups/v8.22.0_2026-09-27_checklist-vira-lista/
+!backups/v8.22.1_2026-09-27_ordem-da-viagem-tambem/
+!backups/v8.23.0_2026-09-27_escala-em-tres-degraus/
+!backups/v8.23.1_2026-09-28_botoes-de-icone-unificados/
+!backups/v8.23.2_2026-09-28_icone-claro-de-volta/
+!backups/v8.24.0_2026-10-10_busca-sem-acento/
+!backups/v8.24.1_2026-10-10_icone-da-aba/
+!backups/v8.24.2_2026-10-10_icone-na-marca/
 
 # --- Bloco de notas de quem trabalha na pasta ---
 # Qualquer rascunho solto na raiz entra no próximo "git add -A" e vai parar num

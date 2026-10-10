@@ -1,0 +1,15 @@
+VERSÃO 1.0 — 22/08/2026
+Fase 1 do roadmap: modo campo.
+
+O que esta versão tem:
+  - Upload de GeoJSON, mapa, origem por endereço ou GPS
+  - Checklist de clientes e ordem manual das paradas
+  - Traçar nesta ordem / Otimizar ordem (OSRM)
+  - Modo campo: link do roteiro, tela de celular, Waze/Maps por parada,
+    marcar concluída com progresso salvo no aparelho
+
+Fundo do mapa: CARTO dark_all (ainda sem a marca d'água — ela apareceu depois,
+quando a CARTO passou a exigir chave de acesso).
+
+Resgatada do histórico do Git (commit 2c87046) em 29/08/2026, quando o
+versionamento numerado foi adotado. Validada em celular real pelo usuário.

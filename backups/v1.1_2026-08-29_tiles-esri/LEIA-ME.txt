@@ -1,0 +1,14 @@
+VERSÃO 1.1 — 29/08/2026
+Troca do provedor de tiles + adoção do número de versão.
+
+O que mudou em relação à v1.0:
+  - Fundo do mapa: CARTO dark_all -> Esri Dark Gray Canvas (duas camadas,
+    ruas + rótulos). Motivo: a CARTO passou a exigir chave e começou a
+    devolver os ladrilhos carimbados com "API KEY REQUIRED".
+  - maxNativeZoom 16 com maxZoom 19: o Esri só tem imagem real até o zoom 16
+    nesta região; assim o mapa continua deixando aproximar sem ficar em branco.
+  - Atribuição atualizada para "Tiles © Esri" no mapa e no rodapé.
+  - Selo de versão passou a aparecer ao lado da marca, nas duas telas.
+
+Custo aceito: o fundo ficou cinza médio, mais claro que o preto-azulado
+anterior, portanto menos integrado ao painel escuro.

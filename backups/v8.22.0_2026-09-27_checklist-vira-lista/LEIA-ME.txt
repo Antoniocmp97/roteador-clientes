@@ -1,0 +1,24 @@
+v8.22.0 - 27/09/2026 - o checklist vira lista
+
+O QUE MUDOU
+  O cliente deixou de ser um cartao e virou LINHA DE LISTA, separada por um
+  fio. A cascata aberta se marca por um FILETE a esquerda, e a unidade dentro
+  dela perdeu a caixa tambem.
+  Medido (13 clientes, 27 unidades, tudo aberto): lista de 1845 para 1591px.
+
+O QUE NAO FAZER SEM SABER
+  - O `gap` do checklist e ZERO de proposito: quem separa e o fio. Devolver o
+    gap deixa a lista mais frouxa do que era com cartao.
+  - A `.check-row` NAO pode voltar para as listas de "caixas de dentro" do
+    vidro (.console .check-row a 80% de --panel-2): elas tem especificidade
+    maior e devolvem o fundo do cartao.
+  - Quem marca a area de clique agora e o :hover. Tirar a regra deixa a linha
+    sem nenhuma pista de que e clicavel.
+  - O filete da cascata e o mesmo recurso do grupo do uMap desde a v2.9.
+  - A "Ordem da viagem" ficou de fora DE PROPOSITO: la a parada e um objeto que
+    se arrasta, e o cartao e o que a faz parecer pegavel.
+
+ONDE MEXER
+  index.html - .checklist, .grupo, .grupo-head, .grupo-corpo, .check-row,
+               .grupo-umap, .grupo-umap-corpo; e as duas listas de "caixas de
+               dentro" do vidro, de onde a .check-row saiu.

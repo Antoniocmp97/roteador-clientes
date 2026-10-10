@@ -1,0 +1,27 @@
+v8.18.0 - 26/09/2026 - o Roteiro nasce fechado, e um modulo a menos
+
+O QUE MUDOU
+  1. O modulo Roteiro abre e fecha por um chevron no titulo, e NASCE FECHADO.
+     A escolha fica em hg_roteiro_aberto. Medido: 278px aberto, 58px fechado.
+  2. "Enviar para o campo" deixou de ser modulo (m6) e virou um bloco dentro do
+     modulo Rota, separado por um fio. De sete modulos para seis.
+  3. O campo de retomar que ficava no "Enviar para o campo" saiu: era igual ao
+     do modulo Clientes, e so existia depois de uma rota tracada.
+
+O QUE NAO FAZER SEM SABER
+  - O apelido m6 NAO pode ser reaproveitado: arranjo salvo por ai ainda cita
+    m6, e `arranjoGuardado()` ignora chave desconhecida. Reusar o nome poria
+    outro modulo na coluna onde estava o "Enviar".
+  - Fechado, o Roteiro sai de `elasticosVisiveis()`. Tirar essa condicao faz um
+    Roteiro fechado segurar metade da coluna.
+  - A margem do titulo do Roteiro tem de ficar no CSS, nao inline: recolhida
+    ela vai a zero.
+  - `#envioSection` continua sendo o mesmo id, mostrado/escondido por
+    style.display. prepararEnvio / invalidarRota / salvarNoTecnico /
+    carregarDoTecnico contam com isso.
+
+ONDE MEXER
+  index.html - secao `O Roteiro nasce fechado (v8.18.0)` (CHAVE_ROTEIRO,
+               roteiroAberto, aplicarRoteiroRecolhido);
+               `#envioSection` dentro do markup do modulo m5;
+               MODULOS / ORDEM_PADRAO para a lista de modulos.

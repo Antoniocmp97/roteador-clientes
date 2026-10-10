@@ -1,0 +1,26 @@
+v8.22.1 - 27/09/2026 - a Ordem da viagem tambem vira lista
+
+O QUE MUDOU
+  O modulo "Ordem da viagem" seguiu a mesma logica do checklist (v8.22.0):
+  fio entre as linhas, sem cartao por parada. Pedido do usuario.
+  5 paradas sem prioritarias: 253,5 -> 233,5px.
+
+O CARTAO CARREGAVA TRES ESTADOS PELA BORDA - cada um tem destino novo
+  - ARRASTANDO: o cartao VOLTA (fundo, borda ambar, raio, sombra). Ali a
+    parada e um objeto na mao.
+  - PRIORITARIA: saiu e NAO foi substituida. Era o terceiro sinal da mesma
+    coisa: ja ha o bloco "Prioritarias" e a estrela acesa.
+  - REALCADA pelo mapa: virou barra ambar por DENTRO (inset box-shadow).
+    Inset nao ocupa espaco - nao muda a altura da linha, que e medida durante
+    o arraste.
+
+O QUE NAO FAZER SEM SABER
+  - O fio e `border-top`, nao `border-bottom`: e o que deixa apaga-lo na
+    primeira linha e na linha logo depois de um cabecalho de bloco
+    (`.stop-grupo + .stop-row`) com um seletor so.
+  - A .stop-row nao pode voltar para as listas de "caixas de dentro" do vidro.
+  - O realce NAO pode voltar a usar borda: mudaria a altura da linha.
+
+ONDE MEXER
+  index.html - .stops, .stop-row, .stop-row.arrastando, .stop-row.realcada,
+               .stop-grupo; e as duas listas de "caixas de dentro" do vidro.

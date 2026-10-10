@@ -1,0 +1,20 @@
+v8.17.1 - 26/09/2026 - a ida ate a parada ficou suave
+
+O QUE MUDOU
+  1. A rede de seguranca da v8.17.0 comparava o centro em GRAUS com 1e-7 e
+     dava "nao chegou" SEMPRE - entao disparava um setView seco no fim de toda
+     ida. Era o "delay meio travado". Agora a comparacao e em PIXEL, folga de 2.
+  2. A ida virou flyTo (0,55s) no lugar do setView animado, que desiste de
+     animar quando o destino esta longe e cai num salto instantaneo.
+  3. A rede virou dois relogios: 140ms (o voo nem saiu) e 770ms (parou no meio).
+
+O QUE NAO FAZER SEM SABER
+  - Nao voltar a comparar em graus: o Leaflet erra 0,42 pixel ao aplicar um
+    centro mesmo sem animacao. Tolerancia de mundo para coisa de tela nao serve.
+  - A rede continua desistindo se a pessoa arrastou o mapa (arrastouDepois).
+  - No modo leve nao ha voo: o clique e instantaneo.
+  - Os dois relogios cobrem casos diferentes; tirar um deles faz escolher entre
+    demorar a toa e cortar o voo pela metade.
+
+ONDE MEXER
+  index.html - `centralizarVisivel()` e a constante DUR_VOO_PARADA (0,55s).

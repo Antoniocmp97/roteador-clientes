@@ -1,0 +1,24 @@
+v8.23.0 - 27/09/2026 - a escala do escritorio em tres degraus
+
+A ESCALA (escritorio)
+  10,5  dado miudo  - contador, cliente sob o nome da parada, numero do
+                      marcador, etiqueta de tipo
+  11,5  rotulo      - titulos, links do titulo, dicas, legendas, URL, selo
+  13    conteudo    - nomes, botoes, campos, status, passo a passo
+  + 20 para o km/min e 19 para a marca (logotipo).
+  Medido com tudo aberto: ZERO elementos fora desses valores.
+
+O QUE NAO FAZER SEM SABER
+  - Texto novo no escritorio: escolher um dos tres degraus. Meio pixel nao
+    entrega hierarquia (altura de linha identica, 0,3px por caractere).
+  - A legenda do km/min e ROTULO (11,5), nao conteudo: em 13 ela ficava MAIOR
+    que o titulo do modulo acima dela.
+  - A TELA DO CAMPO tem escala propria e MAIOR (nome da parada 17px). Nao
+    aplicar esta escala la: aquela tela e lida em celular e no sol.
+  - `.brand-icon.campo-pin` precisa das DUAS classes para vencer
+    `.brand-icon.num`. Com uma so, o pino do campo volta a herdar o corpo do
+    pino do escritorio - foi assim desde a v8.16.0, sem ninguem notar.
+
+ONDE MEXER
+  index.html - as declaracoes de font-size do bloco do escritorio, que vai do
+               inicio do <style> ate a regra `.campo{`.

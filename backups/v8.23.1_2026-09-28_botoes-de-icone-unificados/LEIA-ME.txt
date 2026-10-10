@@ -1,0 +1,20 @@
+v8.23.1 - 28/09/2026 - os botoes de icone falam uma lingua so
+
+O QUE MUDOU
+  .btn-icon (o alvo e o alfinete do Origem, e o alvo da parada avulsa) e
+  .btn-lista (engrenagem, marcar todos, alfinete do modulo 3) passaram a ter
+  os mesmos valores: 34x36px, icone de 16px com traco 1,7, --muted em repouso,
+  clareando no hover, ambar quando ligados.
+  Medido: campo de busca 190 -> 202px; campo de origem 206 -> 224px.
+
+O QUE NAO FAZER SEM SABER
+  - A unificacao foi para BAIXO de proposito: quem manda nos dois modulos e o
+    CAMPO DE TEXTO. Devolver o --text aos botoes do Origem desfaz isso.
+  - No toque eles voltam a 40px (@media pointer:coarse). Tirar essa regra
+    deixa alvo de 34px para o dedo.
+  - O COMPORTAMENTO do 📍 nao foi tocado, so cor e tamanho. A regra de nao
+    mexer naquele botao sem testar na maquina real vale para a geolocalizacao.
+
+ONDE MEXER
+  index.html - .btn-icon, .btn-lista e a regra @media (pointer:coarse) logo
+               abaixo da alca da parada.

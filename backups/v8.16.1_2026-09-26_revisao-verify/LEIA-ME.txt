@@ -1,0 +1,16 @@
+v8.16.1 — 26/09/2026 — fecha a primeira revisao .Verify
+
+O QUE MUDOU NO index.html
+  - removido o id morto `moduloRota` (orfao desde que a v8.12.0 tirou o sticky)
+  - cinco linhas de COMENTARIO saneadas: exemplos que usavam nome de cliente
+    real passaram a usar o vocabulario ficticio de Exemplos/exemplo.umap
+  Nenhuma linha de codigo mudou. O comportamento e o mesmo.
+
+O QUE MUDOU FORA DELE
+  CLAUDE.md, MAPA-DO-CODIGO.md, README.md, LOG-ALTERACOES.txt e .gitignore.
+  Ver a entrada "[26/09/2026] .Verify — primeira revisao geral" no log.
+
+ATENCAO
+  O historico do git ainda contem os nomes reais dos commits antigos. Foi
+  decisao consciente do usuario nao reescrever o historico de um repositorio
+  publico. O saneamento vale de agora em diante.

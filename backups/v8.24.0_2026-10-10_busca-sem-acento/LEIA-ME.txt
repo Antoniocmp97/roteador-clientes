@@ -1,0 +1,24 @@
+v8.24.0 - 10/10/2026 - a busca do checklist ignora acento e cedilha
+
+O QUE MUDOU
+  Nova funcao semAcento() (logo acima de renderChecklist) e as quatro
+  comparacoes da busca passam por ela: termo digitado, nome do GRUPO do uMap,
+  nome da CAMADA (cliente) e nome da UNIDADE (filial). Digitar "educacao" acha
+  "EDUCACAO" com cedilha e til; digitar com acento tambem continua achando.
+  Pedido do usuario: "o filtro e muito especifico, nao consegue localizar caso
+  o nome tenha acento".
+
+O QUE CONTINUA NAO ACHANDO (de proposito, escolha do usuario)
+  - Palavras em outra ordem: "educacao exemplo" nao acha "... EXEMPLO - EDUCACAO".
+  - Erro de digitacao que nao e acento: "acuo" nao acha "ACUAO".
+
+O QUE NAO FAZER SEM SABER
+  - NAO guardar o nome normalizado dentro do objeto (g._busca / pt._busca): a
+    parada avulsa nasce em tempo de execucao e, sem o campo, nunca mais
+    apareceria na busca, sem erro nenhum. Calcular na hora.
+  - NAO mexer no Intl.Collator de ordenarBase(): ordenar precisa do acento,
+    buscar nao.
+  - A mensagem "nenhum resultado" ecoa o texto COM o acento digitado. Esta certo.
+
+ONDE MEXER
+  index.html - semAcento() e o bloco "const termo" de renderChecklist().

@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hagamorfis · Roteador de Clientes</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Paleta de cores do tema escuro (âmbar = origem/rota, teal = clientes/sucesso) */
+  :root{
+    --ink:#0C1418; --panel:#16232B; --panel-2:#1D2E37; --line:#2A3D47;
+    --text:#E7EEF2; --muted:#7C93A0; --amber:#F2A93C; --amber-dim:#B87F26;
+    --teal:#2FB6A6; --danger:#E2604F;
+  }
+  /* Reset básico + ocupa a tela inteira (necessário para o mapa em tela cheia) */
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--ink);color:var(--text);font-family:'Inter',system-ui,sans-serif;}
+  .app{display:flex;flex-direction:column;height:100%;min-height:640px;}
+
+  /* Cabeçalho com o nome do app */
+  header{padding:18px 22px 14px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  header .mark{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;}
+  header .mark span{color:var(--amber);}
+  header .sub{color:var(--muted);font-size:13px;font-family:'JetBrains Mono',monospace;}
+
+  /* Área principal: mapa (flex:1, ocupa o espaço restante) + painel lateral */
+  main{position:relative;flex:1;display:flex;min-height:0;}
+  #map{flex:1;min-height:0;background:#0C1418;}
+
+  /* Painel lateral ("console") com os controles: upload, origem, checklist, paradas, botões */
+  .console{width:340px;background:var(--panel);border-left:1px solid var(--line);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+  .field-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.5px;color:var(--amber-dim);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+  .field-label small{color:var(--muted);letter-spacing:0;text-transform:none;font-size:10.5px;}
+
+  /* Área de arrastar-e-soltar (ou clicar) para carregar o .geojson */
+  .dropzone{border:1.5px dashed var(--line);border-radius:8px;padding:16px;text-align:center;font-size:12.5px;color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s;}
+  .dropzone:hover,.dropzone.drag{border-color:var(--teal);background:#132229;color:var(--text);}
+  .dropzone strong{color:var(--text);}
+  .file-status{font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--teal);margin-top:6px;min-height:14px;}
+
+  /* Campo de endereço de origem + botão de geolocalização */
+  .origin-row{display:flex;gap:8px;}
+  input[type="text"]{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:9px 10px;font-family:'Inter',sans-serif;font-size:13.5px;}
+  input[type="text"]:focus{outline:none;border-color:var(--amber-dim);}
+  button{font-family:'Inter',sans-serif;cursor:pointer;border:none;}
+  .btn-icon{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:0 12px;font-size:15px;}
+  .btn-icon:hover{border-color:var(--teal);}
+  .link-btn{background:none;color:var(--teal);font-size:11.5px;text-decoration:underline;padding:0;}
+
+  /* Checklist com um item por cliente carregado do .geojson */
+  .checklist{display:flex;flex-direction:column;gap:6px;max-height:190px;overflow-y:auto;padding-right:2px;}
+  .check-row{display:flex;align-items:flex-start;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:13px;}
+  .check-row input{margin-top:2px;accent-color:var(--teal);}
+  .check-row .coord{display:block;color:var(--muted);font-size:10.5px;font-family:'JetBrains Mono',monospace;}
+  .empty-hint{font-size:12px;color:var(--muted);font-style:italic;}
+
+  /* Lista ordenável das paradas selecionadas (ordem da viagem) */
+  .stops{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:190px;overflow-y:auto;}
+  .stop-row{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;}
+  .stop-row .n{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;width:16px;flex-shrink:0;}
+  .stop-row .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .stop-row button{background:none;color:var(--muted);font-size:13px;padding:2px 4px;}
+  .stop-row button:hover{color:var(--text);}
+
+  /* Botões principais: "Traçar nesta ordem" (âmbar) e "Otimizar ordem" (secundário) */
+  .go-btn{background:var(--amber);color:#241705;font-weight:600;font-size:13.5px;border-radius:7px;padding:11px;text-align:center;}
+  .go-btn:hover{background:#FFC163;}
+  .go-btn.secondary{background:var(--panel-2);color:var(--teal);border:1px solid var(--teal);}
+  .go-btn.secondary:hover{background:#132229;}
+  .btn-row{display:flex;gap:8px;}
+  .btn-row .go-btn{flex:1;}
+
+  /* Mensagem de status/erro exibida abaixo dos botões */
+  .status{font-size:12.5px;color:var(--danger);font-family:'JetBrains Mono',monospace;min-height:16px;}
+
+  /* Painel de resultado: distância, tempo e roteiro passo a passo (escondido até haver uma rota) */
+  .readout{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--panel-2);display:none;}
+  .readout.show{display:block;}
+  .readout .row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--amber);font-weight:700;}
+  .readout .row + .row{margin-top:2px;font-size:13px;color:var(--muted);font-weight:400;}
+  .readout hr{border:none;border-top:1px solid var(--line);margin:10px 0;}
+  .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+  .steps li{font-size:12.5px;line-height:1.4;color:var(--text);padding-left:14px;border-left:2px solid var(--teal);}
+  .steps li.leg-header{border-left-color:var(--amber);color:var(--amber);font-weight:600;font-family:'JetBrains Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;}
+
+  /* Rodapé com créditos dos mapas/rotas */
+  footer{padding:8px 22px;border-top:1px solid var(--line);font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  .leaflet-container{background:#0C1418;font-family:'Inter',sans-serif;}
+  /* Ícones customizados dos marcadores: bolinha simples (cliente/origem) e bolinha numerada (parada na rota) */
+  .brand-icon{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);}
+  .brand-icon.num{width:20px;height:20px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-family:'JetBrains Mono',monospace;}
+
+  /* Layout empilhado (mapa em cima, painel embaixo) em telas estreitas */
+  @media (max-width:760px){
+    main{flex-direction:column;}
+    .console{width:auto;max-height:56%;border-left:none;border-top:1px solid var(--line);}
+  }
+
+  /* Campo "5 · Enviar para o campo": o input do link e a dica de uso */
+  #linkCampo{width:100%;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);}
+  .envio-dica{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:8px;}
+
+  /* ==========================================================
+     MODO CAMPO — tela cheia, separada do modo escritório.
+     Feita para uso com uma mão, em movimento, sob luz de sol:
+     alvos de toque grandes, alto contraste, sem mapa nem upload.
+     ========================================================== */
+  .campo{
+    display:flex; flex-direction:column; height:100%; min-height:100vh;
+    background:var(--ink); color:var(--text); font-family:'Inter',system-ui,sans-serif;
+  }
+
+  /* Cabeçalho fixo com o nome do app e a barra de progresso do dia */
+  .campo-head{
+    position:sticky; top:0; z-index:5;
+    background:var(--ink); border-bottom:1px solid var(--line);
+    padding:16px 18px 14px; display:flex; flex-direction:column; gap:10px;
+  }
+  .campo-marca{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;}
+  .campo-marca span{color:var(--amber);}
+  .campo-saindo{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  .campo-progresso{display:flex;align-items:center;gap:10px;}
+  .campo-barra{flex:1;height:8px;border-radius:5px;background:var(--panel-2);overflow:hidden;}
+  .campo-preenche{height:100%;background:var(--teal);border-radius:5px;transition:width .25s;width:0%;}
+  .campo-contagem{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);white-space:nowrap;}
+
+  /* Lista de paradas: cada card é um alvo de toque grande, com o essencial visível de cara */
+  .campo-lista{flex:1;padding:14px 14px 40px;display:flex;flex-direction:column;gap:12px;}
+
+  .parada{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:16px; display:flex; flex-direction:column; gap:12px;
+  }
+  .parada.feita{opacity:.55;}
+  .parada.proxima{border-color:var(--amber); border-width:2px; padding:15px;}
+
+  .parada-topo{display:flex; align-items:flex-start; gap:12px;}
+  .parada-n{
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:15px;
+    color:#1a0f00; background:var(--amber); border-radius:50%;
+    width:30px; height:30px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  }
+  .parada.feita .parada-n{background:var(--teal);}
+  .parada-info{flex:1; min-width:0;}
+  .parada-nome{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:17px; line-height:1.3;}
+  .parada.feita .parada-nome{text-decoration:line-through;}
+  .parada-tag{
+    display:inline-block; margin-top:5px; font-family:'JetBrains Mono',monospace;
+    font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--teal); background:#0e2422; border:1px solid var(--teal);
+    border-radius:4px; padding:2px 7px;
+  }
+  .parada-obs{font-size:13px; color:var(--muted); margin-top:7px; line-height:1.5;}
+
+  .parada-acoes{display:flex; gap:8px;}
+  .parada-acoes button{
+    flex:1; border-radius:9px; padding:13px 10px; font-weight:600; font-size:14.5px;
+    font-family:'Inter',sans-serif; cursor:pointer; border:none;
+  }
+  .btn-navegar{background:var(--amber); color:#241705;}
+  .btn-navegar:active{background:#FFC163;}
+  .btn-feito{background:var(--panel-2); color:var(--teal); border:1px solid var(--teal) !important;}
+  .btn-feito:active{background:#132229;}
+  .parada.feita .btn-feito{background:var(--teal); color:#062420;}
+
+  .campo-vazio{
+    text-align:center; color:var(--muted); font-size:14px; padding:60px 20px; line-height:1.6;
+  }
+  .campo-vazio b{display:block; color:var(--text); font-size:16px; margin-bottom:6px;}
+
+  /* Faixa de comemoração quando todas as paradas já foram marcadas */
+  .campo-banner{
+    background:#0e2422; border:1px solid var(--teal); color:var(--teal);
+    border-radius:10px; padding:14px 16px; font-size:14px; font-weight:600; text-align:center;
+  }
+
+  .campo-pe{
+    padding:12px 18px; text-align:center; font-size:10.5px; color:var(--muted);
+    font-family:'JetBrains Mono',monospace; border-top:1px solid var(--line);
+  }
+
+  /* Alvos de toque generosos em qualquer largura de tela no modo campo */
+  @media (max-width:480px){
+    .parada-acoes button{padding:15px 10px;font-size:15px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="mark">hagamorfis<span>/</span>rotas</div>
+    <div class="sub">roteador multi-parada · clientes</div>
+  </header>
+
+  <main>
+    <div id="map"></div>
+    <div class="console">
+
+      <!-- Passo 1: upload do .geojson (clique abre o seletor de arquivo; também aceita arrastar-e-soltar) -->
+      <div>
+        <div class="field-label">1 · Clientes <small id="countLabel"></small></div>
+        <div class="dropzone" id="dropzone">
+          <strong>Clique para carregar</strong> ou arraste um arquivo<br>.geojson aqui
+        </div>
+        <input type="file" id="fileInput" accept=".geojson,.json,application/geo+json" style="display:none">
+        <div class="file-status" id="fileStatus"></div>
+      </div>
+
+      <!-- Passo 2: ponto de partida da viagem (endereço digitado ou geolocalização do navegador) -->
+      <div>
+        <div class="field-label">2 · Origem</div>
+        <div class="origin-row">
+          <input type="text" id="originInput" placeholder="Endereço em Criciúma...">
+          <button class="btn-icon" id="geoBtn" title="Usar minha localização">📍</button>
+        </div>
+      </div>
+
+      <!-- Passo 3: checklist para escolher quais clientes entram na viagem -->
+      <div>
+        <div class="field-label">3 · Selecionar paradas <button class="link-btn" id="selectAllBtn">marcar todos</button></div>
+        <div class="checklist" id="checklist">
+          <div class="empty-hint">Carregue um arquivo .geojson para ver os clientes aqui.</div>
+        </div>
+      </div>
+
+      <!-- Passo 4: lista reordenável das paradas escolhidas (só aparece quando há paradas) -->
+      <div id="stopsSection" style="display:none;">
+        <div class="field-label">4 · Ordem da viagem</div>
+        <ul class="stops" id="stopsList"></ul>
+      </div>
+
+      <!-- Ações: calcular rota respeitando a ordem atual, ou deixar o OSRM otimizar a ordem -->
+      <div class="btn-row">
+        <button class="go-btn" id="routeBtn">Traçar nesta ordem</button>
+        <button class="go-btn secondary" id="optimizeBtn">Otimizar ordem</button>
+      </div>
+      <div class="status" id="status"></div>
+
+      <!-- Passo 5: gerar o link do roteiro para mandar a quem vai a campo.
+           Só aparece depois que uma rota foi traçada com sucesso. -->
+      <div id="envioSection" style="display:none;">
+        <div class="field-label">5 · Enviar para o campo</div>
+        <button class="go-btn" id="gerarLinkBtn">Gerar link do roteiro</button>
+        <div id="linkPronto" style="display:none;margin-top:10px;">
+          <input type="text" id="linkCampo" readonly>
+          <div class="btn-row" style="margin-top:8px;">
+            <button class="go-btn" id="compartilharBtn">Compartilhar</button>
+            <button class="go-btn secondary" id="copiarBtn">Copiar</button>
+          </div>
+          <div class="envio-dica" id="envioDica">
+            Mande este link para quem vai fazer as visitas. Ao abrir, a pessoa
+            vê o roteiro na ordem certa, com botão de navegação em cada parada.
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultado: distância/tempo totais + instruções passo a passo por parada -->
+      <div class="readout" id="readout">
+        <div class="row"><span id="distVal">--</span><span id="timeVal">--</span></div>
+        <div class="row"><span>distância total</span><span>tempo estimado</span></div>
+        <hr>
+        <div class="field-label" style="margin-bottom:10px;">Roteiro</div>
+        <ul class="steps" id="steps"></ul>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    Mapas © OpenStreetMap contributors · Tiles © CARTO · Rotas via OSRM (servidor de demonstração público — para uso em produção, hospede sua própria instância ou use uma API paga).
+  </footer>
+</div>
+
+<!-- ==========================================================
+     MODO CAMPO
+     Tela alternativa, mostrada quando o app é aberto por um link
+     de roteiro (endereço contém "#r="). É a tela de quem está na
+     rua: sem mapa, sem upload, sem configuração — só a ordem das
+     paradas, navegação e marcação do que já foi feito.
+     ========================================================== -->
+<div class="campo" id="modoCampo" hidden>
+  <header class="campo-head">
+    <div class="campo-marca">hagamorfis<span>/</span>rotas</div>
+    <div class="campo-saindo" id="campoSaindo"></div>
+    <div class="campo-progresso">
+      <div class="campo-barra"><div class="campo-preenche" id="campoPreenche"></div></div>
+      <div class="campo-contagem" id="campoContagem"></div>
+    </div>
+  </header>
+
+  <div class="campo-lista" id="campoLista" role="main"></div>
+
+  <footer class="campo-pe">
+    Roteiro recebido por link · nada é enviado para servidor
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// Detecta se o app foi aberto por um link de roteiro (ex.: .../index.html#r=eyJ...).
+// Nesse caso entramos no MODO CAMPO (ver seção no fim do script) e nem inicializamos
+// o mapa do modo escritório — ele fica escondido e não é usado.
+const modoCampoAtivo = location.hash.startsWith('#r=');
+
+// Inicializa o mapa Leaflet centrado em Criciúma/SC e aplica o tile escuro (CARTO dark_all)
+// (só no modo escritório; no modo campo `map` fica null e nunca é usado)
+let map = null;
+if (!modoCampoAtivo) {
+  map = L.map('map', { zoomControl: true }).setView([-28.6775, -49.3697], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO', subdomains: 'abcd', maxZoom: 19
+  }).addTo(map);
+}
+
+// Ícone de bolinha simples (usado para clientes e para o marcador de origem, cor varia por chamada)
+function dot(color){
+  return L.divIcon({ className:'', html:`<div class="brand-icon" style="background:${color}"></div>`, iconSize:[14,14], iconAnchor:[7,7] });
+}
+// Ícone de bolinha numerada (usado nas paradas depois que a rota é traçada, mostra a ordem de visita)
+function numIcon(n){
+  return L.divIcon({ className:'', html:`<div class="brand-icon num" style="background:var(--amber)">${n}</div>`, iconSize:[20,20], iconAnchor:[10,10] });
+}
+
+// Estado global do app (em memória — nada é persistido, recarregar a página zera tudo)
+let clientPoints = [];   // { id, name, lat, lng, marker } — todos os clientes carregados do .geojson
+let stops = [];          // subconjunto/ordem de clientPoints selecionados para esta viagem
+let originLatLng = null; // [lat, lng] do ponto de partida, definido por geolocalização ou geocodificação
+let originMarker = null; // marcador do Leaflet para a origem no mapa
+let routeLine = null;    // polyline da rota traçada no mapa
+let stopMarkers = [];    // marcadores numerados das paradas atuais (redesenhados a cada traçado)
+
+// Escreve a mensagem de status/erro abaixo dos botões (verde/teal = sucesso, vermelho = erro)
+function setStatus(msg, ok=false){
+  const el = document.getElementById('status');
+  el.textContent = msg || '';
+  el.style.color = ok ? 'var(--teal)' : 'var(--danger)';
+}
+
+/* ---------------- Upload / parse GeoJSON ---------------- */
+// Clicar na dropzone abre o seletor de arquivo nativo (o <input type="file"> fica oculto)
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+dropzone.onclick = () => fileInput.click();
+// Feedback visual (borda destacada) enquanto um arquivo é arrastado sobre a dropzone
+['dragover','dragleave','drop'].forEach(evt=>{
+  dropzone.addEventListener(evt, e=>{
+    e.preventDefault();
+    dropzone.classList.toggle('drag', evt==='dragover');
+  });
+});
+// Arquivo solto na dropzone (drag-and-drop) é carregado
+dropzone.addEventListener('drop', e=>{
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+// Arquivo escolhido pelo seletor nativo (clique) é carregado
+fileInput.addEventListener('change', e=>{
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+});
+
+// Lê o arquivo escolhido/arrastado como texto, valida o JSON e envia os pontos para importClients()
+function loadFile(file){
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) throw new Error('não é uma FeatureCollection válida');
+      const points = data.features.filter(f => f.geometry && f.geometry.type === 'Point');
+      if (!points.length) throw new Error('nenhum ponto encontrado no arquivo');
+      importClients(points, file.name);
+    }catch(err){
+      document.getElementById('fileStatus').style.color = 'var(--danger)';
+      document.getElementById('fileStatus').textContent = 'Erro: ' + err.message;
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Substitui os clientes atuais pelos pontos recém-carregados: limpa o mapa/estado anterior,
+// cria um marcador teal por cliente (com popup de adicionar/remover parada) e enquadra o mapa neles
+function importClients(features, filename){
+  // reset
+  clientPoints.forEach(c => c.marker && map.removeLayer(c.marker));
+  clientPoints = []; stops = [];
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  document.getElementById('readout').classList.remove('show');
+
+  features.forEach((f, i) => {
+    const [lng, lat] = f.geometry.coordinates;
+    const name = (f.properties && f.properties.name) || `Ponto ${i+1}`;
+    const id = f.id || `p${i}`;
+    const marker = L.marker([lat, lng], { icon: dot('#2FB6A6') }).addTo(map)
+      .bindPopup(`<b>${name}</b><br><button onclick="toggleStop('${id}')" style="margin-top:6px;cursor:pointer;">Adicionar/remover parada</button>`);
+    clientPoints.push({ id, name, lat, lng, marker });
+  });
+
+  const group = L.featureGroup(clientPoints.map(c => c.marker));
+  map.fitBounds(group.getBounds(), { padding: [40,40] });
+
+  document.getElementById('fileStatus').style.color = 'var(--teal)';
+  document.getElementById('fileStatus').textContent = `✓ ${clientPoints.length} pontos carregados de "${filename}"`;
+  document.getElementById('countLabel').textContent = `(${clientPoints.length})`;
+  renderChecklist();
+}
+
+// Chamado pelo botão do popup do marcador no mapa: simula o clique no checkbox correspondente
+// do checklist, reaproveitando a lógica de seleção que já existe lá (evento 'change')
+function toggleStop(id){
+  const cb = document.getElementById('chk-' + id);
+  if (cb){ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }
+}
+window.toggleStop = toggleStop; // precisa estar em escopo global: é chamado via onclick inline no HTML do popup
+
+/* ---------------- Checklist + stops UI ---------------- */
+// Redesenha o checklist do zero a partir de clientPoints. Cada linha tem um checkbox cujo
+// estado (marcado/desmarcado) espelha se o cliente está em `stops`; marcar/desmarcar
+// adiciona ou remove o cliente de `stops` e atualiza a lista de paradas
+function renderChecklist(){
+  const el = document.getElementById('checklist');
+  el.innerHTML = '';
+  if (!clientPoints.length){
+    el.innerHTML = '<div class="empty-hint">Carregue um arquivo .geojson para ver os clientes aqui.</div>';
+    return;
+  }
+  clientPoints.forEach(c => {
+    const row = document.createElement('label');
+    row.className = 'check-row';
+    row.innerHTML = `<input type="checkbox" id="chk-${c.id}"><span>${c.name}<span class="coord">${c.lat.toFixed(4)}, ${c.lng.toFixed(4)}</span></span>`;
+    const cb = row.querySelector('input');
+    cb.checked = stops.some(s => s.id === c.id);
+    cb.addEventListener('change', () => {
+      if (cb.checked){ if (!stops.some(s=>s.id===c.id)) stops.push(c); }
+      else { stops = stops.filter(s => s.id !== c.id); }
+      renderStopsList();
+    });
+    el.appendChild(row);
+  });
+}
+
+// Botão "marcar todos": alterna entre selecionar todos os clientes e limpar a seleção
+document.getElementById('selectAllBtn').onclick = () => {
+  const allSelected = stops.length === clientPoints.length && clientPoints.length > 0;
+  stops = allSelected ? [] : [...clientPoints];
+  renderChecklist();
+  renderStopsList();
+};
+
+// Redesenha a lista numerada de paradas (seção 4) a partir de `stops`, na ordem atual do array.
+// Cada linha tem botões ▲/▼ (troca de posição com o vizinho) e ✕ (remove da viagem)
+function renderStopsList(){
+  const section = document.getElementById('stopsSection');
+  const list = document.getElementById('stopsList');
+  section.style.display = stops.length ? 'block' : 'none';
+  list.innerHTML = '';
+  stops.forEach((s, i) => {
+    const li = document.createElement('li');
+    li.className = 'stop-row';
+    li.innerHTML = `<span class="n">${i+1}</span><span class="nm">${s.name}</span>
+      <button data-act="up" title="Mover para cima">▲</button>
+      <button data-act="down" title="Mover para baixo">▼</button>
+      <button data-act="rm" title="Remover">✕</button>`;
+    li.querySelector('[data-act=up]').onclick = () => { if (i>0){ [stops[i-1],stops[i]]=[stops[i],stops[i-1]]; renderStopsList(); } };
+    li.querySelector('[data-act=down]').onclick = () => { if (i<stops.length-1){ [stops[i+1],stops[i]]=[stops[i],stops[i+1]]; renderStopsList(); } };
+    li.querySelector('[data-act=rm]').onclick = () => { stops.splice(i,1); renderStopsList(); renderChecklist(); };
+    list.appendChild(li);
+  });
+}
+
+/* ---------------- Origin ---------------- */
+// Define o ponto de partida: guarda as coordenadas, (re)posiciona o marcador âmbar no mapa
+// e preenche o campo de texto com o rótulo (endereço) ou as coordenadas cruas
+function setOrigin(lat, lng, label){
+  originLatLng = [lat, lng];
+  if (originMarker) map.removeLayer(originMarker);
+  originMarker = L.marker([lat, lng], { icon: dot('#F2A93C') }).addTo(map).bindPopup(label || 'Origem').openPopup();
+  document.getElementById('originInput').value = label || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+}
+
+// Botão 📍: pede a localização atual ao navegador (API de geolocalização) e usa como origem
+document.getElementById('geoBtn').onclick = () => {
+  if (!navigator.geolocation){ setStatus('Geolocalização não suportada.'); return; }
+  setStatus('Obtendo localização...', true);
+  navigator.geolocation.getCurrentPosition(
+    pos => { setOrigin(pos.coords.latitude, pos.coords.longitude, 'Minha localização'); setStatus('Localização encontrada.', true); },
+    () => setStatus('Não foi possível obter localização. Digite um endereço.')
+  );
+};
+
+// Wrapper de fetch()+JSON usado por todas as chamadas de rede (Nominatim e OSRM).
+// Centraliza o tratamento de erro: se o fetch falhar (rede bloqueada, offline, CORS),
+// devolve uma mensagem em português explicando a causa mais provável (pré-visualização
+// embutida do Claude.ai bloqueia requisições externas — ver seção 5 do CLAUDE.md)
+async function safeFetchJSON(url){
+  let res;
+  try{
+    res = await fetch(url);
+  }catch(err){
+    throw new Error('Não foi possível conectar ao serviço de rotas/endereços. Se você está vendo isso na pré-visualização dentro do chat, baixe o arquivo e abra-o diretamente no navegador — a pré-visualização embutida bloqueia chamadas de rede externas por segurança.');
+  }
+  if (!res.ok) throw new Error(`O serviço respondeu com erro (${res.status}). Tente novamente em instantes.`);
+  return res.json();
+}
+
+// Geocodificação: converte um endereço digitado em coordenadas via Nominatim (OpenStreetMap),
+// com viés de busca para Criciúma/SC e limitado ao Brasil
+async function geocode(query){
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${encodeURIComponent(query + ', Criciúma, SC')}`;
+  const data = await safeFetchJSON(url);
+  if (!data.length) throw new Error('Endereço não encontrado.');
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), label: data[0].display_name };
+}
+
+/* ---------------- Routing ---------------- */
+// Traduz uma instrução de manobra do OSRM (formato OSRM Step) para uma frase em português,
+// combinando o tipo de manobra (virar, rotatória, chegada...) com o modificador de direção
+function maneuverText(step){
+  const mods = {left:'à esquerda', right:'à direita', 'slight left':'levemente à esquerda',
+    'slight right':'levemente à direita', 'sharp left':'bem à esquerda', 'sharp right':'bem à direita',
+    straight:'em frente', uturn:'de retorno'};
+  const name = step.name || 'via sem nome';
+  const dist = Math.round(step.distance);
+  const mod = mods[step.maneuver.modifier] || '';
+  switch(step.maneuver.type){
+    case 'depart': return `Siga por ${name} (${dist} m)`;
+    case 'arrive': return `Chegada.`;
+    case 'roundabout':
+    case 'rotary': return `Na rotatória, siga para ${name} (${dist} m)`;
+    case 'turn':
+    case 'end of road':
+    case 'fork': return `Vire ${mod} em ${name} (${dist} m)`;
+    default: return `Continue por ${name} (${dist} m)`;
+  }
+}
+
+// Garante que existe uma origem definida antes de traçar/otimizar a rota. Se já houver
+// coordenadas (geolocalização ou geocodificação anterior), não faz nada; senão, geocodifica
+// o texto digitado no campo de origem. Retorna false (e mostra o erro) se não for possível
+async function ensureOrigin(){
+  if (originLatLng) return true;
+  const q = document.getElementById('originInput').value.trim();
+  if (!q){ setStatus('Informe um endereço de origem ou use sua localização.'); return false; }
+  try{
+    setStatus('Buscando endereço...', true);
+    const g = await geocode(q);
+    setOrigin(g.lat, g.lng, g.label);
+    return true;
+  }catch(e){ setStatus(e.message); return false; }
+}
+
+// Desenha o resultado de uma rota calculada (por routeBtn ou optimizeBtn): traça a polyline
+// âmbar sobre a geometria retornada pelo OSRM, substitui os marcadores das paradas por
+// versões numeradas na ordem de visita, enquadra o mapa na rota e preenche o painel de
+// distância/tempo/roteiro com as instruções passo a passo agrupadas por parada (leg)
+function drawResult(distance, duration, geometry, legs){
+  if (routeLine) map.removeLayer(routeLine);
+  stopMarkers.forEach(m => map.removeLayer(m));
+  stopMarkers = [];
+
+  const coords = geometry.coordinates.map(c => [c[1], c[0]]);
+  routeLine = L.polyline(coords, { color:'#F2A93C', weight:5, opacity:0.9 }).addTo(map);
+
+  stops.forEach((s, i) => {
+    const m = L.marker([s.lat, s.lng], { icon: numIcon(i+1) }).addTo(map).bindPopup(`${i+1}. ${s.name}`);
+    stopMarkers.push(m);
+  });
+
+  map.fitBounds(routeLine.getBounds(), { padding:[40,40] });
+
+  document.getElementById('distVal').textContent = `${(distance/1000).toFixed(1)} km`;
+  document.getElementById('timeVal').textContent = `${Math.round(duration/60)} min`;
+
+  const stepsEl = document.getElementById('steps');
+  stepsEl.innerHTML = '';
+  legs.forEach((leg, i) => {
+    const header = document.createElement('li');
+    header.className = 'leg-header';
+    header.textContent = `Parada ${i+1} · ${stops[i].name}`;
+    stepsEl.appendChild(header);
+    leg.steps.forEach(s => {
+      const li = document.createElement('li');
+      li.textContent = maneuverText(s);
+      stepsEl.appendChild(li);
+    });
+  });
+
+  document.getElementById('readout').classList.add('show');
+}
+
+// Botão "Traçar nesta ordem": chama a OSRM Route API respeitando a ordem atual de `stops`.
+// Monta a string de coordenadas "lng,lat;lng,lat;..." (origem primeiro, depois cada parada,
+// nessa ordem) e pede a rota com geometria completa + instruções passo a passo
+document.getElementById('routeBtn').onclick = async () => {
+  if (!(await ensureOrigin())) return;
+  if (!stops.length){ setStatus('Selecione ao menos um cliente para visitar.'); return; }
+  setStatus('Calculando rota...', true);
+  const coordsStr = [[originLatLng[1], originLatLng[0]], ...stops.map(s=>[s.lng,s.lat])].map(c=>c.join(',')).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson&steps=true`;
+  try{
+    const data = await safeFetchJSON(url);
+    if (data.code !== 'Ok') throw new Error('Não foi possível calcular a rota.');
+    const r = data.routes[0];
+    drawResult(r.distance, r.duration, r.geometry, r.legs);
+    setStatus('Rota traçada na ordem selecionada.', true);
+    prepararEnvio(r.distance, r.duration);
+  }catch(e){ setStatus(e.message || 'Erro ao calcular rota.'); }
+};
+
+// Botão "Otimizar ordem": chama a OSRM Trip API (resolve um TSP aproximado) para encontrar
+// a melhor sequência de visita partindo da origem fixa (source=first, roundtrip=false).
+// O OSRM devolve `waypoints` na ordem original de entrada, cada um com seu `waypoint_index`
+// (posição dele na rota otimizada) — o bloco abaixo remonta `stops` nessa nova ordem,
+// descartando o waypoint 0 (que é a própria origem, não uma parada) e redesenha tudo
+document.getElementById('optimizeBtn').onclick = async () => {
+  if (!(await ensureOrigin())) return;
+  if (!stops.length){ setStatus('Selecione ao menos um cliente para visitar.'); return; }
+  setStatus('Otimizando ordem de visita...', true);
+  const coordsStr = [[originLatLng[1], originLatLng[0]], ...stops.map(s=>[s.lng,s.lat])].map(c=>c.join(',')).join(';');
+  const url = `https://router.project-osrm.org/trip/v1/driving/${coordsStr}?source=first&roundtrip=false&geometries=geojson&steps=true`;
+  try{
+    const data = await safeFetchJSON(url);
+    if (data.code !== 'Ok') throw new Error('Não foi possível otimizar a rota.');
+    const trip = data.trips[0];
+    const order = data.waypoints
+      .map((wp, idx) => ({ idx, wo: wp.waypoint_index }))
+      .filter(w => w.idx !== 0)
+      .sort((a,b) => a.wo - b.wo)
+      .map(w => stops[w.idx - 1]);
+    stops = order;
+    renderStopsList();
+    renderChecklist();
+    drawResult(trip.distance, trip.duration, trip.geometry, trip.legs);
+    setStatus('Ordem otimizada e rota traçada.', true);
+    prepararEnvio(trip.distance, trip.duration);
+  }catch(e){ setStatus(e.message || 'Erro ao otimizar rota.'); }
+};
+
+// Atalho de teclado: pressionar Enter no campo de origem força uma nova geocodificação
+// (zera originLatLng) e já dispara o traçado da rota, sem precisar clicar no botão
+document.getElementById('originInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ originLatLng = null; document.getElementById('routeBtn').click(); }
+});
+
+/* ==========================================================
+   Envio para o campo (Fase 1)
+   Gera um link com o roteiro inteiro codificado no FRAGMENTO da
+   URL (a parte depois do #). O navegador nunca envia o fragmento
+   ao servidor, então nome/endereço/coordenada de cliente não
+   passam pelo GitHub Pages nem ficam em log nenhum — só trafegam
+   entre quem gera o link e quem abre (ex.: pelo WhatsApp).
+   ========================================================== */
+
+// Guarda o resumo (distância/tempo) da última rota traçada, para ir junto no link
+let ultimoResumo = null;
+
+// Chamada depois de uma rota traçada com sucesso (routeBtn ou optimizeBtn):
+// guarda o resumo e revela a seção "5 · Enviar para o campo"
+function prepararEnvio(distance, duration){
+  ultimoResumo = { d: Math.round(distance), t: Math.round(duration) };
+  document.getElementById('envioSection').style.display = 'block';
+  document.getElementById('linkPronto').style.display = 'none';
+  document.getElementById('linkCampo').value = '';
+}
+
+// Empacota a rota atual (paradas na ordem da tela + resumo) num objeto compacto.
+// Chaves curtas e coordenadas com 5 casas decimais (~1,1m de precisão) para manter
+// o link pequeno — cabem confortavelmente 15-20 paradas dentro do limite prático
+// de tamanho de uma URL.
+function montarRoteiro(){
+  return {
+    v: 1, // versão do formato, para o modo campo saber ler links antigos no futuro
+    s: stops.map(s => [s.name, Math.round(s.lat * 1e5) / 1e5, Math.round(s.lng * 1e5) / 1e5]),
+    d: ultimoResumo ? ultimoResumo.d : null,
+    t: ultimoResumo ? ultimoResumo.t : null,
+  };
+}
+
+// Codifica o objeto do roteiro em texto seguro para URL (base64 "url-safe",
+// sem os caracteres +, / e = que precisariam de escape numa URL)
+function codificarRoteiro(obj){
+  const json = JSON.stringify(obj);
+  const b64 = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, h) => String.fromCharCode('0x' + h)));
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Caminho inverso: recebe o texto do link e devolve o objeto do roteiro, ou null
+// se o link estiver corrompido/incompleto (ex.: copiado pela metade)
+function decodificarRoteiro(txt){
+  try{
+    const b64 = txt.replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(atob(b64).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join(''));
+    const obj = JSON.parse(json);
+    if (!obj || !Array.isArray(obj.s)) return null;
+    return obj;
+  }catch(e){ return null; }
+}
+
+// Botão "Gerar link do roteiro": monta o link completo (URL atual + #r=...) e mostra
+// no campo de texto, pronto para compartilhar ou copiar
+document.getElementById('gerarLinkBtn').onclick = () => {
+  if (!stops.length){ setStatus('Trace uma rota antes de gerar o link.'); return; }
+  const codigo = codificarRoteiro(montarRoteiro());
+  const url = location.origin + location.pathname + '#r=' + codigo;
+  document.getElementById('linkCampo').value = url;
+  document.getElementById('linkPronto').style.display = 'block';
+};
+
+// Botão "Compartilhar": usa o menu nativo de compartilhamento do celular (WhatsApp,
+// e-mail, etc.) quando disponível; em desktop, onde não existe, cai para copiar
+document.getElementById('compartilharBtn').onclick = async () => {
+  const url = document.getElementById('linkCampo').value;
+  if (!url) return;
+  if (navigator.share){
+    try{ await navigator.share({ title: 'Roteiro de visitas', url }); }
+    catch(e){ /* usuário cancelou o compartilhamento — não é erro */ }
+  }else{
+    await copiarLink(url);
+    setStatus('Este navegador não tem compartilhamento nativo — link copiado.', true);
+  }
+};
+
+// Botão "Copiar": copia o link para a área de transferência
+document.getElementById('copiarBtn').onclick = () => copiarLink(document.getElementById('linkCampo').value);
+
+async function copiarLink(url){
+  if (!url) return;
+  try{
+    await navigator.clipboard.writeText(url);
+    setStatus('Link copiado.', true);
+  }catch(e){
+    // Alguns navegadores bloqueiam a área de transferência fora de HTTPS —
+    // seleciona o texto do campo para o usuário copiar manualmente (Ctrl+C)
+    const el = document.getElementById('linkCampo');
+    el.select();
+    setStatus('Não deu para copiar automaticamente — texto selecionado, use Ctrl+C.');
+  }
+}
+
+/* ==========================================================
+   MODO CAMPO
+   Tela para quem está na rua. Ativada quando a página é aberta
+   com "#r=..." no final do endereço. Não usa mapa nem rede (além
+   do clique em "Navegar", que abre outro app) — só lê o roteiro
+   do próprio link e o progresso do armazenamento local do
+   navegador (localStorage), que é o que sobrevive a fechar a aba
+   ou o navegador (requisito C-04).
+   ========================================================== */
+
+// Devolve o conjunto de índices já marcados como concluídos para este roteiro
+// específico. A chave do localStorage inclui o próprio código do link, então
+// roteiros diferentes nunca se misturam.
+function progressoChave(codigo){ return 'hg_progresso_' + codigo; }
+
+function lerProgresso(codigo){
+  try{
+    const bruto = localStorage.getItem(progressoChave(codigo));
+    return bruto ? new Set(JSON.parse(bruto)) : new Set();
+  }catch(e){ return new Set(); }
+}
+
+function salvarProgresso(codigo, feitos){
+  try{ localStorage.setItem(progressoChave(codigo), JSON.stringify([...feitos])); }
+  catch(e){ /* armazenamento indisponível (ex.: modo privado) — segue sem persistir */ }
+}
+
+// Evita que nome de cliente com <, > ou & quebre o HTML da lista
+function escaparHtml(txt){
+  return String(txt).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function formatarDistancia(m){ return m == null ? null : (m/1000).toFixed(1) + ' km'; }
+function formatarTempo(s){ return s == null ? null : Math.round(s/60) + ' min'; }
+
+// Monta os links de navegação para os dois apps mais usados no Brasil.
+// Ambos são links universais: abrem o app se estiver instalado, ou a versão
+// web se não estiver — não é preciso detectar o que o usuário tem no celular.
+function linkWaze(lat, lng){ return `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`; }
+function linkMaps(lat, lng){ return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`; }
+
+// Ativa o modo campo: esconde a interface do escritório, decodifica o roteiro
+// do link e desenha a lista de paradas
+function ativarModoCampo(){
+  document.querySelector('.app').style.display = 'none';
+  document.getElementById('modoCampo').hidden = false;
+
+  const codigo = location.hash.slice(3); // remove o prefixo "#r="
+  const roteiro = decodificarRoteiro(codigo);
+  const lista = document.getElementById('campoLista');
+
+  if (!roteiro || !roteiro.s.length){
+    lista.innerHTML = `<div class="campo-vazio"><b>Link de roteiro inválido</b>Peça para gerarem o link de novo — este parece incompleto ou corrompido.</div>`;
+    document.getElementById('campoSaindo').textContent = '';
+    return;
+  }
+
+  const feitos = lerProgresso(codigo);
+  desenharCampo(roteiro, codigo, feitos);
+}
+
+// Redesenha a lista de paradas e a barra de progresso a partir do estado atual
+// (roteiro fixo, vindo do link; feitos muda conforme o usuário marca as paradas)
+function desenharCampo(roteiro, codigo, feitos){
+  const total = roteiro.s.length;
+  const feitas = feitos.size;
+
+  // Resumo no cabeçalho: nº de paradas + distância/tempo previstos, se vieram no link
+  const partes = [`${total} parada${total === 1 ? '' : 's'}`];
+  const dist = formatarDistancia(roteiro.d);
+  const tempo = formatarTempo(roteiro.t);
+  if (dist) partes.push(dist);
+  if (tempo) partes.push(tempo);
+  document.getElementById('campoSaindo').textContent = partes.join(' · ');
+
+  document.getElementById('campoPreenche').style.width = total ? `${(feitas/total)*100}%` : '0%';
+  document.getElementById('campoContagem').textContent = `${feitas}/${total}`;
+
+  // O "próximo" é a primeira parada ainda não concluída, na ordem do roteiro —
+  // é ela que ganha o destaque visual (borda âmbar)
+  const indiceProximo = roteiro.s.findIndex((_, i) => !feitos.has(i));
+
+  const lista = document.getElementById('campoLista');
+  const banner = feitas === total
+    ? `<div class="campo-banner">🎉 Roteiro concluído — todas as ${total} paradas foram marcadas.</div>`
+    : '';
+  lista.innerHTML = banner + listaHtmlParadas();
+
+  function listaHtmlParadas(){
+    return roteiro.s.map(([nome, lat, lng], i) => {
+      const done = feitos.has(i);
+      const proxima = i === indiceProximo;
+      return `
+        <div class="parada ${done ? 'feita' : ''} ${proxima ? 'proxima' : ''}">
+          <div class="parada-topo">
+            <div class="parada-n">${i+1}</div>
+            <div class="parada-info">
+              <div class="parada-nome">${escaparHtml(nome)}</div>
+            </div>
+          </div>
+          <div class="parada-acoes">
+            <button class="btn-navegar" data-lat="${lat}" data-lng="${lng}" data-app="waze">🧭 Waze</button>
+            <button class="btn-navegar" data-lat="${lat}" data-lng="${lng}" data-app="maps">📍 Maps</button>
+          </div>
+          <button class="btn-feito" data-i="${i}">${done ? '✓ Parada concluída' : 'Marcar como concluída'}</button>
+        </div>`;
+    }).join('');
+  }
+
+  // Delegação de eventos: um único listener no container cobre todos os botões,
+  // inclusive os recriados a cada redesenho (mais simples que religar um por um)
+  lista.onclick = (e) => {
+    const navBtn = e.target.closest('.btn-navegar');
+    if (navBtn){
+      const { lat, lng, app } = navBtn.dataset;
+      window.open(app === 'waze' ? linkWaze(lat, lng) : linkMaps(lat, lng), '_blank');
+      return;
+    }
+    const feitoBtn = e.target.closest('.btn-feito');
+    if (feitoBtn){
+      const i = Number(feitoBtn.dataset.i);
+      if (feitos.has(i)) feitos.delete(i); else feitos.add(i);
+      salvarProgresso(codigo, feitos);
+      desenharCampo(roteiro, codigo, feitos); // redesenha para atualizar progresso e destaque
+    }
+  };
+}
+
+// Só entra no modo campo se o link realmente trouxer um roteiro
+if (modoCampoAtivo) ativarModoCampo();
+</script>
+</body>
+</html>

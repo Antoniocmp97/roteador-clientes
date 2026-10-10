@@ -1,0 +1,29 @@
+v8.24.1 - 10/10/2026 - icone da aba do navegador
+
+O QUE MUDOU
+  <link rel="icon"> no <head>, logo abaixo do <title>, com um SVG em data-URI
+  (399 caracteres): uma rota em ambar - origem pequena, destino grande - sobre
+  o cracha escuro #0C1418. Antes o navegador mostrava o globo padrao e ainda
+  pedia um /favicon.ico inexistente.
+  Pedido do usuario: "uma logo para colocar na Aba, hoje esta um globinho".
+  Escolhido entre 14 propostas (COMPARACAO-ICONE.html): "rota - da origem ao
+  destino". NAO TEM LETRA: mostra o que o app faz, nas cores do mapa.
+
+O QUE NAO FAZER SEM SABER
+  - O "#" das cores vai como %23. Num data: URI o "#" comeca o fragmento e corta
+    o SVG no meio, sem erro no console (o navegador volta ao globo).
+  - Atributos do SVG com aspas simples, de proposito (a linha mora num atributo
+    HTML com aspas duplas).
+  - Duas letras em 16px nao cabem (o buraco do R fecha em 1,5px). Nao propor
+    monograma de novo sem refazer a conta.
+  - Nao acompanha o tema do app: a aba tem o tema do NAVEGADOR.
+  - iOS ignora SVG/data-URI no apple-touch-icon; nao acrescentar PNG sem o
+    usuario decidir (seria arquivo versionado novo).
+  - Variantes prontas se pedir: rota-b (traco afinado) e rota-f (cracha ambar),
+    no PLANO-BUSCA-E-ICONE.md, secao 3.2.
+
+⚠️ O navegador guarda favicon em cache proprio, que nao cai no F5 comum:
+   conferir com Ctrl+Shift+R ou aba anonima.
+
+ONDE MEXER
+  index.html - linha <link rel="icon"> logo apos o <title>.

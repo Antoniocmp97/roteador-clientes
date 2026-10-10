@@ -1,0 +1,28 @@
+v8.20.0 - 27/09/2026 - embaixo do link fica so o "?"
+
+O QUE MUDOU
+  As tres explicacoes do bloco de envio (texto do link, saida "nao abriu no
+  celular?" e a opcao "sempre compativel") foram para um painel atras do "?".
+  Embaixo do link nao sobrou TEXTO NENHUM - so o botao, a direita.
+  Medido: envio 290 -> 169px; modulo Rota 510 -> 390px.
+
+O QUE NAO FAZER SEM SABER
+  - NAO devolver frase nenhuma para debaixo do link: a primeira forma desta
+    versao deixava uma, e o usuario cortou ("deixe somente o ? e a janela que
+    ele abre"). O botao acima ja diz o que faz.
+  - MAS o estado do formato nao pode sumir: o "?" ACENDE EM AMBAR quando o link
+    na tela e o compativel. Sem isso, quem tiver "sempre compativel" ligado
+    geraria links longos sem saber por que.
+  - O aceso le o LINK QUE ESTA NA TELA (prefixo #r= ou #z=), NAO a preferencia
+    guardada. Ler a preferencia foi a primeira forma e estava errada: a saida
+    avulsa "gerar link compativel" nao mexe na preferencia, e o aviso mentia.
+  - Por isso ele e atualizado em gerarLinkDoRoteiro() E em carregarDoTecnico().
+  - O ambar do "?" significa "formato compativel", e NAO "painel aberto" -
+    por isso o clique nao acende mais o botao.
+  - O painel abre e fecha so na sessao, como os de tipos, avulsa e retomar.
+
+ONDE MEXER
+  index.html - `O estado do formato mora no PROPRIO "?"`:
+               atualizarResumoDoEnvio() e o clique de #envioAjudaBtn;
+               CSS em `.envio-resumo` e `.btn-titulo.compat`;
+               o markup fica dentro de #linkPronto, no modulo m5.

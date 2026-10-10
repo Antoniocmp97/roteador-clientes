@@ -1,0 +1,24 @@
+v8.19.0 - 26/09/2026 - a coluna 2 nasce aberta em tela larga
+
+O QUE MUDOU
+  Acima de 1600px de largura, "Selecionar paradas" e "Ordem da viagem" nascem
+  na coluna 2. Abaixo disso, nada muda.
+  Medido a 1920x1080 com rota tracada: antes 451px de painel fora da vista
+  (31%); agora ZERO, e o mapa segue com 1189px.
+
+O QUE NAO FAZER SEM SABER
+  - `abreEmDuasColunas` e decidido UMA VEZ, na abertura. Ler a largura ao vivo
+    faz o DISQUETE acender sozinho quando a pessoa redimensiona a janela,
+    porque aplicarArranjo() roda a cada resize e compara a tela com o "normal".
+  - `arranjoNormal()` TEM de canonizar o que devolve, senao o disquete nasce
+    aceso (ordem por coluna x ordem de ORDEM_PADRAO).
+  - O texto da lixeira sai de `textoDoArranjoNormal()`: acima de 1600px o
+    "normal" inclui a coluna 2, e prometer "tudo no painel" seria mentira.
+  - Quem salvou arranjo continua mandando: isto e so o fallback.
+  - Isto NAO resolve os 53% de painel fora da vista da TV de 1366. Foi decisao:
+    a 1366 o mapa cairia para ~626px.
+
+ONDE MEXER
+  index.html - `O padrao de abertura depende do TAMANHO DA TELA`:
+               LARGURA_DUAS_COLUNAS (1600), MODULOS_DA_COLUNA_2 (m3, m4),
+               abreEmDuasColunas, arranjoNormal(), textoDoArranjoNormal().

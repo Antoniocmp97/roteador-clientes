@@ -1,0 +1,27 @@
+v8.21.0 - 27/09/2026 - a monoespacada volta a ser dos numeros
+
+A REGRA
+  Numero, codigo e endereco em JetBrains Mono. Palavra em Inter.
+  Medido: 36 elementos em mono viraram 23, e os 23 sao o selo de versao, os
+  numeros dos marcadores, os contadores, os numeros das paradas e o km/min.
+
+O QUE MUDOU DE FONTE
+  titulos de modulo, os links do titulo, os rotulos do arraste,
+  "Prioritarias"/"Demais", "Quilometragem aproximada", as legendas do km/min,
+  a linha de status, o aviso do upload e o "Parada N - NOME" do Roteiro.
+  Todos perderam tambem a CAIXA ALTA e a entreletra aberta.
+
+O QUE NAO FAZER SEM SABER
+  - Texto novo: se tem digito, mono; se tem palavra, Inter.
+  - Sem o text-transform do CSS, rotulo escrito em minuscula no codigo aparece
+    em minuscula. Tres precisaram de maiuscula inicial: 'Salvar como padrao',
+    'Quilometragem aproximada' e 'Nova coluna'. O "gerar link compativel"
+    continua minusculo DE PROPOSITO: vive no meio de uma frase.
+  - A COR dos titulos nao foi tocada: e o ponto 2 da revisao, decisao a parte.
+  - A etiqueta de tipo de servico e a TELA DO CAMPO ficaram de fora.
+
+ONDE MEXER
+  index.html - .field-label, .link-btn, .modulo-encaixe, .modulo-fantasma,
+               .alvo-coluna, .stop-grupo, header .resumo-dia .rotulo,
+               .resumo-rota .row + .row, .status, .file-status,
+               .steps li.leg-header
