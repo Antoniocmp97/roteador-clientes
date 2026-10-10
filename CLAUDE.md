@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 10/10/2026 — v8.24.1 (busca sem acento e ícone da aba)
+> **Última atualização:** 10/10/2026 — v8.24.2 (busca sem acento, ícone da aba e da marca)
 
 ---
 
@@ -1411,6 +1411,12 @@ finalistas e **ele aceitou isso de olhos abertos**: não "consertar" sem pedido.
 Variantes prontas, se pedir: `rota-b` (traço 3,0 e pontos 3,4/4,6) e `rota-f`
 (crachá âmbar, a de silhueta mais forte) — as linhas estão no
 `PLANO-BUSCA-E-ICONE.md`.
+**O mesmo ícone também está ao lado do nome da marca** (v8.24.2, pedido do usuário
+depois de ver o da aba no ar: "gostei do ícone"), nas duas telas: um `<symbol
+id="logoMarca">` no topo do `<body>`, usado por `<use>`. ⚠️ **O desenho mora em
+dois lugares** (o data-URI do `<link>` e o `<symbol>`): mudar um exige mudar o
+outro. ⚠️ O crachá é `#0C1418`, **igual ao fundo do tema escuro**: o fio de 1px em
+`--line` é o que o mantém à vista; sem ele sobraria só a curva âmbar.
 ⚠️ **Armadilhas do data-URI**: o `#` das cores vai como `%23` (senão cortaria o SVG
 no meio **sem erro no console**); atributos do SVG com aspas **simples** (a linha
 mora num atributo HTML de aspas duplas); `<text>` não serve, porque favicon não
@@ -2144,6 +2150,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 118 | **v8.23.2** — O traço do ícone volta a ser claro nos dois (pedido do usuário); quem carrega a hierarquia passa a ser o tamanho |
 | 119 | **v8.24.0** — A busca do checklist ignora acento e cedilha (`educacao` acha `EDUCAÇÃO`) |
 | 120 | **v8.24.1** — Ícone da aba: uma rota em âmbar (origem pequena, destino grande), SVG em data-URI, sem letra |
+| 121 | **v8.24.2** — O mesmo ícone ao lado do nome "hagamorfis/rotas", nas duas telas |
 
 ---
 
@@ -2211,7 +2218,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.24.1
+8.24.2
 ```
 
 ### Onde o número aparece
@@ -2229,11 +2236,19 @@ com o `index.html` daquela versão e um `LEIA-ME.txt` explicando o que mudou e
 por quê. Ajustes leves (`X.Y.Z`) também ganham backup, na mesma forma
 (`backups/vX.Y.Z_AAAA-MM-DD_apelido/`).
 
-⚠️ **A pasta `backups/` não é versionada** (bloqueada no `.gitignore`), então
-essas cópias existem **apenas nesta máquina**. Numa próxima troca de computador
-elas se perdem se a pasta não for copiada junto. A rede de segurança real
-continua sendo o Git, que guarda todas as versões no GitHub de qualquer forma —
-os backups locais são conveniência, não garantia.
+⚠️ **A pasta `backups/` é ignorada por padrão, e só sobem as pastas liberadas
+no `.gitignore`** (desde 10/10/2026, a pedido do usuário: "todo backup na máquina
+local e no repositório também"). Sobem **v1.0, v1.1 e da v8.16.1 em diante**.
+**Ficam só na máquina** as outras 102 pastas e o `MARCO_v8.23.2`: trazem nomes de
+clientes reais em comentários do código e nos `LEIA-ME`, e o repositório é
+PÚBLICO — a limpeza de 26/09/2026 saneou os arquivos da raiz, **não os backups**.
+Conferido por varredura dos nomes dos `.umap` reais locais contra cada pasta
+(o `.zip` da v1 foi excluído: comprimido, a varredura não o enxerga).
+⚠️ **Backup novo NÃO sobe sozinho**: varrer por nome real e só então acrescentar a
+linha `!backups/<pasta>/` ao `.gitignore`. A pasta inteira está dentro do
+OneDrive, o que é uma segunda cópia, e as versões ficam também no histórico do
+Git; mas o `MARCO` e as 102 pastas antigas **não estão no GitHub** — numa troca
+de máquina, copiar `backups/` junto.
 
 **Antes de uma mudança estrutural, o marco é diferente** (criado em 28/09/2026,
 antes da fase de métricas, a pedido do usuário: *"faça uma marcação do projeto
@@ -2375,3 +2390,4 @@ versão continua sendo a cada número fechado.
 | 8.23.2 | 28/09/2026 | O ícone volta ao claro em repouso; o hover passa a ser borda teal + fundo, já que clarear não diria nada |
 | 8.24.0 | 10/10/2026 | A busca do checklist ignora acento e cedilha, nos três níveis |
 | 8.24.1 | 10/10/2026 | Ícone da aba: rota âmbar sobre crachá escuro, em data-URI, sem letra |
+| 8.24.2 | 10/10/2026 | O mesmo ícone ao lado do nome da marca, nas duas telas |

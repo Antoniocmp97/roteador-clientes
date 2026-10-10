@@ -1,0 +1,21 @@
+v8.24.2 - 10/10/2026 - o icone da aba tambem ao lado do nome da marca
+
+O QUE MUDOU
+  O mesmo desenho do icone da aba (v8.24.1) aparece antes de "hagamorfis/rotas",
+  nas DUAS telas (cabecalho do escritorio e da tela do campo). Pedido do usuario,
+  depois de testar o site: "Acrescente o mesmo icone ... ao lado do nome. Gostei
+  do icone".
+  Declarado UMA vez como <symbol id="logoMarca"> no topo do <body> e usado por
+  <use href="#logoMarca"> nos dois lugares. Tamanho 1.25em (23,75px no escritorio),
+  alinhado pela linha de base, fio de 1px em --line.
+
+O QUE NAO FAZER SEM SABER
+  - O cracha e #0C1418, IGUAL ao fundo do tema escuro: sem o fio de 1px (box-shadow
+    em --line) ele sumiria ali e sobraria so a curva ambar.
+  - O desenho esta duplicado em dois lugares do arquivo (o data-URI do <link> e o
+    <symbol>): mudar um exige mudar o outro. O link precisa de %23; o symbol, de #.
+  - Altura do cabecalho nao mudou (65px).
+
+ONDE MEXER
+  index.html - <symbol id="logoMarca"> no topo do <body>; regra ".mark .logo,
+  .campo-marca .logo" no CSS; e os dois <svg class="logo"> nos cabecalhos.

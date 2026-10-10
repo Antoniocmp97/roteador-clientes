@@ -7660,3 +7660,26 @@ MEDIDO
 ⚠️ Numa aba escura o crachá quase some e sobra o percurso âmbar: é o desenho.
   Variante pronta se achar apagado: rota-f (crachá âmbar), no
   PLANO-BUSCA-E-ICONE.md.
+
+--------------------------------------------------------
+[10/10/2026] v8.24.2 — o ícone também ao lado do nome da marca
+--------------------------------------------------------
+PEDIDO DO USUÁRIO, depois de testar a v8.24.1 no site publicado
+  "Testei no site comitado, ficou bom. Acrescente o mesmo ícone implementado na
+   aba ao lado do nome hagamorfis/rota. Gostei do ícone."
+
+O QUE MUDOU
+  O mesmo desenho do ícone da aba aparece antes de "hagamorfis/rotas" no
+  cabeçalho do escritório e no da tela do campo. Um <symbol id="logoMarca">
+  declarado uma vez no topo do <body>, usado por <use> nos dois lugares. 1,25em
+  (23,75px no escritório), alinhado pela linha de base, fio de 1px em --line.
+
+MEDIDO
+  altura do cabeçalho do escritório: 65px, a mesma de antes
+  conferido nos temas escuro e claro e na tela do campo (link v9 montado à mão)
+  sem erro de console
+
+⚠️ O crachá (#0C1418) é IGUAL ao fundo do tema escuro: sem o fio de 1px ele
+  sumiria e sobraria só a curva âmbar. Por isso o fio.
+⚠️ O desenho agora mora em DOIS lugares (o data-URI do <link> e o <symbol>):
+  mudar um exige mudar o outro.
