@@ -1,141 +1,211 @@
 # Plano — o servidor (Cloudflare Workers + D1)
 
-> Escrito em 04/10/2026. É a **Fase B** do `PLANO-METRICAS.md`, detalhada a
-> ponto de ser implementada direto.
+> **2ª versão, 06/10/2026.** A 1ª (28/09) era o caminho feliz. Esta foi pedida
+> depois de o usuário ler a primeira: *"precisamos pensar mais referente ao que
+> pode dar errado"*, *"ainda é desconhecido todos os riscos, pros e contras que
+> atribuir um servidor possa criar"*.
 >
 > **Status: nada construído. Nenhuma conta criada. O app não foi tocado.**
 >
-> ⚠️ **Leia o `PLANO-METRICAS.md` antes deste.** Lá está o *porquê* da fase e a
-> escolha do backend. Aqui está só o *como*.
+> ⚠️ Ler o `PLANO-METRICAS.md` antes deste: lá está o *porquê* da fase.
 
 ---
 
-## 0. O que isto é — e o que não é
+## 0. O que mudou da 1ª para a 2ª versão
 
-**É:** uma função pequena na Cloudflare, com um banco SQLite ao lado, que
-recebe o que foi planejado (do escritório) e o que foi executado (do celular),
-e devolve isso junto para virar relatório.
+Quatro coisas, e três delas são correções de defeito meu:
 
-**NÃO é** uma reescrita do app. O `index.html` continua sendo o app, continua
-abrindo sozinho, e **continua funcionando inteiro sem o servidor**. A
-sincronização é um acréscimo: se a Cloudflare sumir, o técnico não percebe.
-
-⚠️ **Essa promessa é o eixo do projeto inteiro e não pode ser quebrada em
-nenhum passo.** O roteiro viaja no link (ADR-01) e o progresso é salvo no
-aparelho. O servidor é uma **cópia**, nunca a fonte.
-
----
-
-## 1. O desenho, numa página
-
-```
-  ESCRITÓRIO (navegador)                   CELULAR (navegador)
-  ───────────────────────                  ───────────────────
-  planeja o dia                            abre o link
-  traça a rota                             marca as paradas
-  gera o link  ───────────────────────────► anota km de saída/chegada
-       │                                         │
-       │ POST /plano                             │ POST /execucao
-       │ (senha do escritório)                   │ (rid + token do link)
-       ▼                                         ▼
-  ┌──────────────────────────────────────────────────┐
-  │   WORKER  (roteador.CONTA.workers.dev)            │
-  │   ~160 linhas de JavaScript                       │
-  └───────────────────────┬──────────────────────────┘
-                          ▼
-                 ┌─────────────────┐
-                 │   D1 (SQLite)   │  roteiro · parada
-                 │                 │  execucao · conclusao
-                 └─────────────────┘
-                          │
-  escritório  ◄───────────┘  GET /relatorio  (senha do escritório)
-```
-
-Quatro rotas, só isso:
-
-| rota | quem chama | o que faz |
-|---|---|---|
-| `GET /saude` | qualquer um | responde "ok". Serve para testar sem nada configurado |
-| `POST /plano` | escritório | grava o roteiro planejado e suas paradas |
-| `POST /execucao` | celular | grava km de saída/chegada e as horas de conclusão |
-| `GET /relatorio` | escritório | devolve os dias, previsto e real lado a lado |
+1. **Apareceu um PASSO ZERO obrigatório** (seção 3). O leitor de link do app
+   **recusa** qualquer versão de formato que ele não conheça, e a v11 seria
+   recusada. Isso cria uma janela real de link quebrado na rua. A correção é de
+   quatro linhas e tem de ser publicada **dias antes** de qualquer outra coisa.
+2. **A gravação da execução tinha um bug de perda de dados** (seção 5.3): eu
+   havia escrito `DELETE` + `INSERT`, e um aparelho sincronizando com lista
+   vazia **apagaria** o que o outro já tinha mandado.
+3. **O link curto saiu do plano** e virou decisão à parte (seção 11). Ele é
+   tentador — 77 caracteres contra 1208 — mas transforma o servidor de *cópia*
+   em *único caminho*, e isso quebra o eixo do projeto.
+4. **O número do link agora é medido, não estimado** (seção 2), e a
+   sincronização passou a ser um **interruptor** (seção 5.5).
 
 ---
 
-## 2. B0 — O que VOCÊ faz, uma vez (~20 minutos)
+## 1. O que está em jogo — a promessa que não pode quebrar
 
-⚠️ **Nada aqui toca no app nem envia dado nenhum.** É só preparar a conta.
+Hoje o roteiro viaja **inteiro dentro do link** e o progresso é salvo no
+aparelho (ADR-01). Consequência prática: **não existe servidor para cair.** Se
+a internet do escritório morrer depois de o link ser enviado, o dia acontece
+igual.
 
-### Passo 1 — Conta na Cloudflare
-`dash.cloudflare.com/sign-up` — grátis, **não pede cartão** para Workers e D1.
+Até a v7.9.2 a tela do campo dizia isso com letras: *"Roteiro recebido por
+link · nada é enviado para servidor"*. A frase saiu da tela, mas a arquitetura
+continua sendo essa — e, para quem vender este app a outros clientes, ela é
+**argumento de venda**, não detalhe técnico.
 
-### Passo 2 — Node.js
-Se `node --version` não responder no terminal, instalar de `nodejs.org`
-(versão LTS). É só a ferramenta de linha de comando; o app continua sem build.
-
-### Passo 3 — Entrar pela linha de comando
-```bash
-npx wrangler login
-```
-Abre o navegador e pede autorização. Uma vez só, nesta máquina.
-
-### Passo 4 — Criar o banco
-```bash
-npx wrangler d1 create roteador
-```
-Ele imprime um bloco com um **`database_id`**. **Guarde esse texto** — o Sonnet
-vai precisar dele no `wrangler.toml`.
-
-### Passo 5 — Escolher a senha do escritório
-Pense numa senha (qualquer coisa longa). Ela **não vai para o repositório** —
-será guardada como segredo na Cloudflare, no passo B3.
-
-**Quando terminar, diga ao Sonnet:** "conta pronta, database_id é tal".
+**A regra desta fase inteira:** o servidor é uma **cópia**. Tudo continua
+funcionando sem ele. Qualquer passo que viole isso sai do plano ou vira decisão
+separada e explícita.
 
 ---
 
-## 3. B1 — O banco (Sonnet)
+## 2. O link de 10 paradas — medido
 
-Criar a pasta e o esquema. ⚠️ **Primeira coisa no projeto que não é o
-`index.html`** — isto derruba a decisão 5 da seção 4 do `CLAUDE.md`, e isso
-precisa ser escrito lá quando a fase fechar.
+Replicação fiel do codificador do `index.html` (`escSep`, `codificarLinha`,
+`simplificarLinha` a 30 m, `montarRoteiro`, `codificarRoteiro`,
+`comprimirParaLink`), com **rota real do OSRM** e base fictícia de 20 paradas
+na região (Criciúma · Içara · Araranguá · Tubarão).
+
+Números = **caracteres do link inteiro**, já com
+`https://antoniocmp97.github.io/roteador-clientes/` e o prefixo.
+
+| paradas | rota | **v10 hoje** `#z=` | v10 `#r=` | **v11 c/ token** `#z=` | v11 `#r=` | v11 **sem trajeto** `#z=` | sem traj. `#r=` |
+|---|---|---|---|---|---|---|---|
+| 5  | 31 km  | **776**  | 955  | 794  | 978  | 452 | 564 |
+| 10 | 52 km  | **1208** | 1644 | **1227** | 1667 | **598** | 883 |
+| 15 | 135 km | 2127 | 2999 | 2146 | 3022 | 724 | 1147 |
+| 20 | 373 km | 3308 | **4692** | 3328 | 4715 | 820 | 1368 |
+
+Link **curto** pelo servidor (`#s=rid.token`): **77 caracteres**, em qualquer
+número de paradas.
+
+**A conferência que valida o modelo:** a v8.16.0 mediu, numa rota **real** de 10
+paradas e 52,8 km, 139 pontos simplificados e um link de **1186 / 1553**. A
+simulação, com 51,9 km, deu **141 pontos** e **1208 / 1644** — 2% de diferença
+no comprimido. O modelo é fiel; a diferença no compatível é que meus nomes
+fictícios são mais longos que os reais.
+
+### O que esses números dizem
+
+**O token custa 19 caracteres** no link comprimido de 10 paradas (23 no
+compatível). É 1,6% — irrelevante.
+
+**O trajeto desenhado é 51% do link.** A 10 paradas: 1227 com ele, **598** sem.
+Ele existe desde a v8.16.0 para o técnico ver o desenho do dia; recalculá-lo no
+celular (o caminho de reserva já existe, porque link v5–v9 abre sem trajeto)
+cortaria o link **pela metade** ao custo de uma chamada ao OSRM no celular.
+
+⚠️ **O caso que preocupa é o `#r=` com muitas paradas.** A 15 paradas ele passa
+de **2999** caracteres; a 20, de **4692**. E o `#r=` é justamente o formato que
+vai para o **celular antigo** — o aparelho com menos capacidade recebe o link
+mais longo.
+⚠️ **Não afirmo que ele quebra num número exato.** O trecho depois do `#` nunca
+vai ao servidor, então os limites de cabeçalho HTTP não valem, e os navegadores
+atuais aguentam muito mais que isso. O que dá para afirmar é que um link de 4,7
+mil caracteres é **passivo operacional**: ocupa a tela do WhatsApp, é difícil de
+conferir, e qualquer aplicativo no caminho que quebre linha o corrompe.
+⚠️ **E as linhas de 15 e 20 paradas não são o dia de vocês**: minhas paradas
+fictícias chegam a Araranguá e Tubarão, então a rota infla. Elas servem para
+mostrar **como o tamanho escala**, não para prever a operação.
+
+---
+
+## 3. PASSO ZERO — a correção que vem antes de tudo
+
+⚠️ **Este é o achado mais importante desta revisão.** Sem ele, a entrada da v11
+cria link quebrado na rua.
+
+Em `lerRoteiroCompacto()` (~linha 6782):
+
+```js
+if (!['5','6','7','8','9','10'].includes(ver)) return null; // formato desconhecido
+```
+
+Um link **v11** aberto pelo app de hoje devolve `null` — a tela do campo mostra
+link inválido. **Não degrada: não abre.**
+
+E não basta tirar a lista. Logo abaixo há três outras comparações presas a
+versões literais, e com `ver = '11'` todas falham:
+
+| linha | o que faz | com v11 | o que se perde |
+|---|---|---|---|
+| `v8ouMais = ['8','9','10'].includes(ver)` | rid, origem, retorno | `false` | **o `rid`** → o progresso do técnico zera |
+| `['9','10'].includes(ver)` | nome do técnico | `false` | a pílula do nome |
+| `ver === '10'` | trajeto | `false` | o desenho no mapa |
+
+**A correção — quatro comparações viram desigualdade numérica:**
+
+```js
+const n = Number(ver);
+if (!(n >= 5)) return null;          // qualquer versão daqui para frente abre
+const v8ouMais = n >= 8;
+// ... n >= 9 para o técnico, n >= 10 para o trajeto
+```
+
+Com isso **todo formato futuro passa a ser aditivo de verdade**: um link v11
+aberto por um app v8.23.2 mostra o roteiro inteiro, com rid, origem, retorno,
+nome e trajeto — só ignora o grupo que não conhece. Que é exatamente o que se
+quer, porque **a tela do campo não precisa do token**: quem usa o token é a
+sincronização, e um app antigo simplesmente não sincroniza.
+
+### Por que publicar isto ANTES, e esperar
+
+Medido agora no site no ar: `Cache-Control: max-age=600`. O celular guarda o
+app por **10 minutos**.
+
+O cenário ruim, que é um fluxo real e documentado (*"meia hora depois surge
+mais uma parada"*):
 
 ```
-PROJETO APP LOGISTICA/
-├── index.html
-└── servidor/              ← novo
-    ├── src/index.js
-    ├── schema.sql
-    ├── wrangler.toml
-    └── LEIA-ME.md
+09:00  escritório publica a v11
+09:02  técnico abre o roteiro  → guarda o app v8.23.2 em cache
+09:05  escritório acrescenta uma parada e manda o link v11
+09:05  técnico abre          → app de 09:02, do cache → LINK INVÁLIDO
 ```
 
-**`servidor/schema.sql`:**
+Janela de 10 minutos, batendo justamente na hora em que o escritório regera o
+link. A correção do passo zero fecha isso **para sempre** — mas só se ela já
+estiver no cache de todo mundo **antes** do primeiro link v11.
+
+**Então:** publicar o passo zero como versão própria, deixar **pelo menos uma
+semana** (ou até os três técnicos terem aberto um roteiro), e só depois começar
+o resto. É uma alteração de quatro linhas, sem efeito visível, e **não precisa
+de servidor nenhum** — pode ir hoje.
+
+---
+
+## 4. O desenho
+
+```
+  ESCRITÓRIO                                  CELULAR
+  ──────────                                  ───────
+  planeja · traça · gera o link ───────────►  abre · marca · anota km
+       │                                           │
+       │ POST /plano                               │ POST /execucao
+       │ (senha)                                   │ (rid + token do link)
+       ▼                                           ▼
+  ┌──────────────────────────────────────────────────────┐
+  │  WORKER  roteador.CONTA.workers.dev   ·  D1 (SQLite) │
+  └───────────────────────────┬──────────────────────────┘
+                              │  GET /relatorio (senha)
+  escritório  ◄───────────────┘
+```
+
+Rotas: `GET /saude` · `POST /plano` · `POST /execucao` · `GET /relatorio`.
+
+### 4.1 O esquema
 
 ```sql
--- O roteiro PLANEJADO pelo escritório.
 CREATE TABLE IF NOT EXISTS roteiro (
-  rid          TEXT PRIMARY KEY,          -- o id que o app já gera
-  tok          TEXT NOT NULL,             -- senha deste roteiro (ver seção 5)
-  criado_em    INTEGER NOT NULL,          -- epoch ms
-  data_do_dia  TEXT    NOT NULL,          -- 'AAAA-MM-DD' no fuso DE QUEM PLANEJOU
+  rid          TEXT PRIMARY KEY,
+  tok          TEXT NOT NULL,
+  criado_em    INTEGER NOT NULL,       -- epoch ms, do servidor
+  data_do_dia  TEXT    NOT NULL,       -- 'AAAA-MM-DD', calculada NO CLIENTE
   tecnico      TEXT    NOT NULL DEFAULT '',
   origem_lat   REAL, origem_lng REAL, origem_label TEXT,
   voltar       INTEGER NOT NULL DEFAULT 0,
-  km_previsto  REAL, min_previsto REAL,   -- do OSRM, o que o app já calcula
+  km_previsto  REAL, min_previsto REAL,
   n_paradas    INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_roteiro_dia ON roteiro(data_do_dia);
 
 CREATE TABLE IF NOT EXISTS parada (
-  rid TEXT NOT NULL, ordem INTEGER NOT NULL,   -- 1..n, na ordem traçada
+  rid TEXT NOT NULL, ordem INTEGER NOT NULL,
   nome TEXT DEFAULT '', cliente TEXT DEFAULT '',
   lat REAL NOT NULL, lng REAL NOT NULL,
   tipo TEXT DEFAULT '', prioritaria INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (rid, ordem)
 );
 
--- O que ACONTECEU, mandado pelo celular.
 CREATE TABLE IF NOT EXISTS execucao (
   rid TEXT PRIMARY KEY,
   km_saida REAL, km_chegada REAL,
@@ -144,447 +214,352 @@ CREATE TABLE IF NOT EXISTS execucao (
 
 CREATE TABLE IF NOT EXISTS conclusao (
   rid TEXT NOT NULL,
-  chave TEXT NOT NULL,              -- a MESMA chave do progresso local: a
-                                    -- coordenada, ou 'retorno' para a volta
-  concluido_em INTEGER NOT NULL,    -- epoch ms
+  chave TEXT NOT NULL,              -- a coordenada, ou 'retorno' — a MESMA
+                                    -- chave do progresso local
+  concluido_em INTEGER NOT NULL,    -- hora do CELULAR
+  recebido_em  INTEGER NOT NULL,    -- hora do SERVIDOR  (ver R4)
   PRIMARY KEY (rid, chave)
 );
 ```
 
-⚠️ **Sem chave estrangeira, de propósito**: no SQLite elas só valem com
-`PRAGMA foreign_keys=ON` e atrapalhariam a ordem dentro de um `batch`. O
-`rid` amarra tudo e é suficiente.
+⚠️ **Sem chave estrangeira**, de propósito: no SQLite elas exigem
+`PRAGMA foreign_keys=ON` e atrapalhariam a ordem dentro de um `batch`.
 
-⚠️ **`concluido_em` é epoch ms, não texto de data.** Criciúma é UTC−3 e
-"hoje" em UTC não é "hoje" aqui. Quem sabe o fuso é o navegador, então
-`data_do_dia` é calculada **no cliente** e viaja pronta.
+⚠️ **`data_do_dia` é calculada no cliente.** Criciúma é UTC−3: "hoje" em UTC
+não é hoje aqui, e um roteiro gerado às 22h viraria o dia seguinte.
 
-Aplicar:
-```bash
-npx wrangler d1 execute roteador --file=schema.sql --remote
-```
+⚠️ **`recebido_em` existe por causa do relógio do celular** (R4). Guardar as
+duas horas custa 8 bytes e é a única forma de desconfiar de uma delas depois.
 
 ---
 
-## 4. B2 — O Worker (Sonnet)
+## 5. As correções em cima da 1ª versão
 
-**`servidor/wrangler.toml`:**
-```toml
-name = "roteador"
-main = "src/index.js"
-compatibility_date = "2026-01-01"
+### 5.1 O token nunca muda
+O escritório regera o link o dia inteiro. `POST /plano` lê o `tok` já gravado e
+o devolve, em vez de sobrescrever — senão o celular que está na rua com o link
+antigo para de ser aceito.
 
-[[d1_databases]]
-binding = "DB"
-database_name = "roteador"
-database_id = "COLAR-O-ID-DO-PASSO-4"
-```
+### 5.2 Paradas: apagar e regravar está certo
+A lista muda ao longo do dia; reconciliar não traria nada. ⚠️ Uma parada
+removida deixa uma `conclusao` órfã (a chave é a coordenada). **Fica**: é
+histórico, e apagá-la esconderia que a visita aconteceu.
 
-**`servidor/src/index.js`** — o esqueleto completo. Serve como está; o Sonnet
-confere os nomes dos campos contra o que o `index.html` realmente manda.
+### 5.3 ⚠️ Conclusões: MESCLAR, nunca apagar — correção de bug do plano anterior
+A 1ª versão fazia `DELETE FROM conclusao WHERE rid=?` e reinseria o conjunto
+que o celular mandasse, com o argumento de que "o celular é a fonte". **O
+argumento tem um buraco:** se o celular sincroniza com a lista **vazia** — porque
+o técnico limpou o navegador, trocou de aparelho, ou abriu o link num segundo
+celular — aquele `DELETE` **apaga o dia inteiro** que já estava gravado.
+
+A gravação passa a ser:
 
 ```js
-// Worker do Roteador de Clientes.
-// ⚠️ O app funciona inteiro SEM isto. Aqui só se GUARDA uma cópia.
-
-const CORS = {
-  'Access-Control-Allow-Origin': '*',          // o app vive em github.io
-  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,X-Senha',
-  'Access-Control-Max-Age': '86400'
-};
-
-const json = (dados, status = 200) => new Response(JSON.stringify(dados), {
-  status, headers: { 'Content-Type': 'application/json; charset=utf-8', ...CORS }
-});
-
-const num = v => (v === '' || v === null || v === undefined || isNaN(Number(v)))
-  ? null : Number(v);
-
-const doEscritorio = (req, env) =>
-  !!env.SENHA_ESCRITORIO && req.headers.get('X-Senha') === env.SENHA_ESCRITORIO;
-
-export default {
-  async fetch(req, env) {
-    // ⚠️ O preflight vem ANTES de tudo. Sem isto o navegador nem tenta o POST.
-    if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
-
-    const url  = new URL(req.url);
-    const rota = url.pathname.replace(/\/+$/, '') || '/';
-    try {
-      if (rota === '/saude')                             return json({ ok: true, versao: 1 });
-      if (rota === '/plano'     && req.method === 'POST') return await gravarPlano(req, env);
-      if (rota === '/execucao'  && req.method === 'POST') return await gravarExecucao(req, env);
-      if (rota === '/relatorio' && req.method === 'GET')  return await lerRelatorio(req, url, env);
-      return json({ erro: 'rota desconhecida' }, 404);
-    } catch (e) {
-      return json({ erro: String((e && e.message) || e) }, 500);
-    }
-  }
-};
-
-async function gravarPlano(req, env) {
-  if (!doEscritorio(req, env)) return json({ erro: 'senha' }, 401);
-  const p = await req.json();
-  if (!p || !p.rid || !p.tok) return json({ erro: 'faltam rid/tok' }, 400);
-
-  // ⚠️ O token de um roteiro NUNCA muda depois de criado. O escritório regera
-  //    o link o dia inteiro (v4.1: mudar a lista desfaz a rota), e trocar o
-  //    token deixaria de fora o celular que já está na rua com o link antigo.
-  const ja  = await env.DB.prepare('SELECT tok FROM roteiro WHERE rid=?').bind(p.rid).first();
-  const tok = ja ? ja.tok : String(p.tok);
-
-  const cmds = [
-    env.DB.prepare(`INSERT INTO roteiro
-        (rid,tok,criado_em,data_do_dia,tecnico,origem_lat,origem_lng,origem_label,
-         voltar,km_previsto,min_previsto,n_paradas)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-      ON CONFLICT(rid) DO UPDATE SET
-        data_do_dia=excluded.data_do_dia, tecnico=excluded.tecnico,
-        origem_lat=excluded.origem_lat,   origem_lng=excluded.origem_lng,
-        origem_label=excluded.origem_label, voltar=excluded.voltar,
-        km_previsto=excluded.km_previsto, min_previsto=excluded.min_previsto,
-        n_paradas=excluded.n_paradas`)
-      .bind(p.rid, tok, Date.now(), String(p.data_do_dia || ''), String(p.tecnico || ''),
-            num(p.origem_lat), num(p.origem_lng), String(p.origem_label || ''),
-            p.voltar ? 1 : 0, num(p.km_previsto), num(p.min_previsto),
-            (p.paradas || []).length),
-    // A lista muda ao longo do dia: apaga e regrava, em vez de reconciliar.
-    env.DB.prepare('DELETE FROM parada WHERE rid=?').bind(p.rid)
-  ];
-
-  (p.paradas || []).forEach((s, i) => cmds.push(
-    env.DB.prepare(`INSERT INTO parada (rid,ordem,nome,cliente,lat,lng,tipo,prioritaria)
-                    VALUES (?,?,?,?,?,?,?,?)`)
-      .bind(p.rid, i + 1, String(s.nome || ''), String(s.cliente || ''),
-            Number(s.lat), Number(s.lng), String(s.tipo || ''), s.prio ? 1 : 0)));
-
-  await env.DB.batch(cmds);          // batch é transação: ou tudo, ou nada
-  return json({ ok: true, rid: p.rid, tok });
-}
-
-async function gravarExecucao(req, env) {
-  const p = await req.json();
-  if (!p || !p.rid || !p.tok) return json({ erro: 'faltam rid/tok' }, 400);
-
-  const r = await env.DB.prepare('SELECT tok FROM roteiro WHERE rid=?').bind(p.rid).first();
-  if (!r)              return json({ erro: 'roteiro desconhecido' }, 404);
-  if (r.tok !== p.tok) return json({ erro: 'token' }, 401);
-
-  const cmds = [
-    env.DB.prepare(`INSERT INTO execucao (rid,km_saida,km_chegada,atualizado_em)
-        VALUES (?,?,?,?)
-        ON CONFLICT(rid) DO UPDATE SET
-          km_saida      = COALESCE(excluded.km_saida,   execucao.km_saida),
-          km_chegada    = COALESCE(excluded.km_chegada, execucao.km_chegada),
-          atualizado_em = excluded.atualizado_em`)
-      .bind(p.rid, num(p.km_saida), num(p.km_chegada), Date.now()),
-    // ⚠️ O CELULAR É A FONTE: ele manda o conjunto INTEIRO, com as horas que
-    //    ele guardou. Apagar e regravar é o que faz "reabri uma parada por
-    //    engano" chegar aqui. E não se perde hora nenhuma, porque quem guarda
-    //    o original é o aparelho.
-    env.DB.prepare('DELETE FROM conclusao WHERE rid=?').bind(p.rid)
-  ];
-
-  for (const [chave, quando] of Object.entries(p.conclusoes || {}))
-    cmds.push(env.DB.prepare(
-      `INSERT INTO conclusao (rid,chave,concluido_em) VALUES (?,?,?)`)
-      .bind(p.rid, String(chave), Number(quando) || Date.now()));
-
-  await env.DB.batch(cmds);
-  return json({ ok: true });
-}
-
-async function lerRelatorio(req, url, env) {
-  if (!doEscritorio(req, env)) return json({ erro: 'senha' }, 401);
-  const de  = url.searchParams.get('de')  || '0000-01-01';
-  const ate = url.searchParams.get('ate') || '9999-12-31';
-
-  const r = await env.DB.prepare(`
-    SELECT r.rid, r.data_do_dia, r.tecnico, r.km_previsto, r.min_previsto, r.n_paradas,
-           e.km_saida, e.km_chegada,
-           (SELECT COUNT(*)          FROM conclusao c WHERE c.rid = r.rid) AS concluidas,
-           (SELECT MIN(concluido_em) FROM conclusao c WHERE c.rid = r.rid) AS primeira,
-           (SELECT MAX(concluido_em) FROM conclusao c WHERE c.rid = r.rid) AS ultima
-      FROM roteiro r LEFT JOIN execucao e ON e.rid = r.rid
-     WHERE r.data_do_dia BETWEEN ? AND ?
-     ORDER BY r.data_do_dia DESC, r.tecnico`).bind(de, ate).all();
-
-  return json({ ok: true, dias: r.results });
-}
+// ACRESCENTA ou atualiza; nunca apaga por omissão
+INSERT INTO conclusao (rid,chave,concluido_em,recebido_em) VALUES (?,?,?,?)
+  ON CONFLICT(rid,chave) DO UPDATE SET
+    concluido_em = MIN(conclusao.concluido_em, excluded.concluido_em)
 ```
 
----
-
-## 5. A autenticação — a parte que a tabela deixou "por sua conta"
-
-São **dois papéis**, e nenhum deles é "uma chave no `index.html`" — isso não
-existe num repositório público.
-
-### Papel 1 · o escritório: uma senha
-Guardada como **segredo na Cloudflare** (nunca no repositório) e digitada uma
-vez no navegador do escritório, ficando em `localStorage` (`hg_senha_servidor`).
-Vai no cabeçalho `X-Senha`. Dá direito a **escrever planos e ler tudo**.
-
-### Papel 2 · o celular: um token por roteiro
-Dá direito a escrever **a execução daquele roteiro só**. Nada mais.
-
-⚠️ **ACHADO DO CÓDIGO (04/10/2026) — o `rid` NÃO serve como token.**
-Ele nasce de `Date.now().toString(36) + Math.random().toString(36).slice(2,6)`
-(linha ~6468): 8 caracteres de relógio, que são adivinháveis, e **apenas 4
-aleatórios** — 1,68 milhão de combinações, varrível. ⚠️ **Isto não é falha no
-app de hoje**: ali o `rid` é só uma chave de `localStorage` e não protege
-nada. Vira falha no minuto em que for usado como senha. **Por isso existe o
-`tok`.**
+E reabrir uma parada passa a ser **explícito**, numa lista própria da carga:
 
 ```js
-function novoToken(){                       // 12 bytes = 96 bits
-  const b = new Uint8Array(12);
-  crypto.getRandomValues(b);
-  return btoa(String.fromCharCode(...b))
-         .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');   // 16 chars
-}
+// p.reabertas = ['-28.67750,-49.36970', ...]
+DELETE FROM conclusao WHERE rid=? AND chave=?
 ```
 
-⚠️ **base64url não contém os separadores do link** (`~`, `|`, `*`, `%`) —
-então o token entra **sem passar pelo `escSep`**, e não há risco de partir o
-link ao meio (a armadilha da v8.16.0).
+Com isso uma carga vazia não faz nada, e `MIN` guarda a **primeira** hora de
+conclusão — que é a verdadeira, mesmo se a parada for reaberta e refeita.
 
-⚠️ **O `tok` vive junto do `rid`**: nas variáveis do técnico (`t.rid` nas
-linhas ~2548/2557/2575 ganha um `t.tok` ao lado), em `zerarIdRoteiro()`
-(~6472), e no plano do dia. Sem isso, trocar de aba troca o token.
+### 5.4 Validação do km, no servidor e na tela
+O erro de digitação mais provável é a casa decimal: `11234` onde o certo era
+`112340`. Barato de pegar:
 
-⚠️ **Quem tem o link tem o token — e isso está certo.** Quem tem o link já tem
-o roteiro inteiro. O token não protege o conteúdo; protege contra **estranho
-escrever execução num roteiro que não é dele**.
+- `km_chegada` tem de ser **≥** `km_saida` (odômetro não anda para trás);
+- a diferença dividida pelo `km_previsto` tem de cair numa faixa larga
+  (sugiro **0,5 a 3,0**);
+- fora da faixa, **grava igual** e marca como suspeito. ⚠️ **Não recusar**:
+  recusar o número é perder o dado, e quem está na rua não vai voltar para
+  corrigir.
+
+### 5.5 ⚠️ A sincronização é um INTERRUPTOR
+Não é zelo — resolve quatro problemas de uma vez:
+
+- **R9**, a promessa de privacidade: desligada, a afirmação "nada sai da
+  máquina" volta a ser **verdade literal**, e continua sendo um modo suportado
+  para um cliente que exija isso;
+- **o retorno atrás** fica trivial: deu errado, desliga;
+- o **beta** nasce com ela ligada e a produção com ela desligada, até a decisão
+  estar tomada;
+- e ela fala o **idioma que o app já tem** — é o mesmo padrão do modo leve, do
+  vidro e das janelas (`hg_sync`, aplicado no `<head>`).
+
+⚠️ **Desligada, nem a fila é criada.** Não é "grava e não envia": é o app de
+hoje, sem um `fetch` a mais.
 
 ---
 
-## 6. B3 — Publicar e testar, AINDA SEM O APP (Sonnet)
+## 6. O ambiente BETA
 
-```bash
-npx wrangler secret put SENHA_ESCRITORIO
-```
-```bash
-npx wrangler deploy
-```
+Pedido do usuário: *"inclua no plano uma base teste, fora do site já
+hospedado"*. Está certo, e é mais necessário do que parece.
 
-Ele imprime a URL (`https://roteador.CONTA.workers.dev`). Testar as rotas por
-linha de comando, **antes de encostar no `index.html`**:
+### ⚠️ A armadilha que inviabiliza o caminho óbvio
 
-| teste | esperado |
+Um beta em `antoniocmp97.github.io/roteador-clientes/beta/` — ou **num segundo
+repositório** — **compartilha o `localStorage` com a produção.** O
+armazenamento do navegador é por **origem** (esquema + host + porta), e **não**
+por caminho. Todo projeto no GitHub Pages de uma conta vive em
+`antoniocmp97.github.io`, então os dois seriam a **mesma origem**.
+
+Consequência concreta: testar o beta mexeria nas **21 chaves** reais —
+`hg_base_clientes`, `hg_arranjo_modulos`, `hg_dia_planejado`, `hg_origem_padrao`.
+Um teste que apaga a base guardada apaga **a base de verdade**.
+
+Dava para contornar prefixando as chaves, mas são **26 ocorrências literais** no
+arquivo e esquecer uma é justamente o caso que corrompe o dado real.
+
+### A recomendação: Cloudflare Pages
+
+| | |
 |---|---|
-| `GET /saude` | `{"ok":true,...}` |
-| `POST /plano` **sem** `X-Senha` | **401** |
-| `POST /plano` com a senha e um roteiro de mentira | `{"ok":true,"tok":...}` |
-| `POST /execucao` com `tok` **errado** | **401** |
-| `POST /execucao` com o `tok` certo | `{"ok":true}` |
-| `GET /relatorio` com a senha | o dia de mentira, com previsto e real |
-| `GET /relatorio` **sem** a senha | **401** |
+| **Onde** | `roteador-beta.pages.dev` — **origem diferente**, então `localStorage` isolado por construção, sem tocar numa linha |
+| **Mesma conta** | do Worker. Grátis, e é a peça que já vai existir |
+| **Banco próprio** | `roteador_beta`, num Worker próprio. Dado de teste nunca encosta no de verdade |
+| **Produção** | segue **exatamente** onde está: GitHub Pages, branch `main`. Nada muda |
+| **Branch** | `beta`. Publicação automática a cada push |
 
-⚠️ **Os três testes de 401 são os que importam.** Um Worker que aceita
-qualquer um é pior que nenhum Worker.
+### Sem build, sem arquivo diferente
 
-⚠️ Usar dados **inventados**, nunca a base real — ainda é teste.
-
-### 🚦 PORTÃO — a decisão do ADR-01
-
-**Tudo até aqui é reversível e não enviou dado nenhum de cliente.** Dá para
-construir, publicar, testar e até desistir sem consequência.
-
-**O passo seguinte cruza a linha**: nome e coordenada de cliente passam a sair
-da máquina e ficar num servidor de terceiro.
-
-Antes do B4, é preciso **(1)** o aceite explícito do usuário e **(2)** o
-`ADR-01` reescrito no documento de arquitetura, dizendo o que mudou e por quê.
-Não deixar isso acontecer de lado.
-
----
-
-## 7. B4 — O escritório manda o plano (Sonnet, no `index.html`)
-
-Ponto de enganche: **`gerarLinkDoRoteiro()`**. É por onde todo roteiro passa
-antes de ir para a rua.
-
-1. garantir o `tok` do técnico ativo (criar se não houver);
-2. montar o corpo do `POST /plano` a partir de `stops`, `ultimoResumo`,
-   `originLatLng` e do nome da aba;
-3. `data_do_dia` calculada **no cliente**, em fuso local;
-4. **enfileirar** (seção 9) em vez de enviar direto — o escritório também pode
-   estar sem rede;
-5. pôr o `tok` no link: **formato v11**, 12º grupo.
-
-⚠️ **O formato v11 acrescenta UM grupo no fim e não mexe nos 11 anteriores.**
-O 1º grupo (hoje `'10'`, montado na linha ~6709) passa a `'11'`. Links v5–v10
-continuam abrindo, como sempre — é a mesma regra desde a v2.6. **Testar um
-link antigo de verdade.**
-
-⚠️ **Custo no tamanho do link: ~17 caracteres.** Há folga de sobra: o
-`PLANO-METRICAS.md` mediu que o trajeto desenhado é **68%** do link e que
-recalculá-lo no celular levaria de 1533 para 495 caracteres.
-
----
-
-## 8. B5 — O celular manda a execução (Sonnet, no `index.html`)
-
-Dois pontos de enganche, os dois já existentes:
-
-- **`salvarProgresso(codigo, rid, feitos)`** (~linha 7015) — hoje grava
-  `JSON.stringify([...feitos])`, um array **sem hora**. Com o A2 do
-  `PLANO-METRICAS.md` ele vira `{chave: epoch_ms}`.
-  ⚠️ **`lerProgresso()` (~7004) precisa entender AS DUAS FORMAS** (array
-  antigo e objeto novo), senão quem estiver com um roteiro aberto perde o que
-  já marcou. O projeto já fez essa conversão uma vez, na v6.8.0.
-- **o km de saída e de chegada** (A3), guardados junto.
-
-Depois de cada um dos dois: `enfileirar({rota:'/execucao', corpo:{...}})` e
-`tentarSincronizar()`.
-
-⚠️ **Nunca bloquear e nunca avisar de erro.** Sem rede, o toque na parada
-responde exatamente como hoje. No máximo um indicador discreto de "N para
-enviar". Registro pela metade vale mais que registro nenhum.
-
----
-
-## 9. A fila — o coração do B4 e do B5
+O ambiente se descobre em tempo de execução, então **o `index.html` é o mesmo
+nos dois** e o merge `beta → main` não tem conflito artificial:
 
 ```js
-const CHAVE_FILA = 'hg_fila_sync';
-const SERVIDOR   = 'https://roteador.CONTA.workers.dev';   // NÃO é segredo
-
-function enfileirar(item){                 // {rota, corpo, senha?}
-  try{
-    const f = JSON.parse(localStorage.getItem(CHAVE_FILA) || '[]');
-    f.push(item);
-    localStorage.setItem(CHAVE_FILA, JSON.stringify(f.slice(-200)));
-  }catch(e){}
-}
-
-async function tentarSincronizar(){
-  let f;
-  try{ f = JSON.parse(localStorage.getItem(CHAVE_FILA) || '[]'); }catch(e){ return; }
-  if (!f.length || !navigator.onLine) return;
-  const sobrou = [];
-  for (const item of f){
-    try{
-      const r = await fetch(SERVIDOR + item.rota, {
-        method:'POST',
-        headers: Object.assign({'Content-Type':'application/json'},
-                               item.senha ? {'X-Senha': item.senha} : {}),
-        body: JSON.stringify(item.corpo)
-      });
-      // ⚠️ 4xx = o servidor ENTENDEU e recusou. Repetir não resolve: descarta.
-      //    5xx e falha de rede = tentar de novo depois.
-      if (!r.ok && r.status >= 500) sobrou.push(item);
-    }catch(e){ sobrou.push(item); }
-  }
-  try{ localStorage.setItem(CHAVE_FILA, JSON.stringify(sobrou)); }catch(e){}
-}
+const EH_BETA = location.hostname.endsWith('.pages.dev')
+             || location.hostname === 'localhost'
+             || location.hostname === '127.0.0.1';
+const SERVIDOR = EH_BETA ? 'https://roteador-beta.CONTA.workers.dev'
+                         : 'https://roteador.CONTA.workers.dev';
 ```
 
-Quando tentar: **na carga**, **depois de cada gravação**, no evento `online`,
-e um `setInterval` lento (60 s) como rede de segurança.
+⚠️ **A marcação visual vai nas DUAS telas**, inclusive na do campo: o risco
+real é um link de beta chegar ao WhatsApp de um técnico e o dia ser registrado
+no banco de teste sem ninguém perceber. Uma faixa que diga TESTE resolve, e no
+celular ela tem de estar **acima** do primeiro cartão.
 
-⚠️ **Nada disto pode usar `safeFetchJSON()`** (~linha 5965). A mensagem de erro
-daquela função manda *"baixe o arquivo e abra-o diretamente no navegador"* —
-certo para o OSRM, absurdo aqui. A sincronização é **muda**.
-
-⚠️ **Regra 2 do projeto — modo leve.** Nada aqui depende de `transitionend`,
-de animação ou de o mapa estar em tela cheia, então passa por construção. Mas
-**testar nos dois estados assim mesmo**, que é a regra.
-
-⚠️ O `setInterval` não para nunca, e isso é aceitável porque ele **não faz nada
-com a fila vazia** (sai na primeira linha). Registrar isso, porque a revisão de
-24/09 confere "temporizador com parada garantida".
+⚠️ **O `localhost` entra na conta de propósito**: o servidor local do
+`.claude/launch.json` passa a apontar para o beta sozinho, então nenhum teste
+feito aqui escreve no banco de verdade.
 
 ---
 
-## 10. B6 — Ver os dias (Sonnet)
+## 7. Registro de riscos
 
-O mínimo que fecha o laço: um painel no escritório que chama
-`GET /relatorio?de=&ate=` e mostra uma linha por dia/técnico —
-**previsto × real**, paradas concluídas de quantas, primeira e última hora.
+Ordenado por quanto dói, não por probabilidade.
 
-O relatório de verdade (médias, tendência, o "este dia não cabe") é a **Fase C**
-do `PLANO-METRICAS.md`. Aqui é só provar que o dado chegou inteiro.
+| # | risco | tamanho | o que o plano faz |
+|---|---|---|---|
+| **R1** | **O servidor virar caminho único para o campo** | fatal | **Não acontece nesta fase.** O link continua carregando o roteiro inteiro. É o link curto que criaria isso — e ele saiu para a seção 11 |
+| **R2** | Link v11 recusado por app em cache | alto, **medido** | Passo zero (seção 3), publicado com antecedência |
+| **R3** | Carga vazia apagar o dia já gravado | alto | Mesclar em vez de apagar (5.3) |
+| **R4** | Relógio do celular errado → hora errada | médio | Guardar `concluido_em` **e** `recebido_em` |
+| **R5** | **Registrar hora de chegada e saída de empregado** | **alto, jurídico** | Ver seção 9. **Não é risco de código** |
+| **R6** | O km virar dinheiro com 15% de erro | alto | Ver seção 9. Odômetro = fato; app = previsão |
+| **R7** | Virar produto para vários clientes | médio | Isolamento por conta **desde o esquema**, mesmo com um cliente só |
+| **R8** | Cloudflare mudar regra / suspender conta | médio | D1 é SQLite: `wrangler d1 export` dá um `.sql`. Exportação semanal + o histórico local da Fase A, que é cópia independente |
+| **R9** | Perder "nada sai da máquina" como argumento | médio | O interruptor (5.5) mantém o modo antigo suportado |
+| **R10** | Beta corromper dado real pelo `localStorage` | alto | Origem diferente (seção 6) |
+| **R11** | Link de beta chegar a um técnico | médio | Faixa TESTE nas duas telas + banco separado |
+| **R12** | Senha do escritório vazar | médio | Senha longa e aleatória, em gerenciador; troca = um `wrangler secret put`. **Nunca** em arquivo |
+| **R13** | Segredo no repositório público | alto | `.gitignore` com `.dev.vars`, `node_modules/`, `.wrangler/` **antes** do primeiro commit da pasta |
+| **R14** | CORS mal configurado → falha muda | baixo | `OPTIONS` na primeira linha |
+| **R15** | Fila entupir com erro permanente | baixo | 4xx descarta, 5xx repete |
+| **R16** | A fase parar no meio | baixo | Todo ponto de parada é estável (seção 10) |
+| **R17** | O teste aqui não pegar o que falha na rua | médio | Beta + piloto só com o usuário antes dos técnicos |
 
-⚠️ **Tem de aguentar buraco.** Se metade dos dias vier sem km, mostra o que tem
-e **diz quantos dias entraram na conta**. Relatório que só funciona com dado
-completo não sobrevive a equipe real.
+### O que o servidor traz de bom, e que também é risco não ter
+
+Para ser justo com o outro lado:
+
+- **O progresso deixa de morrer com o navegador do técnico.** Hoje, limpar o
+  navegador perde o dia. Com o servidor, dá para restaurar.
+- **O escritório passa a saber o que já foi feito** sem telefonar.
+- **O planejamento aprende** (Fase C): sem dado, a otimização continua
+  puramente geográfica para sempre.
+- **O dia morre todo dia.** Sem isto, não existe série, e sem série não existe
+  nem resposta para "os 15% são sistemáticos?".
 
 ---
 
-## 11. Segurança — a conferência que não pode falhar
+## 8. Cenários — o que acontece quando
 
-**O repositório é PÚBLICO.** Antes de qualquer commit desta fase:
-
-- [ ] `.gitignore` bloqueia **`.dev.vars`**, **`node_modules/`** e
-      **`.wrangler/`** (`.dev.vars` é onde o wrangler guarda segredo local)
-- [ ] a senha do escritório **não** aparece em arquivo nenhum do repositório —
-      ela vive em `wrangler secret` e no `localStorage` de quem usa
-- [ ] nenhum `tok` de roteiro real foi commitado (eles nascem em tempo de
-      execução e não devem ser escritos em lugar nenhum do repositório)
-- [ ] busca por nome de cliente real em tudo que vai ser commitado
-- [ ] o `database_id` **pode** ir no repositório: sozinho não dá acesso a nada
-
-⚠️ **A URL do Worker no `index.html` não é segredo** e pode ser commitada. Quem
-a tiver ainda precisa da senha ou de um token válido.
+| cenário | hoje | com o servidor |
+|---|---|---|
+| Servidor cai no meio do dia | — | nada muda na rua; a fila guarda e manda depois |
+| Servidor cai às 7h, antes de sair | — | o link já tem tudo: o dia acontece igual |
+| Celular sem sinal o dia inteiro | tudo salvo no aparelho | idem; sobe quando pegar sinal |
+| Técnico limpa o navegador | **perde o dia** | perde na tela, mas o servidor tem; ⚠️ e **não apaga** o que já subiu (R3) |
+| Mesmo link em dois aparelhos | progressos separados | mesclados; a **primeira** hora vence |
+| Escritório regera o link com o técnico já na rua | progresso sobrevive (por `rid`) | idem, e o token não muda (5.1) |
+| Técnico reabre parada marcada por engano | sai da tela dele | lista `reabertas` apaga no servidor |
+| Esquece o km | — | o dia entra sem km. **Nunca bloquear** |
+| Digita o km com casa errada | — | grava e marca suspeito (5.4) |
+| Relógio do celular errado | — | `recebido_em` permite desconfiar |
+| Dia atravessa a meia-noite | — | `data_do_dia` é a do planejamento, não a da conclusão |
+| Não termina o roteiro | — | dia parcial; o relatório **diz** quantas de quantas |
+| Rota refeita no meio do dia | rota desfeita (v4.1) | `km_previsto` é atualizado no `/plano` |
+| Planeja num computador, abre noutro | nada é compartilhado | o servidor passa a ser a ponte |
+| Mesmo cliente para dois técnicos | permitido, só avisa | dois `rid` distintos, sem cruzar (v8.9.0) |
+| Link de beta mandado por engano | — | escreve no banco de teste; a faixa avisa |
+| Conta suspensa | — | exportação semanal + histórico local |
+| Cliente pede os dados, ou a exclusão | nada a entregar | `rid` é a chave; dá para extrair e apagar |
+| Técnico sai da empresa | — | o histórico dele continua. ⚠️ **Decidir por quanto tempo** |
 
 ---
 
-## 12. Armadilhas — a lista para não cair
+## 9. Para a conversa com o cliente
 
-| ⚠️ | o que é |
+Isto não é código, e é a parte mais importante desta revisão.
+
+### 9.1 A moldura que eu recomendaria: previsão × fato
+
+| | de onde vem | o que é |
+|---|---|---|
+| **km do app** | OSRM, antes de sair | **previsão** — porta a porta, sem trânsito, sem manobra |
+| **km do odômetro** | o carro | **fato** — já é coletado hoje, no papel |
+| **a diferença** | a conta | **informação** — manobra, desvio, aderência ao roteiro |
+
+A primeira medição de campo (28/09) deu **27 previstos contra 31 rodados,
++15%**, e o próprio usuário apontou a causa: *"precisei fazer pequenos
+quadrados para estacionar"*.
+
+⚠️ **O que eu não prometeria ao cliente:** um número de km exato. A previsão
+tem 15% de erro medido **num ponto só**, e três fontes somadas (manobra,
+caminho real diferente do calculado, e o próprio odômetro, que em carro de
+série lê 2 a 5% alto).
+
+⚠️ **O que dá para prometer com segurança:** comparação entre dias e entre
+técnicos pelo **mesmo** critério, taxa de paradas concluídas, horário de início
+e de fim, e tempo por visita. Comparação aguenta erro sistemático; valor
+absoluto não.
+
+⚠️ **Se o número for virar reembolso ou combustível**, pagar sobre o
+**odômetro** (que é o fato e já existe) e usar o app para planejar. Pagar sobre
+a previsão é pagar 15% errado para algum lado.
+
+### 9.2 ⚠️ O que precisa ser verificado ANTES de prometer relatório com horários
+
+**Não sou advogado e isto não é orientação jurídica.** Mas é um risco grande
+demais para ficar fora do plano:
+
+Um sistema que registra **hora de chegada e de saída** de empregado não é só
+uma métrica de rota — ele se aproxima de **controle de jornada**, que no Brasil
+tem regra própria (CLT art. 74 e a portaria de registro eletrônico de ponto).
+Há diferença entre *"a visita levou 40 minutos"* e *"o técnico começou às 8h12
+e parou às 17h30"*, e o segundo é o que o relatório vai mostrar sem querer.
+
+Há ainda o lado da **LGPD**: dado de cliente é, em boa parte, dado de empresa
+(nome e endereço comercial), mas **horário e deslocamento de pessoa
+identificada são dados pessoais do empregado**.
+
+**O que eu faria antes da conversa:** levantar com quem cuida de pessoal e
+contabilidade (1) se o registro de horários cria obrigação de ponto, (2) quem é
+o controlador do dado, e (3) o que precisa ser comunicado aos técnicos.
+
+### 9.3 A transparência é desenho, não só ética
+Se o técnico descobrir sozinho que está sendo medido, o dado piora — alguém vai
+parar de marcar parada, ou vai marcar tudo no fim do dia de uma vez, e aí a
+série não vale nada. **O número é insumo de planejamento ou é cobrança?** Os
+dois funcionam, mas as telas são escritas diferente, e essa decisão vem antes
+do código.
+
+---
+
+## 10. A ordem, com os pontos de parada
+
+```
+PASSO ZERO   leitor de link tolerante a versão nova      ← pode ir HOJE
+             4 linhas · sem servidor · sem efeito visível
+             ⏳ esperar ~1 semana de propagação
+─────────────────────────────────────────────────────────────────────
+A1  histórico do dia + km/tempo previstos      ┐ Fase A do PLANO-METRICAS.
+A2  hora em cada conclusão (2 formatos!)       ├ Local. Nenhum dado sai.
+A3  km de saída e chegada, sem bloquear        │ Útil sozinha.
+A4  exportar                                   ┘
+─────────────────────────────────────────────────────────────────────
+BETA  Cloudflare Pages + Worker e banco de teste
+B0    conta e banco                            ← você, ~20 min
+B1    esquema      ┐ nenhum dado real sai da máquina.
+B2    Worker       ├ Totalmente reversível.
+B3    testar sem o app ┘ (os 3 testes de recusa são os que importam)
+──────────── 🚦 PORTÃO: aceitar a revisão do ADR-01 ────────────────
+B4    interruptor de sincronização + escritório manda  (link v11)
+B5    celular manda, com fila
+B6    ver os dias
+──────────── piloto: 1 semana só você → 1 técnico → os três ────────
+C1    relatório previsto × real
+C2    a duração real volta para o planejamento
+```
+
+**Todo ponto de parada é estável**, e isso é de propósito:
+
+- **depois do passo zero**: o app ficou mais robusto, nada mais mudou
+- **depois da Fase A**: histórico local + exportação. Já serve, sem servidor
+- **depois do B3**: existe um servidor que não faz nada. Nenhum dado saiu
+- **depois do B5 com o interruptor desligado**: nada mudou para ninguém
+
+---
+
+## 11. O link curto — decisão à parte, NÃO nesta fase
+
+77 caracteres contra 1208. É muito tentador, e o Worker já estaria lá.
+
+⚠️ **E é exatamente o que viola a seção 1.** Com `#s=rid.token`, o roteiro
+**não está mais no link**: o celular tem de buscá-lo. Servidor fora do ar às 7h
+da manhã = **ninguém começa o dia**. O servidor deixa de ser cópia e passa a
+ser o caminho único.
+
+Mitigações possíveis, se um dia valer a pena:
+
+1. **O celular guarda na primeira abertura.** A janela de risco fica só na
+   primeira abertura do dia — mas ela é justamente às 7h.
+2. **Os dois links.** O curto para mandar, o longo guardado como reserva. Aí o
+   problema é humano: quem vai achar o longo quando precisar?
+3. **Encurtar sem servidor:** tirar o trajeto do link e recalculá-lo no celular
+   leva 1227 → **598** caracteres, **metade**, sem acoplar nada. ⚠️ Custo: uma
+   chamada ao OSRM no celular, que pode falhar sem sinal — e aí o mapa do dia
+   aparece sem a linha, que é o comportamento que link v5–v9 já tem.
+
+**Minha recomendação:** a opção 3, **depois** da Fase B estar estável, e como
+versão própria. Ela resolve metade do incômodo sem criar dependência nenhuma.
+
+---
+
+## 12. O que fica de fora, de propósito
+
+- **Chave do geocodificador** (rua + número). O Worker é o intermediário que a
+  esconde. **Depois** — e é a terceira razão de ter escolhido a Cloudflare.
+- **Login por pessoa.** Com três técnicos, senha do escritório + token por
+  roteiro resolve. Rever se a equipe crescer ou se o cliente quiser entrar.
+- **Relatório para o cliente ver sozinho.** Depende de decisão de acesso.
+- **Observação livre por parada** (adiada em 29/08/2026). ⚠️ Vale lembrar que,
+  com servidor, ela fica barata — e é o campo que explica os 15%: *"não tinha
+  vaga, dei três voltas"*.
+
+---
+
+## 13. O que ainda não sei
+
+Perguntado ao usuário em 06/10/2026; as respostas mudam o plano nos pontos
+marcados.
+
+| pergunta | muda o quê |
 |---|---|
-| **CORS** | sem tratar `OPTIONS` **antes de tudo**, o navegador nem chega a tentar o POST. O erro no console fala de CORS e parece outro problema |
-| **`safeFetchJSON`** | não usar aqui. A mensagem dele é sobre o OSRM |
-| **o `rid` como senha** | não serve: 4 caracteres aleatórios. Ver seção 5 |
-| **fuso horário** | `data_do_dia` calculada no cliente. "Hoje" em UTC não é hoje em Criciúma |
-| **progresso em dois formatos** | `lerProgresso()` tem de entender o array velho e o objeto novo |
-| **o token não pode mudar** | o escritório regera o link o dia inteiro; o celular já está na rua com o antigo |
-| **link v11** | 12º grupo no fim; os 11 anteriores não se movem. Testar link antigo |
-| **a fila com 4xx** | repetir um 4xx para sempre entope a fila. Descartar |
-| **separadores** | o token é base64url e não precisa de `escSep` — mas não trocar por outra codificação sem reconferir `~`, `|`, `*`, `%` |
-| **modo leve** | regra 2 do projeto: testar ligado e desligado |
-| **limites grátis** | folgados para 3 técnicos, mas **conferir os números atuais** antes de fechar: eles mudam |
-
----
-
-## 13. O que fica de fora, de propósito
-
-- **Link curto** (o roteiro guardado no servidor, link virando `#s=<id>`). É a
-  segunda das três razões de ter escolhido a Cloudflare, e o mesmo Worker
-  serve — mas é uma mudança bem mais funda no ADR-01. **Depois.**
-- **Chave do geocodificador** (rua + número). Terceira razão. O Worker vira o
-  intermediário que esconde a chave paga. **Depois.**
-- **Login de verdade** por pessoa. Com 3 técnicos, senha do escritório mais
-  token por roteiro resolve. Rever se a equipe crescer.
-- **LGPD.** São dados de clientes de terceiros num servidor de terceiro.
-  Precisa de decisão, não de código.
-
----
-
-## 14. Ordem recomendada
-
-```
-B0  conta e banco          ← VOCÊ, ~20 min, não toca em nada
-B1  esquema                ┐
-B2  Worker                 ├ Sonnet. Nenhum dado real sai da máquina.
-B3  publicar e testar      ┘ Totalmente reversível.
-───────────── 🚦 PORTÃO: aceitar a revisão do ADR-01 ─────────────
-A1  histórico do dia       ┐ do PLANO-METRICAS.md. Fazer ANTES do B4:
-A2  hora na conclusão      ├ é o registro local que a fila envia.
-A3  km de saída/chegada    ┘
-B4  escritório manda       ┐
-B5  celular manda          ├ Sonnet.
-B6  ver os dias            ┘
-```
-
-⚠️ **O A1–A3 entra no meio por um motivo prático**: o que a fila manda é
-exatamente o que eles gravam localmente. Desenhar o servidor **primeiro** (que
-é o que este documento fez) deixa o formato local já na forma que o servidor
-quer — então sincronizar vira envio direto, sem conversão. Esse é o ganho de
-ter planejado o B antes de escrever o A.
-
-⚠️ **E o A continua valendo sozinho.** Se o portão não for aberto, A1–A3
-seguem úteis: gravam o histórico na máquina e exportam. Nada se perde.
+| **Para que o número vai servir** — planejar, pagar, avaliar pessoas? | 9.1, 9.3, e como as telas são escritas |
+| **De quem é o dado** — Hagamorfis, ou o cliente é outra empresa? | R5, R7, LGPD, isolamento por conta |
+| **Onde o km de saída/chegada vai hoje** — papel, WhatsApp, planilha? | A3: alimentar o destino que já existe em vez de criar outro |
+| **Quem testa o beta, e por quanto tempo** | seção 10, o piloto |
+| Os técnicos já sabem, ou vão saber? | 9.3 |
+| Orçamento zero é requisito duro? | R8, durabilidade da escolha |
+| Quantos meses de histórico o cliente quer? | rotação, R8, e "técnico que saiu" |
+| O cliente vai querer entrar e ver, ou você entrega o relatório? | seção 12 |
