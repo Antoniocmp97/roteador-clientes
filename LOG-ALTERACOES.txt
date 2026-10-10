@@ -7599,3 +7599,64 @@ MEDIDAS
   `getAnimations().forEach(a => a.finish())` devolveu o valor final.
   É a mesma pegadinha da v8.20.0 (a cor do "?" aceso). Vale a regra: ao medir
   COR num elemento com `transition`, terminar as animações antes de ler.
+
+--------------------------------------------------------
+[10/10/2026] v8.24.0 — a busca do checklist ignora acento e cedilha
+--------------------------------------------------------
+PEDIDO DO USUÁRIO, depois de um dia de uso no trabalho
+  "Ao digitar a busca no trabalho hoje acabei percebendo uma necessidade
+   básica, porém muito eficaz. O filtro é muito específico, não consegue
+   localizar caso o nome tenha acento."
+
+O QUE MUDOU
+  Função nova semAcento() (NFD + apagar U+0300–U+036F + minúscula), acima de
+  renderChecklist(). As QUATRO comparações da busca passam por ela: termo
+  digitado, nome do grupo do uMap, nome da camada (cliente) e nome da unidade.
+  Eram exatamente quatro `toLowerCase()` no arquivo (conferido por grep).
+  Escopo decidido pelo usuário: SÓ acento e cedilha.
+
+MEDIDO (base de teste com nomes acentuados, no app rodando)
+  educacao / educação -> PREFEITURA EXEMPLO - EDUCAÇÃO (dentro de grupo)
+  jose, sao jose      -> SÃO JOSÉ         otica -> ÓTICA CENTRO
+  açu                 -> AÇUÃO e ACUDE    pmex area -> grupo "PMEX ÁREA"
+  continuam sem achar, de propósito: "educacao exemplo" (ordem das palavras)
+    e "acuo" (erro de digitação, não acento)
+  busca vazia -> base inteira; "nenhum resultado" ecoa o texto COM acento
+  parada avulsa ("FÁBRICA ÓTIMA") aparece buscando "otima" e "ótima"
+  custo: 0,07ms por chamada de renderChecklist com 117 nomes (39 clientes x 2
+    filiais + grupos) — muito abaixo do limite de 2ms do plano; sem cache
+  modo leve ligado e desligado: mesmo resultado. Sem erro de console.
+
+⚠️ O exemplo.umap NÃO serve para testar isto: não tem um nome acentuado. O teste
+  usou um arquivo feito no scratchpad da sessão, fora do repositório.
+⚠️ Não guardar a forma normalizada no objeto: a parada avulsa nasce em execução
+  e, sem o campo, sumiria da busca sem erro. Não tocar no Intl.Collator.
+
+--------------------------------------------------------
+[10/10/2026] v8.24.1 — ícone da aba do navegador
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  "Precisamos de uma logo para colocar na Aba, hoje está um globinho. Crie algo
+   como HF." (depois HR; depois um estudo de design com 14 propostas, e ele
+   escolheu o "rota — da origem ao destino", que não tem letra nenhuma.)
+
+O QUE MUDOU
+  <link rel="icon"> com SVG em data-URI logo abaixo do <title>: 399 caracteres.
+  Nenhum arquivo novo. Antes: globo padrão e um /favicon.ico inexistente.
+  Curva âmbar, origem pequena e destino grande, sobre o crachá #0C1418 — as
+  mesmas cores e o mesmo sentido do mapa.
+
+MEDIDO
+  a linha tem 399 caracteres e nenhum "#" cru (as cores vão como %23)
+  o SVG decodifica e rasteriza; em 16x16: 26 px âmbar, 210 escuros, 4 vazios
+  nenhuma requisição a /favicon.ico (painel de rede)
+  escritório e tela do campo (link v9 montado à mão) abrem sem erro de console
+  desenhado a 16, 32, 128 e 256px sobre fundo de aba escura e clara: legível
+
+⚠️ LIMITE DO TESTE: o painel de teste não tem barra de abas, então o ícone foi
+  conferido desenhado em tamanho real, NÃO dentro de uma aba de verdade. Falta
+  ver no Chrome do usuário, no meio de outras abas, com Ctrl+Shift+R — o
+  navegador guarda favicon em cache próprio e o F5 comum não troca.
+⚠️ Numa aba escura o crachá quase some e sobra o percurso âmbar: é o desenho.
+  Variante pronta se achar apagado: rota-f (crachá âmbar), no
+  PLANO-BUSCA-E-ICONE.md.

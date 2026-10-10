@@ -35,6 +35,8 @@ do link, tela do campo) é comum às duas telas.
 ```
 1. <head> script curto        → data-tema, data-vidro, data-janelas, data-leve
                                 ANTES da primeira pintura (senão a tela salta)
+                                (o <link rel="icon"> em data-URI mora logo abaixo
+                                do <title>, antes disso — v8.24.1)
 2. CSS                        → lê esses quatro atributos do <html>
 3. <script> principal:
    3.1 const VERSAO           → preenche os selos .versao das duas telas
@@ -76,7 +78,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | o trajeto dentro do link | `O trajeto dentro do link (v8.16.0)` | `simplificarLinha`, `codificarLinha`, `decodificarLinha` |
 | restaurar o planejamento | `O planejamento do dia sobrevive…` | `salvarDia`, `restaurarDia` |
 | carregar o `.umap` | `Upload / parse GeoJSON` | `lerUmap`, `importClients` |
-| checklist de clientes | `Checklist + stops UI` | `renderChecklist` |
+| checklist de clientes | `Checklist + stops UI` | `renderChecklist`, `semAcento` (busca sem acento, v8.24.0) |
 | a aparência de linha do checklist | `.checklist` / `.grupo` / `.check-row` no CSS | (regra) fio entre linhas, filete na cascata — sem cartão por linha (v8.22.0) |
 | a aparência de linha da ordem da viagem | `.stops` / `.stop-row` no CSS | (regra) fio em `border-top`; o cartão só em `.arrastando` (v8.22.1) |
 | lista de paradas (ordem) | `Arrastar para reordenar (v3.8)` | `renderStopsList` |

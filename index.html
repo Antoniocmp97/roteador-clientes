@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hagamorfis · Roteador de Clientes</title>
+<!-- Ícone da aba (v8.24.1): uma rota — origem pequena, destino grande — em âmbar
+     sobre o crachá escuro, as mesmas cores do mapa. Sem letra de propósito.
+     · Vetor, e não PNG: o navegador escolhe o tamanho (16px na aba, 32px no
+       atalho) e não há arquivo novo para versionar.
+     · O "#" das cores vai como %23: num data: URI o "#" começa o fragmento e
+       cortaria o SVG no meio, sem erro nenhum no console.
+     · Data-URI, e não arquivo: o app é um HTML só. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230C1418'/%3E%3Cpath d='M9.5 24Q9.5 17 16 17T22.5 10' fill='none' stroke='%23F2A93C' stroke-width='3.8' stroke-linecap='round' stroke-linejoin='miter'/%3E%3Ccircle cx='9.5' cy='24' r='3' fill='%23F2A93C'/%3E%3Ccircle cx='22.5' cy='10' r='4' fill='%23F2A93C'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2283,7 +2291,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.23.2';
+const VERSAO = '8.24.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -3741,6 +3749,26 @@ function marcasDosDonos(pontos){
   return fora.join('');
 }
 
+// Tira acento e cedilha, para a busca do checklist encontrar "EDUCAÇÃO" quando
+// se digita "educacao" — e o contrário também, porque os dois lados passam por
+// aqui (v8.24.0, relatado pelo usuário depois de um dia de uso: "o filtro é
+// muito específico, não consegue localizar caso o nome tenha acento").
+//
+// NFD separa a letra do acento ("ç" vira "c" + cedilha solta) e a faixa
+// U+0300–U+036F é exatamente a dos acentos soltos — então apagá-la deixa só a
+// letra base. Cedilha entra nessa conta: "ç" sai como "c".
+//
+// ⚠️ Isto NÃO é o mesmo trabalho do Intl.Collator de ordenarBase(). Lá o
+// acento precisa CONTAR, para "AÇUDE" cair no lugar certo do alfabeto; aqui ele
+// precisa ser IGNORADO, para quem digita achar. Dois problemas opostos, e é por
+// isso que o Collator não serve para a busca (ele compara strings inteiras, não
+// faz "contém").
+// ⚠️ Calculada na hora, e não guardada no objeto: a parada avulsa nasce em tempo
+// de execução e, sem o campo, nunca mais apareceria na busca.
+function semAcento(txt){
+  return (txt || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
 function renderChecklist(){
   const el = document.getElementById('checklist');
   const buscaInput = document.getElementById('buscaClientes');
@@ -3761,13 +3789,14 @@ function renderChecklist(){
   // essas — evita esconder filiais "irmãs" quando a busca é só pelo nome
   // de uma delas, mas também não polui o resultado com filiais que não
   // combinam com nada quando a busca é por outro cliente.
-  const termo = buscaAtual.trim().toLowerCase();
+  // Desde a v8.24.0 a comparação ignora acento e cedilha (ver semAcento).
+  const termo = semAcento(buscaAtual.trim());
   const gruposVisiveis = !termo ? gruposClientes : gruposClientes
     .map(g => {
       // Buscar pelo nome do GRUPO traz todas as camadas dele inteiras
-      const grupoBate = !!g.grupo && g.grupo.toLowerCase().includes(termo);
-      const clienteBate = g.cliente.toLowerCase().includes(termo);
-      const pontos = (grupoBate || clienteBate) ? g.pontos : g.pontos.filter(pt => pt.name.toLowerCase().includes(termo));
+      const grupoBate = !!g.grupo && semAcento(g.grupo).includes(termo);
+      const clienteBate = semAcento(g.cliente).includes(termo);
+      const pontos = (grupoBate || clienteBate) ? g.pontos : g.pontos.filter(pt => semAcento(pt.name).includes(termo));
       return pontos.length ? { cliente: g.cliente, grupo: g.grupo, pontos } : null;
     })
     .filter(Boolean);

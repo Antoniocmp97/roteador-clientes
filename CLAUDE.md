@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 28/09/2026 — v8.23.2 (mesma língua, e o traço do ícone volta a ser claro)
+> **Última atualização:** 10/10/2026 — v8.24.1 (busca sem acento e ícone da aba)
 
 ---
 
@@ -143,7 +143,20 @@ sem dependências instaladas. Abre direto no navegador.
   painel está estreito, em vez de terminar em "…" (o final do nome é justamente
   o que distingue uma unidade da outra)
 - **Busca no checklist** (Fase 3): filtra por nome do cliente ou da filial;
-  grupos com resultado abrem sozinhos durante a busca. Ao lado do campo, dois
+  grupos com resultado abrem sozinhos durante a busca. **Ignora acento e
+  cedilha** (v8.24.0, relatado pelo usuário depois de um dia de uso: "o filtro é
+  muito específico, não consegue localizar caso o nome tenha acento"): digitar
+  `educacao` acha `EDUCAÇÃO` e o contrário também, nos três níveis (grupo,
+  camada, unidade). `semAcento()` = NFD + apagar a faixa U+0300–U+036F +
+  minúscula. ⚠️ **Escopo decidido pelo usuário: só acento.** Continuam **não**
+  achando palavras em outra ordem (`educacao exemplo`) nem erro de digitação
+  (`acuo` não acha `AÇUÃO`). ⚠️ **Não é o `Intl.Collator` de `ordenarBase()`**:
+  ordenar precisa do acento, buscar precisa ignorá-lo — não tocar no Collator.
+  ⚠️ **A forma normalizada é calculada na hora, NUNCA guardada no objeto**
+  (`g._busca`/`pt._busca`): a parada avulsa nasce em execução e, sem o campo,
+  sumiria da busca sem erro. Custo medido: **0,07ms** por tecla com 117 nomes
+  (39 clientes × 2 filiais + grupos), então cache não se paga. A mensagem de
+  "nenhum resultado" continua ecoando o texto **com** o acento digitado. Ao lado do campo, dois
   ícones (v6.6.0, sugestão de layout 6): **engrenagem** = tipos de serviço,
   **caixa marcada** = marcar/desmarcar todos; acendem em âmbar quando ligados e
   aparecem só com base carregada. Saíram do cabeçalho porque no painel de 340px
@@ -1377,6 +1390,37 @@ hoje é um `<svg>` com tamanho próprio, e aquele corpo não pintava nada. E o
 parada tem 17px): ela é lida em celular e no sol. Conferido depois: selo 11px,
 técnico 11px, contagem 12,5px, nome 17px — nada mudou lá.
 
+**O ícone da aba é uma rota, sem letra** (v8.24.1, pedido do usuário: "uma logo
+para colocar na Aba, hoje está um globinho. Crie algo como HF"). Um
+`<link rel="icon">` com **SVG em data-URI** (399 caracteres) logo abaixo do
+`<title>`: curva âmbar com uma bolinha pequena na origem e uma grande no destino,
+sobre o crachá `#0C1418` — **as mesmas cores e o mesmo sentido do mapa** (âmbar =
+origem, rota e paradas). Nenhum arquivo novo; vale nas duas telas, que dividem o
+`<head>`. ⚠️ **É a primeira peça da marca que mostra o que o app FAZ, e não como
+ele se chama.** O pedido andou HF → HR → estudo de 14 propostas em 4 famílias
+(`COMPARACAO-ICONE.html`), e o usuário escolheu o `rota` ("da origem ao destino")
+vendo o 16px real.
+⚠️ **O que o estudo de 16×16 (256 pixels) descobriu, para ninguém repropor:**
+sigla de **duas letras não cabe** (o buraco do R fecha em 1,5px); o **R de asfalto
+com faixa central não cabe** (a fita pede ≥4px e a faixa ≥1,5px, e sobram <2px
+para o buraco); **asfalto em perspectiva lê como a letra A**; a **rota em S lia
+como "?"** até ganhar uma parada cheia em cada ponta. O que funcionou entre as
+letras foi o `r-via` (núcleo âmbar com borda escura sobre crachá cor de asfalto) —
+ponto de partida se a marca voltar a querer letra. O `rota` é o mais vago dos
+finalistas e **ele aceitou isso de olhos abertos**: não "consertar" sem pedido.
+Variantes prontas, se pedir: `rota-b` (traço 3,0 e pontos 3,4/4,6) e `rota-f`
+(crachá âmbar, a de silhueta mais forte) — as linhas estão no
+`PLANO-BUSCA-E-ICONE.md`.
+⚠️ **Armadilhas do data-URI**: o `#` das cores vai como `%23` (senão cortaria o SVG
+no meio **sem erro no console**); atributos do SVG com aspas **simples** (a linha
+mora num atributo HTML de aspas duplas); `<text>` não serve, porque favicon não
+tem webfont. ⚠️ O ícone **não acompanha o tema do app** (a aba tem o tema do
+navegador); numa aba escura o crachá quase some e sobra o percurso âmbar — é o
+desenho. ⚠️ O navegador guarda favicon em cache próprio: após publicar, o globo
+pode continuar até um Ctrl+Shift+R. ⚠️ O iOS ignora SVG/data-URI no
+`apple-touch-icon` ("adicionar à tela de início" não pega este ícone) — aceito; não
+acrescentar PNG sem o usuário decidir, é arquivo versionado novo.
+
 O escritório **não tem rodapé** (removido em 10/09/2026, a pedido do usuário).
 O crédito obrigatório ao OpenStreetMap e à Esri fica no canto do próprio mapa,
 no controle de atribuição do Leaflet (opção attribution da camada base) — é
@@ -1891,7 +1935,14 @@ real do painel; a v8.4.2 saiu das duas últimas combinadas) e
 técnico: um painel só, um efeito de cada vez, em câmera lenta; a v8.14.0 saiu
 do "saída + cascata") e `COMPARACAO-LAYOUT.html` (os 6 pontos da revisão de
 layout acima, hoje × proposta na largura real do painel, com controle de
-ampliação — várias diferenças são de meio pixel e não se julgam a 1×).
+ampliação — várias diferenças são de meio pixel e não se julgam a 1×) e
+`COMPARACAO-ICONE.html` (14 propostas de ícone da aba em quatro famílias, com o
+**16×16 real** de cada uma, os pixels à mostra, e barras de aba falsas clara e
+escura; clicar no cartão manda o candidato para a aba da própria página e imprime
+a linha do `<link>`; a v8.24.1 saiu do `rota`). Lição que ela registra: **16×16
+são 256 pixels — comparar em tamanho real, com os pixels à mostra, ou não
+comparar**. E o veredito dela, que ranqueou por *legibilidade* e errou, porque o
+usuário decidiu por *significado*.
 ⚠️ **A primeira versão dessa página não servia**, e o
 defeito era meu: os quatro efeitos disparavam **ao mesmo tempo**, em quatro
 painéis — ninguém consegue olhar para quatro lugares em 180ms ("não consegui
@@ -2091,6 +2142,8 @@ de arquitetura, para retomar quando fizer sentido):
 | 116 | **v8.23.0** — Ponto 1: a escala do escritório vai de oito degraus de texto para três (10,5 · 11,5 · 13) |
 | 117 | **v8.23.1** — Os botões de ícone do Origem e do Selecionar paradas passam a ter a mesma cor e o mesmo tamanho, menores |
 | 118 | **v8.23.2** — O traço do ícone volta a ser claro nos dois (pedido do usuário); quem carrega a hierarquia passa a ser o tamanho |
+| 119 | **v8.24.0** — A busca do checklist ignora acento e cedilha (`educacao` acha `EDUCAÇÃO`) |
+| 120 | **v8.24.1** — Ícone da aba: uma rota em âmbar (origem pequena, destino grande), SVG em data-URI, sem letra |
 
 ---
 
@@ -2158,7 +2211,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.23.2
+8.24.1
 ```
 
 ### Onde o número aparece
@@ -2320,3 +2373,5 @@ versão continua sendo a cada número fechado.
 | 8.23.0 | 27/09/2026 | Escala tipográfica do escritório em três degraus de texto; some a inversão da legenda do km |
 | 8.23.1 | 28/09/2026 | Botões de ícone unificados (cor, largura e desenho) e menores; o campo de texto ganha espaço |
 | 8.23.2 | 28/09/2026 | O ícone volta ao claro em repouso; o hover passa a ser borda teal + fundo, já que clarear não diria nada |
+| 8.24.0 | 10/10/2026 | A busca do checklist ignora acento e cedilha, nos três níveis |
+| 8.24.1 | 10/10/2026 | Ícone da aba: rota âmbar sobre crachá escuro, em data-URI, sem letra |
