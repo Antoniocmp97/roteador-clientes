@@ -60,6 +60,7 @@ backups/*
 !backups/v8.24.1_2026-10-10_icone-da-aba/
 !backups/v8.24.2_2026-10-10_icone-na-marca/
 !backups/v8.25.0_2026-10-10_cabecalho-com-nome/
+!backups/v8.26.0_2026-10-10_varredura-de-bugs/
 
 # --- Bloco de notas de quem trabalha na pasta ---
 # Qualquer rascunho solto na raiz entra no próximo "git add -A" e vai parar num

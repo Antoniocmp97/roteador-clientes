@@ -1,7 +1,7 @@
 # Mapa do código — `index.html`
 
 > Onde cada coisa mora e o que liga o quê. Feito em 24/09/2026 na v8.8.0;
-> conferido linha a linha na v8.16.1 e atualizado em 10/10/2026 na v8.25.0. Os números de
+> conferido linha a linha na v8.16.1 e atualizado em 10/10/2026 na v8.26.0. Os números de
 > linha envelhecem; os **títulos de seção** não — procure pelo título quando a
 > linha não bater.
 >
@@ -14,17 +14,17 @@
 
 | Camada | Tamanho | Onde |
 |---|---|---|
-| CSS | 1550 linhas | um `<style>` no `<head>` |
-| Markup | 501 linhas | `<body>`: duas telas inteiras |
-| JS | 5108 linhas | um `<script>` no fim do `<body>` |
+| CSS | 1754 linhas | um `<style>` no `<head>` |
+| Markup | 567 linhas | `<body>`: duas telas inteiras |
+| JS | 5448 linhas | um `<script>` no fim do `<body>` |
 
-**41% do arquivo são comentários** (~160 KB de 401 KB). É proposital: eles são a
+**43% do arquivo são comentários** (~186 KB de 434 KB, medido na v8.26.0). É proposital: eles são a
 memória do projeto. Não afetam o desempenho — o GitHub Pages serve comprimido, e
 o navegador descarta comentário no parse.
 
 ⚠️ **Duas telas no mesmo arquivo.** `.app` é o escritório; **`#modoCampo`** é a
 tela do técnico. Quem decide qual aparece é `modoCampoAtivo`, calculado uma vez
-a partir do `#` da URL. O que é só do escritório fica em **oito blocos**
+a partir do `#` da URL. O que é só do escritório fica em **nove blocos**
 `if (!modoCampoAtivo){...}` espalhados pelo script — o resto (funções, leitura
 do link, tela do campo) é comum às duas telas.
 
@@ -85,9 +85,11 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | a aparência de linha da ordem da viagem | `.stops` / `.stop-row` no CSS | (regra) fio em `border-top`; o cartão só em `.arrastando` (v8.22.1) |
 | lista de paradas (ordem) | `Arrastar para reordenar (v3.8)` | `renderStopsList` |
 | tipos de serviço | `Configuração dos tipos de serviço` | `renderTiposPainel` |
-| parada avulsa | `Parada avulsa (v7.0.0)` | `criarParadaAvulsa`, `novoPontoAvulso` |
-| origem | `Origin` / `Origem padrão salva` | `setOrigin`, `lerOrigemPadrao` |
-| traçar / otimizar | `Routing` | `drawResult`, `prepararEnvio` |
+| parada avulsa | `Parada avulsa (v7.0.0)` | `criarParadaAvulsa`, `novoPontoAvulso`, `renomearAvulsa` (troca o nome na base **e nas cópias de todas as abas**, v8.26.0) |
+| origem | `Origin` / `Origem padrão salva` | `setOrigin` (desfaz a rota quando a coordenada muda e devolve se havia uma, v8.26.0), `lerOrigemPadrao` |
+| traçar / otimizar | `Routing` | `tracarNaOrdemAtual`, `drawResult`, `prepararEnvio` |
+| qualquer coisa que espere a rede e depois escreva na viagem | `O que foi pedido ao serviço de rotas` | `retratoDoPedido`, `pedidoMudou` — tirar o retrato antes do `await` e conferir depois (v8.26.0) |
+| reencontrar na base uma parada guardada | `Reencontrar na base uma parada guardada` | `indicePorCoordenada`, `acharNaBase` (coordenada, com desempate por id e por nome + cliente, v8.26.0) |
 | efeito ao traçar | `Efeito ao traçar a rota (v8.0.0)` | `efeitoLigado`, `animarNumero` |
 | clicar na parada e ir até ela | `Centraliza um ponto na parte visível` | `centralizarVisivel`, `verParadaNoMapa`, `DUR_VOO_PARADA` |
 | mover módulos entre colunas | `Arrastar um módulo pela alça…` | `destinoDoModulo`, `moverModulo` |
@@ -241,6 +243,15 @@ mudou stops, origem, retorno, ou trocou a base
 
 ⚠️ `invalidarRota()` mexe só no técnico ativo — as rotas das outras abas ficam.
 
+⚠️ **A origem só passou a invalidar a rota na v8.26.0.** Este mapa afirmava isso
+desde a v8.8.0 e o código não fazia: `setOrigin()` não chamava `invalidarRota()`,
+e digitar no campo de origem zerava a coordenada sem tocar na rota. Achado na
+varredura de 10/10/2026.
+
+⚠️ **Trocar a base (`importClients`) zera só a aba ABERTA.** As outras abas
+ficam com paradas da base antiga. Em aberto, esperando decisão — ver a tabela
+da varredura no `CLAUDE.md`.
+
 ---
 
 ## 7. Armadilhas que já morderam (não repetir)
@@ -275,6 +286,17 @@ mudou stops, origem, retorno, ou trocou a base
 7. **`offsetTop` num elemento sticky já vem com o deslocamento embutido.**
 8. **O id de um ponto da base é `c<camada>_<feature>`** — reordenar uma camada
    no uMap muda todos. Casar parada guardada é sempre por **coordenada**.
+9. **Depois de um `await`, a tela não é mais a de antes.** A resposta do OSRM
+   era aplicada ao que estivesse aberto quando chegasse: uma parada marcada
+   durante o cálculo sumia, e trocar de aba fazia a lista de um técnico ir
+   parar na aba de outro. Só aparece com a rede lenta — testar atrasando o
+   `fetch`. *Mordeu até a v8.25.0.*
+10. **`stops` é CÓPIA do ponto da base (v8.9.0).** Mudar um dado do ponto (o
+    nome da avulsa) não chega à viagem sozinho, e o checklist — que lê a base —
+    mostra o valor certo e esconde o defeito. *Mordeu da v8.9.0 à v8.25.0.*
+11. **Valor em pixel escrito num path do Leaflet envelhece no primeiro zoom.**
+    O `stroke-dasharray` do efeito de traçar ficava no path, e a metade da
+    linha caía no vão ao aproximar. Tem de sair quando o efeito acaba.
 
 ---
 

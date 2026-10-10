@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 10/10/2026 — v8.25.0 (cabeçalho com dois botões com nome e menu "Exibição"; desenhos que enganavam, trocados)
+> **Última atualização:** 10/10/2026 — v8.26.0 (varredura completa atrás de bugs: nove correções, quatro pontos em aberto)
 
 ---
 
@@ -174,7 +174,9 @@ sem dependências instaladas. Abre direto no navegador.
   bolinha órfã (relatado pelo usuário). O 🎯 da origem e o da
   avulsa dividem o mesmo mecanismo, agora com **modo** (`'origem' | 'avulsa'`) —
   um desarma o outro. Sem nome digitado, o rótulo vem do endereço de volta
-  (Nominatim). ⚠️ Vive só na sessão: recarregar limpa, como a seleção do dia; para
+  (Nominatim). ⚠️ **Entre a v8.9.0 e a v8.25.0 esse rótulo não chegava à "Ordem
+  da viagem" nem ao link** (a `stops` passou a guardar cópia, e o nome era
+  trocado só no ponto da base); corrigido na v8.26.0 por `renomearAvulsa()`. ⚠️ Vive só na sessão: recarregar limpa, como a seleção do dia; para
   recuperar, retoma-se pelo link
 - **A cascata fecha ao selecionar** (v5.0): marcar uma filial fecha a cascata do
   cliente, para a lista não ficar poluída. O **contador** no cabeçalho
@@ -1994,6 +1996,48 @@ comentário no parse. Eles são a memória do projeto.
   nome que aparece: **renomear o repositório muda o endereço do GitHub Pages e
   quebra todos os links de roteiro já enviados à equipe**.
 
+**Varredura de bugs (10/10/2026), a pedido do usuário: "elabore uma varredura
+completa no site, procurando por bugs".** Análise mecânica do `index.html`,
+leitura do script inteiro e — o que separa achado de palpite — **cada suspeito
+reproduzido no app rodando**, com a rede de verdade e, nos que dependem de
+tempo, a rede atrasada de propósito. Tela do campo por link de verdade, tela
+estreita, e tudo de novo com o modo leve. A cópia publicada era byte a byte a
+do `HEAD`. O detalhe e os números estão no `LOG-ALTERACOES.txt`.
+
+| # | O que foi achado | Situação |
+|---|---|---|
+| 1 | **A resposta do OSRM era aplicada ao que estivesse na tela quando chegasse**, e não ao que foi pedido. Marcar um cliente durante "Rota otimizada" fazia a parada nova **sumir**; trocar de aba durante o cálculo **trocava as paradas do outro técnico** pelas do primeiro | ✅ v8.26.0 — `retratoDoPedido()` / `pedidoMudou()` |
+| 2 | **Mudar a origem não desfazia a rota**: o link saía com a origem nova e o trajeto/km velhos (medido: 12 km entre o pino e o começo do desenho) | ✅ v8.26.0 — `setOrigin()` chama `invalidarRota()` |
+| 3 | **Digitar no campo de origem** deixava a rota sem origem: link sem origem e sem retorno, e "Salvar como padrão" respondendo com um erro que não era o dele | ✅ v8.26.0 |
+| 4 | **A linha da rota sumia pela metade ao aproximar o mapa**, com o efeito de traçar ligado: o `stroke-dasharray` do desenho (v8.0.0) ficava no path para sempre | ✅ v8.26.0 — sai por relógio |
+| 5 | **O endereço da avulsa não chegava à "Ordem da viagem"** nem ao link (regressão da v8.9.0: `stops` guarda cópia) | ✅ v8.26.0 — `renomearAvulsa()` |
+| 6 | **Restaurar o dia** só devolvia o pino de origem da aba aberta | ✅ v8.26.0 |
+| 7 | **Aba nova de técnico** ignorava a preferência de retorno guardada | ✅ v8.26.0 — `voltarGuardado()` |
+| 8 | O "atrás" dos marcadores da aba apagada era desfeito pelo Leaflet a cada zoom (cosmético) | ✅ v8.26.0 — `setZIndexOffset` |
+| 9 | **Dois clientes na mesma coordenada** voltavam como um só ao restaurar o dia ou retomar um link. ⚠️ Latente: nenhuma base local tem coordenada repetida | ✅ v8.26.0 — `indicePorCoordenada()` / `acharNaBase()` |
+| A | **Trocar de base com várias abas zera só a aba aberta**; as outras ficam com paradas que não existem na base nova. Duas saídas (zerar todas, ou reencontrar pela coordenada) | **em aberto — decisão do usuário** |
+| B | Na **tela do campo** o progresso é por coordenada: dois clientes no mesmo prédio seriam marcados juntos. Latente, como o 9. ⚠️ Mudar a chave quebraria o progresso de quem já está na rua | em aberto |
+| C | "Marcar todos" com a busca ativa marca a base inteira, não o que a busca mostra | em aberto |
+| D | Números com ponto ("61.2 km") numa interface em português | em aberto |
+
+⚠️ **As lições, para a próxima mudança:**
+- **Depois de um `await`, a tela não é mais a de antes.** Todo trecho que espera
+  a rede e depois escreve em `stops`, na origem ou no mapa precisa conferir se o
+  pedido ainda vale. É a mesma família do relógio parado, só que no outro
+  sentido: lá a tela não anda, aqui ela anda sem avisar.
+- **`stops` é cópia desde a v8.9.0** — quem muda um dado do ponto da base (nome)
+  tem de mudar nas cópias de **todas** as abas. O defeito 5 passou três semanas
+  sem ser visto porque o checklist, que lê a base, mostrava o nome certo.
+- **Estilo inline deixado num elemento do Leaflet sobrevive ao zoom; a geometria
+  dele não.** Valor em pixel escrito num path (`stroke-dasharray`) envelhece no
+  primeiro zoom — tem de sair quando o efeito acaba.
+- **O mapa do código dizia que origem invalidava a rota, e não invalidava.**
+  Afirmação de documento se confere rodando, não lendo.
+
+⚠️ **A pasta `TUTORIAL/`** está na raiz sem versionar **e sem estar no
+`.gitignore`**: entra no próximo `git add -A` de um repositório PÚBLICO. Antes de
+decidir, varrer por nome de cliente real (as imagens são capturas da tela).
+
 **Revisão de usabilidade (10/10/2026), a pedido do usuário: "verificar se está
 acessível para pessoas com menos conhecimento de tecnologia".** Feita percorrendo
 o app como alguém que nunca o viu (base de teste, paradas, origem, rota, link) e
@@ -2267,6 +2311,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 120 | **v8.24.1** — Ícone da aba: uma rota em âmbar (origem pequena, destino grande), SVG em data-URI, sem letra |
 | 121 | **v8.24.2** — O mesmo ícone ao lado do nome "hagamorfis/rotas", nas duas telas |
 | 122 | **v8.25.0** — Cabeçalho com nome: sete ícones viram dois botões ("Mapa: …" e o menu "Exibição"); disquete, lixeira, vidro e os dois da Origem trocam de desenho |
+| 123 | **v8.26.0** — Varredura de bugs: nove correções (resposta do OSRM conferida antes de aplicar, origem desfaz a rota, tracejado do efeito sai, nome da avulsa chega à viagem, entre outras) |
 
 ---
 
@@ -2334,7 +2379,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.25.0
+8.26.0
 ```
 
 ### Onde o número aparece
@@ -2508,3 +2553,4 @@ versão continua sendo a cada número fechado.
 | 8.24.1 | 10/10/2026 | Ícone da aba: rota âmbar sobre crachá escuro, em data-URI, sem letra |
 | 8.24.2 | 10/10/2026 | O mesmo ícone ao lado do nome da marca, nas duas telas |
 | 8.25.0 | 10/10/2026 | Cabeçalho com dois botões com nome e menu "Exibição"; cinco desenhos que diziam outra coisa, trocados |
+| 8.26.0 | 10/10/2026 | Nove correções da varredura de bugs; quatro pontos ficaram em aberto |

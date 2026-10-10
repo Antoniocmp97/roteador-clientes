@@ -1539,7 +1539,7 @@ TESTES REALIZADOS
   - Estado manual preservado: aberto um grupo à mão, buscado por outro
     termo (que abre grupos diferentes automaticamente), busca limpa —
     o grupo aberto manualmente continuou aberto.
-  - Repetido o teste de busca por filial ("giassi") com a base real do
+  - Repetido o teste de busca por filial (pelo nome de uma unidade) com a base real do
     usuário (11 pontos, 8 clientes) — resultado correto (LABORATORIO
     EXEMPLO → UNIDADE 30).
   - Console sem erros em nenhum teste.
@@ -7784,3 +7784,126 @@ O PREÇO, ASSUMIDO
   tema escuro, a 1400 e a 700px; o TEMA CLARO e o estado com modo leve ligado
   foram conferidos só pelo DOM. Falta o olho do usuário neles.
 
+
+--------------------------------------------------------
+[10/10/2026] Varredura completa atrás de bugs
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  "Elabore uma varredura completa no site, procurando por bugs."
+
+COMO FOI FEITA
+  1 Análise mecânica do index.html: 182 funções declaradas (todas chamadas),
+    92 ids (nenhum duplicado, nenhum citado que não exista), chaves do CSS
+    balanceadas, nenhuma var() sem definição, nenhum transitionend/animationend,
+    1 setInterval com clearInterval, 1 MutationObserver.
+  2 Leitura do script inteiro, sem os comentários (3378 linhas de código).
+  3 Cada suspeito REPRODUZIDO no app rodando antes de virar achado, com a base
+    de teste, a rede de verdade (OSRM) e, onde o defeito depende de tempo, a
+    rede atrasada de propósito em 1,5s.
+  4 Tela do campo por link de verdade num celular simulado (375x812), tela
+    estreita do escritório, e tudo de novo com o modo leve ligado.
+  5 Cópia publicada: o index.html do GitHub Pages é byte a byte o do HEAD
+    (v8.25.0). Sem erro de console nas duas telas.
+
+O QUE ESTÁ SÃO (conferido, não suposto)
+  tela do campo inteira (progresso, dois toques, reabrir, mapa, tela cheia,
+  ocultar/mostrar, tema claro, modo leve) · tela estreita sem rolagem lateral ·
+  menu Exibição · link v10 ida e volta · retomada por link com avulsa, ★ e tipo
+  · restauração do dia · km do dia · filtro do mapa.
+
+ACHADOS — 9 corrigidos na v8.26.0, 4 ficaram em aberto (abaixo)
+
+--------------------------------------------------------
+[10/10/2026] v8.26.0 — nove correções da varredura de bugs
+--------------------------------------------------------
+1 A RESPOSTA DO SERVIÇO DE ROTAS ERA APLICADA AO QUE ESTIVESSE NA TELA
+  O OSRM leva de meio segundo a vários, e a tela continua viva. Medido com a
+  rede atrasada em 1,5s:
+    · marcar mais um cliente durante "Rota otimizada" -> a parada nova SUMIA da
+      viagem e do checklist, sem aviso;
+    · trocar de aba durante o cálculo -> as 3 paradas do outro técnico foram
+      TROCADAS pelas 4 do primeiro, e a rota desenhada na aba errada.
+  Agora o pedido leva um retrato (técnico, paradas na ordem, origem, retorno) e
+  a resposta só vale se o retrato ainda for o mesmo; senão, "As paradas, a
+  origem ou a aba mudaram enquanto a rota era calculada — trace de novo."
+  retratoDoPedido() / pedidoMudou(), em tracarNaOrdemAtual, no "Rota otimizada"
+  e (só a aba) em ensureOrigin.
+
+2 MUDAR A ORIGEM NÃO DESFAZIA A ROTA
+  Com a rota traçada, marcar outra origem (mapa, endereço, localização) deixava
+  a linha saindo do ponto antigo, e o link levava a origem NOVA com o trajeto e
+  o km VELHOS — medido: pino de origem do link a 12 km do começo do desenho.
+  setOrigin() agora chama invalidarRota() quando a coordenada muda, e devolve
+  se havia rota (os avisos ganham "Trace a rota de novo.").
+  ⚠️ O MAPA-DO-CODIGO.md já dizia que origem invalidava a rota. Não invalidava.
+
+3 DIGITAR NO CAMPO DE ORIGEM DEIXAVA UMA ROTA SEM ORIGEM
+  A coordenada era zerada (de propósito, desde sempre) e a rota ficava. "Gerar
+  link" mandava o roteiro SEM origem e SEM retorno — medido: 4 paradas no link,
+  com a rota desenhada voltando à base e o interruptor ligado. E o botão
+  "Salvar como padrão" ficava à vista e respondia "não foi possível salvar
+  neste navegador", que não era o problema. Agora a rota cai junto, o botão
+  some e o status avisa.
+
+4 A LINHA DA ROTA SUMIA PELA METADE AO APROXIMAR O MAPA (com o efeito ligado)
+  O efeito de traçar (v8.0.0) desenha a linha com stroke-dasharray = o
+  comprimento dela em pixels NAQUELE zoom, e o tracejado ficava no path para
+  sempre. Um degrau de zoom depois a linha tem o dobro do comprimento e a
+  segunda metade cai no vão do tracejado. Medido: 1824px ao traçar, 3647px
+  depois, 1823px invisíveis. Bem de perto não aparecia (o Leaflet recorta o
+  traçado). O tracejado agora sai por relógio, 120ms depois do desenho.
+  ⚠️ Não existia no modo leve, que não tem o efeito.
+
+5 O ENDEREÇO DA PARADA AVULSA NÃO CHEGAVA À VIAGEM (regressão da v8.9.0)
+  Avulsa criada por clique no mapa, sem nome: o endereço buscado de volta
+  aparecia no checklist, e a "Ordem da viagem", o link e a tela do campo
+  seguiam com "Ponto (-28.68123, -49.37456)" — a `stops` guarda uma cópia desde
+  a v8.9.0 e o nome era trocado só no ponto da base. renomearAvulsa() troca nos
+  quatro lugares. De brinde o balão renomeado volta a ter o botão
+  "Adicionar/remover parada", que ele perdia.
+
+6 RESTAURAR O DIA SÓ DEVOLVIA O PINO DE ORIGEM DA ABA ABERTA
+  Medido: 1 pino para 2 abas. As outras voltavam com a origem escrita no campo
+  e sem nada no mapa. Agora cada aba ganha o seu, as inativas já apagadas.
+
+7 ABA NOVA DE TÉCNICO IGNORAVA A PREFERÊNCIA DE RETORNO
+  Nascia sempre com "Voltar para a origem" ligado. Agora lê voltarGuardado().
+
+8 "ATRÁS" DOS MARCADORES DA ABA APAGADA NÃO DURAVA
+  O z-index -1 posto à mão era reescrito pelo Leaflet a cada zoom (medido:
+  383/292/481 logo depois de traçar). Trocado por setZIndexOffset(-10000), que
+  entra na conta do próprio Leaflet. Cosmético.
+
+9 DOIS CLIENTES NA MESMA COORDENADA VIRAVAM UM SÓ AO RESTAURAR/RETOMAR
+  "SALA 1 / SECRETARIA A" e "SALA 2 / SECRETARIA B" no mesmo prédio voltavam
+  como duas vezes a SALA 2. indicePorCoordenada() + acharNaBase(): o desempate
+  é por id, depois nome + cliente. ⚠️ LATENTE: nenhuma das três bases locais
+  tem coordenada repetida hoje.
+
+TESTADO
+  Os nove, um a um, com o modo leve ligado e desligado; o caminho comum
+  (traçar, otimizar, link, retomar, restaurar) continua igual. Sem erro de
+  console. A análise mecânica refeita no arquivo novo: 188 funções, todas
+  chamadas.
+⚠️ LIMITE DO TESTE: o painel de teste não estava pintando (relógio de quadros
+  parado), então o defeito 4 foi provado por medida (comprimento do path x
+  tracejado), não por imagem. O ramo animado foi exercitado avisando o fim do
+  voo à mão.
+
+FICARAM EM ABERTO (não mexi — pedem decisão ou não valem o risco)
+  A TROCAR DE BASE COM VÁRIAS ABAS zera só a aba aberta. As outras ficam com
+    paradas da base antiga, que não existem na nova (nada marcado no
+    checklist, rota velha no mapa). Duas saídas: zerar todas, ou reencontrar
+    as paradas de todas na base nova pela coordenada. É escolha do usuário.
+  B NA TELA DO CAMPO o progresso é guardado pela coordenada (v6.8.0): dois
+    clientes no mesmo prédio seriam marcados juntos. Latente, como o 9.
+  C "Marcar todos" com a busca ativa marca a base INTEIRA, não o que a busca
+    mostra.
+  D Os números saem com ponto ("61.2 km"), e em português é vírgula.
+  E a pasta TUTORIAL/ está na raiz sem versionar e sem estar no .gitignore:
+    entra no próximo "git add -A" de um repositório PÚBLICO. Não é minha e não
+    abri as imagens.
+  F um termo de busca que era o nome de uma unidade REAL estava numa linha
+    antiga deste log (teste da busca, v2.1). Trocado por uma descrição.
+    ⚠️ Continua no histórico do Git, que é público: tirar de lá é reescrever
+    o histórico, e isso é decisão do usuário.

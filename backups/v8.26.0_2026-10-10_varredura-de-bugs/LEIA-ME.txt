@@ -1,0 +1,59 @@
+v8.26.0 - 10/10/2026 - nove correcoes da varredura de bugs
+
+O QUE MUDOU
+  O usuario pediu "uma varredura completa no site, procurando por bugs".
+  Analise mecanica, leitura do script inteiro e cada suspeito REPRODUZIDO no app
+  rodando antes de virar achado. Nove corrigidos aqui:
+
+  1 A resposta do servico de rotas era aplicada ao que estivesse na tela quando
+    chegasse. Marcar um cliente durante "Rota otimizada" fazia a parada nova
+    sumir; trocar de aba durante o calculo trocava as paradas do outro tecnico.
+    Agora o pedido leva um retrato e a resposta so vale se ele nao mudou.
+  2 Mudar a origem nao desfazia a rota: o link saia com a origem nova e o
+    trajeto/km velhos.
+  3 Digitar no campo de origem deixava a rota sem origem: link sem origem e sem
+    retorno, e "Salvar como padrao" respondendo com um erro que nao era o dele.
+  4 Com o efeito de tracar ligado, a linha da rota sumia pela metade ao
+    aproximar o mapa (o tracejado do desenho ficava no path para sempre).
+  5 O endereco da parada avulsa nao chegava a "Ordem da viagem" nem ao link
+    (regressao da v8.9.0).
+  6 Restaurar o dia so devolvia o pino de origem da aba aberta.
+  7 Aba nova de tecnico ignorava a preferencia de retorno guardada.
+  8 O "atras" dos marcadores da aba apagada era desfeito a cada zoom.
+  9 Dois clientes na mesma coordenada voltavam como um so ao restaurar o dia ou
+    retomar um link (latente: nenhuma base local tem coordenada repetida).
+
+MEDIDO
+  1: rede atrasada em 1,5s - 5a parada marcada durante o calculo sumia; as 3
+     paradas do tecnico 2 viravam as 4 do tecnico 1.
+  2: pino de origem do link a 12 km do comeco do desenho.
+  4: path com 1824px ao tracar e 3647px um degrau de zoom depois; 1823px no vao.
+  6: 1 pino de origem para 2 abas.
+  Os nove testados com o modo leve ligado e desligado. Sem erro de console.
+
+O QUE NAO FAZER SEM SABER
+  - Todo trecho que espera a rede (await) e depois escreve em stops, na origem
+    ou no mapa tem de tirar retratoDoPedido() antes e chamar pedidoMudou()
+    depois. Sem isso o defeito 1 volta, e so aparece com a rede lenta.
+  - setOrigin() agora DESFAZ a rota quando a coordenada muda. Quem chamar de um
+    lugar novo ganha isso de graca - e precisa querer.
+  - Mudar o nome de um ponto da base: usar renomearAvulsa(), que troca tambem
+    nas copias de todas as abas. stops e copia desde a v8.9.0.
+  - O tracejado do efeito sai por setTimeout, e nao por transitionend: e a regra
+    do modo leve, e o relogio ainda serve de rede na aba que nao pinta.
+  - "Atras" de marcador e setZIndexOffset; style.zIndex o Leaflet reescreve.
+
+FICOU EM ABERTO
+  A Trocar de base com varias abas zera so a aba aberta (decisao do usuario:
+    zerar todas, ou reencontrar as paradas na base nova pela coordenada).
+  B Na tela do campo o progresso e por coordenada: dois clientes no mesmo predio
+    seriam marcados juntos. Mudar a chave quebraria o progresso de quem ja esta
+    na rua.
+  C "Marcar todos" com a busca ativa marca a base inteira.
+  D Numeros com ponto ("61.2 km") em vez de virgula.
+
+ONDE MEXER
+  index.html - "O que foi pedido ao servico de rotas" (retratoDoPedido,
+  pedidoMudou); setOrigin; o listener de input do campo de origem; drawResult
+  (o setTimeout depois do stroke-dashoffset); renomearAvulsa; restaurarDia;
+  realcarCamadas; "Reencontrar na base uma parada guardada".
