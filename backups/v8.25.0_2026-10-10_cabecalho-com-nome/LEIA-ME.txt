@@ -1,0 +1,38 @@
+v8.25.0 - 10/10/2026 - cabecalho com nome nos botoes
+
+O QUE MUDOU
+  Revisao de usabilidade pedida pelo usuario ("verificar se esta acessivel para
+  pessoas com menos conhecimento de tecnologia"). No cabecalho havia sete icones
+  sem palavra nenhuma (oito com o ima), e tres diziam outra coisa.
+  Viraram DOIS botoes com nome:
+    [Mapa: todos]  o filtro de clientes da v8.15.0, com o estado escrito
+    [Exibicao v]   menu em que cada linha tem nome e uma frase: Modo leve, Tema
+                   escuro, Transparencia do painel, Janelas soltas, Alinhar
+                   janelas, Guardar esta organizacao, Voltar a organizacao padrao
+  Escolhido pelo usuario entre tres propostas (a "A" da COMPARACAO-CABECALHO.html).
+  Desenhos trocados: disquete -> painel com check; lixeira -> seta de voltar;
+  vidro -> vidraca com reflexo (o anterior era o icone de COPIAR); e na Origem a
+  mira passou para "usar minha localizacao" e "marcar no mapa" virou um mapa
+  dobrado (so o desenho; posicao e funcao dos botoes sao as mesmas).
+
+MEDIDO
+  bloco do cabecalho 265 -> 252px; altura do cabecalho 65px, igual.
+  Testado com o modo leve ligado e desligado, a 1400, 700 e 375px, e na tela do
+  campo por link de verdade. Sem erro de console.
+
+O QUE NAO FAZER SEM SABER
+  - Os ids e os data-*-btn das linhas do menu sao os MESMOS dos icones antigos:
+    as funcoes aplicar... acham o botao por eles. Nao renomear.
+  - .icone-btn NAO e resto no CSS: e o botao de tema da TELA DO CAMPO.
+  - atualizarPontoExibicao() roda na carga, antes de varias constantes existirem:
+    so pode ler atributos do <html>, classes e matchMedia.
+  - O z-index do menu (2000) mora em .exibicao, e nao no <header>.
+  - O menu nao tem animacao de proposito (abre por hidden): e o que o faz ser
+    igual no modo leve.
+  - Com o modo leve ligado, as linhas de transparencia e de janelas ficam
+    TRAVADAS com o motivo escrito; antes os botoes sumiam.
+
+ONDE MEXER
+  index.html - CSS "Cabecalho: dois botoes com NOME (v8.25.0)"; marcacao dentro
+  de <header> (.cabecalho-acoes); JS 'Menu "Exibicao" (v8.25.0)' e
+  atualizarPontoExibicao().

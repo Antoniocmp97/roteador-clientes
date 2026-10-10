@@ -1,7 +1,7 @@
 # Mapa do código — `index.html`
 
 > Onde cada coisa mora e o que liga o quê. Feito em 24/09/2026 na v8.8.0;
-> conferido linha a linha na v8.16.1 e atualizado em 28/09/2026 na v8.23.1. Os números de
+> conferido linha a linha na v8.16.1 e atualizado em 10/10/2026 na v8.25.0. Os números de
 > linha envelhecem; os **títulos de seção** não — procure pelo título quando a
 > linha não bater.
 >
@@ -66,6 +66,8 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | qual fonte usar num texto novo | (regra, não função) | número/código/endereço = JetBrains Mono; palavra = Inter (v8.21.0) |
 | qual TAMANHO usar num texto novo | (regra, não função) | escritório: 10,5 dado miúdo · 11,5 rótulo · 13 conteúdo · 20 número (v8.23.0). A tela do campo tem escala própria, maior |
 | um botão de ícone novo | `.btn-lista` / `.btn-icon` no CSS | (regra) 34×36px, ícone 16px/1,7, `--text` em repouso, hover = borda teal + fundo, âmbar quando ligado; 40px no toque (v8.23.2) |
+| **botões do cabeçalho / menu "Exibição"** | `Menu "Exibição" (v8.25.0)` no JS; `Cabeçalho: dois botões com NOME (v8.25.0)` no CSS | `abrirExibicao`, `atualizarPontoExibicao` (o ponto âmbar), `atualizarBotaoArranjo` (a linha "Guardar"). ⚠️ cada linha do menu guarda o `data-*-btn` de antes: quem liga o comando é a função `aplicar…` de sempre |
+| um comando novo no menu "Exibição" | (regra, não função) | uma `<button class="exib-lin">` com ícone, `<b>` nome, `<small>` frase e `<span class="sw">` (interruptor, com `role="switch"`) ou `<span class="acao">` (ação). Sem `title`: a explicação é a frase |
 | vidro ligado/desligado | `Vidro ligado ou desligado (v8.2.0)` | `aplicarVidro(lig, salvar)` |
 | **modo leve** | `Modo leve (v8.7.0)` | `aplicarModoLeve(lig, salvar)` |
 | janelas livres | `Janelas livres (v8.4.0)` | `aplicarModoJanelas`, `aplicarJanelas` |
@@ -154,7 +156,7 @@ map              o Leaflet
 | `hg_roteiro_aberto` | o módulo Roteiro aberto (ausente = fechado, que é o padrão) |
 | `hg_largura_painel`, `hg_largura_guia`, `hg_largura_guia2` | larguras |
 | `hg_alturas_modulos` | alturas do checklist e das paradas no painel |
-| `hg_arranjo_modulos` | o arranjo salvo pelo disquete |
+| `hg_arranjo_modulos` | o arranjo guardado pela linha "Guardar esta organização" do menu Exibição (era o disquete até a v8.24.2) |
 | `hg_dia_planejado` | o planejamento do dia (oferecido ao abrir) |
 | `hg_link_compativel` | formato do link (legível x comprimido) |
 | `hg_prog_r_<rid>` | progresso do campo, por roteiro |
@@ -257,11 +259,11 @@ mudou stops, origem, retorno, ou trocou a base
    esses eventos em `window` vê o arraste COMEÇAR (a classe e o indicador são
    criados no `pointerdown`) e nunca terminar — parece um bug que não existe.
    *Descoberto testando a v8.22.1.*
-3. **Largura da tela lida ao vivo em coisa que o disquete compara.**
+3. **Largura da tela lida ao vivo em coisa que o "Guardar" compara** (o disquete, até a v8.24.2).
    `aplicarArranjo()` roda a cada `resize` e chama `atualizarBotaoArranjo()`,
    que compara a tela com `arranjoGuardado() || arranjoNormal()`. Se o "normal"
    depender da largura **atual**, arrastar a janela muda a referência e o
-   disquete acende sozinho, sem ninguém ter mexido em nada. Por isso
+   "Guardar" acende sozinho (e o ponto âmbar do "Exibição" junto), sem ninguém ter mexido em nada. Por isso
    `abreEmDuasColunas` é decidido **uma vez, na abertura** (v8.19.0), como a
    geometria padrão das janelas livres já era desde a v8.4.0.
 4. **`#map` nunca pode ser `position:static`.** Os painéis do Leaflet se ancoram

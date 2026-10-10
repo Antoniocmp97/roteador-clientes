@@ -31,8 +31,8 @@ uma lista de clientes em GeoJSON. Feito para uso em Criciúma/SC.
 
 1. Abra o link acima (funciona no computador e no celular)
 2. Carregue o backup completo do uMap (`.umap`) com seus clientes
-3. Defina o ponto de partida: digite o endereço, toque no alfinete para usar sua
-   localização, ou use o alvo para marcar o ponto exato clicando no mapa
+3. Defina o ponto de partida: digite o endereço, toque na mira para usar sua
+   localização, ou no botão com o desenho de mapa para marcar o ponto exato
 4. Marque os clientes que vai visitar
 5. Clique em **Rota otimizada** (ou **Nesta ordem**, se já sabe a sequência)
 6. Se for mandar para alguém na rua, gere o link do roteiro e envie

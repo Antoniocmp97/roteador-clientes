@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 10/10/2026 — v8.24.2 (busca sem acento, ícone da aba e da marca)
+> **Última atualização:** 10/10/2026 — v8.25.0 (cabeçalho com dois botões com nome e menu "Exibição"; desenhos que enganavam, trocados)
 
 ---
 
@@ -199,7 +199,11 @@ sem dependências instaladas. Abre direto no navegador.
   caracteres, que dependem da fonte do sistema. ⚠️ Ficaram de propósito como
   texto: o **✓** (base carregada, confirmar, parada concluída), o **↩** do
   retorno e o **🎉** do fim do roteiro — são glifos dentro de frases e rótulos,
-  não controles
+  não controles.
+  ⚠️ **Os dois botões da Origem trocaram de DESENHO na v8.25.0**: a mira passou
+  para "usar minha localização" e "marcar no mapa" virou um mapa dobrado (ver o
+  item do cabeçalho com nome, abaixo). A posição e a função de cada botão são as
+  mesmas
 - **Modo noturno** (v3.3): botão no cabeçalho das **duas telas**
   (escritório e campo) troca o app inteiro entre tema escuro e claro. A escolha
   fica guardada no navegador e é aplicada antes da primeira pintura, para a tela
@@ -209,12 +213,92 @@ sem dependências instaladas. Abre direto no navegador.
   trilho com "MODO NOTURNO" escrito ao lado (~110px em caixa alta). Continua
   sendo `<button role="switch">` com `aria-checked`: o CSS escolhe o ícone a
   partir dele e o leitor de tela anuncia a partir dele, num lugar só. A dica do
-  mouse diz para onde o clique leva
+  mouse diz para onde o clique leva.
+  ⚠️ **No escritório, desde a v8.25.0, é a linha "Tema escuro" do menu
+  "Exibição"** — mesmo `data-tema-btn`, mesmo `aria-checked`. O ícone sozinho
+  continua existindo **só na tela do campo**, e é por causa dele que a classe
+  `.icone-btn` não pode ser apagada do CSS
 - **Ações do cabeçalho num bloco só** (v7.6.0): `[disquete] [lixeira] | [tema]`
   encostados à direita, com um divisor de 1px entre o arranjo e o tema — 121px no
   total. Antes o disquete e a lixeira ficavam colados na marca, como se fossem
   parte dela. Em tela estreita (<760px) o arranjo some, como já era, e o divisor
-  some junto
+  some junto. ⚠️ **Este bloco de ícones deixou de existir na v8.25.0** — ver o
+  item seguinte
+- **Cabeçalho com NOME nos botões** (v8.25.0, a pedido do usuário: "com um olhar
+  mais de usuário, visualize os botões do cabeçalho e do restante do site... quero
+  verificar se está acessível para pessoas com menos conhecimento de tecnologia").
+  O bloco `[disquete] [lixeira] | [foco] [leve] [janelas] [ímã] [vidro] [tema]`
+  virou **dois botões com palavra**: `[Mapa: todos]` e `[Exibição ▾]`. O primeiro
+  é o filtro de clientes da v8.15.0, agora com o **estado escrito** ("Mapa:
+  todos" / "Mapa: destaque" / "Mapa: só a viagem"). O segundo abre um **menu**
+  em que cada comando é uma linha com **nome e uma frase**: Modo leve, Tema
+  escuro, Transparência do painel · Janelas soltas, Alinhar janelas, Guardar esta
+  organização, Voltar à organização padrão. Escolhido pelo usuário entre três
+  propostas na `COMPARACAO-CABECALHO.html` (a "A"; as outras eram o nome embaixo
+  de cada ícone e os mesmos ícones com dica imediata).
+  ⚠️ **O que foi medido antes**: 27 dos 33 botões visíveis do escritório eram só
+  ícone, e no cabeçalho eram sete de sete. A única explicação era a dica do
+  navegador, que demora perto de um segundo, **não existe em tela de toque** e
+  pede que a pessoa saiba parar o ponteiro em cima. E nenhum dos sete fazia
+  parte do trabalho do dia — eram aparência e arrumação, no lugar mais nobre.
+  ⚠️ **Três desenhos diziam outra coisa**, e é por isso que não bastava pôr
+  nome: o **disquete** é o símbolo de salvar o *trabalho* (quem clicava achava
+  que tinha guardado o planejamento do dia — que se guarda sozinho desde a
+  v8.5.0); a **lixeira** parece "apagar" e assusta quem tem medo de estragar; e
+  o do **vidro** eram dois quadrados sobrepostos, o ícone universal de
+  **copiar**. Viraram: painel com ✓, seta de voltar e vidraça com reflexo.
+  ⚠️ **O vocabulário mudou junto**: "arranjo" → "organização da tela", "voltar
+  ao normal" → "voltar à organização padrão", "vidro" → "transparência do
+  painel", "janelas livres" → "janelas soltas", "encaixe" → "alinhar janelas".
+  **No código os nomes são os de sempre** (`arranjo`, `aplicarVidro`,
+  `data-vidro`, `hg_arranjo_modulos`...), e este documento continua falando em
+  vidro, janelas livres e arranjo — é o vocabulário interno, como "módulo 3".
+  ⚠️ **As dicas do filtro do mapa diziam "APAGAR"**, e para quem não conhece o
+  app apagar é **excluir**. Agora dizem "os outros ficam mais fracos".
+  ⚠️ **Os ids e os `data-*-btn` são OS MESMOS**, e isso é o que fez a mudança
+  ser de marcação e não de lógica: `aplicarTema`, `aplicarVidro`,
+  `aplicarModoLeve`, `aplicarModoJanelas`, `aplicarIma` e
+  `atualizarBotaoFoco` continuam achando o seu botão pelo mesmo seletor. O que
+  saiu de dentro delas foi o `b.title`, que era a explicação — ela agora está
+  escrita na linha.
+  ⚠️ **Medido**: bloco de **265px → 252px** (275 com "Mapa: destaque", 292 com
+  "Mapa: só a viagem"; o de antes chegava a 301 com o ímã). Cabeçalho continua
+  com **65px**. Fica mais estreito apesar das palavras, porque sete botões
+  viraram dois. Menu de 356×440px.
+  ⚠️ **O PREÇO, assumido**: ligar o modo leve passou de **um clique para dois**,
+  e o que está ligado **saiu da vista**. Sobra um **ponto âmbar** no botão
+  "Exibição" (`atualizarPontoExibicao()`), que acende com modo leve ligado,
+  transparência desligada, janelas soltas ou arrumação da tela ainda não
+  guardada — e a dica do botão diz qual. ⚠️ Em máquina que vive no modo leve o
+  ponto fica aceso sempre; é o comportamento aprovado na comparação.
+  ⚠️ **Com o modo leve ligado, as linhas de transparência e de janelas NÃO
+  somem mais**: ficam **travadas**, com "Desligado pelo modo leve." no lugar da
+  frase. Antes os dois botões desapareciam do cabeçalho e nada dizia por quê.
+  ⚠️ **O menu não tem animação nenhuma**: abre e fecha pelo atributo `hidden`,
+  no mesmo quadro. É igual com o modo leve ligado e desligado por construção
+  (medido: zero animações, `transition-duration: 0s`).
+  ⚠️ **O `z-index: 2000` mora na caixa do menu (`.exibicao`), e não no
+  `<header>`**: as janelas livres sobem o próprio z-index a cada clique
+  (`frenteJanela`), os controles do Leaflet vão a 1000 e a etiqueta do módulo
+  arrastado é 1001. Pondo ali, só o menu vira contexto de empilhamento.
+  ⚠️ **`atualizarPontoExibicao()` é chamada na CARGA**, de dentro de
+  `aplicarVidro`, antes de `LARGURA_MINIMA_GUIA` existir — por isso ela pergunta
+  a tela estreita ao `matchMedia`, e não a `telaComportaGuia()`, que estouraria
+  na zona morta do `const`.
+  ⚠️ **Clique fora fecha, clique dentro não** (dá para ligar duas coisas sem
+  reabrir), Esc fecha e devolve o foco ao botão. O clique de fora é escutado na
+  **fase de captura**: o mapa e os arrastes tratam o próprio `pointerdown`.
+  ⚠️ **Em tela estreita (≤760px) o menu fica com duas linhas** — Modo leve e
+  Tema escuro —, que são as únicas que valem ali (classe `.exib-so-largo`).
+  ⚠️ **Na mesma versão, os dois botões da Origem trocaram de desenho.** No
+  Google Maps, no Waze e em todo celular a **mira é "onde eu estou"** e o
+  alfinete é "um ponto no mapa"; aqui estava ao contrário, herança dos emojis
+  🎯 e 📍 de antes da v7.9.0. Agora a mira é "usar minha localização" e "marcar
+  o ponto no mapa" é um **mapa dobrado** — que também deixa de se confundir com
+  o alfinete-com-mais da parada avulsa (o botão de marcar da avulsa trocou
+  junto). **Só o desenho mudou**: a posição dos botões, a função de cada um e o
+  comportamento da geolocalização são os mesmos. ⚠️ Quem usa há semanas vai ver
+  a mira **no botão da direita**, onde antes estava o alfinete
 - **Vidro: o mapa passa por baixo do painel** (v8.1.0, pedido do usuário; ele
   escolheu o modo "Apple" numa comparação com quatro modos e cinco controles).
   O mapa é **absoluto e ocupa a tela inteira**; o painel e as colunas flutuam
@@ -333,6 +417,8 @@ sem dependências instaladas. Abre direto no navegador.
   **transições, animações, sombras desfocadas** e o **efeito ao traçar**. Os
   botões de vidro e de janelas **somem** enquanto ele está ligado, porque a
   escolha deles não vale nada ali; o do ímã some junto, pela regra dele.
+  ⚠️ **Desde a v8.25.0 eles não somem**: são linhas do menu "Exibição", que
+  ficam travadas com o motivo escrito. O interruptor do modo leve também mora lá.
   ⚠️ **Não apaga a escolha dos outros dois**: força as duas desligadas sem tocar
   no que está guardado, e ao sair elas voltam exatamente como estavam. É
   aplicado pelo script do `<head>` **depois** dos outros dois, porque manda
@@ -1908,6 +1994,27 @@ comentário no parse. Eles são a memória do projeto.
   nome que aparece: **renomear o repositório muda o endereço do GitHub Pages e
   quebra todos os links de roteiro já enviados à equipe**.
 
+**Revisão de usabilidade (10/10/2026), a pedido do usuário: "verificar se está
+acessível para pessoas com menos conhecimento de tecnologia".** Feita percorrendo
+o app como alguém que nunca o viu (base de teste, paradas, origem, rota, link) e
+inventariando todo botão visível — rótulo, dica, tamanho. **O caminho principal
+é fácil** (toda ação principal tem palavra: Rota otimizada, Nesta ordem, Gerar
+link, Compartilhar, Copiar) e as mensagens de status dizem o próximo passo em
+frase inteira; o problema estava em volta dele.
+
+| # | O que foi achado | Situação |
+|---|---|---|
+| 1 | Cabeçalho com 7 ícones sem nome, 3 deles dizendo outra coisa | ✅ **feito na v8.25.0** |
+| 2 | Mira e alfinete da Origem trocados em relação ao que o celular ensinou | ✅ **feito na v8.25.0** (só o desenho) |
+| 3 | Os botões de traçar vêm **antes** de escolher as paradas (ordem da v8.13.0): quem lê de cima para baixo aperta "Rota otimizada" primeiro e recebe "Selecione ao menos um cliente". Proposta: o módulo Rota dizer "Escolha as paradas abaixo e depois trace a rota" enquanto não há parada — **sem** desfazer a v8.13.0 | em aberto |
+| 4 | **14 botões de 22–24×18px** (★, ✕ de remover, ícones dos títulos). O de esquecer a base fica colado no de trocar a base | em aberto |
+| 5 | "Retomar roteiro pelo link" atrás de um ícone de corrente, que ninguém adivinha; "base", "backup (.umap)" e "parada avulsa" pedem explicação para um cliente novo | em aberto |
+| 6 | Dicas do zoom do mapa em inglês ("Zoom in"/"Zoom out") | em aberto |
+| 7 | Pelo teclado não se chega às linhas de cliente do checklist, ao nome da parada nem às abas de técnico (`tabindex` −1) | em aberto |
+
+⚠️ Os itens 3, 4 e 6 são pequenos e não mexem em identidade. **A tela do campo
+não foi reaberta nesta revisão.**
+
 **Revisão de layout (26/09/2026), a pedido do usuário: "elabore um review com
 um olhar de um designer sênior".** Seis pontos, todos medidos no app rodando
 (`getComputedStyle`/`getBoundingClientRect`) a 1920×1080 e 1366×768, montados
@@ -1949,6 +2056,14 @@ a linha do `<link>`; a v8.24.1 saiu do `rota`). Lição que ela registra: **16×
 são 256 pixels — comparar em tamanho real, com os pixels à mostra, ou não
 comparar**. E o veredito dela, que ranqueou por *legibilidade* e errou, porque o
 usuário decidiu por *significado*.
+E `COMPARACAO-CABECALHO.html` (o cabeçalho de hoje × três propostas, cada uma o
+cabeçalho inteiro em tamanho real, clicável, com as **medidas tiradas na hora**
+embaixo — largura do bloco, altura, se quebra em duas linhas, quantos botões
+sem nome; e os cinco desenhos que enganavam, hoje → proposta; a v8.25.0 saiu da
+"A"). ⚠️ O que ela registra: as quatro versões **dividem o mesmo estado** (ligar
+o modo leve numa liga em todas), que é o que deixa comparar a mesma situação; e
+o usuário disse nesta sessão que **assimila melhor por imagem** — proposta de
+layout já deve nascer como página de comparação, não como texto.
 ⚠️ **A primeira versão dessa página não servia**, e o
 defeito era meu: os quatro efeitos disparavam **ao mesmo tempo**, em quatro
 painéis — ninguém consegue olhar para quatro lugares em 180ms ("não consegui
@@ -2151,6 +2266,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 119 | **v8.24.0** — A busca do checklist ignora acento e cedilha (`educacao` acha `EDUCAÇÃO`) |
 | 120 | **v8.24.1** — Ícone da aba: uma rota em âmbar (origem pequena, destino grande), SVG em data-URI, sem letra |
 | 121 | **v8.24.2** — O mesmo ícone ao lado do nome "hagamorfis/rotas", nas duas telas |
+| 122 | **v8.25.0** — Cabeçalho com nome: sete ícones viram dois botões ("Mapa: …" e o menu "Exibição"); disquete, lixeira, vidro e os dois da Origem trocam de desenho |
 
 ---
 
@@ -2218,7 +2334,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.24.2
+8.25.0
 ```
 
 ### Onde o número aparece
@@ -2391,3 +2507,4 @@ versão continua sendo a cada número fechado.
 | 8.24.0 | 10/10/2026 | A busca do checklist ignora acento e cedilha, nos três níveis |
 | 8.24.1 | 10/10/2026 | Ícone da aba: rota âmbar sobre crachá escuro, em data-URI, sem letra |
 | 8.24.2 | 10/10/2026 | O mesmo ícone ao lado do nome da marca, nas duas telas |
+| 8.25.0 | 10/10/2026 | Cabeçalho com dois botões com nome e menu "Exibição"; cinco desenhos que diziam outra coisa, trocados |

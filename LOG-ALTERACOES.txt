@@ -7683,3 +7683,104 @@ MEDIDO
   sumiria e sobraria só a curva âmbar. Por isso o fio.
 ⚠️ O desenho agora mora em DOIS lugares (o data-URI do <link> e o <symbol>):
   mudar um exige mudar o outro.
+
+--------------------------------------------------------
+[10/10/2026] Revisão de usabilidade (sem alteração de código)
+--------------------------------------------------------
+PEDIDO DO USUÁRIO
+  "Com um olhar mais de usuário, visualize os botões do cabeçalho e do restante
+   do site como um todo, com o pensamento de ser facilmente interpretado. Quero
+   verificar se está acessível para pessoas com menos conhecimento de tecnologia."
+
+COMO FOI FEITA
+  App aberto com a base de teste e percorrido como por quem nunca o viu: marcar
+  paradas, definir origem, traçar, gerar o link. Inventário de todo botão
+  visível (rótulo, dica, tamanho) tirado do DOM.
+
+MEDIDO
+  27 dos 33 botões visíveis do escritório são só ícone; 6 têm palavra
+  cabeçalho: 7 de 7 sem nome (8 com o ímã), nenhum deles do trabalho do dia
+  14 botões com 22-24 x 18px (estrela, X de remover, ícones dos títulos)
+
+ACHADOS (a lista inteira, com a situação de cada um, está no CLAUDE.md, seção 8)
+  1 cabeçalho só de ícones, três dizendo outra coisa     -> v8.25.0
+  2 mira e alfinete da Origem trocados                   -> v8.25.0
+  3 botões de traçar antes de escolher as paradas        em aberto
+  4 alvos de 22-24 x 18px                                em aberto
+  5 "retomar pelo link" atrás de uma corrente; jargão    em aberto
+  6 dicas do zoom do mapa em inglês                      em aberto
+  7 checklist, nome da parada e abas fora do teclado     em aberto
+
+MATERIAL
+  COMPARACAO-CABECALHO.html (fora do repositório): hoje x três propostas, cada
+  uma o cabeçalho inteiro em tamanho real, clicável, com medidas ao vivo.
+  O usuário escolheu a "A" e aprovou os cinco desenhos novos.
+
+--------------------------------------------------------
+[10/10/2026] v8.25.0 — cabeçalho com nome nos botões
+--------------------------------------------------------
+PEDIDO DO USUÁRIO, depois de ver a comparação
+  "2: Três formas de resolver. Gostei da opção a)"
+  "3: Gostei, pode implementar."
+
+O QUE MUDOU
+  O bloco de oito ícones do cabeçalho virou dois botões com palavra:
+    [Mapa: todos]   o filtro de clientes da v8.15.0, com o estado escrito
+                    (Mapa: todos / Mapa: destaque / Mapa: só a viagem)
+    [Exibição v]    abre um menu; cada linha tem nome e uma frase
+                      Desempenho e aparência
+                        Modo leve · Tema escuro · Transparência do painel
+                      Organização da tela
+                        Janelas soltas · Alinhar janelas (só com as janelas)
+                        Guardar esta organização · Voltar à organização padrão
+  Desenhos trocados:
+    disquete  -> painel com ✓        (parecia "salvar meu roteiro")
+    lixeira   -> seta de voltar      (parecia "apagar")
+    vidro     -> vidraça com reflexo (era o ícone universal de COPIAR)
+    Origem    -> a MIRA passa para "usar minha localização" e "marcar no mapa"
+                 vira um mapa dobrado (era o contrário do Google Maps e do Waze)
+    avulsa    -> o botão de marcar no mapa também vira o mapa dobrado
+  Textos: "botão de alvo" saiu das três mensagens que o citavam; as dicas do
+  filtro do mapa pararam de dizer "APAGAR" (lia-se como excluir).
+
+O QUE NÃO MUDOU
+  Os ids e os data-*-btn são os mesmos: aplicarTema, aplicarVidro,
+  aplicarModoLeve, aplicarModoJanelas, aplicarIma e atualizarBotaoFoco continuam
+  achando o seu botão pelo mesmo seletor. Saiu de dentro delas só o b.title.
+  O comportamento do botão de localização não foi tocado — só o desenho.
+  A tela do campo: o tema lá continua sendo um ícone sozinho (.icone-btn).
+
+MEDIDO (janela de 1400 x 820)
+  bloco do cabeçalho: 265px -> 252px (275 com "destaque", 292 com "só a viagem")
+  altura do cabeçalho: 65px, a mesma
+  menu: 356 x 440px, por cima do painel e do mapa (elementFromPoint confere)
+  modo leve ligado NA ABERTURA: linhas de transparência e janelas travadas, com
+    "Desligado pelo modo leve."; ponto âmbar aceso; zero animações;
+    transition-duration 0s; sombra do menu removida
+  saindo do modo leve: as duas linhas destravam e as frases voltam
+  janelas soltas: a linha "Alinhar janelas" aparece e some com elas
+  mover um módulo: "Guardar" acende em âmbar, a frase muda e o ponto acende;
+    guardar: "✓ Guardado" por 1,8 s; voltar ao padrão: tudo apaga
+  clique dentro do menu não fecha; clique no mapa fecha; Esc fecha e devolve o
+    foco ao botão
+  700px: o menu fica com Modo leve e Tema escuro. 375px: cabe, sem rolagem
+    horizontal (menu de 351px)
+  fluxo inteiro refeito depois da mudança: origem pelo mapa, rota otimizada,
+    link gerado; filtro do mapa cicla os três estados
+  tela do campo aberta por link de verdade: v8.25.0, mapa presente, botão de
+    tema 32x32 trocando o tema
+  sem erro de console no escritório nem no campo
+
+O PREÇO, ASSUMIDO
+  Ligar o modo leve passou de um clique para dois, e o que está ligado saiu da
+  vista — sobra o ponto âmbar no botão "Exibição", com o motivo na dica.
+
+⚠️ atualizarPontoExibicao() roda na CARGA (por aplicarVidro), antes de
+  LARGURA_MINIMA_GUIA existir: por isso pergunta a tela estreita ao matchMedia.
+⚠️ O z-index do menu (2000) mora em .exibicao, não no <header>.
+⚠️ .icone-btn NÃO é resto no CSS: é o botão de tema da tela do campo.
+⚠️ LIMITE DO TESTE: as capturas de tela do painel de teste falharam várias
+  vezes (a janela não estava pintando). O menu aberto foi visto em captura no
+  tema escuro, a 1400 e a 700px; o TEMA CLARO e o estado com modo leve ligado
+  foram conferidos só pelo DOM. Falta o olho do usuário neles.
+
