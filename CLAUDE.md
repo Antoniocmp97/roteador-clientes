@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 10/10/2026 — v8.26.0 (varredura completa atrás de bugs: nove correções, quatro pontos em aberto)
+> **Última atualização:** 14/10/2026 — v8.26.1 (o zoom ao clicar na parada vai a 15, um degrau mais longe)
 
 ---
 
@@ -1025,9 +1025,14 @@ sem dependências instaladas. Abre direto no navegador.
   animação não faz a linha antiga voltar: cada traçado tem um número e só o mais
   recente desenha
 - **Clicar na parada leva o mapa até ela** (v6.9.0): clique no nome ou no número
-  centraliza o mapa na parada com zoom 16, abre o balão e acende o marcador. O
-  zoom **nunca afasta** (se já estiver mais perto, só centraliza). Alça e botões
-  mantêm a função deles.
+  centraliza o mapa na parada com zoom **15** (`ZOOM_DA_PARADA`), abre o balão e
+  acende o marcador. O zoom **nunca afasta** (se já estiver mais perto, só
+  centraliza). Alça e botões mantêm a função deles.
+  ⚠️ **Era 16 até a v8.26.0**; o usuário achou perto demais ("um pouco mais
+  longe") e a v8.26.1 baixou um degrau — o dobro de área à vista. O mapa do
+  escritório tem zoom inteiro, então não existe 15,5. As medidas da v8.17.0
+  abaixo foram tiradas ainda com 16. A origem (`setOrigin`) continua em 16:
+  é outro caso e não foi pedido
   ⚠️ **CORRIGIDO NA v8.17.0** (relatado pelo usuário: "ao dar o zoom em qualquer
   parada que esteja dentro da ordem de viagem parece que a tela não acompanha
   muito bem. Preciso que o zoom e foco passe a ser o ponto clicado"). O centro
@@ -2312,6 +2317,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 121 | **v8.24.2** — O mesmo ícone ao lado do nome "hagamorfis/rotas", nas duas telas |
 | 122 | **v8.25.0** — Cabeçalho com nome: sete ícones viram dois botões ("Mapa: …" e o menu "Exibição"); disquete, lixeira, vidro e os dois da Origem trocam de desenho |
 | 123 | **v8.26.0** — Varredura de bugs: nove correções (resposta do OSRM conferida antes de aplicar, origem desfaz a rota, tracejado do efeito sai, nome da avulsa chega à viagem, entre outras) |
+| 124 | **v8.26.1** — O zoom ao clicar na parada vai a 15 em vez de 16 (um pouco mais longe, a pedido do usuário) |
 
 ---
 
@@ -2379,7 +2385,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.26.0
+8.26.1
 ```
 
 ### Onde o número aparece
@@ -2554,3 +2560,4 @@ versão continua sendo a cada número fechado.
 | 8.24.2 | 10/10/2026 | O mesmo ícone ao lado do nome da marca, nas duas telas |
 | 8.25.0 | 10/10/2026 | Cabeçalho com dois botões com nome e menu "Exibição"; cinco desenhos que diziam outra coisa, trocados |
 | 8.26.0 | 10/10/2026 | Nove correções da varredura de bugs; quatro pontos ficaram em aberto |
+| 8.26.1 | 14/10/2026 | Zoom ao clicar na parada de 16 para 15 |

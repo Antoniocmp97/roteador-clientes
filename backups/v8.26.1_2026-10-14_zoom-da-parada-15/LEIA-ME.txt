@@ -1,0 +1,17 @@
+v8.26.1 — 14/10/2026 — zoom ao clicar na parada um degrau mais longe
+
+O QUE MUDOU
+  ZOOM_DA_PARADA de 16 para 15. Clicar no nome ou no número de uma parada
+  da Ordem da viagem leva o mapa até ela com zoom 15 (o dobro de área à
+  vista). Continua sem afastar quando o mapa já está mais perto.
+
+POR QUÊ
+  Pedido do usuário: "o zoom dado ao clicar na parada já selecionada é muito
+  grande. Ajuste para ficar um pouco mais longe".
+
+NÃO MEXIDO
+  O enquadramento da origem continua em 16.
+
+TESTADO
+  Zoom 15 e parada no centro da área visível, com o modo leve ligado e
+  desligado; com o mapa já em 17, ele continua em 17.

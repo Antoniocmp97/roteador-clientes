@@ -7907,3 +7907,18 @@ FICARAM EM ABERTO (não mexi — pedem decisão ou não valem o risco)
     antiga deste log (teste da busca, v2.1). Trocado por uma descrição.
     ⚠️ Continua no histórico do Git, que é público: tirar de lá é reescrever
     o histórico, e isso é decisão do usuário.
+
+--------------------------------------------------------
+[14/10/2026] v8.26.1 — zoom ao clicar na parada um degrau mais longe
+--------------------------------------------------------
+- Pedido do usuário: "o zoom dado ao clicar na parada já selecionada é muito
+  grande. Ajuste para ficar um pouco mais longe".
+- ZOOM_DA_PARADA de 16 para 15 (index.html). Vale para o clique no nome ou no
+  número da parada na Ordem da viagem e para a avulsa recém-criada, que usam
+  o mesmo caminho (verParadaNoMapa). 15 é o dobro de área à vista.
+- O mapa do escritório tem zoom inteiro (sem zoomSnap fracionário), então não
+  há meio-termo entre 16 e 15.
+- Continua valendo "o zoom nunca afasta": se o mapa já está mais perto que 15,
+  só centraliza.
+- NÃO mexido: o enquadramento da origem (setOrigin), que continua em 16.
+- Leve (só um número): 8.26.0 -> 8.26.1.

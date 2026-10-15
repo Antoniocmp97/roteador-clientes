@@ -2386,7 +2386,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.26.0';
+const VERSAO = '8.26.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -4429,8 +4429,12 @@ function realcarPeloMarcador(ponto, ligado){
 /* Clicar no corpo da parada leva o mapa até ela (v6.9.0, pedido do usuário a
    partir do realce da v6.7.0). O clique vale no nome e no número; alça e botões
    continuam fazendo o que já faziam. O zoom nunca AFASTA: se o mapa já está mais
-   perto do que 16, mantém o que está. */
-const ZOOM_DA_PARADA = 16;
+   perto do que isto, mantém o que está.
+   ⚠️ Era 16 até a v8.26.1 — o usuário achou perto demais ("o zoom é muito
+   grande, um pouco mais longe"). 15 é um degrau: o dobro de área à vista, com
+   as ruas em volta da parada ainda legíveis. O mapa do escritório tem zoom
+   inteiro, então não há meio-termo entre os dois. */
+const ZOOM_DA_PARADA = 15;
 
 /* Bloquear/liberar esse zoom (v7.3.0, pedido do usuário: "muito importante").
    Conferindo a lista com o mapa enquadrado num bairro, cada clique jogava o mapa
