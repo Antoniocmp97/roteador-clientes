@@ -7987,3 +7987,11 @@ NÃO ENTROU (para validar antes): aviso no link/tela do campo, marca no
   ponto facultativo". Nível próprio 'facultativo' (âmbar, rótulo "Ponto
   facultativo"), ativo junto com 'fechado'; só o Carnaval (segunda e terça)
   usa. Quarta de Cinzas continua desligada.
+
+--------------------------------------------------------
+[16/10/2026] v8.28.1 — "Rota para" maior e o dia escolhido em âmbar
+--------------------------------------------------------
+- Pedido do usuário: o rótulo "Rota para" do mesmo tamanho dos botões ao lado
+  (11,5 -> 13px) e o dia selecionado com a LETRA em âmbar também, não só a
+  borda (que passou de --amber-dim para --amber).
+- Leve: 8.28.0 -> 8.28.1.

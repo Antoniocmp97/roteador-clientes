@@ -64,6 +64,7 @@ backups/*
 !backups/v8.26.1_2026-10-14_zoom-da-parada-15/
 !backups/v8.27.0_2026-10-15_feriados-por-municipio/
 !backups/v8.28.0_2026-10-15_so-feriados-confirmados/
+!backups/v8.28.1_2026-10-16_dia-em-ambar/
 
 # --- Bloco de notas de quem trabalha na pasta ---
 # Qualquer rascunho solto na raiz entra no próximo "git add -A" e vai parar num

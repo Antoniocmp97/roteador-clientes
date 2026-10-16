@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/10/2026 — v8.28.0 (os avisos de feriado ficam só com os feriados confirmados)
+> **Última atualização:** 16/10/2026 — v8.28.1 ("Rota para" em 13px e o dia escolhido todo em âmbar)
 
 ---
 
@@ -758,6 +758,8 @@ sem dependências instaladas. Abre direto no navegador.
   o desenho (âmbar e teal) continua no CSS. Ficam de fora, então: ponto
   facultativo, Dia do Professor, Dia do Servidor, recessos, datas de fonte não
   oficial, o Corpus Christi das cidades em que ele não é feriado e as festas.
+  ⚠️ **O dia escolhido fica todo em âmbar**, borda e letra, e o rótulo "Rota para"
+  tem 13px, o mesmo dos botões (v8.28.1, pedido do usuário).
   ⚠️ **A exceção é o CARNAVAL**, pedido dele na mesma rodada: aparece em âmbar
   como **"Ponto facultativo"** (nível próprio, `'facultativo'`), nas duas datas
   (segunda e terça). É ponto facultativo em todo lugar, e não dúvida. A Quarta
@@ -2396,6 +2398,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 124 | **v8.26.1** — O zoom ao clicar na parada vai a 15 em vez de 16 (um pouco mais longe, a pedido do usuário) |
 | 125 | **v8.27.0** — Dia da rota (hoje / próximo dia) e avisos de feriado, ponto facultativo e festa por município, com a tabela de 16 cidades |
 | 126 | **v8.28.0** — Só os feriados confirmados aparecem, mais o Carnaval como ponto facultativo; avisos de dúvida, de nicho e festas ficam desligados na tabela |
+| 127 | **v8.28.1** — "Rota para" do tamanho dos botões e o dia escolhido todo em âmbar |
 
 ---
 
@@ -2464,7 +2467,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.28.0
+8.28.1
 ```
 
 ### Onde o número aparece
@@ -2642,3 +2645,4 @@ versão continua sendo a cada número fechado.
 | 8.26.1 | 14/10/2026 | Zoom ao clicar na parada de 16 para 15 |
 | 8.27.0 | 15/10/2026 | Dia da rota e avisos de feriado por município (16 cidades) |
 | 8.28.0 | 15/10/2026 | Só feriados confirmados e o Carnaval como ponto facultativo (o Dia do Professor marcava quem não é escola) |
+| 8.28.1 | 16/10/2026 | "Rota para" em 13px e o dia escolhido com borda e letra em âmbar |

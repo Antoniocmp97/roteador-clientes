@@ -1368,12 +1368,14 @@
      A bolinha é a mesma língua do resto do app: vermelho = fecha de verdade,
      âmbar = pode fechar, teal = festa. */
   header .dia-rota{flex:none; align-self:center; display:flex; align-items:center; gap:5px;}
-  header .dia-rota .rotulo{font-size:11.5px; color:var(--muted); margin-right:2px; white-space:nowrap;}
+  /* 13px, o mesmo dos botões ao lado (v8.28.1, pedido do usuário) */
+  header .dia-rota .rotulo{font-size:13px; color:var(--muted); margin-right:2px; white-space:nowrap;}
   .dia-btn{display:flex; align-items:center; gap:4px; height:30px; padding:0 10px; border-radius:7px;
            background:none; border:1px solid var(--line); color:var(--muted); font-size:13px;
            white-space:nowrap; cursor:pointer; transition:color .15s, background .15s, border-color .15s;}
   .dia-btn:hover{background:var(--hover); color:var(--text);}
-  .dia-btn[aria-checked="true"]{color:var(--text); background:var(--panel-2); border-color:var(--amber-dim); font-weight:600;}
+  /* O dia escolhido em âmbar inteiro, borda e letra (v8.28.1, pedido do usuário) */
+  .dia-btn[aria-checked="true"]{color:var(--amber); background:var(--panel-2); border-color:var(--amber); font-weight:600;}
   .dia-btn .data{font-family:'JetBrains Mono',monospace; font-size:11.5px;}
   .dia-btn:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
   .dia-btn .marca{width:7px; height:7px; border-radius:50%; flex:none; margin-left:3px;}
@@ -2433,7 +2435,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.28.0';
+const VERSAO = '8.28.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 

@@ -1,0 +1,9 @@
+v8.28.1 — 16/10/2026 — "Rota para" maior e o dia escolhido em âmbar
+
+O QUE MUDOU
+  O rótulo "Rota para" do cabeçalho foi de 11,5px para 13px, o tamanho dos
+  botões ao lado. O dia selecionado ganhou letra em âmbar, e a borda passou
+  do âmbar apagado para o âmbar cheio.
+
+POR QUÊ
+  Pedido do usuário.
