@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 14/10/2026 — v8.26.1 (o zoom ao clicar na parada vai a 15, um degrau mais longe)
+> **Última atualização:** 15/10/2026 — v8.27.0 (dia da rota e avisos de feriado, ponto facultativo e festa por município)
 
 ---
 
@@ -726,6 +726,69 @@ sem dependências instaladas. Abre direto no navegador.
   ⚠️ A soma lê o resumo do técnico ativo da variável global e o das outras abas
   do objeto de cada uma, em vez de chamar `salvarNoTecnico()` — que mexeria no
   DOM no meio da montagem do DOM
+- **Dia da rota e avisos de feriado** (v8.27.0, pedido do usuário em 15/10/2026,
+  no dia em que o técnico foi a escolas fechadas no Dia do Professor: "nada mais
+  importante como saber ou não o que está aberto, para que não seja desperdiçado
+  recursos e tempo"). Três peças:
+  · **"Rota para: [Hoje · qui 15/10] [Próximo dia · sex 16/10]"** no cabeçalho,
+    logo depois das abas. O padrão é o **próximo dia**, porque ele planeja quase
+    sempre na véspera. O próximo dia **pula sábado, domingo e feriado nacional**
+    (numa sexta, mostra a segunda). Feriado municipal não pula, porque vale para
+    uma cidade só. O dia é **um só para todas as abas**. Cada botão ganha uma
+    bolinha se há algo naquele dia, e a dica do mouse diz o quê e onde: assim os
+    **dois dias** ficam à vista, como combinado.
+  · **No módulo Rota**, acima dos botões, a lista do dia escolhido: uma linha por
+    evento, com as cidades. O mesmo evento em várias cidades vira uma linha só.
+  · **Em cada parada da "Ordem da viagem"**, uma linha pequena com o aviso que vale
+    para a cidade dela ("Feriado em Içara · São Donato"). Se houver mais de um, os
+    outros ficam na dica.
+  ⚠️ **A regra das cores é do usuário**: *"nesses casos que existe a dúvida de ser
+  ou não, deixa apenas um aviso; quando for algo concreto, como 1º de maio ou
+  Natal, um aviso real"*. **Vermelho = "Feriado"**: nacional, ou municipal que está
+  no **decreto de 2026 da prefeitura** ou na **lista do TRE-SC de 2026**. **Âmbar =
+  "Pode estar fechado"**: ponto facultativo, data de fonte não oficial, escola que
+  pode ou não parar. **Teal = "Evento"**: festa da cidade. **Nada bloqueia.**
+  ⚠️ **O tipo de cliente foi dispensado pelo usuário** ("sabemos dos locais e sua
+  área"). Por isso o Dia do Professor vira aviso para **todas** as paradas, e quem
+  sabe que não é escola ignora.
+  ⚠️ **O município de cada parada vem do Nominatim**, pela coordenada, no nível de
+  cidade (`zoom=10`), **uma vez só**, e fica guardado em `hg_municipios`. A busca é
+  só para as paradas que estão na viagem, **uma por vez, com 1,1s entre elas**
+  (regra de uso do Nominatim). O intervalo é por `setTimeout`, que anda igual no
+  modo leve e com a aba sem pintar. Enquanto o município não chega, a parada recebe
+  só os avisos que valem para todas as cidades. Quando chega, a marca é **trocada
+  no lugar** (`pintarAvisosNasParadas`), sem redesenhar a lista, porque redesenhar
+  no meio de um arraste o quebraria. Se a consulta falha, o app não insiste naquela
+  sessão.
+  ⚠️ **A tabela é `DATAS_FIXAS`, e a parte municipal precisa ser conferida TODO
+  ANO.** O levantamento, com a fonte de cada linha, está em **`FERIADOS-2026.md`**.
+  As melhores fontes: os **decretos no Diário Oficial dos Municípios de SC** (busca
+  por `codigoEntidade`) e a **lista anual do TRE-SC** (`Feriados_Municipais_Ano_2026.pdf`,
+  que só cobre as cidades-sede de zona eleitoral). ⚠️ O site do TRE **bloqueia
+  download automático**: o usuário baixou o PDF pelo navegador. ⚠️ **Metade das
+  prefeituras não publica calendário anual**: decretam data por data, às vezes na
+  véspera.
+  ⚠️ **As datas que dependem da Páscoa são CALCULADAS** (`pascoa()`, algoritmo de
+  Meeus): Carnaval, Cinzas, Paixão e Corpus Christi valem para qualquer ano sem
+  mexer na tabela. Conferido: Páscoa de 2026 em 05/04 e de 2027 em 28/03.
+  ⚠️ **Corpus Christi tem dois níveis no mesmo dia**: "Feriado" nas dez cidades em
+  que o decreto diz isso e "Pode estar fechado" nas demais. A `chave:'corpus'` é o
+  que faz o aviso genérico sumir onde existe o feriado de verdade.
+  ⚠️ **A Data Magna de SC (11/08) NÃO está na tabela, de propósito**: a Lei
+  estadual 18.531/2022 manda a comemoração para o domingo seguinte. Os sites de
+  feriado ainda a listam como feriado, e estão errados.
+  ⚠️ **A seção inteira usa `var` e função, e nenhum `const`/`let` de topo**:
+  `renderStopsList()` chama `pintarAvisosNasParadas()` e pode rodar na carga antes
+  de a seção ser lida. Com `const`, a zona morta derrubaria o app; com `var`, a
+  função encontra `undefined` e sai sem fazer nada.
+  ⚠️ **"Esplanada", da lista do usuário, não é município**: é o Balneário
+  Esplanada, em **Jaguaruna** (confirmado por ele).
+  ⚠️ **O aviso NÃO vai para a tela do campo, por decisão do usuário** ("ainda não
+  tem muita utilidade, deixe sem por enquanto"). O link não mudou de formato.
+  Também ficaram de fora a marca **no checklist** e a **data no planejamento
+  guardado**.
+  ⚠️ **`FERIADOS-2026.md` é versionado** (pedido do usuário: "a fonte deve
+  acompanhar o site"). Quem mexer em `DATAS_FIXAS` atualiza os dois juntos.
 - **O planejamento do dia sobrevive ao recarregar** (v8.5.0, pedido do usuário).
   Até aqui só a **configuração** era guardada; o roteiro do dia morria no F5, de
   propósito. Com as abas a conta mudou de tamanho: um F5 sem querer passou a
@@ -1833,7 +1896,7 @@ repositório é público (ver `.gitignore`).
   o vidro ligado
   ou desligado, as janelas livres ligadas ou desligadas, o ímã de alinhamento
   delas, **a faixa de mapa da tela do campo** (v8.16.0, no aparelho de quem
-  abriu o link), **o modo leve** (v8.7.0), **o planejamento do dia** (v8.5.0, restaurado
+  abriu o link), **o modo leve** (v8.7.0), **o município de cada coordenada já consultada** (v8.27.0), **o planejamento do dia** (v8.5.0, restaurado
   só se a pessoa aceitar), a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
   botão), o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
@@ -2318,6 +2381,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 122 | **v8.25.0** — Cabeçalho com nome: sete ícones viram dois botões ("Mapa: …" e o menu "Exibição"); disquete, lixeira, vidro e os dois da Origem trocam de desenho |
 | 123 | **v8.26.0** — Varredura de bugs: nove correções (resposta do OSRM conferida antes de aplicar, origem desfaz a rota, tracejado do efeito sai, nome da avulsa chega à viagem, entre outras) |
 | 124 | **v8.26.1** — O zoom ao clicar na parada vai a 15 em vez de 16 (um pouco mais longe, a pedido do usuário) |
+| 125 | **v8.27.0** — Dia da rota (hoje / próximo dia) e avisos de feriado, ponto facultativo e festa por município, com a tabela de 16 cidades |
 
 ---
 
@@ -2333,6 +2397,7 @@ PROJETO APP LOGISTICA/        ← raiz do repositório Git
 ├── CLAUDE.md                 ← este arquivo (contexto do projeto)
 ├── MAPA-DO-CODIGO.md         ← onde cada coisa mora no index.html (v8.8.0)
 ├── LOG-ALTERACOES.txt        ← log de todas as alterações
+├── FERIADOS-2026.md          ← levantamento das datas, com fonte (v8.27.0)
 ├── README.md
 ├── .gitignore
 ├── Exemplos/
@@ -2385,7 +2450,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.26.1
+8.27.0
 ```
 
 ### Onde o número aparece
@@ -2561,3 +2626,4 @@ versão continua sendo a cada número fechado.
 | 8.25.0 | 10/10/2026 | Cabeçalho com dois botões com nome e menu "Exibição"; cinco desenhos que diziam outra coisa, trocados |
 | 8.26.0 | 10/10/2026 | Nove correções da varredura de bugs; quatro pontos ficaram em aberto |
 | 8.26.1 | 14/10/2026 | Zoom ao clicar na parada de 16 para 15 |
+| 8.27.0 | 15/10/2026 | Dia da rota e avisos de feriado por município (16 cidades) |

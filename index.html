@@ -1099,6 +1099,12 @@
   .stop-row .nm-tipo{display:inline-block; margin-top:3px; font-family:'JetBrains Mono',monospace;
                       font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--teal);
                       background:var(--teal-fraco); border:1px solid var(--teal); border-radius:4px; padding:1px 6px;}
+  /* Aviso do dia na parada (v8.27.0): feriado, "pode estar fechado" ou festa
+     na cidade dela, no dia escolhido no cabeçalho */
+  .stop-row .nm-aviso{display:block; margin-top:3px; font-size:10.5px; font-weight:600; line-height:1.3;}
+  .stop-row .nm-aviso.fechado{color:var(--danger);}
+  .stop-row .nm-aviso.aviso{color:var(--amber);}
+  .stop-row .nm-aviso.evento{color:var(--teal);}
   .empty-hint{font-size:11.5px;color:var(--muted);font-style:italic;}
 
   /* Lista ordenável das paradas selecionadas (ordem da viagem) */
@@ -1357,6 +1363,34 @@
      dizem distância falam a mesma língua. Troca com o tema, como todo o resto. */
   header .resumo-dia .valor{font-family:'JetBrains Mono',monospace; font-size:13px;
               font-weight:700; color:var(--amber);}
+
+  /* Dia da rota (v8.27.0): dois botões, hoje e o próximo dia de atendimento.
+     A bolinha é a mesma língua do resto do app: vermelho = fecha de verdade,
+     âmbar = pode fechar, teal = festa. */
+  header .dia-rota{flex:none; align-self:center; display:flex; align-items:center; gap:5px;}
+  header .dia-rota .rotulo{font-size:11.5px; color:var(--muted); margin-right:2px; white-space:nowrap;}
+  .dia-btn{display:flex; align-items:center; gap:4px; height:30px; padding:0 10px; border-radius:7px;
+           background:none; border:1px solid var(--line); color:var(--muted); font-size:13px;
+           white-space:nowrap; cursor:pointer; transition:color .15s, background .15s, border-color .15s;}
+  .dia-btn:hover{background:var(--hover); color:var(--text);}
+  .dia-btn[aria-checked="true"]{color:var(--text); background:var(--panel-2); border-color:var(--amber-dim); font-weight:600;}
+  .dia-btn .data{font-family:'JetBrains Mono',monospace; font-size:11.5px;}
+  .dia-btn:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
+  .dia-btn .marca{width:7px; height:7px; border-radius:50%; flex:none; margin-left:3px;}
+  .marca.fechado{background:var(--danger);} .marca.aviso{background:var(--amber);} .marca.evento{background:var(--teal);}
+
+  /* O dia no módulo Rota: uma linha por evento, a mesma cor da bolinha */
+  .avisos-dia{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
+  .avisos-dia .legenda{font-size:11.5px; color:var(--muted);}
+  .avisos-dia .nada{font-size:11.5px; color:var(--muted);}
+  .avisos-dia .linha{font-size:13px; line-height:1.35; color:var(--text); padding-left:9px;
+                     border-left:2px solid var(--line);}
+  .avisos-dia .linha b{font-weight:600;}
+  .avisos-dia .linha .obs{color:var(--muted);}
+  .avisos-dia .linha .onde{display:block; font-size:11.5px; color:var(--muted);}
+  .avisos-dia .fechado{border-left-color:var(--danger);} .avisos-dia .fechado b{color:var(--danger);}
+  .avisos-dia .aviso{border-left-color:var(--amber);}    .avisos-dia .aviso b{color:var(--amber);}
+  .avisos-dia .evento{border-left-color:var(--teal);}    .avisos-dia .evento b{color:var(--teal);}
 
   /* Painel de resultado: distância, tempo e roteiro passo a passo (escondido até haver uma rota) */
   .readout{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--panel-2);display:none;}
@@ -1823,6 +1857,15 @@
     <div class="mark"><svg class="logo" aria-hidden="true"><use href="#logoMarca"/></svg>hagamorfis<span>/</span>rotas<span class="versao" id="versaoEscritorio"></span></div>
     <!-- Abas de técnico (v8.5.0), ao lado do selo de versão. Desenhadas em renderAbas(). -->
     <div class="abas" id="abasTecnicos" role="tablist" aria-label="Roteiros por técnico"></div>
+    <!-- Dia da rota (v8.27.0): hoje ou o próximo dia de atendimento. Vale para
+         TODAS as abas — os técnicos saem no mesmo dia. A bolinha diz se há
+         feriado (vermelha), dúvida (âmbar) ou festa (teal) naquele dia; a dica
+         do mouse diz o quê e onde. -->
+    <div class="dia-rota" role="radiogroup" aria-label="Rota para">
+      <span class="rotulo">Rota para</span>
+      <button class="dia-btn" type="button" role="radio" data-dia-btn="hoje"></button>
+      <button class="dia-btn" type="button" role="radio" data-dia-btn="proximo"></button>
+    </div>
     <!-- Soma das rotas traçadas de todas as abas (v8.8.0). Só aparece com duas
          ou mais: com uma rota só, o total é o mesmo número que o módulo Rota
          já mostra a meio metro dali. -->
@@ -2111,6 +2154,9 @@
         <div class="field-label">
           <span style="display:flex;align-items:center;"><span class="modulo-alca" data-alca></span>Rota</span>
         </div>
+        <!-- O que acontece na região no dia da rota (v8.27.0): feriado, ponto
+             facultativo, festa. Só informa, não bloqueia nada. -->
+        <div class="avisos-dia" id="avisosDia" aria-live="polite"></div>
         <div class="btn-row">
           <button class="go-btn principal" id="optimizeBtn"
                   title="O app escolhe a melhor sequência e já traça a rota. As paradas prioritárias continuam fixas na frente.">Rota otimizada</button>
@@ -2386,7 +2432,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.26.1';
+const VERSAO = '8.27.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -3923,6 +3969,276 @@ function semAcento(txt){
   return (txt || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
+/* ---------------- Dia da rota, feriados e datas festivas (v8.27.0) ----------------
+   Pedido do usuário depois de 15/10/2026, quando o técnico foi a escolas
+   fechadas no Dia do Professor: "como o sistema contempla a logística, nada mais
+   importante como saber ou não o que está aberto". O levantamento das datas está
+   em FERIADOS-2026.md, com a fonte de cada linha.
+   Três níveis, e a regra é do usuário:
+   · 'fechado' = coisa CONCRETA (1º de maio, Natal, feriado municipal que está no
+     decreto de 2026 da prefeitura) → aviso de verdade, em vermelho;
+   · 'aviso'   = dúvida (ponto facultativo, data só de agregador, escola que pode
+     ou não parar) → "pode estar fechado", em âmbar;
+   · 'evento'  = festa da cidade, informativo → teal.
+   "O intuito é a informação": NADA disso bloqueia, só avisa.
+   ⚠️ Tudo com `var` e função, e não `const`/`let`: renderStopsList() pode rodar na
+   carga antes desta seção ser lida, e a zona morta de um `const` derrubaria o app. */
+
+var DIAS_CURTOS = ['dom','seg','ter','qua','qui','sex','sáb'];
+var DIAS_LONGOS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+var diaRotaEscolhido = 'proximo';   // planeja-se quase sempre na véspera (decisão do usuário)
+
+function isoLocal(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function dataDeIso(iso){ const p = iso.split('-').map(Number); return new Date(p[0], p[1]-1, p[2]); }
+function somaDias(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+
+// Domingo de Páscoa (algoritmo de Meeus/Jones/Butcher). Carnaval, Cinzas, Paixão
+// e Corpus Christi saem dele, então o app sabe as datas de qualquer ano sem internet.
+function pascoa(ano){
+  const a = ano % 19, b = Math.floor(ano/100), c = ano % 100, d = Math.floor(b/4), e = b % 4,
+        f = Math.floor((b+8)/25), g = Math.floor((b-f+1)/3), h = (19*a+b-d-g+15) % 30,
+        i = Math.floor(c/4), k = c % 4, l = (32+2*e+2*i-h-k) % 7, m = Math.floor((a+11*h+22*l)/451),
+        mes = Math.floor((h+l-7*m+114)/31), dia = ((h+l-7*m+114) % 31) + 1;
+  return new Date(ano, mes-1, dia);
+}
+
+/* A tabela. `q` = 'MM-DD' (todo ano) ou 'AAAA-MM-DD' (só aquele ano); `de`/`ate`
+   = período. `c` = cidades ('*' = todas). `chave` junta o genérico com o da cidade:
+   onde existe um 'fechado' com a mesma chave, o 'aviso' genérico não aparece.
+   ⚠️ A parte municipal precisa ser conferida TODO ANO — metade das prefeituras
+   decreta data por data, às vezes na véspera. */
+var CORPUS_FERIADO = ['Içara','Nova Veneza','Siderópolis','Sombrio','Urussanga','Forquilhinha','Cocal do Sul','Treviso','Tubarão','Jaguaruna'];
+var DATAS_FIXAS = [
+  // Nacionais (Lei 662/1949, 6.802/1980, 14.759/2023)
+  {q:'01-01', n:'fechado', t:'Confraternização Universal', c:'*'},
+  {q:'04-21', n:'fechado', t:'Tiradentes', c:'*'},
+  {q:'05-01', n:'fechado', t:'Dia do Trabalho', c:'*'},
+  {q:'09-07', n:'fechado', t:'Independência do Brasil', c:'*'},
+  {q:'10-12', n:'fechado', t:'Nossa Senhora Aparecida', c:'*'},
+  {q:'11-02', n:'fechado', t:'Finados', c:'*'},
+  {q:'11-15', n:'fechado', t:'Proclamação da República', c:'*'},
+  {q:'11-20', n:'fechado', t:'Consciência Negra', c:'*'},
+  {q:'12-25', n:'fechado', t:'Natal', c:'*'},
+  // Datas que fecham só uma parte
+  {q:'10-15', n:'aviso', t:'Dia do Professor', o:'escolas podem estar fechadas', c:'*'},
+  {q:'10-28', n:'aviso', t:'Dia do Servidor Público', o:'ponto facultativo; muitas prefeituras transferem', c:'*'},
+  {q:'12-24', n:'aviso', t:'Véspera de Natal', o:'ponto facultativo', c:'*'},
+  {q:'12-31', n:'aviso', t:'Véspera de Ano-Novo', o:'ponto facultativo', c:'*'},
+  // Estadual: Santa Catarina de Alexandria está em PROJETO de lei (PL 0023/2026).
+  // A Data Magna de 11/08 NÃO entra: a Lei 18.531/2022 a manda para o domingo seguinte.
+  {q:'11-25', n:'aviso', t:'Santa Catarina de Alexandria', o:'feriado estadual em projeto de lei — conferir', c:'*'},
+
+  // Municipais — 'fechado' só quando está no decreto de 2026 da prefeitura ou na
+  // lista do TRE-SC de 2026 (atualizada em 21/08/2026; só cobre as cidades-sede
+  // de zona eleitoral); o resto é 'aviso'. Ver FERIADOS-2026.md.
+  {q:'01-06', n:'fechado', t:'Santos Reis e fundação da cidade', c:['Criciúma']},
+  {q:'12-04', n:'fechado', t:'Santa Bárbara', c:['Criciúma']},
+  {q:'08-07', n:'fechado', t:'São Donato, padroeiro', c:['Içara']},
+  {q:'12-26', n:'fechado', t:'Aniversário de emancipação', c:['Içara']},
+  {q:'04-26', n:'fechado', t:'São Marcos, padroeiro', c:['Nova Veneza']},
+  {q:'06-21', n:'fechado', t:'Emancipação', c:['Nova Veneza']},
+  {q:'12-04', n:'fechado', t:'Santa Bárbara', c:['Siderópolis','Treviso']},
+  {q:'10-03', n:'aviso',   t:'Aniversário da cidade', o:'só fonte não oficial', c:['Balneário Rincão']},
+  {q:'04-03', n:'fechado', t:'Aniversário de emancipação', c:['Araranguá']},
+  {q:'05-04', n:'fechado', t:'Nossa Senhora Mãe dos Homens, padroeira', c:['Araranguá']},
+  {q:'05-26', n:'fechado', t:'Aniversário do município', c:['Urussanga']},
+  {q:'12-08', n:'fechado', t:'Imaculada Conceição, padroeira', c:['Urussanga']},
+  {q:'10-22', n:'aviso',   t:'Dia do Município', o:'fonte oficial de anos anteriores', c:['Braço do Norte']},
+  {q:'04-26', n:'aviso',   t:'Dia do Município', o:'fonte oficial indireta', c:['Forquilhinha']},
+  {q:'12-04', n:'aviso',   t:'Santa Bárbara', o:'a conferir', c:['Forquilhinha']},
+  {q:'09-08', n:'fechado', t:'Nossa Senhora da Natividade, padroeira', c:['Cocal do Sul']},
+  {q:'09-26', n:'fechado', t:'Aniversário de emancipação', c:['Cocal do Sul']},
+  {q:'06-12', n:'aviso',   t:'Aniversário da cidade', o:'só fonte não oficial', c:['São Ludgero']},
+  {q:'03-20', n:'fechado', t:'Dia do Município', c:['Turvo']},
+  {q:'07-12', n:'fechado', t:'Nossa Senhora da Oração, padroeira', c:['Turvo']},
+  {q:'06-13', n:'fechado', t:'Padroeiro da Paróquia de Sombrio', c:['Sombrio']},
+  {q:'01-20', n:'aviso',   t:'Padroeiro da Comunidade Figueirinha', o:'padroeiro de uma comunidade do município', c:['Sombrio']},
+  {q:'07-08', n:'fechado', t:'Emancipação', c:['Treviso']},
+  {q:'05-27', n:'fechado', t:'Aniversário do município', c:['Tubarão']},
+  {q:'09-15', n:'fechado', t:'Nossa Senhora da Piedade, padroeira', c:['Tubarão']},
+  {q:'09-15', n:'fechado', t:'Nossa Senhora das Dores, padroeira', c:['Jaguaruna']},
+  {q:'12-11', n:'aviso',   t:'Emancipação', o:'data a conferir', c:['Jaguaruna']},
+
+  // Só de 2026 (decretos do ano: transferências, pontes e recessos)
+  {q:'2026-04-20', n:'aviso', t:'Véspera de Tiradentes', o:'ponto facultativo', c:['Urussanga','Treviso','Jaguaruna']},
+  {q:'2026-06-05', n:'aviso', t:'Dia seguinte a Corpus Christi', o:'ponto facultativo', c:['Urussanga','Treviso','Sombrio','Forquilhinha','Araranguá','Turvo','Tubarão','Jaguaruna']},
+  {q:'2026-10-13', n:'aviso', t:'Dia do Professor (folga da rede municipal)', o:'escolas municipais fechadas', c:['Tubarão','Forquilhinha']},
+  {q:'2026-10-26', n:'aviso', t:'Dia do Servidor, antecipado', o:'prefeitura fechada', c:['Içara']},
+  {q:'2026-10-30', n:'aviso', t:'Dia do Servidor, transferido', o:'prefeitura fechada', c:['Nova Veneza','Urussanga','Araranguá','Sombrio','Turvo','Treviso','Forquilhinha']},
+  {q:'2026-12-07', n:'aviso', t:'Véspera da Imaculada Conceição', o:'ponto facultativo', c:['Urussanga']},
+  {de:'2026-12-21', ate:'2026-12-31', n:'aviso', t:'Recesso de fim de ano', o:'prefeitura fechada', c:['Jaguaruna']},
+  {de:'2026-12-23', ate:'2027-01-03', n:'aviso', t:'Recesso administrativo', o:'prefeitura fechada', c:['São Ludgero']},
+
+  // Datas festivas com data certa (as de "só o mês" ficam no FERIADOS-2026.md)
+  {de:'2026-06-18', ate:'2026-06-21', n:'evento', t:'Festa da Gastronomia Típica Italiana', c:['Nova Veneza']},
+  {de:'2026-09-24', ate:'2026-09-27', n:'evento', t:'CocalFest e Festa do Colono', c:['Cocal do Sul']},
+  {de:'2026-06-02', ate:'2026-06-14', n:'evento', t:'Programação do aniversário', c:['São Ludgero']}
+];
+
+// As datas que dependem da Páscoa, calculadas para o ano pedido.
+function datasMoveis(ano){
+  const p = pascoa(ano), dia = n => isoLocal(somaDias(p, n));
+  return [
+    {d:dia(-48), n:'aviso', t:'Carnaval', o:'ponto facultativo', c:'*'},
+    {d:dia(-47), n:'aviso', t:'Carnaval', o:'ponto facultativo', c:'*'},
+    {d:dia(-46), n:'aviso', t:'Quarta-feira de Cinzas', o:'ponto facultativo até as 14h', c:'*'},
+    {d:dia(-2),  n:'fechado', t:'Paixão de Cristo', c:'*'},
+    {d:dia(60),  n:'fechado', t:'Corpus Christi', c:CORPUS_FERIADO, chave:'corpus'},
+    {d:dia(60),  n:'aviso', t:'Corpus Christi', o:'ponto facultativo; em várias cidades é feriado', c:'*', chave:'corpus'}
+  ];
+}
+
+// Tudo o que cai num dia ('AAAA-MM-DD'), na região inteira.
+function eventosDoDia(iso){
+  const ano = Number(iso.slice(0,4)), mmdd = iso.slice(5);
+  const fixos = DATAS_FIXAS.filter(e =>
+    e.de ? (iso >= e.de && iso <= e.ate) : (e.q.length === 5 ? e.q === mmdd : e.q === iso));
+  return fixos.concat(datasMoveis(ano).filter(e => e.d === iso));
+}
+
+var ORDEM_NIVEL = { fechado:0, aviso:1, evento:2 };
+var valeNaCidade = (e, cidade) => e.c === '*' || (!!cidade && e.c.some(x => semAcento(x) === semAcento(cidade)));
+
+// O que vale para UMA parada: os de todas as cidades e os do município dela.
+// Sem município conhecido (ainda buscando, ou falhou), só os de todas as cidades.
+function eventosDaParada(s, iso){
+  const cidade = municipioDaParada(s);
+  const lista = eventosDoDia(iso).filter(e => valeNaCidade(e, cidade));
+  const fechadas = new Set(lista.filter(e => e.n === 'fechado' && e.chave).map(e => e.chave));
+  return lista.filter(e => !(e.n !== 'fechado' && e.chave && fechadas.has(e.chave)))
+              .sort((a, b) => ORDEM_NIVEL[a.n] - ORDEM_NIVEL[b.n]);
+}
+
+// "Hoje" e o próximo dia de atendimento: pula sábado, domingo e feriado
+// nacional — municipal não pula, porque vale só para uma cidade.
+function diasDaRota(){
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  let prox = somaDias(hoje, 1);
+  for (let n = 0; n < 10; n++){
+    const iso = isoLocal(prox);
+    const feriadoGeral = eventosDoDia(iso).some(e => e.n === 'fechado' && e.c === '*');
+    if (prox.getDay() !== 0 && prox.getDay() !== 6 && !feriadoGeral) break;
+    prox = somaDias(prox, 1);
+  }
+  return { hoje: isoLocal(hoje), proximo: isoLocal(prox) };
+}
+function diaDaRota(){ return diasDaRota()[diaRotaEscolhido]; }
+function rotuloCurto(iso){ const d = dataDeIso(iso); return `${DIAS_CURTOS[d.getDay()]} <span class="data">${iso.slice(8)}/${iso.slice(5,7)}</span>`; }
+function rotuloLongo(iso){ const d = dataDeIso(iso); return `${DIAS_LONGOS[d.getDay()]}, ${iso.slice(8)}/${iso.slice(5,7)}`; }
+
+/* Município de cada parada: descoberto UMA vez pela coordenada (Nominatim, no
+   nível de cidade) e guardado no navegador. A busca é só para as paradas da
+   viagem, uma por vez e com 1,1s entre elas — a regra de uso do Nominatim é de
+   uma requisição por segundo. Enquanto não chega, a parada recebe só os avisos
+   que valem para todas as cidades. */
+var CHAVE_MUNICIPIOS = 'hg_municipios';
+var municipiosConhecidos = null, filaMunicipios = [], buscandoMunicipio = false, municipiosFalhos = new Set();
+function chaveCoord(lat, lng){ return Number(lat).toFixed(4) + ',' + Number(lng).toFixed(4); }
+function municipioDaParada(s){
+  if (!s || !isFinite(s.lat)) return null;
+  if (!municipiosConhecidos){
+    try{ municipiosConhecidos = JSON.parse(localStorage.getItem(CHAVE_MUNICIPIOS)) || {}; }catch(e){ municipiosConhecidos = {}; }
+  }
+  const k = chaveCoord(s.lat, s.lng);
+  if (k in municipiosConhecidos) return municipiosConhecidos[k] || null;
+  if (!municipiosFalhos.has(k) && !filaMunicipios.some(x => x.k === k)){
+    filaMunicipios.push({ k, lat: s.lat, lng: s.lng });
+    buscarProximoMunicipio();
+  }
+  return null;
+}
+async function buscarProximoMunicipio(){
+  if (buscandoMunicipio) return;
+  const item = filaMunicipios.shift();
+  if (!item) return;
+  buscandoMunicipio = true;
+  try{
+    const d = await safeFetchJSON(`https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&addressdetails=1&lat=${item.lat}&lon=${item.lng}`);
+    const a = (d && d.address) || {};
+    municipiosConhecidos[item.k] = a.city || a.town || a.municipality || a.village || '';
+    try{ localStorage.setItem(CHAVE_MUNICIPIOS, JSON.stringify(municipiosConhecidos)); }catch(e){}
+    atualizarAvisosDoDia();
+  }catch(e){
+    municipiosFalhos.add(item.k);   // não insiste nesta sessão; recarregar tenta de novo
+  }
+  // ⚠️ A próxima só sai depois do intervalo, com ou sem erro — por relógio, que
+  // anda igual com o modo leve ligado e com a aba sem pintar.
+  setTimeout(() => { buscandoMunicipio = false; buscarProximoMunicipio(); }, 1100);
+}
+
+var ROTULO_NIVEL = { fechado:'Feriado', aviso:'Pode estar fechado', evento:'Evento' };
+
+// Marca de cada parada na "Ordem da viagem": o aviso mais forte, com os outros na dica.
+function pintarAvisosNasParadas(){
+  const lista = document.getElementById('stopsList');
+  if (!lista || !ROTULO_NIVEL) return;   // chamada na carga antes desta seção ser lida
+  const iso = diaDaRota();
+  lista.querySelectorAll('.stop-row').forEach(li => {
+    const s = stops[Number(li.dataset.i)];
+    const nm = li.querySelector('.nm');
+    if (!s || !nm) return;
+    let marca = nm.querySelector('.nm-aviso');
+    const evs = eventosDaParada(s, iso);
+    if (!evs.length){ if (marca) marca.remove(); return; }
+    if (!marca){ marca = document.createElement('span'); nm.appendChild(marca); }
+    const e = evs[0], cidade = municipioDaParada(s);
+    const onde = e.c === '*' ? '' : ` em ${cidade}`;
+    marca.className = 'nm-aviso ' + e.n;
+    marca.textContent = `${ROTULO_NIVEL[e.n]}${onde} · ${e.t}`;
+    marca.title = evs.map(x => `${ROTULO_NIVEL[x.n]}: ${x.t}${x.o ? ' (' + x.o + ')' : ''}`).join('\n');
+  });
+}
+
+// Os dois botões do cabeçalho e a lista do módulo Rota.
+function atualizarAvisosDoDia(){
+  if (!ROTULO_NIVEL) return;
+  const dias = diasDaRota();
+  document.querySelectorAll('[data-dia-btn]').forEach(b => {
+    const qual = b.dataset.diaBtn, iso = dias[qual];
+    const evs = eventosDoDia(iso).sort((a, c) => ORDEM_NIVEL[a.n] - ORDEM_NIVEL[c.n]);
+    const nivel = evs.length ? evs[0].n : '';
+    b.innerHTML = `${qual === 'hoje' ? 'Hoje' : 'Próximo dia'} · ${rotuloCurto(iso)}${nivel ? `<span class="marca ${nivel}"></span>` : ''}`;
+    b.setAttribute('aria-checked', String(qual === diaRotaEscolhido));
+    b.title = (qual === 'hoje' ? 'Rota para hoje' : 'Rota para o próximo dia de atendimento') +
+      (evs.length ? '\n\n' + evs.map(e => `${ROTULO_NIVEL[e.n]}: ${e.t} — ${e.c === '*' ? 'todas as cidades' : e.c.join(', ')}`).join('\n')
+                  : '\n\nNada previsto na região.');
+  });
+
+  const caixa = document.getElementById('avisosDia');
+  if (caixa){
+    const iso = dias[diaRotaEscolhido];
+    const evs = eventosDoDia(iso);
+    // Agrupa o mesmo evento em várias cidades numa linha só. O genérico que tem um
+    // 'fechado' com a mesma chave vira "demais cidades".
+    const grupos = new Map();
+    evs.forEach(e => {
+      const k = e.n + '|' + e.t + '|' + (e.o || '');
+      if (!grupos.has(k)) grupos.set(k, { ...e, cidades: [] });
+      if (e.c === '*') grupos.get(k).todas = true; else grupos.get(k).cidades.push(...e.c);
+    });
+    const chavesFechadas = new Set(evs.filter(e => e.n === 'fechado' && e.chave).map(e => e.chave));
+    const linhas = [...grupos.values()].sort((a, b) => ORDEM_NIVEL[a.n] - ORDEM_NIVEL[b.n]).map(g => {
+      const onde = g.todas ? (g.chave && g.n !== 'fechado' && chavesFechadas.has(g.chave) ? 'demais cidades' : 'todas as cidades')
+                           : g.cidades.join(', ');
+      return `<div class="linha ${g.n}"><b>${ROTULO_NIVEL[g.n]}</b> · ${escaparHtml(g.t)}${g.o ? ` <span class="obs">(${escaparHtml(g.o)})</span>` : ''}<span class="onde">${escaparHtml(onde)}</span></div>`;
+    });
+    caixa.innerHTML = `<div class="legenda">${rotuloLongo(iso)}</div>` +
+      (linhas.length ? linhas.join('') : '<div class="nada">Nada previsto na região.</div>');
+  }
+  pintarAvisosNasParadas();
+}
+
+function escolherDiaDaRota(qual){
+  diaRotaEscolhido = qual;
+  atualizarAvisosDoDia();
+}
+document.querySelectorAll('[data-dia-btn]').forEach(b => b.addEventListener('click', () => escolherDiaDaRota(b.dataset.diaBtn)));
+// Quem deixa o app aberto de um dia para o outro: "hoje" muda à meia-noite.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) atualizarAvisosDoDia(); });
+atualizarAvisosDoDia();
+
 function renderChecklist(){
   const el = document.getElementById('checklist');
   const buscaInput = document.getElementById('buscaClientes');
@@ -4275,6 +4591,8 @@ function renderStopsList(){
     };
     list.appendChild(li);
   });
+  // Feriado, ponto facultativo ou festa no dia da rota, na cidade da parada (v8.27.0)
+  pintarAvisosNasParadas();
 }
 
 /* ---------------- Parada avulsa (v7.0.0) ----------------

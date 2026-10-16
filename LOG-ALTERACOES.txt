@@ -7922,3 +7922,52 @@ FICARAM EM ABERTO (não mexi — pedem decisão ou não valem o risco)
   só centraliza.
 - NÃO mexido: o enquadramento da origem (setOrigin), que continua em 16.
 - Leve (só um número): 8.26.0 -> 8.26.1.
+
+--------------------------------------------------------
+[15/10/2026] v8.27.0 — dia da rota e avisos de feriado por município
+--------------------------------------------------------
+- Pedido do usuário depois de o técnico ir a escolas fechadas no Dia do
+  Professor (15/10). Discutido na mesma sessão: seletor "hoje / próximo dia"
+  (ele planeja quase sempre na véspera), os dois dias à vista, aviso por
+  município. Tipo de cliente dispensado por ele.
+- Levantamento em FERIADOS-2026.md: 16 municípios (Esplanada = Jaguaruna,
+  a confirmar), com a fonte de cada linha. Fontes: decretos de 2026 no DOM/SC
+  (8 prefeituras com calendário anual; as outras decretam data por data),
+  lista do TRE-SC de 2026 (cidades-sede de zona eleitoral; PDF baixado pelo
+  usuário, porque o site bloqueia download automático), decreto estadual
+  1.374/2026, Diário Oficial de Criciúma 2025, TJSC, calendário regional AMREC
+  2026 e, só onde marcado, sites agregadores.
+- A lista do TRE de 2026 promoveu a "Feriado": Santa Bárbara em Criciúma,
+  padroeira de Araranguá (04/05), Dia do Município e padroeira de Turvo, e
+  trouxe as duas datas de Sombrio (13/06 feriado; 20/01, padroeiro de uma
+  comunidade, fica como aviso).
+- index.html:
+  · cabeçalho: "Rota para: [Hoje · data] [Próximo dia · data]", com bolinha
+    vermelha/âmbar/teal e a lista do dia na dica;
+  · módulo Rota: lista do dia escolhido, agrupada por evento;
+  · Ordem da viagem: aviso na parada, pela cidade dela;
+  · tabela DATAS_FIXAS + datas móveis calculadas pela Páscoa;
+  · município pela coordenada (Nominatim, zoom=10, 1 consulta a cada 1,1s,
+    guardado em hg_municipios).
+- Regra das cores (do usuário): concreto = "Feriado" vermelho; dúvida =
+  "Pode estar fechado" âmbar; festa = "Evento" teal. Nada bloqueia.
+- 8.26.1 -> 8.27.0 (funcionalidade nova).
+
+TESTADO (base de exemplo + duas avulsas, em Içara e Nova Veneza)
+  Municípios descobertos: 6x Criciúma, Içara, Nova Veneza. Datas forçadas:
+  07/08 só a parada de Içara tem aviso (São Donato); 04/06 Içara e Nova Veneza
+  "Feriado", Criciúma "Pode estar fechado"; 25/12 todas "Feriado"; 30/10 só
+  Nova Veneza. Hoje (15/10) = Dia do Professor em todas; próximo dia = sex
+  16/10, nada. Páscoa 2026 = 05/04, 2027 = 28/03. Avisos sobrevivem a otimizar
+  (reordena) e a trocar de aba. Modo leve: zero animações. Cabeçalho a 1366:
+  65px (uma linha) com uma e duas abas; a 1024 quebra em duas, sem rolagem
+  horizontal. Tela do campo por link de verdade: abre, sem erro de console.
+  Escritório sem erro de console.
+  (Teste de 04/12 feito antes da lista do TRE: dava "Pode estar fechado" em
+  Criciúma; agora é "Feriado".)
+
+NÃO ENTROU (para validar antes): aviso no link/tela do campo, marca no
+  checklist, data no planejamento guardado.
+- Decisões do usuário depois do teste: "Esplanada" = Jaguaruna (confirmado);
+  FERIADOS-2026.md passa a ser versionado ("a fonte deve acompanhar o site");
+  o aviso NÃO vai para a tela do campo por enquanto.

@@ -1,0 +1,19 @@
+v8.27.0 — 15/10/2026 — dia da rota e avisos de feriado por município
+
+O QUE MUDOU
+  Cabeçalho: "Rota para: [Hoje] [Próximo dia]" (padrão: próximo dia de
+  atendimento, pulando fim de semana e feriado nacional), com bolinha quando
+  há algo no dia. Módulo Rota: lista do que acontece na região no dia
+  escolhido. Ordem da viagem: aviso na parada, pela cidade dela.
+  Vermelho = feriado concreto; âmbar = pode estar fechado (dúvida, ponto
+  facultativo, escola); teal = festa. Nada bloqueia.
+
+POR QUÊ
+  Em 15/10/2026 o técnico foi a escolas fechadas no Dia do Professor.
+
+DADOS
+  Tabela DATAS_FIXAS no index.html, tirada de FERIADOS-2026.md (16 cidades,
+  com a fonte de cada linha). Conferir a parte municipal todo ano.
+
+NÃO ENTROU
+  Link/tela do campo, checklist, data no planejamento guardado.

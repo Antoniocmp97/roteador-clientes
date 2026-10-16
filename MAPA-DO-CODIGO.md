@@ -81,6 +81,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | restaurar o planejamento | `O planejamento do dia sobrevive…` | `salvarDia`, `restaurarDia` |
 | carregar o `.umap` | `Upload / parse GeoJSON` | `lerUmap`, `importClients` |
 | checklist de clientes | `Checklist + stops UI` | `renderChecklist`, `semAcento` (busca sem acento, v8.24.0) |
+| feriados, pontos facultativos e festas | `Dia da rota, feriados e datas festivas (v8.27.0)` | `DATAS_FIXAS` (a tabela; conferir todo ano), `datasMoveis`/`pascoa`, `eventosDoDia`, `eventosDaParada`, `diasDaRota`, `municipioDaParada` (Nominatim, 1 por vez), `atualizarAvisosDoDia`, `pintarAvisosNasParadas` |
 | a aparência de linha do checklist | `.checklist` / `.grupo` / `.check-row` no CSS | (regra) fio entre linhas, filete na cascata — sem cartão por linha (v8.22.0) |
 | a aparência de linha da ordem da viagem | `.stops` / `.stop-row` no CSS | (regra) fio em `border-top`; o cartão só em `.arrastando` (v8.22.1) |
 | lista de paradas (ordem) | `Arrastar para reordenar (v3.8)` | `renderStopsList` |
@@ -137,6 +138,7 @@ arranjo          { local, ordem, pesos, fixas, janelas } — onde cada módulo e
                  (SEIS: m1 m2 m3 m4 m5 m7 — o m6 "Enviar para o campo" virou
                   parte do m5 na v8.18.0, e o apelido não foi reaproveitado)
 map              o Leaflet
+diaRotaEscolhido 'hoje' | 'proximo' — o dia da rota, o MESMO para todas as abas (v8.27.0)
 ```
 
 ### 4.3 Preferências no navegador
@@ -160,6 +162,7 @@ map              o Leaflet
 | `hg_alturas_modulos` | alturas do checklist e das paradas no painel |
 | `hg_arranjo_modulos` | o arranjo guardado pela linha "Guardar esta organização" do menu Exibição (era o disquete até a v8.24.2) |
 | `hg_dia_planejado` | o planejamento do dia (oferecido ao abrir) |
+| `hg_municipios` | o município de cada coordenada já consultada (`"lat,lng"` com 4 casas → nome), para os avisos de feriado (v8.27.0) |
 | `hg_link_compativel` | formato do link (legível x comprimido) |
 | `hg_prog_r_<rid>` | progresso do campo, por roteiro |
 | `hg_progresso_<codigo>` | idem, para link antigo sem `rid` (só leitura, convertido na 1ª abertura) |
