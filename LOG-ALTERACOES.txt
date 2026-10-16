@@ -7995,3 +7995,12 @@ NÃO ENTROU (para validar antes): aviso no link/tela do campo, marca no
   (11,5 -> 13px) e o dia selecionado com a LETRA em âmbar também, não só a
   borda (que passou de --amber-dim para --amber).
 - Leve: 8.28.0 -> 8.28.1.
+
+--------------------------------------------------------
+[16/10/2026] Versionado: Feriados_Municipais_Ano_2026.pdf (TRE-SC)
+--------------------------------------------------------
+- Regra do usuário: "se tiver impacto no site não coloque no repositório,
+  mas se não impactar pode colocar". O PDF é a fonte oficial da tabela de
+  feriados, documento público, 330 KB, e o app não o lê — sem impacto.
+- A pasta TUTORIAL/ continua fora: as imagens são capturas de tela e podem
+  ter nome de cliente real (repositório público).

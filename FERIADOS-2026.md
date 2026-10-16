@@ -320,7 +320,7 @@ Sombrio e Turvo** (AMESC) e **Tubarão, Braço do Norte, São Ludgero e Jaguarun
 - Decreto estadual 1.374/2026 (SC): legisweb.com.br/legislacao/?id=489966
 - Diário Oficial de Criciúma, 03/01/2025 (Decreto SG 35/25)
 - TJSC, "Feriados locais" (planilha de 13/06/2024)
-- TRE-SC, "Feriados municipais em 2026 (zonas eleitorais)", atualizado em 21/08/2026 (PDF salvo pelo usuário na pasta do projeto)
+- TRE-SC, "Feriados municipais em 2026 (zonas eleitorais)", atualizado em 21/08/2026 (`Feriados_Municipais_Ano_2026.pdf`, versionado na raiz do repositório)
 - TRE-SC, feriados municipais 2019/2023
 - Calendário regional de eventos AMREC 2026 (Içara News, 08/04/2026)
 - Prefeituras de Nova Veneza e São Ludgero; Alesc (CocalFest)
