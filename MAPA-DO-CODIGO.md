@@ -81,7 +81,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | restaurar o planejamento | `O planejamento do dia sobrevive…` | `salvarDia`, `restaurarDia` |
 | carregar o `.umap` | `Upload / parse GeoJSON` | `lerUmap`, `importClients` |
 | checklist de clientes | `Checklist + stops UI` | `renderChecklist`, `semAcento` (busca sem acento, v8.24.0) |
-| feriados, pontos facultativos e festas | `Dia da rota, feriados e datas festivas (v8.27.0)` | `DATAS_FIXAS` (a tabela; conferir todo ano), `datasMoveis`/`pascoa`, `eventosDoDia`, `eventosDaParada`, `diasDaRota`, `municipioDaParada` (Nominatim, 1 por vez), `atualizarAvisosDoDia`, `pintarAvisosNasParadas` |
+| feriados, pontos facultativos e festas | `Dia da rota, feriados e datas festivas (v8.27.0)` | `DATAS_FIXAS` (a tabela; conferir todo ano), `NIVEIS_ATIVOS` (desde a v8.28.0 só `'fechado'` e `'facultativo'` — este, só o Carnaval), `datasMoveis`/`pascoa`, `eventosDoDia`, `eventosDaParada`, `diasDaRota`, `municipioDaParada` (Nominatim, 1 por vez), `atualizarAvisosDoDia`, `pintarAvisosNasParadas` |
 | a aparência de linha do checklist | `.checklist` / `.grupo` / `.check-row` no CSS | (regra) fio entre linhas, filete na cascata — sem cartão por linha (v8.22.0) |
 | a aparência de linha da ordem da viagem | `.stops` / `.stop-row` no CSS | (regra) fio em `border-top`; o cartão só em `.arrastando` (v8.22.1) |
 | lista de paradas (ordem) | `Arrastar para reordenar (v3.8)` | `renderStopsList` |

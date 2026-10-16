@@ -1,0 +1,13 @@
+v8.28.0 — 15/10/2026 — só os feriados confirmados
+
+O QUE MUDOU
+  Os avisos de feriado mostram só o que é FERIADO CONFIRMADO (nacional,
+  decreto municipal de 2026, lista do TRE-SC de 2026). Ponto facultativo, Dia
+  do Professor, Dia do Servidor, recessos, datas de fonte não oficial e festas
+  ficam desligados (NIVEIS_ATIVOS = ['fechado']), mas continuam na tabela.
+
+POR QUÊ
+  No teste do usuário, o Dia do Professor marcava clientes que não são escola.
+
+AJUSTE ANTES DE PUBLICAR
+  O Carnaval (segunda e terça) aparece como "Ponto facultativo", em âmbar.

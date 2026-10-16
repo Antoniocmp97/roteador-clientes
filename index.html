@@ -1103,7 +1103,7 @@
      na cidade dela, no dia escolhido no cabeçalho */
   .stop-row .nm-aviso{display:block; margin-top:3px; font-size:10.5px; font-weight:600; line-height:1.3;}
   .stop-row .nm-aviso.fechado{color:var(--danger);}
-  .stop-row .nm-aviso.aviso{color:var(--amber);}
+  .stop-row .nm-aviso.aviso, .stop-row .nm-aviso.facultativo{color:var(--amber);}
   .stop-row .nm-aviso.evento{color:var(--teal);}
   .empty-hint{font-size:11.5px;color:var(--muted);font-style:italic;}
 
@@ -1377,7 +1377,7 @@
   .dia-btn .data{font-family:'JetBrains Mono',monospace; font-size:11.5px;}
   .dia-btn:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
   .dia-btn .marca{width:7px; height:7px; border-radius:50%; flex:none; margin-left:3px;}
-  .marca.fechado{background:var(--danger);} .marca.aviso{background:var(--amber);} .marca.evento{background:var(--teal);}
+  .marca.fechado{background:var(--danger);} .marca.aviso, .marca.facultativo{background:var(--amber);} .marca.evento{background:var(--teal);}
 
   /* O dia no módulo Rota: uma linha por evento, a mesma cor da bolinha */
   .avisos-dia{display:flex; flex-direction:column; gap:5px; margin-bottom:12px;}
@@ -1389,7 +1389,8 @@
   .avisos-dia .linha .obs{color:var(--muted);}
   .avisos-dia .linha .onde{display:block; font-size:11.5px; color:var(--muted);}
   .avisos-dia .fechado{border-left-color:var(--danger);} .avisos-dia .fechado b{color:var(--danger);}
-  .avisos-dia .aviso{border-left-color:var(--amber);}    .avisos-dia .aviso b{color:var(--amber);}
+  .avisos-dia .aviso, .avisos-dia .facultativo{border-left-color:var(--amber);}
+  .avisos-dia .aviso b, .avisos-dia .facultativo b{color:var(--amber);}
   .avisos-dia .evento{border-left-color:var(--teal);}    .avisos-dia .evento b{color:var(--teal);}
 
   /* Painel de resultado: distância, tempo e roteiro passo a passo (escondido até haver uma rota) */
@@ -2432,7 +2433,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.27.0';
+const VERSAO = '8.28.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -4081,8 +4082,8 @@ var DATAS_FIXAS = [
 function datasMoveis(ano){
   const p = pascoa(ano), dia = n => isoLocal(somaDias(p, n));
   return [
-    {d:dia(-48), n:'aviso', t:'Carnaval', o:'ponto facultativo', c:'*'},
-    {d:dia(-47), n:'aviso', t:'Carnaval', o:'ponto facultativo', c:'*'},
+    {d:dia(-48), n:'facultativo', t:'Carnaval', o:'órgãos públicos fecham; comércio abre', c:'*'},
+    {d:dia(-47), n:'facultativo', t:'Carnaval', o:'órgãos públicos fecham; comércio abre', c:'*'},
     {d:dia(-46), n:'aviso', t:'Quarta-feira de Cinzas', o:'ponto facultativo até as 14h', c:'*'},
     {d:dia(-2),  n:'fechado', t:'Paixão de Cristo', c:'*'},
     {d:dia(60),  n:'fechado', t:'Corpus Christi', c:CORPUS_FERIADO, chave:'corpus'},
@@ -4090,15 +4091,26 @@ function datasMoveis(ano){
   ];
 }
 
+/* Quais níveis aparecem na tela (v8.28.0). Só o FERIADO CONFIRMADO, por decisão
+   do usuário depois de testar a v8.27.0: o Dia do Professor marcava todo cliente
+   que não é escola, e aviso em toda parada virou ruído — "coloque apenas os
+   feriados confirmados; os que não são confirmados ou são nichados ficam por
+   fora por enquanto". Os 'aviso' e os 'evento' CONTINUAM na tabela, desligados
+   aqui: voltar com eles é acrescentar o nível nesta lista.
+   'facultativo' (âmbar, "Ponto facultativo") é só o Carnaval, pedido dele na
+   mesma rodada: é ponto facultativo em todo lugar, e não dúvida. */
+var NIVEIS_ATIVOS = ['fechado', 'facultativo'];
+
 // Tudo o que cai num dia ('AAAA-MM-DD'), na região inteira.
 function eventosDoDia(iso){
   const ano = Number(iso.slice(0,4)), mmdd = iso.slice(5);
   const fixos = DATAS_FIXAS.filter(e =>
     e.de ? (iso >= e.de && iso <= e.ate) : (e.q.length === 5 ? e.q === mmdd : e.q === iso));
-  return fixos.concat(datasMoveis(ano).filter(e => e.d === iso));
+  return fixos.concat(datasMoveis(ano).filter(e => e.d === iso))
+              .filter(e => NIVEIS_ATIVOS.includes(e.n));
 }
 
-var ORDEM_NIVEL = { fechado:0, aviso:1, evento:2 };
+var ORDEM_NIVEL = { fechado:0, facultativo:1, aviso:2, evento:3 };
 var valeNaCidade = (e, cidade) => e.c === '*' || (!!cidade && e.c.some(x => semAcento(x) === semAcento(cidade)));
 
 // O que vale para UMA parada: os de todas as cidades e os do município dela.
@@ -4168,7 +4180,7 @@ async function buscarProximoMunicipio(){
   setTimeout(() => { buscandoMunicipio = false; buscarProximoMunicipio(); }, 1100);
 }
 
-var ROTULO_NIVEL = { fechado:'Feriado', aviso:'Pode estar fechado', evento:'Evento' };
+var ROTULO_NIVEL = { fechado:'Feriado', facultativo:'Ponto facultativo', aviso:'Pode estar fechado', evento:'Evento' };
 
 // Marca de cada parada na "Ordem da viagem": o aviso mais forte, com os outros na dica.
 function pintarAvisosNasParadas(){
@@ -4203,7 +4215,7 @@ function atualizarAvisosDoDia(){
     b.setAttribute('aria-checked', String(qual === diaRotaEscolhido));
     b.title = (qual === 'hoje' ? 'Rota para hoje' : 'Rota para o próximo dia de atendimento') +
       (evs.length ? '\n\n' + evs.map(e => `${ROTULO_NIVEL[e.n]}: ${e.t} — ${e.c === '*' ? 'todas as cidades' : e.c.join(', ')}`).join('\n')
-                  : '\n\nNada previsto na região.');
+                  : '\n\nNenhum feriado na região.');
   });
 
   const caixa = document.getElementById('avisosDia');
@@ -4225,7 +4237,7 @@ function atualizarAvisosDoDia(){
       return `<div class="linha ${g.n}"><b>${ROTULO_NIVEL[g.n]}</b> · ${escaparHtml(g.t)}${g.o ? ` <span class="obs">(${escaparHtml(g.o)})</span>` : ''}<span class="onde">${escaparHtml(onde)}</span></div>`;
     });
     caixa.innerHTML = `<div class="legenda">${rotuloLongo(iso)}</div>` +
-      (linhas.length ? linhas.join('') : '<div class="nada">Nada previsto na região.</div>');
+      (linhas.length ? linhas.join('') : '<div class="nada">Nenhum feriado na região.</div>');
   }
   pintarAvisosNasParadas();
 }

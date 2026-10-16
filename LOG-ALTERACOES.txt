@@ -7971,3 +7971,19 @@ NÃO ENTROU (para validar antes): aviso no link/tela do campo, marca no
 - Decisões do usuário depois do teste: "Esplanada" = Jaguaruna (confirmado);
   FERIADOS-2026.md passa a ser versionado ("a fonte deve acompanhar o site");
   o aviso NÃO vai para a tela do campo por enquanto.
+
+--------------------------------------------------------
+[15/10/2026] v8.28.0 — só os feriados confirmados
+--------------------------------------------------------
+- O usuário testou a v8.27.0 e viu clientes que não são escola marcados pelo
+  Dia do Professor: "coloque apenas os feriados confirmados; os que não são
+  confirmados ou são nichados ficam por fora por enquanto".
+- eventosDoDia() passa a filtrar por NIVEIS_ATIVOS = ['fechado']. Os níveis
+  'aviso' e 'evento' continuam na tabela DATAS_FIXAS, desligados; voltar com
+  eles é acrescentar o nível na lista.
+- Textos de vazio: "Nada previsto na região" -> "Nenhum feriado na região".
+- 8.27.0 -> 8.28.0 (muda o que o usuário vê).
+- Na mesma rodada, ainda antes de publicar: "o carnaval pode colocar como
+  ponto facultativo". Nível próprio 'facultativo' (âmbar, rótulo "Ponto
+  facultativo"), ativo junto com 'fechado'; só o Carnaval (segunda e terça)
+  usa. Quarta de Cinzas continua desligada.

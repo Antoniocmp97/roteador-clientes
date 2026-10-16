@@ -3,6 +3,12 @@
 > Levantamento de 15/10/2026. É a fonte da tabela `DATAS_FIXAS` do `index.html`
 > (v8.27.0): quem mudar uma, muda a outra. 16 municípios pedidos pelo usuário.
 > A parte municipal precisa ser conferida todo ano.
+>
+> ⚠️ **Desde a v8.28.0 o app mostra só os FERIADOS CONFIRMADOS** (✅ e 🏛, e os
+> nacionais), mais o **Carnaval como ponto facultativo**. Os outros pontos
+> facultativos, Dia do Professor, recessos, datas ⚠️ e festas continuam aqui e
+> na tabela do app, mas desligados (decisão do usuário: o Dia
+> do Professor marcava clientes que não são escola).
 
 ## Como ler
 

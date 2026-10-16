@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 15/10/2026 — v8.27.0 (dia da rota e avisos de feriado, ponto facultativo e festa por município)
+> **Última atualização:** 15/10/2026 — v8.28.0 (os avisos de feriado ficam só com os feriados confirmados)
 
 ---
 
@@ -748,9 +748,22 @@ sem dependências instaladas. Abre direto no navegador.
   no **decreto de 2026 da prefeitura** ou na **lista do TRE-SC de 2026**. **Âmbar =
   "Pode estar fechado"**: ponto facultativo, data de fonte não oficial, escola que
   pode ou não parar. **Teal = "Evento"**: festa da cidade. **Nada bloqueia.**
-  ⚠️ **O tipo de cliente foi dispensado pelo usuário** ("sabemos dos locais e sua
-  área"). Por isso o Dia do Professor vira aviso para **todas** as paradas, e quem
-  sabe que não é escola ignora.
+  ⚠️ **DESDE A v8.28.0 SÓ O VERMELHO APARECE.** O usuário testou e viu clientes
+  que não são escola marcados pelo Dia do Professor: *"coloque apenas os feriados
+  confirmados; os que não são confirmados ou são nichados ficam por fora por
+  enquanto"*. Eu tinha previsto isso na discussão (o aviso só serve se o app
+  souber o tipo de cliente, e o tipo foi dispensado). **Os níveis 'aviso' e
+  'evento' continuam na tabela**, desligados por `NIVEIS_ATIVOS = ['fechado']`
+  dentro de `eventosDoDia()`. Voltar com eles é acrescentar o nível na lista;
+  o desenho (âmbar e teal) continua no CSS. Ficam de fora, então: ponto
+  facultativo, Dia do Professor, Dia do Servidor, recessos, datas de fonte não
+  oficial, o Corpus Christi das cidades em que ele não é feriado e as festas.
+  ⚠️ **A exceção é o CARNAVAL**, pedido dele na mesma rodada: aparece em âmbar
+  como **"Ponto facultativo"** (nível próprio, `'facultativo'`), nas duas datas
+  (segunda e terça). É ponto facultativo em todo lugar, e não dúvida. A Quarta
+  de Cinzas continua desligada.
+  ⚠️ O tipo de cliente foi dispensado pelo usuário ("sabemos dos locais e sua
+  área"); é por isso que um aviso de nicho não tinha como acertar.
   ⚠️ **O município de cada parada vem do Nominatim**, pela coordenada, no nível de
   cidade (`zoom=10`), **uma vez só**, e fica guardado em `hg_municipios`. A busca é
   só para as paradas que estão na viagem, **uma por vez, com 1,1s entre elas**
@@ -2382,6 +2395,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 123 | **v8.26.0** — Varredura de bugs: nove correções (resposta do OSRM conferida antes de aplicar, origem desfaz a rota, tracejado do efeito sai, nome da avulsa chega à viagem, entre outras) |
 | 124 | **v8.26.1** — O zoom ao clicar na parada vai a 15 em vez de 16 (um pouco mais longe, a pedido do usuário) |
 | 125 | **v8.27.0** — Dia da rota (hoje / próximo dia) e avisos de feriado, ponto facultativo e festa por município, com a tabela de 16 cidades |
+| 126 | **v8.28.0** — Só os feriados confirmados aparecem, mais o Carnaval como ponto facultativo; avisos de dúvida, de nicho e festas ficam desligados na tabela |
 
 ---
 
@@ -2450,7 +2464,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.27.0
+8.28.0
 ```
 
 ### Onde o número aparece
@@ -2627,3 +2641,4 @@ versão continua sendo a cada número fechado.
 | 8.26.0 | 10/10/2026 | Nove correções da varredura de bugs; quatro pontos ficaram em aberto |
 | 8.26.1 | 14/10/2026 | Zoom ao clicar na parada de 16 para 15 |
 | 8.27.0 | 15/10/2026 | Dia da rota e avisos de feriado por município (16 cidades) |
+| 8.28.0 | 15/10/2026 | Só feriados confirmados e o Carnaval como ponto facultativo (o Dia do Professor marcava quem não é escola) |
