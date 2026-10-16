@@ -1,0 +1,13 @@
+v8.29.1 — 16/10/2026 — as datas com o fundo do botão "Mapa: …"
+
+O QUE MUDOU
+  Os botões de data do cabeçalho ficaram sem fundo próprio (o dia escolhido
+  tinha um fundo mais claro) e com 32px de altura, iguais ao "Mapa: …".
+
+POR QUÊ
+  Pedido do usuário: "o fundo do botão é meio preto, aplique o mesmo efeito
+  para as datas".
+
+AJUSTE ANTES DE PUBLICAR
+  Os cinco botões de ícone (engrenagem, marcar todos, avulsa e os dois da
+  Origem) também ficaram sem fundo próprio, só com o contorno.

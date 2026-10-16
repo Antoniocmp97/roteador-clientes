@@ -599,11 +599,12 @@
   .guia input[type="text"], .console input[type="text"],
   .guia .tipos-painel, .console .tipos-painel,
   .guia .go-btn.secondary, .console .go-btn.secondary,
-  .guia .go-btn.principal, .console .go-btn.principal,
-  .guia .btn-lista, .console .btn-lista,
-  .guia .btn-icon, .console .btn-icon{
+  .guia .go-btn.principal, .console .go-btn.principal{
       background:color-mix(in srgb, var(--panel-2) 80%, transparent);
   }
+  /* ⚠️ .btn-lista e .btn-icon SAÍRAM desta lista e da do vidro desligado na
+     v8.29.1: não têm mais fundo próprio, e as duas regras, por serem mais
+     específicas, devolveriam o fundo. */
   /* ---- Modo leve (v8.7.0, pedido do usuário: "testei no trabalho e ficou
      menos travado, mas notei que antes ficava mais fluido. Tem como criar um
      botão onde desativa tudo que possa deixar o site mais travado para
@@ -759,9 +760,7 @@
     :root[data-vidro="0"] .guia input[type="text"], :root[data-vidro="0"] .console input[type="text"],
     :root[data-vidro="0"] .guia .tipos-painel, :root[data-vidro="0"] .console .tipos-painel,
     :root[data-vidro="0"] .guia .go-btn.secondary, :root[data-vidro="0"] .console .go-btn.secondary,
-    :root[data-vidro="0"] .guia .go-btn.principal,  :root[data-vidro="0"] .console .go-btn.principal,
-    :root[data-vidro="0"] .guia .btn-lista,    :root[data-vidro="0"] .console .btn-lista,
-    :root[data-vidro="0"] .guia .btn-icon,     :root[data-vidro="0"] .console .btn-icon{
+    :root[data-vidro="0"] .guia .go-btn.principal,  :root[data-vidro="0"] .console .go-btn.principal{
         background:var(--panel-2);
     }
   }
@@ -937,7 +936,9 @@
    ⚠️ O comportamento do 📍 **não foi tocado** — só cor e tamanho. A regra do
    projeto de não mexer naquele botão sem testar na máquina real vale para a
    geolocalização, que continua exatamente como estava. */
-  .btn-icon{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;
+  /* Sem fundo próprio desde a v8.29.1, como os botões do cabeçalho (pedido do
+     usuário): só o contorno; o fundo que aparece é o do cartão. */
+  .btn-icon{background:none;border:1px solid var(--line);color:var(--text);border-radius:6px;
             flex:none; width:34px;
             display:flex; align-items:center; justify-content:center;
             transition:color .15s, border-color .15s, background .15s;}
@@ -969,7 +970,7 @@
   /* 38px → 34px na v8.23.1, a pedido do usuário. Os três botões ocupavam 138px
      dos 308px da linha, e sobrava pouco mais da metade para a busca. */
   .btn-lista{flex:none; width:34px; display:flex; align-items:center; justify-content:center;
-             background:var(--panel-2); border:1px solid var(--line); border-radius:6px;
+             background:none; border:1px solid var(--line); border-radius:6px;
              color:var(--text); transition:color .15s, border-color .15s, background .15s;}
   .btn-lista svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.7;
                  stroke-linecap:round; stroke-linejoin:round;}
@@ -1374,12 +1375,14 @@
   header .dia-rota{flex:none; align-self:center; display:flex; align-items:center; gap:5px;}
   /* 13px, o mesmo dos botões ao lado (v8.28.1, pedido do usuário) */
   header .dia-rota .rotulo{font-size:13px; color:var(--muted); margin-right:2px; white-space:nowrap;}
-  .dia-btn{display:flex; align-items:center; gap:4px; height:30px; padding:0 10px; border-radius:7px;
+  /* Mesmo corpo do "Mapa: …" ao lado (v8.29.1, pedido do usuário): 32px e SEM
+     fundo próprio — o escuro que aparece é o do app, e é ele que dá o efeito. */
+  .dia-btn{display:flex; align-items:center; gap:4px; height:32px; padding:0 10px; border-radius:7px;
            background:none; border:1px solid var(--line); color:var(--muted); font-size:13px;
            white-space:nowrap; cursor:pointer; transition:color .15s, background .15s, border-color .15s;}
   .dia-btn:hover{background:var(--hover); color:var(--text);}
   /* O dia escolhido em âmbar inteiro, borda e letra (v8.28.1, pedido do usuário) */
-  .dia-btn[aria-checked="true"]{color:var(--amber); background:var(--panel-2); border-color:var(--amber); font-weight:600;}
+  .dia-btn[aria-checked="true"]{color:var(--amber); background:none; border-color:var(--amber); font-weight:600;}
   .dia-btn .data{font-family:'JetBrains Mono',monospace; font-size:11.5px;}
   .dia-btn:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
   .dia-btn .marca{width:7px; height:7px; border-radius:50%; flex:none; margin-left:3px;}
@@ -2441,7 +2444,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.29.0';
+const VERSAO = '8.29.1';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 

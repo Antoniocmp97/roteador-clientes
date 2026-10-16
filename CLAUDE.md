@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 16/10/2026 — v8.29.0 (o dia da rota vai no link e aparece na tela do campo)
+> **Última atualização:** 16/10/2026 — v8.29.1 (datas do cabeçalho e botões de ícone sem fundo próprio, como o "Mapa: …")
 
 ---
 
@@ -760,6 +760,13 @@ sem dependências instaladas. Abre direto no navegador.
   oficial, o Corpus Christi das cidades em que ele não é feriado e as festas.
   ⚠️ **O dia escolhido fica todo em âmbar**, borda e letra, e o rótulo "Rota para"
   tem 13px, o mesmo dos botões (v8.28.1, pedido do usuário).
+  ⚠️ **Os botões de data NÃO têm fundo próprio** (v8.29.1, pedido do usuário:
+  queria o "fundo meio preto" do botão "Mapa: …"). O escuro que se vê é o do app,
+  por transparência; o dia escolhido tinha `--panel-2`, mais claro, e saiu. A
+  altura foi a 32px, a mesma do "Mapa: …". Na mesma versão, a pedido dele, os
+  **cinco botões de ícone** (engrenagem, marcar todos e avulsa do Selecionar
+  paradas; os dois da Origem) também perderam o fundo — ver o item dos botões de
+  ícone, na seção 3.
   ⚠️ **A exceção é o CARNAVAL**, pedido dele na mesma rodada: aparece em âmbar
   como **"Ponto facultativo"** (nível próprio, `'facultativo'`), nas duas datas
   (segunda e terça). É ponto facultativo em todo lugar, e não dúvida. A Quarta
@@ -1520,6 +1527,12 @@ Selecionar paradas), **largura** (43px contra 38) e o desenho (17px/traço 1,8
 contra 18px/1,7). Agora `.btn-icon` e `.btn-lista` têm os mesmos valores:
 **34×36px, ícone de 16px com traço 1,7, `--text` em repouso**, borda teal com
 fundo `--hover` ao passar o mouse, e âmbar quando ligados.
+⚠️ **Desde a v8.29.1 eles NÃO têm fundo próprio** (pedido do usuário, que
+gostou do "fundo meio preto" do botão "Mapa: …" do cabeçalho): só o contorno, e
+o que aparece por dentro é o cartão. Por isso saíram das duas listas de "caixas
+de dentro" do vidro (`.console .btn-lista` etc.), que são mais específicas e
+devolveriam o fundo. O usuário escolheu mudar **os cinco juntos**, e não só a
+engrenagem, para não repetir a diferença que ele mesmo apontou na v8.23.1.
 ⚠️ **A v8.23.1 unificou para BAIXO — os dois apagados — e o usuário corrigiu na
 v8.23.2**: *"se ficar com os traços do ícone dentro do botão na cor branca vai
 ficar bom"*. Ele tem razão: apagados, os ícones ficavam discretos demais para
@@ -2421,6 +2434,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 126 | **v8.28.0** — Só os feriados confirmados aparecem, mais o Carnaval como ponto facultativo; avisos de dúvida, de nicho e festas ficam desligados na tabela |
 | 127 | **v8.28.1** — "Rota para" do tamanho dos botões e o dia escolhido todo em âmbar |
 | 128 | **v8.29.0** — O dia da rota vai no link (formato v11) e aparece na tela do campo, com aviso se aberto em outro dia |
+| 129 | **v8.29.1** — As datas do cabeçalho e os cinco botões de ícone sem fundo próprio, como o botão "Mapa: …" |
 
 ---
 
@@ -2489,7 +2503,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.29.0
+8.29.1
 ```
 
 ### Onde o número aparece
@@ -2669,3 +2683,4 @@ versão continua sendo a cada número fechado.
 | 8.28.0 | 15/10/2026 | Só feriados confirmados e o Carnaval como ponto facultativo (o Dia do Professor marcava quem não é escola) |
 | 8.28.1 | 16/10/2026 | "Rota para" em 13px e o dia escolhido com borda e letra em âmbar |
 | 8.29.0 | 16/10/2026 | Dia da rota no link (v11) e na tela do campo |
+| 8.29.1 | 16/10/2026 | Datas do cabeçalho e botões de ícone sem fundo próprio, como o "Mapa: …" |

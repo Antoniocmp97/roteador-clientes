@@ -8026,3 +8026,18 @@ TESTADO
   dia com link na tela: link some e aparece o recado. Celular 375×812:
   cabeçalho 144px (171 com o aviso), cartão "Agora" cabe sem rolar. Sem erro de
   console nas duas telas.
+
+--------------------------------------------------------
+[16/10/2026] v8.29.1 — as datas com o fundo do botão "Mapa: …"
+--------------------------------------------------------
+- Pedido do usuário: o botão que filtra o mapa tem "o fundo meio preto";
+  aplicar o mesmo nas datas. Medido: o "Mapa: …" é TRANSPARENTE — o escuro é o
+  fundo do app. O dia escolhido tinha --panel-2 (mais claro), que saiu. Altura
+  das datas de 30 para 32px, a mesma do "Mapa: …".
+- Leve: 8.29.0 -> 8.29.1.
+- Na mesma versão, antes de publicar: "aplique também para o botão de
+  configurações". O Exibição já era igual ao Mapa; o botão era a engrenagem
+  (tipos de serviço). O usuário escolheu tirar o fundo dos CINCO botões de
+  ícone (engrenagem, marcar todos, avulsa, e os dois da Origem), para eles
+  continuarem iguais entre si (v8.23.1). Saíram das listas de "caixas de
+  dentro" do vidro, que devolveriam o fundo.
