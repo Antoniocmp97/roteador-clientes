@@ -8004,3 +8004,25 @@ NÃO ENTROU (para validar antes): aviso no link/tela do campo, marca no
   feriados, documento público, 330 KB, e o app não o lê — sem impacto.
 - A pasta TUTORIAL/ continua fora: as imagens são capturas de tela e podem
   ter nome de cliente real (repositório público).
+
+--------------------------------------------------------
+[16/10/2026] v8.29.0 — o dia da rota vai no link e aparece no campo
+--------------------------------------------------------
+- Pergunta do usuário: "o dia que o roteiro é gerado vai para a tela externa?".
+  Não ia. Ele pediu para implementar.
+- Link formato v11: 12º grupo = dia da rota (AAAAMMDD). v5 a v10 continuam
+  abrindo, sem data.
+- Tela do campo: o resumo do cabeçalho começa pelo dia ("Segunda, 19/10 · 6
+  paradas · ..."); aberto em outro dia, aviso âmbar "Este roteiro é para
+  segunda, 19/10." (ou "era para"). Só avisa.
+- Escritório: trocar o dia tira da tela o link já gerado (e o guardado nas
+  outras abas), com "O dia da rota mudou — gere o link de novo."
+- 8.28.1 -> 8.29.0.
+
+TESTADO
+  Link gerado para o próximo dia (seg 19/10) aberto na sexta 16/10: data no
+  resumo e o aviso "é para segunda, 19/10". Gerado para hoje: data, sem aviso.
+  Link v10 montado à mão: abre, 7 itens, trajeto inteiro, sem data. Trocar o
+  dia com link na tela: link some e aparece o recado. Celular 375×812:
+  cabeçalho 144px (171 com o aviso), cartão "Agora" cabe sem rolar. Sem erro de
+  console nas duas telas.

@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 16/10/2026 — v8.28.1 ("Rota para" em 13px e o dia escolhido todo em âmbar)
+> **Última atualização:** 16/10/2026 — v8.29.0 (o dia da rota vai no link e aparece na tela do campo)
 
 ---
 
@@ -1231,6 +1231,27 @@ sem dependências instaladas. Abre direto no navegador.
   **Formato v10** (v8.16.0): 11º grupo = **o trajeto**, para o mapa da tela do
   campo. Os dez anteriores seguem iguais; v5 a v9 continuam abrindo, sem a
   linha.
+  **Formato v11** (v8.29.0): 12º grupo = **o dia da rota**, `AAAAMMDD` — o que
+  estava escolhido em "Rota para" quando o link foi gerado. Os onze anteriores
+  seguem iguais; v5 a v10 continuam abrindo, só que sem data (conferido com um
+  v10 montado à mão: paradas e trajeto inteiros, `dia` nulo).
+- **O dia da rota na tela do campo** (v8.29.0, pergunta do usuário: "o dia que o
+  roteiro é gerado vai para a tela externa?" — não ia, e ele pediu). A linha de
+  resumo do cabeçalho começa pelo dia: **"Segunda, 19/10 · 6 paradas · + retorno ·
+  16.8 km · 29 min"**. Se o link é aberto **em outro dia**, aparece embaixo, em
+  âmbar, **"Este roteiro é para segunda, 19/10."** (ou "era para", se o dia já
+  passou). **Só avisa**: o técnico pode estar olhando o roteiro de amanhã, ou
+  usando o de ontem de propósito.
+  ⚠️ **Isto NÃO é o aviso de feriado no campo**, que o usuário recusou ("ainda não
+  tem muita utilidade"). Aqui vai só a data.
+  ⚠️ **Trocar o dia no escritório tira o link da tela**, com o recado "O dia da
+  rota mudou — gere o link de novo." O link guardado das **outras abas** também
+  sai, porque o dia é um só para todas. É a mesma regra do tipo de serviço
+  (v4.1): o que vai dentro do link mudou, então o link velho não pode ser enviado.
+  ⚠️ **Custo no celular**: com a data, a linha de resumo quebra em duas a 375px, e
+  o cabeçalho foi de **116 para 144px**; com o aviso de outro dia, **171px**. O
+  cartão "Agora" continua cabendo sem rolar (conferido a 375×812). O caso normal,
+  link aberto no próprio dia, não tem o aviso.
 - **O trajeto do dia na tela do campo** (v8.16.0, pedido do usuário: "um preview
   do mapa para a tela externa, no caso da rota feita para aquele dia — assim o
   técnico teria uma noção do trajeto que fará"). Até aqui a tela do campo era,
@@ -2399,6 +2420,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 125 | **v8.27.0** — Dia da rota (hoje / próximo dia) e avisos de feriado, ponto facultativo e festa por município, com a tabela de 16 cidades |
 | 126 | **v8.28.0** — Só os feriados confirmados aparecem, mais o Carnaval como ponto facultativo; avisos de dúvida, de nicho e festas ficam desligados na tabela |
 | 127 | **v8.28.1** — "Rota para" do tamanho dos botões e o dia escolhido todo em âmbar |
+| 128 | **v8.29.0** — O dia da rota vai no link (formato v11) e aparece na tela do campo, com aviso se aberto em outro dia |
 
 ---
 
@@ -2467,7 +2489,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.28.1
+8.29.0
 ```
 
 ### Onde o número aparece
@@ -2646,3 +2668,4 @@ versão continua sendo a cada número fechado.
 | 8.27.0 | 15/10/2026 | Dia da rota e avisos de feriado por município (16 cidades) |
 | 8.28.0 | 15/10/2026 | Só feriados confirmados e o Carnaval como ponto facultativo (o Dia do Professor marcava quem não é escola) |
 | 8.28.1 | 16/10/2026 | "Rota para" em 13px e o dia escolhido com borda e letra em âmbar |
+| 8.29.0 | 16/10/2026 | Dia da rota no link (v11) e na tela do campo |

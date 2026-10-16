@@ -134,6 +134,10 @@
           color:var(--amber);border:1px solid var(--amber-dim);border-radius:4px;
           padding:1px 5px;margin-left:6px;vertical-align:middle;letter-spacing:.02em;}
   .campo-marca .tecnico[hidden]{display:none;}
+  /* "Este roteiro é para segunda, 19/10." (v8.29.0): âmbar, porque avisa e não
+     impede — a mesma língua do "Pode estar fechado" do escritório */
+  .campo-dia-aviso{font-size:12.5px; font-weight:600; color:var(--amber); padding-left:9px;
+                   border-left:2px solid var(--amber); line-height:1.35;}
 
   /* Botão do tema (v3.3 como interruptor de trilho; ícone desde a v7.6.0).
      Mostra o estado atual — lua no escuro, sol no claro. Continua sendo um
@@ -2397,6 +2401,8 @@
       </button>
     </div>
     <div class="campo-saindo" id="campoSaindo"></div>
+    <!-- Link aberto num dia diferente do dia da rota (v8.29.0) -->
+    <div class="campo-dia-aviso" id="campoDiaAviso" role="status" hidden></div>
     <div class="campo-progresso">
       <div class="campo-barra"><div class="campo-preenche" id="campoPreenche"></div></div>
       <div class="campo-contagem" id="campoContagem"></div>
@@ -2435,7 +2441,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.28.1';
+const VERSAO = '8.29.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -4245,8 +4251,20 @@ function atualizarAvisosDoDia(){
 }
 
 function escolherDiaDaRota(qual){
+  const mudou = qual !== diaRotaEscolhido;
   diaRotaEscolhido = qual;
   atualizarAvisosDoDia();
+  // O dia vai dentro do link (v8.29.0): um link já gerado ficou com o dia velho.
+  // Sai da tela, como quando muda o tipo de serviço, e das outras abas também —
+  // o dia é um só para todas.
+  if (!mudou) return;
+  tecnicos.forEach((t, i) => { if (i !== tecnicoAtivo && t.painel){ t.painel.link = ''; t.painel.linkPronto = 'none'; } });
+  if (document.getElementById('linkPronto').style.display !== 'none'){
+    document.getElementById('linkPronto').style.display = 'none';
+    document.getElementById('linkCampo').value = '';
+    atualizarResumoDoEnvio();
+    setStatus('O dia da rota mudou — gere o link de novo.', true);
+  }
 }
 document.querySelectorAll('[data-dia-btn]').forEach(b => b.addEventListener('click', () => escolherDiaDaRota(b.dataset.diaBtn)));
 // Quem deixa o app aberto de um dia para o outro: "hoje" muda à meia-noite.
@@ -7363,10 +7381,14 @@ function montarRoteiro(){
   //   anteriores não mudaram de posição nem de significado.
   const trajeto = (ultimoResumo && ultimoResumo.g && ultimoResumo.g.length)
     ? escSep(codificarLinha(ultimoResumo.g)) : '';
-  return ['10', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
+  // FORMATO v11 (v8.29.0): 12º grupo = o DIA DA ROTA, "AAAAMMDD" — o que estava
+  //   escolhido em "Rota para" quando o link foi gerado. A tela do campo mostra
+  //   "Segunda, 19/10" e avisa se o link for aberto em outro dia.
+  const dia = diaDaRota().replace(/-/g, '');
+  return ['11', clientes.map(escSep).join('|'), tipos.map(escSep).join('|'), linhas.join('|'),
           ultimoResumo ? ultimoResumo.d : '', ultimoResumo ? ultimoResumo.t : '',
           (voltarParaOrigem() && originLatLng) ? '1' : '', idDoRoteiro(), origem,
-          escSep(tecnico), trajeto].join('~');
+          escSep(tecnico), trajeto, dia].join('~');
 }
 
 /* ---------------- Compressão do link (v2.7) ---------------- */
@@ -7431,14 +7453,14 @@ function lerRoteiroJson(json){
 
 function lerRoteiroCompacto(texto){
   const [ver, clientesRaw, tiposRaw, paradasRaw, d, t, retornoRaw, ridRaw, origemRaw,
-         tecnicoRaw, trajetoRaw] = texto.split('~');
+         tecnicoRaw, trajetoRaw, diaRaw] = texto.split('~');
   // v6 acrescentou a prioridade como 6º campo da parada; v7, o retorno como 7º
   // grupo (com a coordenada dentro); v8, o identificador do roteiro e a origem
   // em grupos próprios; v9, o nome do técnico. Em links antigos os campos
   // simplesmente não vêm.
-  if (!['5','6','7','8','9','10'].includes(ver)) return null; // formato desconhecido: link inválido
+  if (!['5','6','7','8','9','10','11'].includes(ver)) return null; // formato desconhecido: link inválido
   // Do v8 em diante o rid, o retorno e a origem moram nos mesmos grupos
-  const v8ouMais = ['8','9','10'].includes(ver);
+  const v8ouMais = ['8','9','10','11'].includes(ver);
   const clientes = clientesRaw ? clientesRaw.split('|').map(unescSep) : [];
   const tipos    = tiposRaw    ? tiposRaw.split('|').map(unescSep)    : [];
   let la = 0, ln = 0;
@@ -7470,11 +7492,14 @@ function lerRoteiroCompacto(texto){
 
   // O trajeto só existe do v10 em diante; link antigo simplesmente não tem, e a
   // tela do campo mostra o mapa só com os pontos
-  const traj = (ver === '10' && trajetoRaw) ? decodificarLinha(unescSep(trajetoRaw)) : [];
+  const traj = (['10','11'].includes(ver) && trajetoRaw) ? decodificarLinha(unescSep(trajetoRaw)) : [];
+  // O dia da rota só existe do v11 em diante (v8.29.0); fora do formato, ignora
+  const dia = (ver === '11' && /^\d{8}$/.test(diaRaw || ''))
+    ? `${diaRaw.slice(0,4)}-${diaRaw.slice(4,6)}-${diaRaw.slice(6)}` : null;
   return { v: Number(ver), s, d: d ? Number(d) : null, t: t ? Number(t) : null,
            rid: (v8ouMais && ridRaw) ? ridRaw : null, origem, retorno: temRetorno,
-           tecnico: (['9','10'].includes(ver) && tecnicoRaw) ? unescSep(tecnicoRaw) : '',
-           traj };
+           tecnico: (['9','10','11'].includes(ver) && tecnicoRaw) ? unescSep(tecnicoRaw) : '',
+           traj, dia };
 }
 
 // Botão "Gerar link do roteiro": monta o link completo (URL atual + #r=...) e mostra
@@ -7920,12 +7945,27 @@ function desenharCampo(roteiro, codigo, feitos, confirmando, abertos){
   const nParadas = roteiro.s.filter(p => !p[6]).length;
   // Resumo no cabeçalho: nº de paradas + distância/tempo previstos, se vieram no link
   const partes = [`${nParadas} parada${nParadas === 1 ? '' : 's'}`];
+  // O dia da rota vai na frente (v8.29.0, link v11): "Segunda, 19/10 · 8 paradas…"
+  if (roteiro.dia) partes.unshift(rotuloLongo(roteiro.dia));
   if (nParadas !== total) partes.push('+ retorno');
   const dist = formatarDistancia(roteiro.d);
   const tempo = formatarTempo(roteiro.t);
   if (dist) partes.push(dist);
   if (tempo) partes.push(tempo);
   document.getElementById('campoSaindo').textContent = partes.join(' · ');
+
+  // Aberto em outro dia? Avisa, sem impedir nada: o técnico pode estar só
+  // olhando o roteiro de amanhã, ou usando o de ontem de propósito.
+  const avisoDia = document.getElementById('campoDiaAviso');
+  if (avisoDia){
+    const hoje = isoLocal(new Date());
+    const outroDia = roteiro.dia && roteiro.dia !== hoje;
+    avisoDia.hidden = !outroDia;
+    if (outroDia){
+      const qual = rotuloLongo(roteiro.dia).replace(/^./, c => c.toLowerCase());
+      avisoDia.textContent = roteiro.dia > hoje ? `Este roteiro é para ${qual}.` : `Este roteiro era para ${qual}.`;
+    }
+  }
 
   document.getElementById('campoPreenche').style.width = total ? `${(feitas/total)*100}%` : '0%';
   document.getElementById('campoContagem').textContent = `${feitas}/${total}`;

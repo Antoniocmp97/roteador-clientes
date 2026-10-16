@@ -219,14 +219,15 @@ arquivo .umap
 ### 6.2 Do escritório ao campo
 
 ```
-montarRoteiro()        monta o texto do formato v10 (11 grupos separados por ~;
-                       o 11º é o trajeto, para o mapa da tela do campo)
+montarRoteiro()        monta o texto do formato v11 (12 grupos separados por ~;
+                       o 11º é o trajeto, para o mapa da tela do campo; o 12º,
+                       o dia da rota AAAAMMDD, v8.29.0)
   → comprime (gzip nativo) ou deixa legível, conforme hg_link_compativel
   → link "…/#z=" ou "…/#r="
   → [WhatsApp]
   → outra máquina abre: modoCampoAtivo = true
-  → lerRoteiroCompacto()  entende v5 a v10 (sem o 11º grupo, o mapa fica só com
-                          os pontos)
+  → lerRoteiroCompacto()  entende v5 a v11 (sem o 11º grupo, o mapa fica só com
+                          os pontos; sem o 12º, não há data nem aviso de dia)
   → desenharCampo()       cartão da vez, faixas das concluídas, linhas das outras
   → progresso em hg_prog_r_<rid>, por COORDENADA da parada
 ```

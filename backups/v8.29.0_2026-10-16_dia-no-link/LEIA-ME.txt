@@ -1,0 +1,11 @@
+v8.29.0 — 16/10/2026 — o dia da rota vai no link e aparece no campo
+
+O QUE MUDOU
+  Link formato v11: o 12º grupo leva o dia escolhido em "Rota para". A tela do
+  campo mostra "Segunda, 19/10 · N paradas · ..." e, se o link for aberto em
+  outro dia, o aviso "Este roteiro é para segunda, 19/10.". Links antigos
+  continuam abrindo, sem data. Trocar o dia no escritório tira da tela o link
+  já gerado.
+
+POR QUÊ
+  Pedido do usuário, depois de perguntar se o dia ia para a tela externa.
