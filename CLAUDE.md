@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 16/10/2026 — v8.29.1 (datas do cabeçalho e botões de ícone sem fundo próprio, como o "Mapa: …")
+> **Última atualização:** 16/10/2026 — v8.30.0 (até seis colunas de módulos, abrindo só as que cabem)
 
 ---
 
@@ -864,8 +864,30 @@ sem dependências instaladas. Abre direto no navegador.
   da alça dos módulos, ao passar o mouse e durante o arraste (v6.1.6).
   **Em coluna de até 400px a parada fica em uma linha só** (v6.2): as setas ▲▼ saem
   e ★ ✕ ficam na linha do nome; em coluna mais larga as setas voltam
-- **Todos os módulos em até três colunas** (v4.4–v4.7; ampliado na v5.7): ordem
-  na tela **mapa · coluna 3 · coluna 2 · painel**. Os **seis** módulos —
+- **Todos os módulos em até SEIS colunas** (v4.4–v4.7; três na v5.7; seis desde a
+  v8.30.0): ordem na tela **mapa · … · coluna 3 · coluna 2 · painel**.
+  ⚠️ **v8.30.0, pedido do usuário: "permita poder criar mais de 3".** São cinco
+  colunas auxiliares (`COLUNAS` g1…g5), uma por módulo no máximo — são seis
+  módulos. A lista `['painel','g1','g2']`, que estava escrita à mão em oito
+  lugares, virou `LOCAIS`. Os ids e os apelidos das duas primeiras (`guiaLateral`
+  g1, `guiaExtra` g2) **não mudaram**, porque todo arranjo salvo cita esses nomes;
+  as novas são `guiaCol4`…`guiaCol6`, com largura em `hg_largura_guia3`…`5`.
+  ⚠️ **Sem buraco**: era "a coluna 3 só existe junto com a 2"; agora, sem nada
+  numa coluna, as da esquerda andam uma casa (`normalizarLocais`).
+  ⚠️ **Coluna nova só se couber** (`cabeNovaColuna`): soltar no mapa ou dar duplo
+  clique só abre a coluna 4 em diante se sobrar `MAPA_MIN` (380px) de mapa. A 2 e
+  a 3 passam sempre, como antes, para nada mudar em tela menor. Medido: a 1920
+  abrem **quatro** colunas (painel + 3, com 431px de mapa); a 1366, três. **Nas
+  janelas soltas não há esse limite** e cabem as seis, porque elas se sobrepõem.
+  ⚠️ **Coluna que não cabe na fila aparece dentro da última que cabe**
+  (`colunasNaFila`, em `aplicarArranjo`), **sem mexer no arranjo**, como o
+  empilhado de tela estreita já fazia com o painel. Pego no teste: com seis
+  colunas abertas nas janelas soltas, desligar as janelas espremia o painel a
+  206px e tirava o mapa da tela. O mesmo acontece ao encolher a janela; alargando
+  de novo, cada módulo volta para a coluna dele.
+  ⚠️ **Teste com o painel do Claude**: redimensionar a emulação NÃO dispara o
+  evento `resize`, e o app parece não reagir. É do painel de testes, não do app:
+  com `window.dispatchEvent(new Event('resize'))` tudo se reorganiza. Os **seis** módulos —
   Clientes, Origem, Selecionar paradas, Ordem da viagem, Rota (botões, status e
   o envio para o campo) e Roteiro — têm alça no título.
   ⚠️ **Eram SETE até a v8.17.1**: o "Enviar para o campo" era o módulo `m6` e
@@ -2435,6 +2457,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 127 | **v8.28.1** — "Rota para" do tamanho dos botões e o dia escolhido todo em âmbar |
 | 128 | **v8.29.0** — O dia da rota vai no link (formato v11) e aparece na tela do campo, com aviso se aberto em outro dia |
 | 129 | **v8.29.1** — As datas do cabeçalho e os cinco botões de ícone sem fundo próprio, como o botão "Mapa: …" |
+| 130 | **v8.30.0** — Até seis colunas de módulos (eram três); coluna nova só abre se couber, e a que não cabe aparece na última visível |
 
 ---
 
@@ -2503,7 +2526,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.29.1
+8.30.0
 ```
 
 ### Onde o número aparece
@@ -2684,3 +2707,4 @@ versão continua sendo a cada número fechado.
 | 8.28.1 | 16/10/2026 | "Rota para" em 13px e o dia escolhido com borda e letra em âmbar |
 | 8.29.0 | 16/10/2026 | Dia da rota no link (v11) e na tela do campo |
 | 8.29.1 | 16/10/2026 | Datas do cabeçalho e botões de ícone sem fundo próprio, como o "Mapa: …" |
+| 8.30.0 | 16/10/2026 | Até seis colunas de módulos, abrindo só as que cabem |

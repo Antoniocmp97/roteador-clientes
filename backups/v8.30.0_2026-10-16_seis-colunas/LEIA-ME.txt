@@ -1,0 +1,10 @@
+v8.30.0 — 16/10/2026 — até seis colunas de módulos
+
+O QUE MUDOU
+  Os módulos podem ir para até cinco colunas além do painel (eram duas). A
+  coluna 4 em diante só abre se o mapa continuar com pelo menos 380px; nas
+  janelas soltas não há limite. Se a tela encolher, a coluna que não cabe
+  aparece dentro da última que cabe, sem perder a arrumação.
+
+POR QUÊ
+  Pedido do usuário: "permita poder criar mais de 3".

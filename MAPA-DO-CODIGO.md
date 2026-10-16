@@ -94,6 +94,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | efeito ao traçar | `Efeito ao traçar a rota (v8.0.0)` | `efeitoLigado`, `animarNumero` |
 | clicar na parada e ir até ela | `Centraliza um ponto na parte visível` | `centralizarVisivel`, `verParadaNoMapa`, `DUR_VOO_PARADA` |
 | mover módulos entre colunas | `Arrastar um módulo pela alça…` | `destinoDoModulo`, `moverModulo` |
+| quantas colunas existem e quantas cabem | `COLUNAS` / `LOCAIS` (v8.30.0) | `COLUNAS` (g1…g5), `LOCAIS`, `normalizarLocais` (sem buraco), `cabeNovaColuna`, `proximaColunaLivre`, `colunasNaFila` (a que não cabe aparece na última visível) |
 | ordem em que os módulos nascem | `MODULOS` / `ORDEM_PADRAO` | `arranjoNormal` |
 | padrão de uma ou duas colunas | `O padrão de abertura depende do TAMANHO DA TELA` | `LARGURA_DUAS_COLUNAS`, `abreEmDuasColunas`, `textoDoArranjoNormal` |
 | abrir/fechar o Roteiro | `O Roteiro nasce fechado (v8.18.0)` | `roteiroAberto`, `aplicarRoteiroRecolhido` |
@@ -158,7 +159,7 @@ diaRotaEscolhido 'hoje' | 'proximo' — o dia da rota, o MESMO para todas as aba
 | `hg_voltar_origem` | o interruptor de retorno |
 | `hg_zoom_parada` | zoom ao clicar na parada |
 | `hg_roteiro_aberto` | o módulo Roteiro aberto (ausente = fechado, que é o padrão) |
-| `hg_largura_painel`, `hg_largura_guia`, `hg_largura_guia2` | larguras |
+| `hg_largura_painel`, `hg_largura_guia`, `hg_largura_guia2`…`hg_largura_guia5` | larguras (painel e as cinco colunas, v8.30.0) |
 | `hg_alturas_modulos` | alturas do checklist e das paradas no painel |
 | `hg_arranjo_modulos` | o arranjo guardado pela linha "Guardar esta organização" do menu Exibição (era o disquete até a v8.24.2) |
 | `hg_dia_planejado` | o planejamento do dia (oferecido ao abrir) |

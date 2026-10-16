@@ -196,6 +196,9 @@
   .guia{container-type:inline-size;width:var(--guia-w, 360px);
         padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; flex:none;}
   #guiaExtra{width:var(--guia2-w, 360px);}
+  #guiaCol4{width:var(--guia3-w, 360px);}
+  #guiaCol5{width:var(--guia4-w, 360px);}
+  #guiaCol6{width:var(--guia5-w, 360px);}
 
   /* MÓDULOS (v5.7). No painel a section não gera caixa (display:contents): o
      conteúdo participa do painel como sempre participou, com o mesmo espaçamento.
@@ -2039,6 +2042,18 @@
          esvazia, o conteúdo da 3 passa para ela. Cada coluna tem a sua
          divisória de largura, à esquerda. As divisórias de ALTURA entre os
          módulos de uma coluna são criadas pelo JS. -->
+    <!-- Colunas 4 a 6 (v8.30.0, pedido do usuário: "permita poder criar mais
+         de 3"). Mesma regra das outras: só aparecem com módulo dentro, e nunca
+         com buraco — sem nada numa coluna, as da esquerda andam uma casa. -->
+    <div class="divisor" id="divisorGuia5" role="separator" aria-orientation="vertical" hidden
+         title="Arraste para ajustar a largura da coluna (duplo clique volta ao padrão)"></div>
+    <aside class="guia" id="guiaCol6" hidden></aside>
+    <div class="divisor" id="divisorGuia4" role="separator" aria-orientation="vertical" hidden
+         title="Arraste para ajustar a largura da coluna (duplo clique volta ao padrão)"></div>
+    <aside class="guia" id="guiaCol5" hidden></aside>
+    <div class="divisor" id="divisorGuia3" role="separator" aria-orientation="vertical" hidden
+         title="Arraste para ajustar a largura da coluna (duplo clique volta ao padrão)"></div>
+    <aside class="guia" id="guiaCol4" hidden></aside>
     <div class="divisor" id="divisorGuia2" role="separator" aria-orientation="vertical" hidden
          title="Arraste para ajustar a largura da coluna (duplo clique volta ao padrão)"></div>
     <aside class="guia" id="guiaExtra" hidden></aside>
@@ -2444,7 +2459,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.29.1';
+const VERSAO = '8.30.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -5107,10 +5122,21 @@ const ORDEM_PADRAO = (() => {
           ...ORDEM_MODULOS.filter(k => !desejada.includes(k))];
 })();
 
+/* As colunas auxiliares, da mais perto do painel para a mais longe. Eram duas
+   até a v8.29.1; desde a v8.30.0 são cinco (pedido do usuário: "permita poder
+   criar mais de 3"), o que dá uma coluna por módulo no máximo — são seis
+   módulos. Os ids das duas primeiras ficaram os de sempre, e os apelidos g1/g2
+   também: todo arranjo salvo por aí cita esses nomes. */
 const COLUNAS = {
   g1: { el:'guiaLateral', divisor:'divisorGuia',  chave:'hg_largura_guia',  css:'--guia-w',  nome:'coluna 2' },
-  g2: { el:'guiaExtra',   divisor:'divisorGuia2', chave:'hg_largura_guia2', css:'--guia2-w', nome:'coluna 3' }
+  g2: { el:'guiaExtra',   divisor:'divisorGuia2', chave:'hg_largura_guia2', css:'--guia2-w', nome:'coluna 3' },
+  g3: { el:'guiaCol4',    divisor:'divisorGuia3', chave:'hg_largura_guia3', css:'--guia3-w', nome:'coluna 4' },
+  g4: { el:'guiaCol5',    divisor:'divisorGuia4', chave:'hg_largura_guia4', css:'--guia4-w', nome:'coluna 5' },
+  g5: { el:'guiaCol6',    divisor:'divisorGuia5', chave:'hg_largura_guia5', css:'--guia5-w', nome:'coluna 6' }
 };
+// Todos os lugares de um módulo, na ordem da direita para a esquerda da tela.
+// ⚠️ Era a lista ['painel','g1','g2'] escrita à mão em oito lugares.
+const LOCAIS = ['painel', ...Object.keys(COLUNAS)];
 
 /* ---- O padrão de abertura depende do TAMANHO DA TELA (v8.19.0, ponto 5 da
    revisão de layout de 26/09/2026) ----
@@ -5178,17 +5204,23 @@ function containerDe(local){
   return local === 'painel' ? document.querySelector('.console') : document.getElementById(COLUNAS[local].el);
 }
 
-/* A coluna 3 não fica sozinha: sem nada na 2, o conteúdo da 3 desce para ela */
+/* Coluna nunca fica com buraco antes dela: sem nada numa coluna, as que estão
+   à esquerda andam uma casa. Era "a coluna 3 não fica sozinha" até a v8.29.1,
+   e é a mesma regra para quantas colunas houver. */
 function normalizarLocais(local){
-  const temNaG1 = ORDEM_MODULOS.some(k => local[k] === 'g1');
-  if (!temNaG1) ORDEM_MODULOS.forEach(k => { if (local[k] === 'g2') local[k] = 'g1'; });
+  const nomes = Object.keys(COLUNAS);
+  const usadas = nomes.filter(c => ORDEM_MODULOS.some(k => local[k] === c));
+  const novo = {};
+  usadas.forEach((c, i) => novo[c] = nomes[i]);
+  ORDEM_MODULOS.forEach(k => { if (novo[local[k]]) local[k] = novo[local[k]]; });
   return local;
 }
 
 // Módulos de cada coluna, na ordem em que aparecem
 function listasDoArranjo(a){
-  const listas = { painel:[], g1:[], g2:[] };
-  a.ordem.forEach(k => listas[a.local[k]].push(k));
+  const listas = {};
+  LOCAIS.forEach(l => listas[l] = []);
+  a.ordem.forEach(k => (listas[a.local[k]] || listas.painel).push(k));
   return listas;
 }
 // Forma única do arranjo: coluna 3 nunca sozinha, e a ordem agrupada por coluna.
@@ -5196,7 +5228,7 @@ function listasDoArranjo(a){
 function canonizarArranjo(a){
   normalizarLocais(a.local);
   const l = listasDoArranjo(a);
-  a.ordem = [...l.painel, ...l.g1, ...l.g2];
+  a.ordem = LOCAIS.flatMap(x => l[x]);
   return a;
 }
 const mesmoLugar = (a, b) =>
@@ -5251,6 +5283,31 @@ function aplicarLarguraGuia(col, px, salvar){
   if (salvar){ try{ localStorage.setItem(COLUNAS[col].chave, String(v)); }catch(e){ /* segue sem persistir */ } }
   return v;
 }
+/* Cabe mais uma coluna na fila sem o mapa ficar menor que MAPA_MIN? (v8.30.0)
+   Com até seis colunas possíveis, abrir sem conferir empurraria o mapa para
+   fora da tela. Conta a coluna nova na largura mínima: ela pode encolher até
+   lá. Nas janelas soltas não vale — elas podem ficar umas sobre as outras.
+   ⚠️ A coluna 2 e a 3 (g1, g2) passam SEMPRE, como passavam até a v8.29.1: a
+   regra vale só da 4 em diante, para nada mudar em tela menor. */
+function cabeNovaColuna(nova){
+  if (nova === 'g1' || nova === 'g2') return true;
+  const painel = document.querySelector('.console').getBoundingClientRect().width || LARGURA_PADRAO;
+  return document.documentElement.clientWidth - painel - 7 - larguraDasOutrasColunas(null)
+         - LARGURA_GUIA_MIN - 7 >= MAPA_MIN;
+}
+/* Quantas colunas auxiliares a FILA mostra nesta tela (v8.30.0). As que
+   sobram aparecem dentro da última que cabe — sem mexer no arranjo, como o
+   empilhado de tela estreita já fazia com o painel. Pego no teste: nas janelas
+   soltas cabem as seis, e ao desligá-las a fila espremia o painel a 206px e
+   tirava o mapa da tela. Também é o que acontece ao encolher a janela.
+   Pela largura MÍNIMA de cada um, e nunca menos de duas (o de antes). */
+function colunasNaFila(){
+  const livre = document.documentElement.clientWidth - MAPA_MIN - LARGURA_MIN - 7;
+  return Math.max(2, Math.min(Object.keys(COLUNAS).length, Math.floor(livre / (LARGURA_GUIA_MIN + 7))));
+}
+// A próxima coluna a abrir: a primeira escondida (não há buraco, ver normalizarLocais)
+const proximaColunaLivre = () => Object.keys(COLUNAS).find(c => containerDe(c).hidden) || null;
+
 const LARGURA_MINIMA_GUIA = 761;   // abaixo disso o layout é empilhado (ver media query)
 
 function telaComportaGuia(){ return document.documentElement.clientWidth >= LARGURA_MINIMA_GUIA; }
@@ -5309,16 +5366,17 @@ function janelasLivres(){ return modoJanelas() && telaComportaGuia(); }
 
 const areaMain = () => document.querySelector('main').getBoundingClientRect();
 const janelasVisiveis = () =>
-  ['painel', 'g1', 'g2'].filter(l => { const el = containerDe(l); return el && !el.hidden; });
+  LOCAIS.filter(l => { const el = containerDe(l); return el && !el.hidden; });
 
 // O desenho de sempre: encostadas à direita, painel · coluna 2 · coluna 3
 function geometriaPadrao(local){
   const m = areaMain();
-  const larguras = { painel: LARGURA_PADRAO, g1: larguraGuiaGuardada('g1'), g2: larguraGuiaGuardada('g2') };
+  const larguras = { painel: LARGURA_PADRAO };
+  Object.keys(COLUNAS).forEach(c => larguras[c] = larguraGuiaGuardada(c));
   const visiveis = janelasVisiveis();
   const altura = Math.max(JANELA_MIN_A, m.height - RESPIRO_JANELA * 2);
   let direita = m.width - RESPIRO_JANELA;
-  for (const l of ['painel', 'g1', 'g2']){
+  for (const l of LOCAIS){
     if (l === local) return { x: Math.max(0, direita - larguras[l]), y: RESPIRO_JANELA,
                               w: larguras[l], a: altura };
     if (visiveis.includes(l)) direita -= larguras[l] + RESPIRO_JANELA;
@@ -5352,7 +5410,7 @@ function limitarJanela(g){
 function limparJanelas(){
   const main = document.querySelector('main');
   main.querySelectorAll(':scope > .pega-janela, :scope > .canto-janela').forEach(el => el.remove());
-  ['painel', 'g1', 'g2'].forEach(l => {
+  LOCAIS.forEach(l => {
     const el = containerDe(l);
     if (!el) return;
     ['left', 'top', 'width', 'height', 'z-index'].forEach(p => el.style.removeProperty(p));
@@ -5500,7 +5558,13 @@ function ordenarModulos(container, lista){
 function aplicarArranjo(){
   const largo = telaComportaGuia();
   // Em tela estreita tudo vai para o painel, mantendo a ordem
-  const chaves = largo ? listasDoArranjo(arranjo) : { painel:[...arranjo.ordem], g1:[], g2:[] };
+  const chaves = largo ? listasDoArranjo(arranjo)
+    : Object.fromEntries(LOCAIS.map(l => [l, l === 'painel' ? [...arranjo.ordem] : []]));
+  // Coluna que não cabe na fila mostra os módulos dela na última que cabe (v8.30.0)
+  if (largo && !janelasLivres()){
+    const nomes = Object.keys(COLUNAS), cabem = colunasNaFila(), ultima = nomes[cabem - 1];
+    nomes.slice(cabem).forEach(c => { chaves[ultima].push(...chaves[c]); chaves[c] = []; });
+  }
   const listas = {};
   Object.keys(chaves).forEach(local => listas[local] = chaves[local].map(vagaDoModulo));
   Object.keys(listas).forEach(local => ordenarModulos(containerDe(local), listas[local]));
@@ -5632,7 +5696,7 @@ function descreverArranjo(a){
      mesmo JSON. O z fica de fora de propósito: ele muda a cada clique numa
      janela, e "trouxe para a frente" não é arranjo a salvar. */
   const janelas = {};
-  ['painel', 'g1', 'g2'].forEach(l => {
+  LOCAIS.forEach(l => {
     const g = a.janelas && a.janelas[l];
     const usada = ORDEM_MODULOS.some(k => local[k] === l);
     if (g && g.livre && usada)
@@ -5646,11 +5710,11 @@ function arranjoGuardado(){
     if (!g || typeof g.local !== 'object') return null;
     const a = arranjoNormal();
     ORDEM_MODULOS.forEach(k => {
-      if (['painel', 'g1', 'g2'].includes(g.local[k])) a.local[k] = g.local[k];
+      if (LOCAIS.includes(g.local[k])) a.local[k] = g.local[k];
       if (g.pesos && g.pesos[k] > 0) a.pesos[k] = g.pesos[k];
     });
     Object.keys(COLUNAS).forEach(col => { if (g.fixas && g.fixas[col] === true) a.fixas[col] = true; });
-    ['painel', 'g1', 'g2'].forEach(l => {
+    LOCAIS.forEach(l => {
       const j = g.janelas && g.janelas[l];
       if (j && j.w > 0 && j.a > 0) a.janelas[l] = { x:+j.x, y:+j.y, w:+j.w, a:+j.a, livre:true };
     });
@@ -5695,10 +5759,7 @@ function caixaDoModulo(k){
 // pelo Y — acima do primeiro módulo cuja metade fica abaixo do ponteiro.
 // Devolve null quando soltar ali não mudaria nada.
 function destinoDoModulo(chave, x, y){
-  const colunas = [['painel', document.querySelector('.console')],
-                   ['g1', document.getElementById('guiaLateral')],
-                   ['g2', document.getElementById('guiaExtra')]]
-    .filter(([, el]) => !el.hidden);
+  const colunas = LOCAIS.map(l => [l, containerDe(l)]).filter(([, el]) => !el.hidden);
   let local = null, rect = null, geo = null;
   if (janelasLivres()){
     /* Com as janelas livres o acerto é pelos DOIS eixos, e ganha a que está na
@@ -5712,8 +5773,7 @@ function destinoDoModulo(chave, x, y){
     else{
       // Soltou no mapa: a coluna que abrir NASCE onde o ponteiro está, e não
       // encostada à direita — é o que faz o modo parecer um aplicativo
-      const nova = document.getElementById('guiaLateral').hidden ? 'g1'
-                 : document.getElementById('guiaExtra').hidden ? 'g2' : null;
+      const nova = proximaColunaLivre();
       if (!nova) return null;
       const m = areaMain(), largura = larguraGuiaGuardada(nova);
       geo = limitarJanela({ x: x - m.left - largura / 2, y: y - m.top - 10, w: largura,
@@ -5733,9 +5793,9 @@ function destinoDoModulo(chave, x, y){
       // Sobre o mapa: abre a próxima coluna, se ainda houver uma
       const maisEsquerda = colunas[colunas.length - 1][1].getBoundingClientRect();
       if (x >= maisEsquerda.left - 7) return null;
-      const nova = document.getElementById('guiaLateral').hidden ? 'g1'
-                 : document.getElementById('guiaExtra').hidden ? 'g2' : null;
-      if (!nova) return null;
+      // ⚠️ E só se couber (v8.30.0): sem espaço para o mapa, soltar ali não faz nada
+      const nova = proximaColunaLivre();
+      if (!nova || !cabeNovaColuna(nova)) return null;
       const largura = larguraGuiaGuardada(nova);
       const main = document.querySelector('main').getBoundingClientRect();
       local = nova;
@@ -5891,16 +5951,17 @@ function iniciarMoverModulo(ev, chave, alca){
   document.addEventListener('keydown', teclar);
 }
 
-// Duplo clique: vai para a coluna seguinte (painel → 2 → 3 → painel), pulando
-// o que não mudaria nada — ex.: o único módulo da coluna 2 não tem como ir
-// sozinho para a 3.
+// Duplo clique: vai para a coluna seguinte (painel → 2 → 3 → … → painel),
+// pulando o que não mudaria nada — ex.: o único módulo da coluna 2 não tem
+// como ir sozinho para a 3. Coluna nova só se couber (v8.30.0).
 function avancarModulo(chave){
   if (!telaComportaGuia()) return;
-  const ciclo = ['painel', 'g1', 'g2'];
+  const ciclo = LOCAIS;
   const atual = ciclo.indexOf(arranjo.local[chave]);
   for (let passo = 1; passo < ciclo.length; passo++){
     const local = ciclo[(atual + passo) % ciclo.length];
     if (local === arranjo.local[chave]) continue;
+    if (local !== 'painel' && containerDe(local).hidden && !janelasLivres() && !cabeNovaColuna(local)) continue;
     const simulado = simularMovimento(arranjo, chave, local, undefined);
     if (!mesmoLugar(simulado, arranjo)){ moverModulo(chave, local, undefined); return; }
   }
@@ -5949,7 +6010,7 @@ if (!modoCampoAtivo){
     const janela = ev.target.closest('.console, .guia');
     if (!janela) return;
     frentearJanela(janela.classList.contains('console') ? 'painel'
-                 : janela.id === 'guiaLateral' ? 'g1' : 'g2');
+                 : Object.keys(COLUNAS).find(c => COLUNAS[c].el === janela.id));
   }, true);
 
   // Uma escuta só para todas as alças, inclusive as dos avisos

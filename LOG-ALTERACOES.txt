@@ -8041,3 +8041,32 @@ TESTADO
   ícone (engrenagem, marcar todos, avulsa, e os dois da Origem), para eles
   continuarem iguais entre si (v8.23.1). Saíram das listas de "caixas de
   dentro" do vidro, que devolveriam o fundo.
+
+--------------------------------------------------------
+[16/10/2026] v8.30.0 — até seis colunas de módulos
+--------------------------------------------------------
+- Pedido do usuário: "permita poder criar mais de 3" (primeiro entendido
+  como abas de técnico — que não têm limite —, depois corrigido por ele: são
+  as colunas dos módulos).
+- COLUNAS ganhou g3, g4, g5 (guiaCol4…6, hg_largura_guia3…5): cinco colunas
+  auxiliares, uma por módulo. A lista ['painel','g1','g2'], escrita à mão em
+  oito lugares, virou LOCAIS. Ids e apelidos de g1/g2 iguais (arranjos salvos).
+- Sem buraco entre colunas (generaliza "a 3 não fica sozinha").
+- Coluna 4 em diante só abre se sobrar MAPA_MIN de mapa; 2 e 3 como antes.
+  Janelas soltas sem limite.
+- A coluna que não cabe na fila aparece dentro da última que cabe, sem mexer
+  no arranjo (pego no teste: desligar as janelas com seis abertas espremia o
+  painel a 206px e tirava o mapa).
+- 8.29.1 -> 8.30.0.
+
+TESTADO
+  1920: soltar no mapa abre até 4 colunas (painel + 3), mapa com 431px; a 5ª
+  não abre. Sem buraco: esvaziar a coluna 2 fez as da esquerda andarem.
+  Duplo clique avança para a coluna seguinte. Salvar e reler o arranjo: igual,
+  disquete apaga. Janelas soltas: 6 colunas, 6 puxadores. Desligar com 6:
+  fila mostra 4 com larguras certas (340/360/360/360), módulos das colunas 5
+  e 6 dentro da 4, arranjo intacto. 1366: 3 colunas. 700: tudo no painel.
+  Modo leve: igual. "Voltar à organização padrão": volta a 2 colunas a 1920,
+  disquete apagado. Sem erro de console.
+  (O painel de testes não dispara 'resize' ao mudar o tamanho emulado; foi
+  disparado à mão.)
