@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 16/10/2026 — v8.30.0 (até seis colunas de módulos, abrindo só as que cabem)
+> **Última atualização:** 19/10/2026 — v8.31.0 (trechos da rota um por vez, cabeçalho do campo preso de verdade, "Rota para" em âmbar)
 
 ---
 
@@ -759,7 +759,8 @@ sem dependências instaladas. Abre direto no navegador.
   facultativo, Dia do Professor, Dia do Servidor, recessos, datas de fonte não
   oficial, o Corpus Christi das cidades em que ele não é feriado e as festas.
   ⚠️ **O dia escolhido fica todo em âmbar**, borda e letra, e o rótulo "Rota para"
-  tem 13px, o mesmo dos botões (v8.28.1, pedido do usuário).
+  tem 13px, o mesmo dos botões (v8.28.1, pedido do usuário). O rótulo também é
+  âmbar desde a v8.31.0, a pedido dele.
   ⚠️ **Os botões de data NÃO têm fundo próprio** (v8.29.1, pedido do usuário:
   queria o "fundo meio preto" do botão "Mapa: …"). O escuro que se vê é o do app,
   por transparência; o dia escolhido tinha `--panel-2`, mais claro, e saiu. A
@@ -1112,6 +1113,51 @@ sem dependências instaladas. Abre direto no navegador.
   teste: 16,2 km sem volta, 27,1 km com volta na mesma ordem, e 24,1 km quando o
   otimizador trabalha sabendo que precisa voltar
 - Marcadores numerados conforme a ordem final de visita
+- **Trechos da rota: um aceso por vez** (v8.31.0, pedido do usuário: "a linha
+  traçada fica com coloração acentuada a cada parada — base para a primeira
+  parada acentuada, as demais permanecem, porém mais translúcidas; ao apertar
+  algum botão ou clicando na segunda parada, ela fica acentuada"). Depois de
+  traçar, o **trecho 1** (origem → parada 1) acende (100%, 7px) e o resto da
+  rota fica atrás, translúcido (`OPAC_ROTA_FUNDO` 22%, `PESO_ROTA_FUNDO` 4px).
+  **Clicar numa parada** — na lista ou no número no mapa — acende o trecho que
+  **chega** nela. No módulo Rota, embaixo do km/min, **"Trecho 3 de 7"** com
+  "2. BAIRRO → 3. CENTRAL · 1.6 km · 4 min" e os botões **‹ › Tudo**: as setas
+  andam um trecho e **enquadram o pedaço no mapa**; "Tudo" acende a rota
+  inteira de novo (para conferir antes de mandar o link). Com retorno, o último
+  trecho chega na origem.
+  ⚠️ **DESLIGADO POR PADRÃO**, a pedido do usuário depois de ver funcionando:
+  *"quero que venha como padrão a rota inteira traçada, e um botão nas opções de
+  configurações para ativar"*. É a linha **"Um trecho por vez"** do menu
+  Exibição, num grupo próprio, **"Rota no mapa"** (aparece também em tela
+  estreita), guardada em `hg_trechos`. Desligado: rota inteira acesa, sem a
+  linha dos trechos no módulo Rota, e o clique na parada faz só o de sempre.
+  Os trechos continuam sendo **preparados em toda rota**: ligar com uma rota na
+  tela acende o trecho 1 na hora, sem traçar de novo; desligar devolve a rota
+  inteira. Não acende o ponto âmbar do "Exibição" — é preferência, não aviso.
+  ⚠️ **Substituiu as SETAS de sentido**, que nasceram nesta mesma versão e o
+  usuário reprovou ("os riscos não surtiram efeito"): um "›" escuro a cada
+  110px dentro da linha. Seta diz a direção da linha inteira; trecho aceso diz
+  **qual pedaço vem agora**, que é a pergunta de quem planeja. Não repropor.
+  ⚠️ **A geometria de cada trecho vem PRONTA do OSRM**: `legs[k].steps[].geometry`
+  (o app já pedia `steps=true` por causa do Roteiro). Conferido: os 7 trechos
+  da rota de teste somam 16,82 km, o mesmo da rota inteira. Nada de cortar a
+  linha pelo ponto mais próximo de cada parada — numa rota que passa duas vezes
+  pela mesma rua isso cortaria no lugar errado.
+  ⚠️ **O trecho aceso é uma segunda linha por cima** (`linha._destaque`),
+  pendurada na linha da rota e seguindo o `add`/`remove` dela: rota desfeita,
+  traçada de novo ou de outra aba leva o destaque junto. **Cada técnico guarda o
+  seu trecho** (`linha._trecho`), e a aba apagada fica como sempre, inteira e
+  fraca (`realcarCamadas()` tira o destaque dela).
+  ⚠️ **Com o efeito de traçar, a linha se desenha INTEIRA primeiro** e só depois
+  o trecho 1 acende — por relógio, no mesmo `setTimeout` que tira o tracejado
+  (v8.26.0), e nos dois atalhos sem animação. No modo leve acende na hora.
+  ⚠️ **O enquadramento das setas é `animate:false`** (a animação nunca é o único
+  caminho), limitado a `ZOOM_DA_PARADA`. O clique na parada **não** enquadra por
+  aqui: quem move o mapa nele é `verParadaNoMapa`, com o bloqueio de zoom dela.
+  ⚠️ **Teste com o painel do Claude**: minimizado, a janela fica 0×0 e o mapa
+  não tem tamanho; e sem pintar, uma foto tirada logo depois pega a transição
+  de opacidade no meio (a linha parece toda forte). Fixar o tamanho com a
+  emulação e conferir `getComputedStyle(path).strokeOpacity`.
 - **Efeito ao traçar a rota** (v8.0.0, pedido do usuário; ele escolheu o conjunto
   entre quatro efeitos comparados lado a lado em mapas de verdade): o mapa **voa**
   até o enquadramento (1,2 s), a **linha se desenha** da origem até o fim (900 ms,
@@ -1222,6 +1268,19 @@ sem dependências instaladas. Abre direto no navegador.
   **A barra de progresso do dia** (teal, no cabeçalho, com "2/4" ao lado) só
   passou a aparecer na **v7.5.0** — existia desde a Fase 1 com largura zero,
   ver seção 5.
+  **O cabeçalho fica preso no topo de verdade desde a v8.31.0** (relatado pelo
+  usuário: "congelar conforme desce"). Ele já era `sticky`, mas a tela inteira
+  (`.campo`) tinha `height:100%`, presa na altura do celular, e o sticky só gruda
+  **dentro da caixa onde mora**: com a lista passando de 812px, o cabeçalho era
+  arrastado para fora depois de ~640px de rolagem (medido: topo em −559 com
+  1200px rolados). Sem o `height:100%`, só com o `min-height:100vh`, o topo fica
+  em 0 em qualquer rolagem. ⚠️ **Só aparecia com roteiro longo** — com as 6
+  paradas da base de exemplo a página nem rola o suficiente.
+  ⚠️ **A faixa do mapa rola para fora**, por baixo do cabeçalho, como antes. O
+  usuário perguntou se ela devia minimizar sozinha; ficou rolando, porque
+  encolher algo enquanto o dedo arrasta faz a lista pular embaixo dele, e o
+  "Ocultar" (guardado no aparelho) já existe para quem não quer a faixa. A tela
+  cheia do mapa não mudou (conferido: 375×812 e volta à faixa).
   **A parada da vez é a única em cartão inteiro** (v7.7.0, ponto 2 da revisão de
   design): ela ganha a etiqueta **AGORA** em âmbar e a borda âmbar que já tinha;
   a **já concluída vira uma faixa de 44px** (✓ teal, "nome · cliente" riscado) e
@@ -1967,7 +2026,7 @@ repositório é público (ver `.gitignore`).
   o vidro ligado
   ou desligado, as janelas livres ligadas ou desligadas, o ímã de alinhamento
   delas, **a faixa de mapa da tela do campo** (v8.16.0, no aparelho de quem
-  abriu o link), **o modo leve** (v8.7.0), **o município de cada coordenada já consultada** (v8.27.0), **o planejamento do dia** (v8.5.0, restaurado
+  abriu o link), **o modo leve** (v8.7.0), **o município de cada coordenada já consultada** (v8.27.0), **o "um trecho por vez"** (v8.31.0), **o planejamento do dia** (v8.5.0, restaurado
   só se a pessoa aceitar), a largura do painel e das colunas, o arranjo dos módulos (só quando salvo pelo
   botão), o tema (claro/escuro) e o progresso do modo campo. **Não** ficam salvos:
   a seleção de paradas do dia, a ordem da viagem, a origem e a rota traçada —
@@ -2458,6 +2517,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 128 | **v8.29.0** — O dia da rota vai no link (formato v11) e aparece na tela do campo, com aviso se aberto em outro dia |
 | 129 | **v8.29.1** — As datas do cabeçalho e os cinco botões de ícone sem fundo próprio, como o botão "Mapa: …" |
 | 130 | **v8.30.0** — Até seis colunas de módulos (eram três); coluna nova só abre se couber, e a que não cabe aparece na última visível |
+| 131 | **v8.31.0** — Trechos da rota acesos um por vez (‹ › no módulo Rota ou clique na parada); o cabeçalho da tela do campo passa a ficar preso em qualquer rolagem; "Rota para" em âmbar |
 
 ---
 
@@ -2526,7 +2586,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.30.0
+8.31.0
 ```
 
 ### Onde o número aparece
@@ -2708,3 +2768,4 @@ versão continua sendo a cada número fechado.
 | 8.29.0 | 16/10/2026 | Dia da rota no link (v11) e na tela do campo |
 | 8.29.1 | 16/10/2026 | Datas do cabeçalho e botões de ícone sem fundo próprio, como o "Mapa: …" |
 | 8.30.0 | 16/10/2026 | Até seis colunas de módulos, abrindo só as que cabem |
+| 8.31.0 | 19/10/2026 | Trechos da rota um por vez; cabeçalho do campo preso; "Rota para" em âmbar |

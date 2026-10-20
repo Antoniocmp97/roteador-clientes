@@ -1114,6 +1114,24 @@
   .stop-row .nm-aviso.aviso, .stop-row .nm-aviso.facultativo{color:var(--amber);}
   .stop-row .nm-aviso.evento{color:var(--teal);}
   .empty-hint{font-size:11.5px;color:var(--muted);font-style:italic;}
+  /* Trechos da rota (v8.31.0): ‹ Trecho 2 de 7 › no módulo Rota. Mesma língua
+     dos botões de ícone (sem fundo próprio, contorno, teal no hover). */
+  .trecho-nav{display:flex; align-items:center; gap:5px; margin-top:12px;}
+  .trecho-nav .trecho-txt{margin-right:3px;}
+  .trecho-btn, .trecho-tudo{flex:none; height:32px; border:1px solid var(--line); border-radius:6px;
+       background:none; color:var(--text); cursor:pointer; transition:border-color .15s, background .15s, color .15s;}
+  .trecho-btn{width:32px; display:flex; align-items:center; justify-content:center; padding:0;}
+  .trecho-btn svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8;
+       stroke-linecap:round; stroke-linejoin:round;}
+  .trecho-tudo{padding:0 10px; font-size:13px;}
+  .trecho-btn:hover:not(:disabled), .trecho-tudo:hover{border-color:var(--teal); background:var(--hover);}
+  .trecho-btn:disabled{opacity:.35; cursor:default;}
+  .trecho-tudo.ligado{color:var(--amber); border-color:var(--amber);}
+  .trecho-btn:focus-visible, .trecho-tudo:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
+  .trecho-txt{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; line-height:1.3;}
+  .trecho-titulo{font-size:13px; font-weight:600; color:var(--text);}
+  .trecho-num{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--amber); white-space:nowrap;}
+  .trecho-de{font-size:11.5px; color:var(--muted); overflow-wrap:anywhere;}
 
   /* Lista ordenável das paradas selecionadas (ordem da viagem) */
   /* position:relative: o indicador de "vai cair aqui" do arraste é posicionado
@@ -1377,7 +1395,7 @@
      âmbar = pode fechar, teal = festa. */
   header .dia-rota{flex:none; align-self:center; display:flex; align-items:center; gap:5px;}
   /* 13px, o mesmo dos botões ao lado (v8.28.1, pedido do usuário) */
-  header .dia-rota .rotulo{font-size:13px; color:var(--muted); margin-right:2px; white-space:nowrap;}
+  header .dia-rota .rotulo{font-size:13px; color:var(--amber); margin-right:2px; white-space:nowrap;}   /* âmbar desde a v8.31.0 (pedido do usuário) */
   /* Mesmo corpo do "Mapa: …" ao lado (v8.29.1, pedido do usuário): 32px e SEM
      fundo próprio — o escuro que aparece é o do app, e é ele que dá o efeito. */
   .dia-btn{display:flex; align-items:center; gap:4px; height:32px; padding:0 10px; border-radius:7px;
@@ -1564,8 +1582,13 @@
      Feita para uso com uma mão, em movimento, sob luz de sol:
      alvos de toque grandes, alto contraste, sem mapa nem upload.
      ========================================================== */
+  /* ⚠️ SEM `height:100%` (v8.31.0, relatado pelo usuário: "congelar o
+     cabeçalho conforme desce"). O cabeçalho sticky só fica preso DENTRO da caixa
+     onde mora; com a tela presa na altura do celular (812px) e a lista passando
+     disso, ele era arrastado para fora depois de ~640px de rolagem (medido: topo
+     em -559 com 1200px rolados). Só o mínimo, e a caixa cresce com a lista. */
   .campo{
-    display:flex; flex-direction:column; height:100%; min-height:100vh;
+    display:flex; flex-direction:column; min-height:100vh;
     background:var(--ink); color:var(--text); font-family:'Inter',system-ui,sans-serif;
   }
 
@@ -1974,6 +1997,19 @@
             <span class="sw" aria-hidden="true"></span>
           </button>
 
+          <div class="exib-grupo">Rota no mapa</div>
+          <!-- Um trecho por vez (v8.31.0): desligado por padrão — a rota aparece
+               inteira, como sempre. Ligado, acende o trecho até a próxima parada. -->
+          <button class="exib-lin trechos-btn" type="button" role="switch" aria-checked="false" data-trechos-btn>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 19c2.5-5 5-3.5 7.5-8.5S16.5 6 20 5" stroke-opacity=".35"/>
+              <path d="M11.5 10.5c1.6-3.4 3.4-4.4 6-5" stroke-width="3.2"/>
+              <circle cx="4" cy="19" r="1.6"/><circle cx="11.5" cy="10.5" r="1.6"/>
+            </svg>
+            <span class="t"><b>Um trecho por vez</b><small>Acende só o caminho até a próxima parada; o resto da rota fica mais fraco.</small></span>
+            <span class="sw" aria-hidden="true"></span>
+          </button>
+
           <div class="exib-grupo exib-so-largo">Organização da tela</div>
           <!-- Janelas livres (v8.4.0): as colunas passam a ter posição e tamanho
                próprios, movidas pelo puxador no topo ao centro. -->
@@ -2197,6 +2233,13 @@
         <div class="resumo-rota" id="resumoRota" hidden>
           <div class="row"><span id="distVal">--</span><span id="timeVal">--</span></div>
           <div class="row"><span>distância total</span><span>tempo estimado</span></div>
+        </div>
+        <!-- Trechos da rota (v8.31.0): qual pedaço está aceso no mapa -->
+        <div class="trecho-nav" id="trechoNav" hidden>
+          <div class="trecho-txt"><span class="trecho-titulo"></span><span class="trecho-de"></span></div>
+          <button type="button" class="trecho-btn" data-trecho="-1" aria-label="Trecho anterior" title="Trecho anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <button type="button" class="trecho-btn" data-trecho="1" aria-label="Próximo trecho" title="Próximo trecho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+          <button type="button" class="trecho-tudo" data-trecho="tudo" aria-pressed="false" title="Acender a rota inteira">Tudo</button>
         </div>
         <div class="status" id="status"></div>
 
@@ -2459,7 +2502,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.30.0';
+const VERSAO = '8.31.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2761,6 +2804,7 @@ function carregarDoTecnico(t){
   document.getElementById('linkPronto').style.display = p.linkPronto || 'none';
   document.getElementById('linkCampo').value = p.link || '';
   atualizarResumoDoEnvio();   // o link restaurado pode ser de outro formato
+  atualizarTrechoNav();       // os trechos são da rota desta aba (v8.31.0)
   setStatus('');
   esconderOpcoesEndereco();
   renderStopsList();
@@ -2797,6 +2841,11 @@ function realcarCamadas(){
       if (elLinha) elLinha.style.transition = 'stroke-opacity .26s linear, stroke-width .26s linear';
       t.linha.setStyle({ opacity: ativo ? .9 : .28, weight: ativo ? 5 : 3 });
       if (ativo) t.linha.bringToFront();
+      // Trecho aceso só na aba aberta; a apagada fica inteira e fraca (v8.31.0)
+      if (t.linha._trechos){
+        if (ativo) aplicarTrecho(t.linha);
+        else if (map.hasLayer(t.linha._destaque)) map.removeLayer(t.linha._destaque);
+      }
     }
     /* ⚠️ "Atrás" vai por setZIndexOffset, e não por `style.zIndex` (v8.26.0):
        o Leaflet REESCREVE o z-index inline de todo marcador a cada zoom (é a
@@ -3615,6 +3664,7 @@ function invalidarRota(){
   if (routeLine){ map.removeLayer(routeLine); routeLine = null; }
   stopMarkers.forEach(m => map.removeLayer(m));
   stopMarkers = [];
+  atualizarTrechoNav();   // sem rota, sem trechos (v8.31.0)
   document.getElementById('readout').classList.remove('show');
   document.getElementById('resumoRota').hidden = true;
   if (envio) envio.style.display = 'none';
@@ -4832,6 +4882,7 @@ function verParadaNoMapa(i, forcar){
   const m = marcadorDaParada(i);
   if (m && m.openPopup) m.openPopup();   // diz qual é, quando há vários por perto
   realcarParada(i, true, false);
+  selecionarTrecho(i, false);            // e acende o trecho que chega nela (v8.31.0)
 }
 
 if (!modoCampoAtivo){
@@ -6828,6 +6879,142 @@ function animarNumero(el, valor, formatar, dur = 600){
 // âmbar sobre a geometria retornada pelo OSRM, substitui os marcadores das paradas por
 // versões numeradas na ordem de visita, enquadra o mapa na rota e preenche o painel de
 // distância/tempo/roteiro com as instruções passo a passo agrupadas por parada (leg)
+/* ---- Trechos da rota (v8.31.0) ----
+   Pedido do usuário: "a linha traçada fica com coloração acentuada a cada
+   parada — base para a primeira parada acentuada, as demais permanecem, porém
+   mais translúcidas; ao apertar algum botão ou clicando na segunda parada, ela
+   fica acentuada, e assim por diante".
+   ⚠️ Substitui as SETAS de sentido, que nasceram e morreram nesta mesma versão:
+   "os riscos não surtiram efeito". Seta diz a direção da linha inteira; o
+   trecho aceso diz QUAL pedaço vem agora, que é a pergunta de quem planeja.
+   ⚠️ A geometria de cada trecho vem PRONTA do OSRM: `legs[k].steps[].geometry`,
+   rua por rua, com `steps=true` que o app já pedia por causa do Roteiro. Nada
+   de cortar a linha inteira pelo ponto mais próximo de cada parada — numa rota
+   que passa duas vezes pela mesma rua isso cortaria no lugar errado.
+   ⚠️ O trecho aceso é uma SEGUNDA linha por cima (`linha._destaque`), e o
+   fundo é a linha de sempre, translúcida. Os dois moram pendurados na linha e
+   seguem o 'add'/'remove' dela: rota desfeita, traçada de novo ou trocada de
+   aba leva o destaque junto, sem tocar em invalidarRota.
+   ⚠️ Com o efeito de traçar, a linha se desenha INTEIRA primeiro e só depois o
+   primeiro trecho acende — por relógio, no mesmo setTimeout que tira o
+   tracejado (v8.26.0). No modo leve acende na hora. */
+/* ⚠️ DESLIGADO POR PADRÃO (pedido do usuário depois de ver funcionando: "quero
+   que venha como padrão a rota inteira traçada, e um botão nas opções de
+   configurações para ativar o que fizemos agora"). A linha "Um trecho por vez"
+   do menu Exibição liga e desliga, e a escolha fica em `hg_trechos`.
+   Desligado: rota inteira acesa, sem a linha dos trechos no módulo Rota, e o
+   clique na parada faz só o de sempre. Os trechos continuam sendo PREPARADOS
+   em toda rota — ligar com uma rota na tela acende o trecho 1 na hora, sem
+   precisar traçar de novo. */
+var CHAVE_TRECHOS = 'hg_trechos';
+var trechosAtivos = false;
+try{ trechosAtivos = localStorage.getItem(CHAVE_TRECHOS) === '1'; }catch(e){ /* padrão: desligado */ }
+function aplicarModoTrechos(lig, salvar){
+  trechosAtivos = lig;
+  document.querySelectorAll('[data-trechos-btn]').forEach(b => b.setAttribute('aria-checked', String(lig)));
+  if (salvar){ try{ localStorage.setItem(CHAVE_TRECHOS, lig ? '1' : '0'); }catch(e){} }
+  // Ligar com uma rota na tela começa pelo trecho 1, como depois de traçar
+  if (lig && routeLine && routeLine._trechos){ routeLine._trecho = 0; routeLine._trechosLigados = true; }
+  if (routeLine) aplicarTrecho(routeLine);
+  atualizarTrechoNav();
+}
+var OPAC_ROTA_FUNDO = .22;   // a rota inteira, atrás do trecho aceso (.35 ficou forte demais no teste)
+var PESO_ROTA_FUNDO = 4;      // e mais fina que o trecho (7), para o aceso saltar
+
+function prepararTrechos(linha, legs, cor){
+  linha._trechos = (legs || []).map(l => ({
+    pts: (l.steps || []).flatMap(st => ((st.geometry && st.geometry.coordinates) || []).map(c => [c[1], c[0]])),
+    km: l.distance, min: l.duration
+  }));
+  linha._trecho = 0;                         // o aceso; null = a rota inteira
+  linha._trechosLigados = !efeitoLigado();   // com o efeito, espera a linha terminar de se desenhar
+  linha._destaque = L.polyline([], { color: cor, weight: 7, opacity: 1, interactive: false });
+  linha.on('add', () => aplicarTrecho(linha));
+  linha.on('remove', () => map.removeLayer(linha._destaque));
+}
+function ativarTrechos(linha){
+  if (!linha || !linha._trechos) return;
+  linha._trechosLigados = true;
+  aplicarTrecho(linha);
+  atualizarTrechoNav();
+}
+// Desenha o estado da linha: destaque por cima e fundo translúcido, ou a rota
+// inteira acesa. Só a linha da aba ABERTA tem destaque; as outras ficam como
+// realcarCamadas deixa (apagadas).
+function aplicarTrecho(linha){
+  if (!linha || !linha._trechos || !map) return;
+  const ativa = linha === routeLine && map.hasLayer(linha);
+  const t = linha._trecho;
+  const aceso = trechosAtivos && ativa && linha._trechosLigados && t !== null
+             && linha._trechos[t] && linha._trechos[t].pts.length > 1;
+  if (aceso){
+    linha._destaque.setLatLngs(linha._trechos[t].pts);
+    if (!map.hasLayer(linha._destaque)) linha._destaque.addTo(map);
+    linha._destaque.bringToFront();
+  }else if (map.hasLayer(linha._destaque)){
+    map.removeLayer(linha._destaque);
+  }
+  if (ativa) linha.setStyle({ opacity: aceso ? OPAC_ROTA_FUNDO : .9, weight: aceso ? PESO_ROTA_FUNDO : 5 });
+}
+/* Acende o trecho i (o que CHEGA na parada i; o último, com retorno, chega na
+   origem). null = rota inteira. `enquadrar` vem das setas do módulo Rota: elas
+   mostram o pedaço no mapa. O clique na parada não enquadra aqui — quem cuida
+   disso é verParadaNoMapa, com o bloqueio de zoom dela. */
+function selecionarTrecho(i, enquadrar){
+  const linha = routeLine;
+  if (!trechosAtivos || !linha || !linha._trechos || !linha._trechos.length) return;
+  linha._trecho = i === null ? null : Math.max(0, Math.min(linha._trechos.length - 1, i));
+  linha._trechosLigados = true;
+  aplicarTrecho(linha);
+  atualizarTrechoNav();
+  if (!enquadrar) return;
+  // animate:false de propósito: a animação nunca é o único caminho até o resultado
+  const pts = linha._trecho === null ? null : linha._trechos[linha._trecho].pts;
+  if (pts && pts.length > 1) map.fitBounds(L.latLngBounds(pts), { ...paddingDoMapa(), animate:false, maxZoom: ZOOM_DA_PARADA });
+  else if (linha._trecho === null) map.fitBounds(linha.getBounds(), { ...paddingDoMapa(), animate:false });
+}
+function nomeDoPontoDoTrecho(k){
+  if (k < 0) return 'Origem';
+  if (k >= stops.length) return 'Retorno à origem';
+  return `${k + 1}. ${stops[k].name}`;
+}
+function atualizarTrechoNav(){
+  const nav = document.getElementById('trechoNav');
+  if (!nav) return;
+  const linha = routeLine;
+  const tem = !!(trechosAtivos && linha && linha._trechos && linha._trechos.length && linha._trechosLigados && map.hasLayer(linha));
+  nav.hidden = !tem;
+  if (!tem) return;
+  const n = linha._trechos.length, t = linha._trecho;
+  nav.querySelector('[data-trecho="-1"]').disabled = t === 0;
+  nav.querySelector('[data-trecho="1"]').disabled = t === n - 1;
+  const tudo = nav.querySelector('[data-trecho="tudo"]');
+  tudo.classList.toggle('ligado', t === null);
+  tudo.setAttribute('aria-pressed', String(t === null));
+  const titulo = nav.querySelector('.trecho-titulo'), de = nav.querySelector('.trecho-de');
+  if (t === null){
+    titulo.textContent = `Rota inteira · ${n} trecho${n === 1 ? '' : 's'}`;
+    de.textContent = 'Use as setas para acender um trecho por vez.';
+  }else{
+    const tr = linha._trechos[t];
+    titulo.textContent = `Trecho ${t + 1} de ${n}`;
+    de.innerHTML = `${escaparHtml(nomeDoPontoDoTrecho(t - 1))} → ${escaparHtml(nomeDoPontoDoTrecho(t))} <span class="trecho-num">· ${(tr.km / 1000).toFixed(1)} km · ${Math.round(tr.min / 60)} min</span>`;
+  }
+}
+if (!modoCampoAtivo){
+  aplicarModoTrechos(trechosAtivos, false);
+  document.querySelectorAll('[data-trechos-btn]').forEach(b =>
+    b.addEventListener('click', () => aplicarModoTrechos(!trechosAtivos, true)));
+  document.getElementById('trechoNav').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-trecho]');
+    if (!b || b.disabled || !routeLine || !routeLine._trechos) return;
+    const atual = routeLine._trecho, n = routeLine._trechos.length;
+    if (b.dataset.trecho === 'tudo') selecionarTrecho(atual === null ? 0 : null, true);
+    else if (atual === null) selecionarTrecho(b.dataset.trecho === '1' ? 0 : n - 1, true);
+    else selecionarTrecho(atual + Number(b.dataset.trecho), true);
+  });
+}
+
 function drawResult(distance, duration, geometry, legs){
   if (routeLine) map.removeLayer(routeLine);
   stopMarkers.forEach(m => map.removeLayer(m));
@@ -6837,6 +7024,9 @@ function drawResult(distance, duration, geometry, legs){
   const cor = corDoTecnico();
   const dono = tecnicos[tecnicoAtivo];      // de quem é esta rota (v8.5.0)
   routeLine = L.polyline(coords, { color:cor, weight:5, opacity:0.9 }).addTo(map);
+  const linhaNova = routeLine;
+  // Trechos (v8.31.0): o primeiro acende; o resto fica translúcido atrás
+  prepararTrechos(linhaNova, legs, cor);
 
   stops.forEach((s, i) => {
     const m = L.marker([s.lat, s.lng], { icon: numIcon(i+1, cor) }).addTo(map).bindPopup(`${i+1}. ${escaparHtml(s.name)}`);
@@ -6846,6 +7036,8 @@ function drawResult(distance, duration, geometry, legs){
        acenderia a linha de outra parada na lista do técnico 1 (v8.5.0). */
     m.on('mouseover', () => { if (tecnicos[tecnicoAtivo] === dono) realcarParada(i, true, true); });
     m.on('mouseout',  () => { if (tecnicos[tecnicoAtivo] === dono) realcarParada(i, false, true); });
+    // Clicar no número acende o trecho que chega nesta parada (v8.31.0)
+    m.on('click', () => { if (tecnicos[tecnicoAtivo] === dono) selecionarTrecho(i, false); });
     if (efeitoLigado()) m.getElement().classList.add('parada-entrando');   // nasce invisível
     stopMarkers.push(m);
   });
@@ -6861,6 +7053,7 @@ function drawResult(distance, duration, geometry, legs){
     map.fitBounds(enquadrar, { ...paddingDoMapa(), animate:false });
     elDist.textContent = `${(distance/1000).toFixed(1)} km`;
     elTempo.textContent = `${Math.round(duration/60)} min`;
+    ativarTrechos(linhaNova);
   }else{
     /* Efeito ao traçar (v8.0.0). A linha nasce escondida porque o mapa ainda vai
        voar: enquanto ele voa, o Leaflet REPROJETA o path a cada quadro, e o
@@ -6904,11 +7097,12 @@ function drawResult(distance, duration, geometry, legs){
         map.fitBounds(enquadrar, { ...paddingDoMapa(), animate:false });
         mostrarParadas();
         mostrarResumo();
+        ativarTrechos(linhaNova);
         return;
       }
 
       const comprimento = path.getTotalLength();
-      if (!comprimento){ mostrarParadas(); return; }      // sem geometria medível, mostra direto
+      if (!comprimento){ mostrarParadas(); ativarTrechos(linhaNova); return; }      // sem geometria medível, mostra direto
       path.style.transition = 'none';
       path.style.strokeDasharray = comprimento;
       path.style.strokeDashoffset = comprimento;
@@ -6928,6 +7122,7 @@ function drawResult(distance, duration, geometry, legs){
         if (!path.isConnected) return;
         path.style.strokeDasharray = '';
         path.style.strokeDashoffset = '';
+        ativarTrechos(linhaNova);   // a linha acabou de chegar ao fim: agora o primeiro trecho acende (v8.31.0)
       }, DUR_ROTA + 120);
       /* A linha se desenhando também muda pixels debaixo do painel, quadro a
          quadro, e refaria o borrão junto (v8.2.0). Segura o congelamento até o

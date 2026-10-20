@@ -92,6 +92,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | qualquer coisa que espere a rede e depois escreva na viagem | `O que foi pedido ao serviço de rotas` | `retratoDoPedido`, `pedidoMudou` — tirar o retrato antes do `await` e conferir depois (v8.26.0) |
 | reencontrar na base uma parada guardada | `Reencontrar na base uma parada guardada` | `indicePorCoordenada`, `acharNaBase` (coordenada, com desempate por id e por nome + cliente, v8.26.0) |
 | efeito ao traçar | `Efeito ao traçar a rota (v8.0.0)` | `efeitoLigado`, `animarNumero` |
+| trechos da rota (um aceso por vez) | `Trechos da rota (v8.31.0)` (logo antes de `drawResult`) | `prepararTrechos` (geometria dos `legs`/`steps` do OSRM), `aplicarTrecho`, `selecionarTrecho`, `ativarTrechos` (fim do desenho), `atualizarTrechoNav`, `OPAC_ROTA_FUNDO`/`PESO_ROTA_FUNDO`, `aplicarModoTrechos` (a linha "Um trecho por vez" do menu Exibição; desligado por padrão) |
 | clicar na parada e ir até ela | `Centraliza um ponto na parte visível` | `centralizarVisivel`, `verParadaNoMapa`, `DUR_VOO_PARADA` |
 | mover módulos entre colunas | `Arrastar um módulo pela alça…` | `destinoDoModulo`, `moverModulo` |
 | quantas colunas existem e quantas cabem | `COLUNAS` / `LOCAIS` (v8.30.0) | `COLUNAS` (g1…g5), `LOCAIS`, `normalizarLocais` (sem buraco), `cabeNovaColuna`, `proximaColunaLivre`, `colunasNaFila` (a que não cabe aparece na última visível) |
@@ -163,6 +164,7 @@ diaRotaEscolhido 'hoje' | 'proximo' — o dia da rota, o MESMO para todas as aba
 | `hg_alturas_modulos` | alturas do checklist e das paradas no painel |
 | `hg_arranjo_modulos` | o arranjo guardado pela linha "Guardar esta organização" do menu Exibição (era o disquete até a v8.24.2) |
 | `hg_dia_planejado` | o planejamento do dia (oferecido ao abrir) |
+| `hg_trechos` | o "um trecho por vez" ligado (`1`); ausente = desligado, a rota aparece inteira (v8.31.0) |
 | `hg_municipios` | o município de cada coordenada já consultada (`"lat,lng"` com 4 casas → nome), para os avisos de feriado (v8.27.0) |
 | `hg_link_compativel` | formato do link (legível x comprimido) |
 | `hg_prog_r_<rid>` | progresso do campo, por roteiro |

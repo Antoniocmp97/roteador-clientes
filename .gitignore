@@ -68,6 +68,7 @@ backups/*
 !backups/v8.29.0_2026-10-16_dia-no-link/
 !backups/v8.29.1_2026-10-16_datas-sem-fundo/
 !backups/v8.30.0_2026-10-16_seis-colunas/
+!backups/v8.31.0_2026-10-19_trechos-da-rota/
 
 # --- Bloco de notas de quem trabalha na pasta ---
 # Qualquer rascunho solto na raiz entra no próximo "git add -A" e vai parar num

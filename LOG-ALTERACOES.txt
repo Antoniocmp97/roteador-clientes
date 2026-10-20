@@ -8070,3 +8070,56 @@ TESTADO
   disquete apagado. Sem erro de console.
   (O painel de testes não dispara 'resize' ao mudar o tamanho emulado; foi
   disparado à mão.)
+
+--------------------------------------------------------
+[19/10/2026] v8.31.0 — setas de sentido, cabeçalho do campo preso, "Rota para" âmbar
+--------------------------------------------------------
+- Setas de sentido na linha da rota (sugestão da avaliação de 14/10, pedida
+  agora pelo usuário). "›" escuro dentro da linha a cada 110px de tela (e não
+  a cada 1 km, que amontoaria de longe); só na área à vista, refeitas a cada
+  moveend; pulam os números das paradas; seguem a linha (grupo pendurado nela);
+  apagadas a 30% na aba de outro técnico; com o efeito de traçar, aparecem
+  quando a linha termina de se desenhar. A primeira forma (chevron da cor da
+  linha com contorno escuro) se fundia com a linha e foi trocada no teste.
+- Tela do campo: o cabeçalho já era sticky, mas a .campo tinha height:100%
+  (altura do celular) e o sticky só gruda dentro dela — com lista longa ele
+  saía depois de ~640px. Sem o height:100%, fica no topo sempre. A faixa do
+  mapa continua rolando para fora (o usuário perguntou se devia minimizar;
+  fica rolando — ver CLAUDE.md).
+- "Rota para" do cabeçalho em âmbar.
+- 8.30.0 -> 8.31.0.
+
+TESTADO
+  Setas: efeito ligado, 0 em 1,5s e 17 em 2,5s; zoom +2 = 19, zoom -2 = 2;
+  modo leve = 17 na hora, zero animações; duas abas: aba apagada a 0,3, aberta
+  a 1; rota desfeita leva linha e setas; voltar à aba 1 devolve 1. Desenho
+  conferido ampliado 4× nas seis cores de técnico, fundo escuro e claro.
+  Campo a 375×812 com lista de 2000px a mais: topo do cabeçalho em 0 com 300,
+  700, 1200 e 2000px rolados (antes: -59, -559, -1359). Tela cheia do mapa:
+  375×812, fecha de volta para 345×158. Sem erro de console.
+  (Com o painel de testes minimizado a janela fica 0×0 e não nasce seta:
+  é do ambiente.)
+- Na mesma versão, antes de publicar: o usuário reprovou as setas ("os riscos
+  não surtiram efeito") e pediu outra coisa — o trecho até a próxima parada
+  aceso e o resto translúcido, avançando por botão ou clicando na parada.
+  As setas saíram inteiras. Entrou:
+  · trecho 1 aceso depois de traçar (100%, 7px), rota atrás a 22% e 4px
+    (.35 ficou forte demais no primeiro teste);
+  · clique na parada (lista ou número no mapa) acende o trecho que chega nela;
+  · módulo Rota: "Trecho 3 de 7", "2. X → 3. Y · 1.6 km · 4 min", ‹ › (que
+    enquadram o trecho) e "Tudo";
+  · geometria de cada trecho dos legs/steps do OSRM (os 7 somam 16,82 km, o
+    mesmo da rota inteira); cada técnico guarda o seu trecho; com o efeito, o
+    trecho acende quando a linha termina de se desenhar.
+  TESTADO: efeito ligado (nada aceso durante o desenho, trecho 1 depois), modo
+  leve, ‹ ›, clique na parada 4 → trecho 4, Tudo e volta, duas abas (cada uma
+  com o seu trecho; a apagada sem destaque), rota desfeita leva o destaque e a
+  linha dos trechos. Sem erro de console.
+- Ainda antes de publicar: "quero que venha como padrão a rota inteira
+  traçada, e um botão nas opções de configurações para ativar o que fizemos
+  agora". Os trechos viraram a linha "Um trecho por vez" do menu Exibição
+  (grupo novo "Rota no mapa"), desligada por padrão e guardada em hg_trechos.
+  TESTADO: sem escolha guardada, traçar deixa a rota inteira (0,9 / 5px), sem
+  a linha dos trechos, e o clique na parada não acende nada; ligar com a rota
+  na tela acende o trecho 1; clique na parada 3 → trecho 3; desligar volta à
+  rota inteira; a escolha sobrevive a recarregar. Sem erro de console.

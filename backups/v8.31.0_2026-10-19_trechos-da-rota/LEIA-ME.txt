@@ -1,0 +1,15 @@
+v8.31.0 — 19/10/2026 — trechos da rota, cabeçalho do campo preso
+
+O QUE MUDOU
+  - Trechos da rota acesos um por vez: depois de traçar, o trecho até a
+    parada 1 acende e o resto fica translúcido; clicar numa parada ou usar
+    ‹ › no módulo Rota acende o seguinte; "Tudo" acende a rota inteira.
+    Desligado por padrão: liga-se na linha "Um trecho por vez" do menu
+    Exibição. (As setas de sentido foram tentadas e trocadas por isto antes
+    de publicar.)
+  - Tela do campo: o cabeçalho fica preso no topo em qualquer rolagem (antes
+    saía com roteiro longo). A faixa do mapa continua rolando para fora.
+  - "Rota para" do cabeçalho em âmbar.
+
+POR QUÊ
+  Pedidos do usuário.
