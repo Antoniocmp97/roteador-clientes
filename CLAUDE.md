@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 19/10/2026 — v8.31.0 (trechos da rota um por vez, cabeçalho do campo preso de verdade, "Rota para" em âmbar)
+> **Última atualização:** 19/10/2026 — v8.32.0 (o trecho até a parada da vez aceso no mapa da tela do campo)
 
 ---
 
@@ -1381,6 +1381,27 @@ sem dependências instaladas. Abre direto no navegador.
   mas vira etiqueta de canto, porque a faixa clara padrão do Leaflet tomava a
   base inteira de uma caixa de 160px. O selo "Leaflet" sai (`setPrefix(false)`):
   esse é autopromoção da biblioteca, não obrigação.
+  ⚠️ **O trecho até a parada da vez fica aceso** (v8.32.0, pedido do usuário:
+  "implemente o efeito para a tela externa também" — o "um trecho por vez" do
+  escritório). O caminho até a parada **"Agora"** acende (6px, 100%) e o resto
+  fica fraco (3px, 25%); concluir a parada passa sozinho para o trecho
+  seguinte, o retorno é o último, e com o dia concluído a rota inteira volta
+  acesa. O enquadramento não muda: a faixa continua mostrando o dia inteiro.
+  ⚠️ **No campo é sempre ligado e anda sozinho**, ao contrário do escritório
+  (onde é a linha "Um trecho por vez" do menu Exibição, desligada por padrão):
+  no celular não há menu de configuração, e o que acende é a próxima tarefa do
+  técnico, não uma escolha de visualização.
+  ⚠️ **O link não traz os trechos, só a linha inteira simplificada** — o corte é
+  feito no celular (`cortarTrajeto`): para cada parada, na ordem, procura-se
+  **para a frente** o ponto da linha que passa por ela, parando no primeiro
+  mínimo perto o bastante (o que evita cortar numa segunda passagem pela mesma
+  rua). Por isso vale para **todo link v10 e v11 já enviado**, sem mudar o
+  formato. ⚠️ **Corta na PROJEÇÃO sobre o segmento, e não no vértice mais
+  perto**: a linha simplificada guarda só as curvas, e numa rua reta o vértice
+  mais perto podia estar a 284 m da parada (medido na primeira forma). Projetando,
+  os cortes caíram a ≤47 m — a exceção, 284 m, é uma parada de exemplo que fica
+  a 304 m da rota inteira (ponto fora da rua), onde o corte cai no lugar mais
+  perto possível.
   ⚠️ **As camadas de ladrilho do mapa do campo são declaradas junto das do
   escritório**, lá no topo, e não na seção do mapa do campo: `aplicarTema()`
   roda na **carga** e lê as quatro, e com o `let` depois dele a zona morta
@@ -2518,6 +2539,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 129 | **v8.29.1** — As datas do cabeçalho e os cinco botões de ícone sem fundo próprio, como o botão "Mapa: …" |
 | 130 | **v8.30.0** — Até seis colunas de módulos (eram três); coluna nova só abre se couber, e a que não cabe aparece na última visível |
 | 131 | **v8.31.0** — Trechos da rota acesos um por vez (‹ › no módulo Rota ou clique na parada); o cabeçalho da tela do campo passa a ficar preso em qualquer rolagem; "Rota para" em âmbar |
+| 132 | **v8.32.0** — No mapa da tela do campo, o trecho até a parada da vez acende e anda sozinho com o progresso |
 
 ---
 
@@ -2586,7 +2608,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.31.0
+8.32.0
 ```
 
 ### Onde o número aparece
@@ -2769,3 +2791,4 @@ versão continua sendo a cada número fechado.
 | 8.29.1 | 16/10/2026 | Datas do cabeçalho e botões de ícone sem fundo próprio, como o "Mapa: …" |
 | 8.30.0 | 16/10/2026 | Até seis colunas de módulos, abrindo só as que cabem |
 | 8.31.0 | 19/10/2026 | Trechos da rota um por vez; cabeçalho do campo preso; "Rota para" em âmbar |
+| 8.32.0 | 19/10/2026 | Trecho até a parada da vez aceso no mapa do campo |

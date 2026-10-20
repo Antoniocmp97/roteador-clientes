@@ -1,0 +1,10 @@
+v8.32.0 — 19/10/2026 — o trecho até a parada da vez, no mapa do campo
+
+O QUE MUDOU
+  No mapa da tela do campo, o caminho até a parada "Agora" fica aceso e o
+  resto da rota mais fraco. Concluir a parada passa sozinho para o trecho
+  seguinte; com o dia concluído, a rota inteira volta acesa. Funciona com os
+  links já enviados.
+
+POR QUÊ
+  Pedido do usuário: o efeito de trechos do escritório também na tela externa.

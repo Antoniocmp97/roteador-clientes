@@ -2502,7 +2502,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.31.0';
+const VERSAO = '8.32.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -8071,10 +8071,55 @@ async function ativarModoCampo(){
    uma animação — e aí o mapa ficaria preso no enquadramento errado. */
 let mapaCampo = null;   // as camadas dele são declaradas junto das do escritório
 let pinosCampo = [], linhaCampo = null, pinoOrigemCampo = null;
+let trechosCampo = [], destaqueCampo = null;   // um trecho por vez, no campo (v8.32.0)
 const CHAVE_MAPA_CAMPO = 'hg_campo_mapa';
 
 function mapaCampoVisivel(){
   try{ return localStorage.getItem(CHAVE_MAPA_CAMPO) !== '0'; }catch(e){ return true; }
+}
+
+/* Corta o trajeto do link em trechos, um por parada (v8.32.0). O link traz só
+   a linha inteira, simplificada a 30 m (v8.16.0), e não os trechos — então o
+   corte é feito aqui: para cada parada, na ordem, procura-se PARA A FRENTE o
+   ponto do trajeto que passa por ela. "Para a frente" e "o primeiro mínimo
+   perto o bastante" são o que evita cortar no lugar errado numa rota que
+   passa duas vezes pela mesma rua. A última parada (ou o retorno) corta no
+   fim da linha. Funciona com todo link v10 e v11 já enviado, sem mudar o
+   formato. */
+function cortarTrajeto(traj, alvos){
+  /* ⚠️ Corta no ponto da LINHA mais perto da parada (a projeção sobre o
+     segmento), e não no vértice mais perto. O trajeto é simplificado: numa rua
+     reta sobram só as duas pontas, e o vértice mais perto da parada pode estar
+     a centenas de metros dela — medido no primeiro teste: cortes a 284 e 197 m
+     da parada. Projetando, o corte cai na rua em frente a ela. */
+  const lat0 = traj[0][0] * Math.PI / 180;
+  const xy = q => [q[1] * Math.cos(lat0) * 111320, q[0] * 110540];   // plano local, em metros
+  const P = traj.map(xy);
+  const trechos = [];
+  let atual = [traj[0]], seg = 0;   // o trecho em montagem e o segmento de onde a busca continua
+  alvos.forEach((alvo, k) => {
+    if (k === alvos.length - 1){   // a última parada (ou o retorno) fecha no fim da linha
+      trechos.push(atual.concat(traj.slice(seg + 1)));
+      return;
+    }
+    const A = xy(alvo);
+    let melhor = { d: Infinity, i: seg, t: 0 };
+    for (let i = seg; i < P.length - 1; i++){
+      const [x1, y1] = P[i], [x2, y2] = P[i + 1];
+      const dx = x2 - x1, dy = y2 - y1, L2 = dx * dx + dy * dy;
+      const t = L2 ? Math.max(0, Math.min(1, ((A[0] - x1) * dx + (A[1] - y1) * dy) / L2)) : 0;
+      const d = Math.hypot(x1 + t * dx - A[0], y1 + t * dy - A[1]);
+      if (d < melhor.d) melhor = { d, i, t };
+      // achou a passagem pela parada e a linha já se afastou: para aqui
+      if (melhor.d < 150 && d > melhor.d + 300) break;
+    }
+    const a = traj[melhor.i], b = traj[melhor.i + 1] || a;
+    const corte = [a[0] + (b[0] - a[0]) * melhor.t, a[1] + (b[1] - a[1]) * melhor.t];
+    trechos.push(atual.concat(traj.slice(seg + 1, melhor.i + 1), [corte]));
+    atual = [corte];
+    seg = melhor.i;
+  });
+  return trechos;
 }
 
 // O pino de uma parada no mapa do campo. O número é o mesmo da lista, e o
@@ -8139,6 +8184,8 @@ function montarMapaCampo(roteiro){
     // o que acontece com um link gerado antes desta versão.
     if (roteiro.traj && roteiro.traj.length > 1){
       linhaCampo = L.polyline(roteiro.traj, { color:'#F2A93C', weight:4, opacity:.9 }).addTo(mapaCampo);
+      trechosCampo = cortarTrajeto(roteiro.traj, roteiro.s.map(p => [p[1], p[2]]));
+      destaqueCampo = L.polyline([], { color:'#F2A93C', weight:6, opacity:1, interactive:false });
     }
     if (roteiro.origem){
       pinoOrigemCampo = L.marker([roteiro.origem.lat, roteiro.origem.lng], { icon: dot('#F2A93C') })
@@ -8166,6 +8213,32 @@ function atualizarPinosCampo(roteiro, feitos, indiceProximo){
     const estado = feitos.has(chaveDaParada(p)) ? 'feita' : (i === indiceProximo ? 'agora' : '');
     m.setIcon(pinoCampo(p[6] ? '↩' : (i + 1), estado));
   });
+  acenderTrechoCampo(indiceProximo);
+}
+
+/* O trecho até a parada da vez acende; o resto da rota fica fraco (v8.32.0,
+   pedido do usuário: "implemente o efeito para a tela externa também").
+   ⚠️ No campo ele ANDA SOZINHO com o progresso — é sempre o caminho até a
+   parada "Agora", que é exatamente o que o técnico precisa. Por isso não há
+   botão nem opção aqui, ao contrário do escritório (onde é a linha "Um trecho
+   por vez" do menu Exibição e vem desligado): no celular não há menu de
+   configuração, e o que acende é a próxima tarefa, não uma escolha de
+   visualização.
+   Dia concluído (nenhuma parada da vez) ou trecho que não deu para cortar:
+   a rota inteira volta acesa, como sempre foi. O enquadramento não muda — a
+   faixa continua mostrando o dia inteiro. */
+function acenderTrechoCampo(indiceProximo){
+  if (!mapaCampo || !linhaCampo || !destaqueCampo) return;
+  const pts = indiceProximo >= 0 ? trechosCampo[indiceProximo] : null;
+  if (pts && pts.length > 1){
+    destaqueCampo.setLatLngs(pts);
+    if (!mapaCampo.hasLayer(destaqueCampo)) destaqueCampo.addTo(mapaCampo);
+    destaqueCampo.bringToFront();
+    linhaCampo.setStyle({ opacity: .25, weight: 3 });
+  }else{
+    if (mapaCampo.hasLayer(destaqueCampo)) mapaCampo.removeLayer(destaqueCampo);
+    linhaCampo.setStyle({ opacity: .9, weight: 4 });
+  }
 }
 
 function alternarMapaCheio(){

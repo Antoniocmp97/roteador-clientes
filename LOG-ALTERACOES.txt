@@ -8123,3 +8123,24 @@ TESTADO
   a linha dos trechos, e o clique na parada não acende nada; ligar com a rota
   na tela acende o trecho 1; clique na parada 3 → trecho 3; desligar volta à
   rota inteira; a escolha sobrevive a recarregar. Sem erro de console.
+
+--------------------------------------------------------
+[19/10/2026] v8.32.0 — o trecho até a parada da vez, no mapa do campo
+--------------------------------------------------------
+- Pedido do usuário: "implemente o efeito para a tela externa também".
+- No mapa da tela do campo (faixa e tela cheia), o trecho até a parada
+  "Agora" acende (6px, 100%) e o resto fica fraco (3px, 25%). Anda sozinho
+  com o progresso; retorno é o último trecho; dia concluído = rota inteira.
+  Sempre ligado no campo (lá não há menu de configuração, e o que acende é a
+  próxima tarefa).
+- O link não traz os trechos: cortarTrajeto() corta a linha simplificada no
+  celular, procurando para a frente a passagem por cada parada, e na PROJEÇÃO
+  sobre o segmento (a primeira forma cortava no vértice mais perto e caía a
+  até 284 m da parada numa rua reta). Vale para todo link v10/v11 já enviado.
+- 8.31.0 -> 8.32.0.
+
+TESTADO (375x812, link de 6 paradas + retorno)
+  Começa no trecho 1; cada "Marcar como concluída" passa ao trecho seguinte;
+  o retorno acende como último; 7/7 = rota inteira (0,9 / 4px). Distância do
+  fim de cada trecho até a parada: 12, 284, 47, 10, 8, 33, 22 m — o 284 é uma
+  parada de exemplo a 304 m da rota inteira. Sem erro de console.
