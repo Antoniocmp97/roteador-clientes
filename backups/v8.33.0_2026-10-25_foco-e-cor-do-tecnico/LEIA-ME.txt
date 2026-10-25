@@ -1,0 +1,13 @@
+v8.33.0 — 25/10/2026 — foco nas bolinhas do trecho; cor de cada técnico
+
+O QUE MUDOU
+  - Com "Um trecho por vez" ligado, ficam inteiras só as duas pontas do
+    trecho aceso; as outras bolinhas (paradas, outras abas, clientes) apagam.
+  - A aba do técnico não tem mais fundo próprio, como os botões de data; a
+    aberta se marca pela borda na cor do técnico.
+  - A bolinha da aba abre uma paleta de 10 cores para escolher a cor daquele
+    técnico (linha, números, origem, aba, checklist).
+
+POR QUÊ
+  Pedidos do usuário: mais foco no trecho, aba no estilo dos botões de data e
+  cor de técnico personalizável.

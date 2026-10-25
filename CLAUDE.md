@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 19/10/2026 — v8.32.0 (o trecho até a parada da vez aceso no mapa da tela do campo)
+> **Última atualização:** 25/10/2026 — v8.33.0 (bolinhas apagam fora do trecho aceso; aba do técnico sem fundo próprio e cor escolhida por técnico)
 
 ---
 
@@ -525,6 +525,27 @@ sem dependências instaladas. Abre direto no navegador.
   linha só delas (medido a 375px: header de 102px). **Um clique no nome da aba
   aberta** entra na edição com o texto inteiro selecionado, então digitar troca
   "Técnico 1" pelo nome da pessoa
+- **A aba do técnico sem fundo próprio, e a cor de cada um escolhida à mão**
+  (v8.33.0, pedido do usuário: "nome do técnico deve ficar com o mesmo fundo
+  preto dos botões do dia de rota. Também pode ser customizado a cor de cada
+  técnico"). A aba tem **32px e fundo transparente**, como os botões de data, e
+  a aberta se marca pela **borda na cor do técnico** (`--cor-aba`) — o mesmo
+  idioma do dia escolhido, que se marca pela borda âmbar. Antes ela tinha o
+  fundo `--panel-2`, mais claro.
+  A **bolinha da aba virou botão** (22px de área para 10px de desenho) e abre
+  uma **paleta de 10 cores** (`PALETA_TECNICO`): as seis de sempre e mais
+  amarelo, magenta, índigo e areia. A cor nova vai para a linha (e o trecho
+  aceso), os números, o pino da origem, a borda da aba e a bolinha de "já está
+  na rota de" no checklist, e entra no planejamento guardado do dia.
+  ⚠️ **Paleta fechada, e não o seletor livre do navegador**, pelas duas regras
+  das cores de técnico: claras o bastante para o **número escuro** do marcador
+  continuar legível, e **longe do teal** dos clientes fora da viagem.
+  ⚠️ **Cor repetida é permitida**, mas aparece com um anel na paleta e a dica
+  diz de quem ela é. ⚠️ **Escolher não troca de aba.** ⚠️ **Aba nova pega a
+  primeira cor que ninguém usa** (antes era o ciclo puro, que com cores
+  escolhidas à mão podia repetir). ⚠️ A **tela do campo não muda**: o link
+  nunca levou a cor. ⚠️ A paleta abre e fecha pelo elemento, sem animação;
+  clique fora (captura) e Esc fecham, como no menu Exibição
 - **A troca de técnico tem passagem, em dois tempos** (v8.14.0, pedido do
   usuário: "implemente um efeito fade ao trocar de técnico"; e, depois de ver a
   primeira forma rodando, "pensei em algo como a opção D, porém quando abrir o
@@ -1134,6 +1155,19 @@ sem dependências instaladas. Abre direto no navegador.
   Os trechos continuam sendo **preparados em toda rota**: ligar com uma rota na
   tela acende o trecho 1 na hora, sem traçar de novo; desligar devolve a rota
   inteira. Não acende o ponto âmbar do "Exibição" — é preferência, não aviso.
+  ⚠️ **As bolinhas também apagam** (v8.33.0, pedido do usuário: "diminuir
+  brilho das demais bolinhas para dar foco maior"). Com um trecho aceso ficam
+  inteiras só as **duas pontas** dele — a parada de onde se sai (a origem, no
+  primeiro) e a parada aonde se chega (a origem, no retorno). O resto vai a
+  **25%** (`OPAC_FORA_DO_TRECHO`): as outras paradas da rota, as das outras abas
+  (que normalmente ficam em 38%) e as bolinhas teal dos clientes (pelo CSS,
+  `data-trecho-foco` no `<html>` e a classe `ponto-cliente`, posta nos
+  marcadores da base e da avulsa). O apagado (18%) e o escondido do botão
+  "Mapa" continuam valendo por cima. Rota inteira ("Tudo") ou opção desligada:
+  tudo volta ao de sempre.
+  ⚠️ **É opacidade inline no elemento de fora do marcador**, a mesma que
+  `realcarCamadas()` usa — por isso ela agora chama o trecho **por último**;
+  antes, o laço dela devolveria todos os números a 100%.
   ⚠️ **Substituiu as SETAS de sentido**, que nasceram nesta mesma versão e o
   usuário reprovou ("os riscos não surtiram efeito"): um "›" escuro a cada
   110px dentro da linha. Seta diz a direção da linha inteira; trecho aceso diz
@@ -2540,6 +2574,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 130 | **v8.30.0** — Até seis colunas de módulos (eram três); coluna nova só abre se couber, e a que não cabe aparece na última visível |
 | 131 | **v8.31.0** — Trechos da rota acesos um por vez (‹ › no módulo Rota ou clique na parada); o cabeçalho da tela do campo passa a ficar preso em qualquer rolagem; "Rota para" em âmbar |
 | 132 | **v8.32.0** — No mapa da tela do campo, o trecho até a parada da vez acende e anda sozinho com o progresso |
+| 133 | **v8.33.0** — Bolinhas fora do trecho aceso apagam; aba do técnico sem fundo próprio, com a borda na cor dele; cor de cada técnico escolhida numa paleta |
 
 ---
 
@@ -2608,7 +2643,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.32.0
+8.33.0
 ```
 
 ### Onde o número aparece
@@ -2792,3 +2827,4 @@ versão continua sendo a cada número fechado.
 | 8.30.0 | 16/10/2026 | Até seis colunas de módulos, abrindo só as que cabem |
 | 8.31.0 | 19/10/2026 | Trechos da rota um por vez; cabeçalho do campo preso; "Rota para" em âmbar |
 | 8.32.0 | 19/10/2026 | Trecho até a parada da vez aceso no mapa do campo |
+| 8.33.0 | 25/10/2026 | Foco nas bolinhas do trecho; aba do técnico sem fundo e cor escolhida por técnico |

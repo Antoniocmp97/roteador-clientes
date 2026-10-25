@@ -8144,3 +8144,34 @@ TESTADO (375x812, link de 6 paradas + retorno)
   o retorno acende como último; 7/7 = rota inteira (0,9 / 4px). Distância do
   fim de cada trecho até a parada: 12, 284, 47, 10, 8, 33, 22 m — o 284 é uma
   parada de exemplo a 304 m da rota inteira. Sem erro de console.
+
+--------------------------------------------------------
+[25/10/2026] v8.33.0 — foco nas bolinhas do trecho; cor de cada técnico
+--------------------------------------------------------
+- Pedido do usuário: "na opção de dar ênfase a cada parada, diminuir brilho
+  das demais bolinhas para dar foco maior". Com um trecho aceso, ficam
+  inteiras só as duas pontas (de onde se sai e aonde se chega; a origem no
+  primeiro e no retorno). O resto a 25%: outras paradas da rota, as das outras
+  abas e as bolinhas teal dos clientes (data-trecho-foco + .ponto-cliente).
+  apagarForaDoTrecho(); realcarCamadas() passa a chamar o trecho por último.
+- Pedido do usuário: "nome do técnico deve ficar com o mesmo fundo preto dos
+  botões do dia de rota". A aba tem 32px e fundo transparente; a aberta se
+  marca pela borda na cor do técnico (antes, fundo --panel-2).
+- "Também pode ser customizado a cor de cada técnico": a bolinha da aba abre
+  uma paleta de 10 cores (as 6 de sempre + amarelo, magenta, índigo, areia).
+  Paleta fechada por causa do número escuro do marcador e do teal dos
+  clientes. Cor repetida permitida, marcada com anel e nome do dono. A cor
+  vai para linha, trecho aceso, números, origem, aba e checklist, e entra no
+  planejamento guardado. Aba nova pega a primeira cor livre.
+- 8.32.0 -> 8.33.0.
+
+TESTADO (1500x900, base de exemplo, dois técnicos)
+  Trecho 1: origem e parada 1 a 1, as outras 0,25; trecho 3: paradas 2 e 3;
+  retorno: parada 4 e origem; "Tudo": todas a 1 e sem data-trecho-foco.
+  Bolinhas teal a 0,25 com trecho aceso. Marcadores da outra aba 0,25 com
+  trecho aceso e 0,38 sem. Opção desligada: tudo como antes.
+  Cor: trocar a da aba de fundo não troca de aba e repinta linha, números,
+  origem e bolinha da aba; trocar a da aba aberta repinta também o trecho
+  aceso e a borda. Esc e clique fora fecham. A cor sobrevive a recarregar e
+  restaurar o dia. Modo leve: zero animações, mesmos resultados. Tela do
+  campo abre pelo link sem erro. Sem erro de console.

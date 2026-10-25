@@ -73,6 +73,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | janelas livres | `Janelas livres (v8.4.0)` | `aplicarModoJanelas`, `aplicarJanelas` |
 | ímã de alinhamento | dentro de `Janelas livres` | `aplicarIma(lig, salvar)` |
 | abas de técnico | `Um roteiro por técnico, em abas (v8.5.0)` | `renderAbas`, `trocarTecnico` |
+| cor de cada técnico | `A cor de cada técnico (v8.33.0)` (logo depois de `renderAbas`) | `PALETA_TECNICO`/`NOMES_COR`, `abrirPaletaCor`, `fecharPaletaCor`, `trocarCorDoTecnico` |
 | efeito ao trocar de aba | `A passagem ao trocar de técnico (v8.14.0)` | `passagemLigada`, `animarTrocaDeAba`, `escalonarCascata` |
 | km do dia | `Quilometragem do dia (v8.8.0)` | `resumoDoDia`, `atualizarResumoDia` |
 | apagar/esconder bolinhas fora da viagem | `O que o mapa mostra dos clientes (v8.15.0)` | `aplicarFocoNaRota`, `atualizarBotaoFoco`, `RECADOS_FOCO` |
@@ -92,7 +93,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | qualquer coisa que espere a rede e depois escreva na viagem | `O que foi pedido ao serviço de rotas` | `retratoDoPedido`, `pedidoMudou` — tirar o retrato antes do `await` e conferir depois (v8.26.0) |
 | reencontrar na base uma parada guardada | `Reencontrar na base uma parada guardada` | `indicePorCoordenada`, `acharNaBase` (coordenada, com desempate por id e por nome + cliente, v8.26.0) |
 | efeito ao traçar | `Efeito ao traçar a rota (v8.0.0)` | `efeitoLigado`, `animarNumero` |
-| trechos da rota (um aceso por vez) | `Trechos da rota (v8.31.0)` (logo antes de `drawResult`) | `prepararTrechos` (geometria dos `legs`/`steps` do OSRM), `aplicarTrecho`, `selecionarTrecho`, `ativarTrechos` (fim do desenho), `atualizarTrechoNav`, `OPAC_ROTA_FUNDO`/`PESO_ROTA_FUNDO`, `aplicarModoTrechos` (a linha "Um trecho por vez" do menu Exibição; desligado por padrão) |
+| trechos da rota (um aceso por vez) | `Trechos da rota (v8.31.0)` (logo antes de `drawResult`) | `prepararTrechos` (geometria dos `legs`/`steps` do OSRM), `aplicarTrecho`, `selecionarTrecho`, `ativarTrechos` (fim do desenho), `atualizarTrechoNav`, `OPAC_ROTA_FUNDO`/`PESO_ROTA_FUNDO`, `aplicarModoTrechos` (a linha "Um trecho por vez" do menu Exibição; desligado por padrão), `apagarForaDoTrecho` + `OPAC_FORA_DO_TRECHO` (as bolinhas fora das duas pontas do trecho apagam, v8.33.0) |
 | clicar na parada e ir até ela | `Centraliza um ponto na parte visível` | `centralizarVisivel`, `verParadaNoMapa`, `DUR_VOO_PARADA` |
 | mover módulos entre colunas | `Arrastar um módulo pela alça…` | `destinoDoModulo`, `moverModulo` |
 | quantas colunas existem e quantas cabem | `COLUNAS` / `LOCAIS` (v8.30.0) | `COLUNAS` (g1…g5), `LOCAIS`, `normalizarLocais` (sem buraco), `cabeNovaColuna`, `proximaColunaLivre`, `colunasNaFila` (a que não cabe aparece na última visível) |

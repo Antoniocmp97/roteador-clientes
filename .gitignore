@@ -70,6 +70,7 @@ backups/*
 !backups/v8.30.0_2026-10-16_seis-colunas/
 !backups/v8.31.0_2026-10-19_trechos-da-rota/
 !backups/v8.32.0_2026-10-19_trecho-no-campo/
+!backups/v8.33.0_2026-10-25_foco-e-cor-do-tecnico/
 
 # --- Bloco de notas de quem trabalha na pasta ---
 # Qualquer rascunho solto na raiz entra no próximo "git add -A" e vai parar num

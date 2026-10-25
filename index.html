@@ -460,16 +460,48 @@
         flex:1 1 auto; min-width:0; align-self:center;
         overflow-x:auto; scrollbar-width:none;}
   header .abas::-webkit-scrollbar{display:none;}
-  .aba{display:flex; align-items:center; gap:7px; flex:none; max-width:220px;
-       padding:5px 6px 5px 10px; border-radius:999px; cursor:pointer; user-select:none;
-       background:transparent; border:1px solid var(--line); color:var(--muted);
+  /* ⚠️ Sem fundo próprio desde a v8.33.0, como os botões de data do "Rota
+     para" (pedido do usuário: "o mesmo fundo preto dos botões do dia de rota").
+     32px de altura, o mesmo deles. A aba aberta se marca pela BORDA NA COR DO
+     TÉCNICO (`--cor-aba`, escrita no elemento) — o mesmo idioma do dia
+     escolhido, que se marca pela borda âmbar —, e não por um fundo mais claro. */
+  .aba{display:flex; align-items:center; gap:5px; flex:none; max-width:220px; height:32px;
+       padding:0 6px 0 4px; border-radius:999px; cursor:pointer; user-select:none;
+       background:none; border:1px solid var(--line); color:var(--muted);
        font-size:13px; transition:background .15s, color .15s, border-color .15s;}
   .aba:hover{background:var(--hover); color:var(--text);}
-  .aba.ativa{background:var(--panel-2); color:var(--text); font-weight:600; border-color:var(--panel-2);}
+  .aba.ativa{background:none; color:var(--text); font-weight:600; border-color:var(--cor-aba, var(--amber));}
+  .aba.ativa:hover{background:var(--hover);}
   /* Na aba aberta, o nome é campo: um clique já entra na edição com o texto
      inteiro selecionado, então digitar troca o "Técnico 1" pelo nome da pessoa */
   .aba.ativa .aba-nome{cursor:text;}
-  .aba-cor{width:9px; height:9px; border-radius:50%; flex:none;}
+  /* A bolinha é um BOTÃO desde a v8.33.0: abre a paleta de cor do técnico.
+     22px de área para 10px de bolinha — o alvo é maior que o desenho. */
+  .aba-cor{width:22px; height:22px; padding:0; border:none; border-radius:50%; flex:none;
+           background:none; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .aba-cor i{width:10px; height:10px; border-radius:50%; display:block;
+             transition:transform .15s;}
+  .aba-cor:hover{background:var(--hover);}
+  .aba-cor:hover i, .aba-cor[aria-expanded="true"] i{transform:scale(1.25);}
+  .aba-cor:focus-visible{outline:2px solid var(--teal); outline-offset:0;}
+  /* A paleta (v8.33.0): flutua presa ao corpo da página, como o menu Exibição,
+     e abre e fecha pelo `hidden`, sem animação — igual no modo leve. */
+  .paleta-cor{position:fixed; z-index:2000; padding:10px; border-radius:10px;
+              background:var(--panel); border:1px solid var(--line);
+              box-shadow:0 8px 24px var(--sombra); width:196px;}
+  .paleta-cor .tit{font-size:11.5px; color:var(--muted); margin:0 0 8px;}
+  .paleta-cor .tit b{color:var(--text); font-weight:600;}
+  .paleta-cor .cores{display:grid; grid-template-columns:repeat(5, 1fr); gap:8px;}
+  .paleta-cor .cor{width:28px; height:28px; border-radius:50%; padding:0; cursor:pointer;
+              border:2px solid transparent; position:relative; justify-self:center;}
+  .paleta-cor .cor:hover{transform:scale(1.1);}
+  .paleta-cor .cor[aria-checked="true"]{border-color:var(--text);}
+  .paleta-cor .cor[aria-checked="true"]::after{content:''; position:absolute; inset:7px;
+              border-radius:50%; background:#0C1418; opacity:.55;}
+  /* Cor que já é de outro técnico: um anel tracejado — escolher é permitido,
+     mas a pessoa fica sabendo antes que as duas rotas vão ficar iguais. */
+  .paleta-cor .cor.em-uso{box-shadow:0 0 0 2px var(--panel), 0 0 0 3px var(--muted);}
+  .paleta-cor .dica{font-size:11.5px; color:var(--muted); margin:8px 0 0; min-height:15px;}
   .aba-nome{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:1ch;}
   .aba-nome[contenteditable="true"]{outline:none; text-overflow:clip; cursor:text;
        box-shadow:inset 0 -1px 0 var(--amber);}
@@ -1500,6 +1532,11 @@
   :root[data-foco="1"] .leaflet-marker-icon.ponto-fora-da-rota{opacity:.18;}
   :root[data-foco="1"] .leaflet-marker-icon.ponto-fora-da-rota:hover{opacity:1;}
   :root[data-foco="2"] .leaflet-marker-icon.ponto-fora-da-rota{opacity:0; pointer-events:none;}
+  /* Um trecho por vez (v8.33.0): com um trecho aceso, as bolinhas dos clientes
+     também apagam — o foco é o pedaço da rota. O apagado do botão "Mapa" (.18)
+     e o escondido (0) são mais específicos e continuam valendo por cima. */
+  :root[data-trecho-foco] .leaflet-marker-icon.ponto-cliente{opacity:.25;}
+  :root[data-trecho-foco] .leaflet-marker-icon.ponto-cliente:hover{opacity:1;}
   .brand-icon.num{width:20px;height:20px;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-family:'JetBrains Mono',monospace;}
 
   /* ---- Efeito ao traçar a rota (v8.0.0, escolha do usuário numa página de
@@ -2502,7 +2539,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.32.0';
+const VERSAO = '8.33.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2743,6 +2780,18 @@ if (map){
    é guardado como texto já pronto, e não recalculado: refazer o traçado ao
    trocar de aba redesenharia o mapa e rodaria a animação de novo. */
 const CORES_TECNICO = ['#F2A93C', '#A78BFA', '#5BC0F8', '#F97EB9', '#B8E04A', '#FF9A6B'];
+/* A paleta que se pode escolher na aba (v8.33.0, pedido do usuário: "também
+   pode ser customizado a cor de cada técnico"). As seis de sempre e mais
+   quatro, com a mesma regra delas: CLARAS o bastante para o número escuro do
+   marcador continuar legível, e nenhuma perto do TEAL, que é a cor dos
+   clientes fora da viagem. É paleta fechada, e não o seletor livre do
+   navegador, justamente por essas duas regras: um azul-marinho apagaria o
+   número, um verde-água se confundiria com os clientes. */
+const PALETA_TECNICO = ['#F2A93C', '#FFD84D', '#FF9A6B', '#F97EB9', '#E879F9',
+                        '#A78BFA', '#818CF8', '#5BC0F8', '#B8E04A', '#D9B88F'];
+const NOMES_COR = { '#F2A93C':'âmbar', '#FFD84D':'amarelo', '#FF9A6B':'coral', '#F97EB9':'rosa',
+                    '#E879F9':'magenta', '#A78BFA':'lilás', '#818CF8':'índigo', '#5BC0F8':'azul',
+                    '#B8E04A':'lima', '#D9B88F':'areia' };
 const SVG_ABA_X = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const SVG_ABA_MAIS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
 let tecnicos = [];
@@ -2759,9 +2808,14 @@ const corDoTecnico = () => (tecnicos[tecnicoAtivo] || {}).cor || CORES_TECNICO[0
 
 function novoTecnico(){
   contaTecnicos++;
+  /* A aba nova pega a primeira cor da ordem de sempre que ninguém está usando
+     (v8.33.0): com cores escolhidas à mão, o ciclo puro podia repetir a cor de
+     uma aba aberta. Com tudo em uso, volta ao ciclo. */
+  const usadas = new Set(tecnicos.map(t => t.cor));
+  const livre = CORES_TECNICO.find(c => !usadas.has(c));
   return {
     nome: 'Técnico ' + contaTecnicos,
-    cor: CORES_TECNICO[(contaTecnicos - 1) % CORES_TECNICO.length],
+    cor: livre || CORES_TECNICO[(contaTecnicos - 1) % CORES_TECNICO.length],
     stops: [], origem: null, origemTexto: '', voltar: true,
     linha: null, marcadores: [], origemMarker: null,
     resumo: null, rid: null, painel: null
@@ -2842,10 +2896,7 @@ function realcarCamadas(){
       t.linha.setStyle({ opacity: ativo ? .9 : .28, weight: ativo ? 5 : 3 });
       if (ativo) t.linha.bringToFront();
       // Trecho aceso só na aba aberta; a apagada fica inteira e fraca (v8.31.0)
-      if (t.linha._trechos){
-        if (ativo) aplicarTrecho(t.linha);
-        else if (map.hasLayer(t.linha._destaque)) map.removeLayer(t.linha._destaque);
-      }
+      if (t.linha._trechos && !ativo && map.hasLayer(t.linha._destaque)) map.removeLayer(t.linha._destaque);
     }
     /* ⚠️ "Atrás" vai por setZIndexOffset, e não por `style.zIndex` (v8.26.0):
        o Leaflet REESCREVE o z-index inline de todo marcador a cada zoom (é a
@@ -2860,6 +2911,11 @@ function realcarCamadas(){
       if (el) el.style.opacity = ativo ? '1' : '.38';
     });
   });
+  /* ⚠️ O trecho vem DEPOIS da opacidade dos marcadores (v8.33.0): ele também
+     apaga os números que ficam fora do trecho, e o laço acima, rodando por
+     último, devolveria todos a 1. */
+  if (routeLine && routeLine._trechos) aplicarTrecho(routeLine);
+  else apagarForaDoTrecho();
 }
 
 /* A passagem ao trocar de técnico (v8.14.0), em dois tempos: o painel de quem
@@ -3176,7 +3232,10 @@ function renderAbas(){
     el.setAttribute('aria-selected', String(ativa));
     el.title = ativa ? 'Roteiro de ' + t.nome + ' — clique no nome para trocar pelo nome da pessoa'
                      : 'Abrir o roteiro de ' + t.nome;
-    el.innerHTML = '<span class="aba-cor" style="background:' + t.cor + '"></span>'
+    el.style.setProperty('--cor-aba', t.cor);
+    el.innerHTML = '<button class="aba-cor" type="button" aria-haspopup="true" aria-expanded="false"'
+      + ' title="Trocar a cor de ' + escaparHtml(t.nome) + '" aria-label="Trocar a cor de ' + escaparHtml(t.nome) + '">'
+      + '<i style="background:' + t.cor + '"></i></button>'
       + '<span class="aba-nome">' + escaparHtml(t.nome) + '</span>'
       + (tecnicos.length > 1
          ? '<button class="aba-x" type="button" aria-label="Fechar a aba de ' + escaparHtml(t.nome) + '">' + SVG_ABA_X + '</button>'
@@ -3186,11 +3245,12 @@ function renderAbas(){
        usuário). Nas outras abas o clique troca de aba, como se espera. */
     el.onclick = ev => {
       if (ev.target.closest('.aba-x')) return;
+      if (ev.target.closest('.aba-cor')){ abrirPaletaCor(i, ev.target.closest('.aba-cor')); return; }
       if (ativa && ev.target.closest('.aba-nome')) renomearTecnico(i, el.querySelector('.aba-nome'));
       else trocarTecnico(i);
     };
     el.ondblclick = ev => {
-      if (ev.target.closest('.aba-x')) return;
+      if (ev.target.closest('.aba-x') || ev.target.closest('.aba-cor')) return;
       if (!ativa) trocarTecnico(i);
       renomearTecnico(i, barra.children[i].querySelector('.aba-nome'));
     };
@@ -3207,6 +3267,98 @@ function renderAbas(){
   mais.onclick = adicionarTecnico;
   barra.appendChild(mais);
 }
+/* ---------------- A cor de cada técnico (v8.33.0) ----------------
+   Pedido do usuário: "também pode ser customizado a cor de cada técnico". A
+   bolinha da aba abre uma paleta; a cor escolhida vai para tudo que já era
+   daquele técnico — a linha da rota (e o trecho aceso), os números, o pino da
+   origem, a borda da aba e o aviso de "já está na rota de" no checklist — e
+   entra no planejamento guardado do dia, que já guardava a cor.
+   ⚠️ Escolher NÃO troca de aba: dá para acertar as cores de todo mundo sem
+   sair do roteiro aberto.
+   ⚠️ Cor repetida é permitida, mas aparece marcada na paleta com o nome do
+   dono: as duas rotas ficariam iguais no mapa, e quem decide é a pessoa.
+   ⚠️ A tela do campo não muda: o link nunca levou a cor, e lá a rota é sempre
+   âmbar, a cor da tela. */
+let paletaAberta = null;   // { el, i, botao }
+function fecharPaletaCor(devolverFoco){
+  if (!paletaAberta) return;
+  const { el, botao } = paletaAberta;
+  paletaAberta = null;
+  el.remove();
+  if (botao && botao.isConnected){
+    botao.setAttribute('aria-expanded', 'false');
+    if (devolverFoco) botao.focus();
+  }
+}
+function abrirPaletaCor(i, botao){
+  const reabrir = !(paletaAberta && paletaAberta.i === i);
+  fecharPaletaCor(false);
+  if (!reabrir) return;          // segundo clique na mesma bolinha fecha
+  const t = tecnicos[i];
+  const el = document.createElement('div');
+  el.className = 'paleta-cor';
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-label', 'Cor de ' + t.nome);
+  el.innerHTML = '<p class="tit">Cor de <b>' + escaparHtml(t.nome) + '</b></p>'
+    + '<div class="cores" role="radiogroup">'
+    + PALETA_TECNICO.map(c => {
+        const dono = tecnicos.find((x, k) => k !== i && x.cor === c);
+        const nome = NOMES_COR[c] || c;
+        const dica = dono ? nome + ' — já é a cor de ' + dono.nome : nome;
+        return '<button type="button" class="cor' + (dono ? ' em-uso' : '') + '" role="radio"'
+          + ' aria-checked="' + (c === t.cor) + '" data-cor="' + c + '" title="' + escaparHtml(dica) + '"'
+          + ' aria-label="' + escaparHtml(dica) + '" style="background:' + c + '"></button>';
+      }).join('')
+    + '</div><p class="dica"></p>';
+  document.body.appendChild(el);
+  // Embaixo da bolinha, sem sair da tela
+  const r = botao.getBoundingClientRect();
+  const larg = el.offsetWidth;
+  el.style.left = Math.max(8, Math.min(innerWidth - larg - 8, r.left - 8)) + 'px';
+  el.style.top = (r.bottom + 6) + 'px';
+  botao.setAttribute('aria-expanded', 'true');
+  paletaAberta = { el, i, botao };
+  const dica = el.querySelector('.dica');
+  el.addEventListener('mouseover', ev => {
+    const b = ev.target.closest('.cor');
+    dica.textContent = b ? b.title : '';
+  });
+  el.addEventListener('click', ev => {
+    const b = ev.target.closest('.cor');
+    if (!b) return;
+    trocarCorDoTecnico(i, b.dataset.cor);
+    fecharPaletaCor(false);
+  });
+  (el.querySelector('.cor[aria-checked="true"]') || el.querySelector('.cor')).focus();
+}
+function trocarCorDoTecnico(i, cor){
+  const t = tecnicos[i];
+  if (!t || t.cor === cor) return;
+  salvarNoTecnico(tecnicos[tecnicoAtivo]);   // as camadas do ativo vivem nas globais
+  t.cor = cor;
+  if (t.linha){
+    t.linha.setStyle({ color: cor });
+    if (t.linha._destaque) t.linha._destaque.setStyle({ color: cor });
+  }
+  // setIcon troca o elemento do marcador; a opacidade é devolvida logo abaixo
+  t.marcadores.forEach((m, k) => m.setIcon(numIcon(k + 1, cor)));
+  if (t.origemMarker) t.origemMarker.setIcon(dot(cor));
+  renderAbas();
+  realcarCamadas();
+  renderChecklist();      // a bolinha de "já está na rota de" é da cor do dono
+  salvarDia();
+}
+if (!modoCampoAtivo){
+  // Clique fora fecha (na captura, como o menu Exibição); Esc fecha e devolve o foco
+  document.addEventListener('pointerdown', ev => {
+    if (paletaAberta && !paletaAberta.el.contains(ev.target) && !ev.target.closest('.aba-cor')) fecharPaletaCor(false);
+  }, true);
+  document.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && paletaAberta){ ev.preventDefault(); fecharPaletaCor(true); }
+  });
+  addEventListener('resize', () => fecharPaletaCor(false));
+}
+
 if (!modoCampoAtivo){
   iniciarTecnicos();
   document.getElementById('retomarDiaSim').onclick = restaurarDia;
@@ -3902,6 +4054,7 @@ function importClients(grupos, filename, salvoEm){
       // Realce mapa -> lista (v6.7)
       marker.on('mouseover', () => realcarPeloMarcador(pt, true));
       marker.on('mouseout',  () => realcarPeloMarcador(pt, false));
+      marker.getElement().classList.add('ponto-cliente');   // para o foco do trecho (v8.33.0)
       clientPoints.push({ ...pt, marker });
     });
   });
@@ -4754,6 +4907,7 @@ function novoPontoAvulso(lat, lng, nome){
     .bindPopup(balaoDaAvulsa(pt.name, pt.id));
   marker.on('mouseover', () => realcarPeloMarcador(pt, true));
   marker.on('mouseout',  () => realcarPeloMarcador(pt, false));
+  marker.getElement().classList.add('ponto-cliente');   // para o foco do trecho (v8.33.0)
   const ponto = { ...pt, marker };
   clientPoints.push(ponto);
 
@@ -6955,6 +7109,41 @@ function aplicarTrecho(linha){
     map.removeLayer(linha._destaque);
   }
   if (ativa) linha.setStyle({ opacity: aceso ? OPAC_ROTA_FUNDO : .9, weight: aceso ? PESO_ROTA_FUNDO : 5 });
+  if (ativa) apagarForaDoTrecho();
+}
+/* As bolinhas acompanham o trecho (v8.33.0, pedido do usuário: "diminuir
+   brilho das demais bolinhas para dar foco maior"). Com um trecho aceso, ficam
+   inteiras só as DUAS PONTAS dele — a parada de onde se sai (ou a origem, no
+   primeiro) e a parada aonde se chega (ou a origem, no retorno). Todo o resto
+   apaga para OPAC_FORA_DO_TRECHO: as outras paradas desta rota, as das outras
+   abas e as bolinhas teal dos clientes (estas pelo CSS, `data-trecho-foco`).
+   Sem trecho aceso, tudo volta ao de sempre: 1 na aba aberta, .38 nas outras.
+   ⚠️ É opacidade INLINE no elemento de fora do marcador, a mesma que
+   realcarCamadas usa — e por isso realcarCamadas chama o trecho por último. O
+   "nascer invisível" do efeito de traçar é no ícone de DENTRO e não briga. */
+var OPAC_FORA_DO_TRECHO = .25;
+function apagarForaDoTrecho(){
+  if (!map) return;
+  const linha = routeLine;
+  const aceso = !!(linha && linha._destaque && map.hasLayer(linha._destaque) && linha._trecho !== null);
+  const t = aceso ? linha._trecho : -1;
+  document.documentElement.toggleAttribute('data-trecho-foco', aceso);
+  const fora = String(OPAC_FORA_DO_TRECHO);
+  stopMarkers.forEach((m, i) => {
+    const el = m.getElement && m.getElement();
+    if (el) el.style.opacity = (!aceso || i === t || i === t - 1) ? '1' : fora;
+  });
+  if (originMarker){
+    const el = originMarker.getElement && originMarker.getElement();
+    if (el) el.style.opacity = (!aceso || t === 0 || t >= stops.length) ? '1' : fora;
+  }
+  tecnicos.forEach((tec, i) => {
+    if (i === tecnicoAtivo) return;
+    [...tec.marcadores, tec.origemMarker].forEach(m => {
+      const el = m && m.getElement && m.getElement();
+      if (el) el.style.opacity = aceso ? fora : '.38';
+    });
+  });
 }
 /* Acende o trecho i (o que CHEGA na parada i; o último, com retorno, chega na
    origem). null = rota inteira. `enquadrar` vem das setas do módulo Rota: elas
