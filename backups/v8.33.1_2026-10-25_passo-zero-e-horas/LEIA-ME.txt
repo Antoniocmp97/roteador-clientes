@@ -1,0 +1,10 @@
+v8.33.1 — 25/10/2026 — primeiros passos do servidor
+
+O QUE MUDOU (nada visível)
+  - O leitor de link compara a versão como número: um link de formato mais
+    novo do que o app guardado no celular abre, em vez de dar "link inválido".
+  - O celular grava a hora de cada parada concluída (hg_prog_h_<rid>).
+
+POR QUÊ
+  O usuário escolheu o servidor (Fase B) para o escritório ver por onde o
+  técnico já passou. Estes são os dois passos que vêm antes, sem servidor.

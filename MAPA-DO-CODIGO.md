@@ -169,6 +169,7 @@ diaRotaEscolhido 'hoje' | 'proximo' — o dia da rota, o MESMO para todas as aba
 | `hg_municipios` | o município de cada coordenada já consultada (`"lat,lng"` com 4 casas → nome), para os avisos de feriado (v8.27.0) |
 | `hg_link_compativel` | formato do link (legível x comprimido) |
 | `hg_prog_r_<rid>` | progresso do campo, por roteiro |
+| `hg_prog_h_<rid>` | a hora de cada conclusão, `{chave: epoch ms}` (v8.33.1; `hg_prog_h_c_<codigo>` para link sem `rid`) |
 | `hg_progresso_<codigo>` | idem, para link antigo sem `rid` (só leitura, convertido na 1ª abertura) |
 
 ---
@@ -230,10 +231,14 @@ montarRoteiro()        monta o texto do formato v11 (12 grupos separados por ~;
   → link "…/#z=" ou "…/#r="
   → [WhatsApp]
   → outra máquina abre: modoCampoAtivo = true
-  → lerRoteiroCompacto()  entende v5 a v11 (sem o 11º grupo, o mapa fica só com
-                          os pontos; sem o 12º, não há data nem aviso de dia)
+  → lerRoteiroCompacto()  entende v5 em diante — a versão é comparada como
+                          NÚMERO desde a v8.33.1, então um formato mais novo
+                          abre e só perde os grupos que não conhece (sem o 11º
+                          grupo, o mapa fica só com os pontos; sem o 12º, não
+                          há data nem aviso de dia)
   → desenharCampo()       cartão da vez, faixas das concluídas, linhas das outras
   → progresso em hg_prog_r_<rid>, por COORDENADA da parada
+                          (e a hora de cada uma em hg_prog_h_<rid>, v8.33.1)
 ```
 
 ⚠️ **O link é a única coisa que sai da máquina, e ele viaja depois do `#`** —

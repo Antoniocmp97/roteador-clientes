@@ -466,12 +466,17 @@
      TÉCNICO (`--cor-aba`, escrita no elemento) — o mesmo idioma do dia
      escolhido, que se marca pela borda âmbar —, e não por um fundo mais claro. */
   .aba{display:flex; align-items:center; gap:5px; flex:none; max-width:220px; height:32px;
-       padding:0 6px 0 4px; border-radius:999px; cursor:pointer; user-select:none;
+       padding:0 11px 0 4px; border-radius:999px; cursor:pointer; user-select:none;
        background:none; border:1px solid var(--line); color:var(--muted);
        font-size:13px; transition:background .15s, color .15s, border-color .15s;}
   .aba:hover{background:var(--hover); color:var(--text);}
   .aba.ativa{background:none; color:var(--text); font-weight:600; border-color:var(--cor-aba, var(--amber));}
   .aba.ativa:hover{background:var(--hover);}
+  /* Respiro do lado direito igual ao do esquerdo (v8.33.2, relatado pelo
+     usuário: o nome ficava colado na borda, e com o ✕ da segunda aba o vão
+     mudava). Sem ✕ o nome fica a 11px da borda, o mesmo que a bolinha do outro
+     lado; com ✕, quem encosta é o botão, que já tem folga dentro dele. */
+  .aba.com-x{padding-right:4px;}
   /* Na aba aberta, o nome é campo: um clique já entra na edição com o texto
      inteiro selecionado, então digitar troca o "Técnico 1" pelo nome da pessoa */
   .aba.ativa .aba-nome{cursor:text;}
@@ -1406,16 +1411,19 @@
      fixo.
      `align-self:center` pelo mesmo motivo das abas: o header é
      `align-items:baseline`, e a linha de base de uma pílula não é a do texto. */
-  header .resumo-dia{flex:none; align-self:center; display:flex; align-items:baseline; gap:7px;
-              padding:4px 11px; border-radius:999px;
-              border:1px solid var(--line); background:var(--panel-2);}
+  /* ⚠️ Mesmo corpo dos botões de data ao lado desde a v8.33.2 (pedido do
+     usuário: "aplique o mesmo efeito de fundo preto dos outros botões"): 32px,
+     cantos de 7px e SEM fundo próprio — o escuro é o do app. Antes era uma
+     pílula com `--panel-2`, mais clara que tudo em volta. */
+  header .resumo-dia{flex:none; align-self:center; display:flex; align-items:center; gap:7px;
+              height:32px; padding:0 10px; border-radius:7px;
+              border:1px solid var(--line); background:none;}
   /* ⚠️ Era o rótulo mais caro do app em largura: 24 caracteres em mono, caixa
      alta e entreletra, dentro do cabeçalho, que é onde a briga por espaço
      acontece — e por isso a entreletra já era menor que a dos outros. Em Inter,
      caixa normal, ele encolhe sozinho (v8.21.0). */
-  header .resumo-dia .rotulo{font-family:'Inter',sans-serif; font-size:10.5px;
-              font-weight:600; letter-spacing:.2px; color:var(--muted);
-              white-space:nowrap;}
+  header .resumo-dia .rotulo{font-family:'Inter',sans-serif; font-size:13px;
+              color:var(--muted); white-space:nowrap;}
   /* Âmbar, e não a cor do texto (pedido do usuário): é a mesma cor em que o
      módulo Rota escreve o km/min de cada rota, então os dois números do app que
      dizem distância falam a mesma língua. Troca com o tema, como todo o resto. */
@@ -1535,8 +1543,13 @@
   /* Um trecho por vez (v8.33.0): com um trecho aceso, as bolinhas dos clientes
      também apagam — o foco é o pedaço da rota. O apagado do botão "Mapa" (.18)
      e o escondido (0) são mais específicos e continuam valendo por cima. */
-  :root[data-trecho-foco] .leaflet-marker-icon.ponto-cliente{opacity:.25;}
-  :root[data-trecho-foco] .leaflet-marker-icon.ponto-cliente:hover{opacity:1;}
+  /* ⚠️ `:not(.ponto-fora-da-rota)` é obrigatório (v8.33.2, relatado pelo
+     usuário: "ao apertar no botão que deveria escondê-los, nada acontece"). Esta
+     regra tem o MESMO peso das do botão "Mapa" logo acima e vem depois, então
+     ganhava delas: com um trecho aceso, o cliente escondido (0) e o apagado
+     (.18) voltavam a .25. Quem o botão "Mapa" já tirou de cena fica com ele. */
+  :root[data-trecho-foco] .leaflet-marker-icon.ponto-cliente:not(.ponto-fora-da-rota){opacity:.25;}
+  :root[data-trecho-foco] .leaflet-marker-icon.ponto-cliente:not(.ponto-fora-da-rota):hover{opacity:1;}
   .brand-icon.num{width:20px;height:20px;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#1a0f00;font-family:'JetBrains Mono',monospace;}
 
   /* ---- Efeito ao traçar a rota (v8.0.0, escolha do usuário numa página de
@@ -2539,7 +2552,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.33.0';
+const VERSAO = '8.33.2';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -3227,7 +3240,7 @@ function renderAbas(){
   tecnicos.forEach((t, i) => {
     const ativa = i === tecnicoAtivo;
     const el = document.createElement('div');
-    el.className = 'aba' + (ativa ? ' ativa' : '');
+    el.className = 'aba' + (ativa ? ' ativa' : '') + (tecnicos.length > 1 ? ' com-x' : '');
     el.setAttribute('role', 'tab');
     el.setAttribute('aria-selected', String(ativa));
     el.title = ativa ? 'Roteiro de ' + t.nome + ' — clique no nome para trocar pelo nome da pessoa'
@@ -3395,7 +3408,8 @@ function atualizarResumoDia(){
      abas ao lado já dizem isso, e repetir aqui gastaria largura no cabeçalho. */
   /* ⚠️ Em maiúscula inicial desde a v8.21.0: era o `text-transform` do CSS
      que punha o rótulo em caixa alta, e sem ele ele ficaria todo minúsculo. */
-  el.querySelector('.rotulo').textContent = 'Quilometragem aproximada';
+  // "Km aproximada" desde a v8.33.2 (texto do usuário; antes, "Quilometragem aproximada")
+  el.querySelector('.rotulo').textContent = 'Km aproximada';
   el.querySelector('.valor').textContent = `${(metros / 1000).toFixed(1)} km`;
   /* ⚠️ O TEMPO NÃO É SOMADO, e é por isso que ele fica só na dica: os técnicos
      saem ao mesmo tempo, então somar as durações não responde nada — quem
@@ -7906,9 +7920,17 @@ function lerRoteiroCompacto(texto){
   // grupo (com a coordenada dentro); v8, o identificador do roteiro e a origem
   // em grupos próprios; v9, o nome do técnico. Em links antigos os campos
   // simplesmente não vêm.
-  if (!['5','6','7','8','9','10','11'].includes(ver)) return null; // formato desconhecido: link inválido
+  /* ⚠️ PASSO ZERO do PLANO-SERVIDOR (v8.33.1): as versões são comparadas como
+     NÚMERO, e não por uma lista de literais. Antes, um link de formato mais novo
+     do que o app guardado no celular (o GitHub Pages deixa o app 10 min em
+     cache) era recusado inteiro — "link inválido" na rua, logo quando o
+     escritório regera o link. Agora todo formato futuro é aditivo de verdade:
+     o app antigo abre o roteiro e só ignora os grupos que não conhece.
+     ⚠️ Por isso este passo vai ao ar DIAS ANTES de qualquer formato novo. */
+  const n = Number(ver);
+  if (!(n >= 5)) return null; // v1–v4 são JSON e têm leitor próprio; o resto é inválido
   // Do v8 em diante o rid, o retorno e a origem moram nos mesmos grupos
-  const v8ouMais = ['8','9','10','11'].includes(ver);
+  const v8ouMais = n >= 8;
   const clientes = clientesRaw ? clientesRaw.split('|').map(unescSep) : [];
   const tipos    = tiposRaw    ? tiposRaw.split('|').map(unescSep)    : [];
   let la = 0, ln = 0;
@@ -7931,22 +7953,22 @@ function lerRoteiroCompacto(texto){
     return (isFinite(lat) && isFinite(lng)) ? { lat, lng, nome: unescSep(nome || 'Origem') } : null;
   };
   if (v8ouMais && origemRaw) origem = lerPonto(origemRaw);
-  else if (ver === '7' && retornoRaw) origem = lerPonto(retornoRaw);
+  else if (n === 7 && retornoRaw) origem = lerPonto(retornoRaw);
 
-  const temRetorno = v8ouMais ? retornoRaw === '1' : !!(ver === '7' && retornoRaw);
+  const temRetorno = v8ouMais ? retornoRaw === '1' : !!(n === 7 && retornoRaw);
   // O retorno entra como último item da lista, com a marca no 7º campo: assim a
   // tela do campo o mostra, navega e marca como concluído sem código separado
   if (temRetorno && origem) s.push([origem.nome, origem.lat, origem.lng, 'RETORNO', '', false, true]);
 
   // O trajeto só existe do v10 em diante; link antigo simplesmente não tem, e a
   // tela do campo mostra o mapa só com os pontos
-  const traj = (['10','11'].includes(ver) && trajetoRaw) ? decodificarLinha(unescSep(trajetoRaw)) : [];
+  const traj = (n >= 10 && trajetoRaw) ? decodificarLinha(unescSep(trajetoRaw)) : [];
   // O dia da rota só existe do v11 em diante (v8.29.0); fora do formato, ignora
-  const dia = (ver === '11' && /^\d{8}$/.test(diaRaw || ''))
+  const dia = (n >= 11 && /^\d{8}$/.test(diaRaw || ''))
     ? `${diaRaw.slice(0,4)}-${diaRaw.slice(4,6)}-${diaRaw.slice(6)}` : null;
-  return { v: Number(ver), s, d: d ? Number(d) : null, t: t ? Number(t) : null,
+  return { v: n, s, d: d ? Number(d) : null, t: t ? Number(t) : null,
            rid: (v8ouMais && ridRaw) ? ridRaw : null, origem, retorno: temRetorno,
-           tecnico: (['9','10','11'].includes(ver) && tecnicoRaw) ? unescSep(tecnicoRaw) : '',
+           tecnico: (n >= 9 && tecnicoRaw) ? unescSep(tecnicoRaw) : '',
            traj, dia };
 }
 
@@ -8145,6 +8167,31 @@ function lerProgresso(codigo, rid, roteiro){
 function salvarProgresso(codigo, rid, feitos){
   try{ localStorage.setItem(progressoChave(codigo, rid), JSON.stringify([...feitos])); }
   catch(e){ /* armazenamento indisponível (ex.: modo privado) — segue sem persistir */ }
+}
+
+/* A HORA de cada conclusão (v8.33.1, item A2 do PLANO-METRICAS). Até aqui o
+   aparelho guardava só QUAIS paradas foram feitas — e a hora é o dado que o
+   escritório vai querer ver ("passou na 3 às 9h40"), e o que o servidor da
+   Fase B vai receber. Custo para o técnico: zero, vem junto do toque.
+   ⚠️ CHAVE SEPARADA (`hg_prog_h_<rid>`), e não a lista de concluídas virando um
+   mapa: o formato de `hg_prog_r_` continua exatamente o mesmo, então um
+   celular com o app antigo em cache, ou uma volta de versão, lê o progresso de
+   sempre sem perder nada. Quem não tem a chave de horas simplesmente não tem
+   hora — o mesmo de quem marcou antes desta versão.
+   ⚠️ Reabrir APAGA a hora: a parada voltou a estar pendente, e refeita ganha a
+   hora nova. É o mesmo que o servidor fará com a lista de reabertas. */
+function chaveHoras(codigo, rid){ return rid ? 'hg_prog_h_' + rid : 'hg_prog_h_c_' + codigo; }
+function lerHoras(codigo, rid){
+  try{
+    const o = JSON.parse(localStorage.getItem(chaveHoras(codigo, rid)) || '{}');
+    return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {};
+  }catch(e){ return {}; }
+}
+function marcarHora(codigo, rid, chave, concluida){
+  const horas = lerHoras(codigo, rid);
+  if (concluida) horas[chave] = Date.now(); else delete horas[chave];
+  try{ localStorage.setItem(chaveHoras(codigo, rid), JSON.stringify(horas)); }
+  catch(e){ /* sem armazenamento: segue sem a hora, como antes */ }
 }
 
 // Evita que nome de cliente com <, > ou & quebre o HTML da lista
@@ -8635,6 +8682,7 @@ function desenharCampo(roteiro, codigo, feitos, confirmando, abertos){
       const chave = chaveDaParada(roteiro.s[i]);
       if (feitos.has(chave)) feitos.delete(chave); else feitos.add(chave);
       salvarProgresso(codigo, roteiro.rid, feitos);
+      marcarHora(codigo, roteiro.rid, chave, feitos.has(chave));
       // Resolvida, a parada fecha: a lista volta a mostrar a da vez em destaque
       abertos.delete(i);
       desenharCampo(roteiro, codigo, feitos, confirmando, abertos);

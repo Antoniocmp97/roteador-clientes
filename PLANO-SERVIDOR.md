@@ -5,7 +5,9 @@
 > pode dar errado"*, *"ainda é desconhecido todos os riscos, pros e contras que
 > atribuir um servidor possa criar"*.
 >
-> **Status: nada construído. Nenhuma conta criada. O app não foi tocado.**
+> **Status (25/10/2026): o usuário escolheu este caminho.** O **passo zero**
+> (seção 3) e o **A2** foram feitos na **v8.33.1**. Nenhuma conta criada ainda;
+> nenhum dado sai da máquina.
 >
 > ⚠️ Ler o `PLANO-METRICAS.md` antes deste: lá está o *porquê* da fase.
 

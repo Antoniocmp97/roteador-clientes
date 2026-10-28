@@ -1,0 +1,11 @@
+v8.33.2 — 27/10/2026 — três ajustes
+
+O QUE MUDOU
+  - Correção: com "Um trecho por vez" ligado, o botão "Mapa" não escondia nem
+    apagava os clientes (defeito da v8.33.0).
+  - A aba do técnico tem o mesmo respiro dos dois lados do nome.
+  - "Quilometragem aproximada" virou "Km aproximada", sem fundo próprio, como
+    os botões de data.
+
+POR QUÊ
+  Pedidos do usuário depois de usar a v8.33.0.

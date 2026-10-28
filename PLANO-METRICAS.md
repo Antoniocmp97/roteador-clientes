@@ -1,7 +1,10 @@
 # Plano — Métricas e Relatórios
 
 > Escrito em 28/09/2026, a partir das conversas de 27 e 28/09.
-> **Status: plano aprovado em estrutura, nenhuma linha de código escrita ainda.**
+> **Status: plano aprovado em estrutura.** O **A2** (hora de cada conclusão)
+> foi feito na v8.33.1, em chave separada (`hg_prog_h_<rid>`) para não mudar o
+> formato da lista de concluídas — o que dispensa a leitura das duas formas
+> prevista na seção 2.
 >
 > Este documento existe porque a sessão de chat seria compactada e o plano
 > precisa sobreviver a isso, à troca de máquina e à próxima sessão. Ele é a

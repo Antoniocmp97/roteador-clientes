@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 25/10/2026 — v8.33.0 (bolinhas apagam fora do trecho aceso; aba do técnico sem fundo próprio e cor escolhida por técnico)
+> **Última atualização:** 27/10/2026 — v8.33.2 (botão "Mapa" volta a esconder com o trecho aceso; respiro da aba; "Km aproximada" sem fundo próprio)
 
 ---
 
@@ -545,7 +545,11 @@ sem dependências instaladas. Abre direto no navegador.
   primeira cor que ninguém usa** (antes era o ciclo puro, que com cores
   escolhidas à mão podia repetir). ⚠️ A **tela do campo não muda**: o link
   nunca levou a cor. ⚠️ A paleta abre e fecha pelo elemento, sem animação;
-  clique fora (captura) e Esc fecham, como no menu Exibição
+  clique fora (captura) e Esc fecham, como no menu Exibição.
+  ⚠️ **Respiro dos dois lados** (v8.33.2, relatado pelo usuário: o nome ficava
+  colado na borda direita, e com o ✕ da segunda aba o vão mudava). Sem ✕ o nome
+  fica a **12px** da borda, o mesmo da bolinha do outro lado; com ✕ (classe
+  `com-x`, a partir de duas abas) quem encosta é o botão, a **5px**
 - **A troca de técnico tem passagem, em dois tempos** (v8.14.0, pedido do
   usuário: "implemente um efeito fade ao trocar de técnico"; e, depois de ver a
   primeira forma rodando, "pensei em algo como a opção D, porém quando abrir o
@@ -740,6 +744,10 @@ sem dependências instaladas. Abre direto no navegador.
   com três abas numa linha só, mas **abaixo de ~1100px o cabeçalho passa a
   quebrar em duas linhas** (medido a 1024: 107px). Não é resolução-alvo, mas
   com o rótulo curto isso não acontecia.
+  ⚠️ **Desde a v8.33.2 o rótulo é "Km aproximada"** (texto do usuário) e a
+  caixa tem o **corpo dos botões de data**: 32px, cantos de 7px, rótulo em 13px
+  e **sem fundo próprio** (antes era uma pílula com `--panel-2`). O número
+  continua âmbar.
   ⚠️ **O tempo não é somado**, e fica só na dica do mouse: os técnicos saem ao
   mesmo tempo, então somar as durações daria um número grande e errado bem ao
   lado de um número certo. Quem responde "quando o dia acaba" é a **rota mais
@@ -1168,6 +1176,13 @@ sem dependências instaladas. Abre direto no navegador.
   ⚠️ **É opacidade inline no elemento de fora do marcador**, a mesma que
   `realcarCamadas()` usa — por isso ela agora chama o trecho **por último**;
   antes, o laço dela devolveria todos os números a 100%.
+  ⚠️ **A v8.33.0 quebrou o botão "Mapa" com o trecho aceso, corrigido na
+  v8.33.2** (relatado pelo usuário: "ao apertar no botão que deveria escondê-los,
+  nada acontece"). A regra das bolinhas teal tinha o **mesmo peso** das do botão
+  "Mapa" e vinha depois no CSS, então ganhava: o cliente escondido (0) e o
+  apagado (.18) voltavam a .25. Agora ela vale só para
+  `:not(.ponto-fora-da-rota)`. ⚠️ Só aparecia com "Um trecho por vez" ligado e
+  rota traçada — sem isso o botão funcionava, e foi por isso que passou.
   ⚠️ **Substituiu as SETAS de sentido**, que nasceram nesta mesma versão e o
   usuário reprovou ("os riscos não surtiram efeito"): um "›" escuro a cada
   110px dentro da linha. Seta diz a direção da linha inteira; trecho aceso diz
@@ -1571,7 +1586,13 @@ sem dependências instaladas. Abre direto no navegador.
   convertidos na primeira abertura; a contagem só considera paradas do roteiro
   atual. Medido: com 2 de 5 marcadas, o escritório inseriu uma parada na 2ª
   posição e regerou o link — as duas seguiram marcadas (uma delas já na 3ª
-  posição) e a contagem virou 2/6
+  posição) e a contagem virou 2/6.
+  ⚠️ **Desde a v8.33.1 a HORA de cada conclusão também é guardada** (item A2 do
+  `PLANO-METRICAS.md`), em chave **separada**, `hg_prog_h_<rid>` =
+  `{chave: epoch ms}`. A lista de concluídas (`hg_prog_r_`) **não mudou de
+  formato**, de propósito: app antigo em cache ou volta de versão leem o
+  progresso de sempre. Reabrir apaga a hora; refazer grava a nova. Nada disso
+  aparece na tela ainda — é o dado que o servidor vai receber
 
 ---
 
@@ -2114,6 +2135,20 @@ operação — ver `.gitignore`):
   fragmento da URL (ADR-01) — ✅ implementado na Fase 1.
 
 Ainda em aberto:
+- ⚠️ **25/10/2026 — O USUÁRIO ESCOLHEU O SERVIDOR.** Pedido: *"precisamos
+  aplicar alguma tela que mostre onde o técnico já passou, como informação para
+  escritório"*. Oferecidos o "link de volta" (sem servidor, depende de o técnico
+  apertar) e o servidor do plano (automático); ele escolheu o **servidor
+  Cloudflare**. Isto é a Fase B. Já feito na **v8.33.1**: o **passo zero** do
+  `PLANO-SERVIDOR.md` (leitor de link comparando a versão como número — um link
+  v12 abre inteiro num app de hoje) e o **A2** (hora de cada conclusão). ⚠️ O
+  passo zero precisa ficar **~1 semana no ar** antes de qualquer link com
+  formato novo. ⚠️ Combinado com ele: **"onde passou" = quais paradas foram
+  concluídas e a que horas**. A trilha de GPS do carro não é possível numa
+  página web (com o Waze na frente, a página para de receber a localização).
+  ⚠️ **Ainda pendentes**: a conta Cloudflare (dele), o aceite escrito da
+  revisão do ADR-01, e as perguntas da seção 13 do `PLANO-SERVIDOR.md`
+  (inclusive o lado jurídico do horário do técnico, seção 9.2).
 - **MÉTRICAS E RELATÓRIOS — a próxima fase, planejada em 28/09/2026.** O plano
   inteiro está em **`PLANO-METRICAS.md`** (versionado): as três fases, o que já
   foi medido, a escolha do backend (**Cloudflare Workers + D1**) e as decisões
@@ -2575,6 +2610,8 @@ de arquitetura, para retomar quando fizer sentido):
 | 131 | **v8.31.0** — Trechos da rota acesos um por vez (‹ › no módulo Rota ou clique na parada); o cabeçalho da tela do campo passa a ficar preso em qualquer rolagem; "Rota para" em âmbar |
 | 132 | **v8.32.0** — No mapa da tela do campo, o trecho até a parada da vez acende e anda sozinho com o progresso |
 | 133 | **v8.33.0** — Bolinhas fora do trecho aceso apagam; aba do técnico sem fundo próprio, com a borda na cor dele; cor de cada técnico escolhida numa paleta |
+| 134 | **v8.33.1** — Primeiros passos do servidor: o leitor de link aceita formatos futuros (passo zero) e o celular grava a hora de cada parada concluída (A2) |
+| 135 | **v8.33.2** — Correção: o botão "Mapa" voltava a mostrar os clientes com o trecho aceso; respiro do nome na aba do técnico; "Km aproximada" sem fundo próprio |
 
 ---
 
@@ -2643,7 +2680,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.33.0
+8.33.2
 ```
 
 ### Onde o número aparece
@@ -2828,3 +2865,5 @@ versão continua sendo a cada número fechado.
 | 8.31.0 | 19/10/2026 | Trechos da rota um por vez; cabeçalho do campo preso; "Rota para" em âmbar |
 | 8.32.0 | 19/10/2026 | Trecho até a parada da vez aceso no mapa do campo |
 | 8.33.0 | 25/10/2026 | Foco nas bolinhas do trecho; aba do técnico sem fundo e cor escolhida por técnico |
+| 8.33.1 | 25/10/2026 | Passo zero (link de formato futuro abre) e hora de cada conclusão no celular |
+| 8.33.2 | 27/10/2026 | Botão "Mapa" com o trecho aceso, respiro da aba e "Km aproximada" sem fundo |

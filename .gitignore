@@ -71,6 +71,8 @@ backups/*
 !backups/v8.31.0_2026-10-19_trechos-da-rota/
 !backups/v8.32.0_2026-10-19_trecho-no-campo/
 !backups/v8.33.0_2026-10-25_foco-e-cor-do-tecnico/
+!backups/v8.33.1_2026-10-25_passo-zero-e-horas/
+!backups/v8.33.2_2026-10-27_mapa-aba-km/
 
 # --- Bloco de notas de quem trabalha na pasta ---
 # Qualquer rascunho solto na raiz entra no próximo "git add -A" e vai parar num

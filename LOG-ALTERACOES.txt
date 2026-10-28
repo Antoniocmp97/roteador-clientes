@@ -8175,3 +8175,49 @@ TESTADO (1500x900, base de exemplo, dois técnicos)
   aceso e a borda. Esc e clique fora fecham. A cor sobrevive a recarregar e
   restaurar o dia. Modo leve: zero animações, mesmos resultados. Tela do
   campo abre pelo link sem erro. Sem erro de console.
+
+--------------------------------------------------------
+[25/10/2026] v8.33.1 — primeiros passos do servidor (passo zero + A2)
+--------------------------------------------------------
+- Pedido do usuário: "precisamos aplicar alguma tela que mostre onde o técnico
+  já passou, como informação para escritório". Hoje o progresso fica só no
+  celular. Oferecidos dois caminhos (link de volta, sem servidor; servidor
+  Cloudflare, automático) e ele escolheu o SERVIDOR (Fase B do
+  PLANO-SERVIDOR.md). Combinado: "onde passou" = paradas concluídas e a hora;
+  trilha de GPS não é possível numa página web.
+- PASSO ZERO: lerRoteiroCompacto() compara a versão como número (n >= 5,
+  n >= 8, n >= 9, n >= 10, n >= 11) em vez de listas de literais. Um link de
+  formato mais novo do que o app em cache deixa de ser "link inválido".
+  Precisa ficar ~1 semana no ar antes de qualquer formato novo.
+- A2: cada parada concluída grava a hora em hg_prog_h_<rid> ({chave: epoch
+  ms}). Chave separada: hg_prog_r_ não muda de formato. Reabrir apaga a hora.
+  Nada aparece na tela ainda.
+- 8.33.0 -> 8.33.1.
+
+TESTADO
+  Leitor: v11 abre igual; v12 de mentira (com dois grupos a mais) abre
+  inteiro — 5 itens, rid, técnico, trajeto de 32 pontos, dia e retorno; v10
+  sem dia; "4~" e "xx~" recusados. Campo (375x812, link real): concluir duas
+  paradas grava as duas horas; reabrir uma tira a chave da lista e a hora.
+  Sem erro de console.
+
+--------------------------------------------------------
+[27/10/2026] v8.33.2 — três ajustes pedidos pelo usuário
+--------------------------------------------------------
+- BUG (da v8.33.0): "ao apertar no botão que deveria escondê-los, nada
+  acontece". Com "Um trecho por vez" ligado e rota traçada, a regra
+  `:root[data-trecho-foco] .ponto-cliente{opacity:.25}` tinha o mesmo peso das
+  regras do botão "Mapa" e vinha depois, então ganhava: escondido (0) e apagado
+  (.18) voltavam a .25. Agora ela tem `:not(.ponto-fora-da-rota)`.
+- Aba do técnico: o nome ficava a 6px da borda direita sem o ✕ e o vão mudava
+  com o ✕. Agora 11px de padding sem ✕ (nome a 12px, como a bolinha do outro
+  lado) e 4px com ✕ (classe com-x, a partir de duas abas).
+- "Quilometragem aproximada" -> "Km aproximada", e a caixa com o corpo dos
+  botões de data: 32px, cantos de 7px, rótulo 13px, sem fundo próprio.
+- 8.33.1 -> 8.33.2.
+
+TESTADO (1500x900, dois técnicos, rotas traçadas)
+  Com trecho aceso: Mapa todos = teal a .25; destaque = fora da viagem a .18;
+  só a viagem = fora da viagem a 0. Sem trecho: 1 / .18 / 0, como antes.
+  Aba: uma aba, nome a 12px da borda; duas abas, ✕ a 5px. Caixa do km: 32px,
+  fundo transparente, raio 7px, rótulo 13px. Sem erro de console.
