@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 27/10/2026 — v8.33.2 (botão "Mapa" volta a esconder com o trecho aceso; respiro da aba; "Km aproximada" sem fundo próprio)
+> **Última atualização:** 27/10/2026 — v8.33.3 (pasta organizada, comentários obsoletos corrigidos e terreno preparado para o teste do servidor)
 
 ---
 
@@ -1772,7 +1772,8 @@ ponto de partida se a marca voltar a querer letra. O `rota` é o mais vago dos
 finalistas e **ele aceitou isso de olhos abertos**: não "consertar" sem pedido.
 Variantes prontas, se pedir: `rota-b` (traço 3,0 e pontos 3,4/4,6) e `rota-f`
 (crachá âmbar, a de silhueta mais forte) — as linhas estão no
-`PLANO-BUSCA-E-ICONE.md`.
+`PLANO-BUSCA-E-ICONE.md`, que desde a v8.33.3 mora em
+`MISCELANEA/planos-concluidos/` (só local; também no histórico do Git).
 **O mesmo ícone também está ao lado do nome da marca** (v8.24.2, pedido do usuário
 depois de ver o da aba no ar: "gostei do ícone"), nas duas telas: um `<symbol
 id="logoMarca">` no topo do `<body>`, usado por `<use>`. ⚠️ **O desenho mora em
@@ -2149,6 +2150,12 @@ Ainda em aberto:
   ⚠️ **Ainda pendentes**: a conta Cloudflare (dele), o aceite escrito da
   revisão do ADR-01, e as perguntas da seção 13 do `PLANO-SERVIDOR.md`
   (inclusive o lado jurídico do horário do técnico, seção 9.2).
+  ⚠️ **27/10/2026, v8.33.3 — faxina e prontidão.** Pasta organizada, código
+  varrido e `.gitignore` do servidor no lugar **antes** do primeiro arquivo dele.
+  A lista do que está pronto e do que falta está na seção **"Prontidão"** do
+  `PLANO-SERVIDOR.md`. ⚠️ **Node.js não está instalado** nesta máquina — a
+  ferramenta `wrangler` precisa dele. Marco criado: tag `v8.33.3` (na
+  publicação) e `backups/MARCO_v8.33.3_2026-10-27_antes-do-servidor/`.
 - **MÉTRICAS E RELATÓRIOS — a próxima fase, planejada em 28/09/2026.** O plano
   inteiro está em **`PLANO-METRICAS.md`** (versionado): as três fases, o que já
   foi medido, a escolha do backend (**Cloudflare Workers + D1**) e as decisões
@@ -2322,9 +2329,10 @@ do `HEAD`. O detalhe e os números estão no `LOG-ALTERACOES.txt`.
 - **O mapa do código dizia que origem invalidava a rota, e não invalidava.**
   Afirmação de documento se confere rodando, não lendo.
 
-⚠️ **A pasta `TUTORIAL/`** está na raiz sem versionar **e sem estar no
-`.gitignore`**: entra no próximo `git add -A` de um repositório PÚBLICO. Antes de
-decidir, varrer por nome de cliente real (as imagens são capturas da tela).
+⚠️ **A pasta `TUTORIAL/`** (o "Guia do Roteador de Clientes", de 10/10/2026)
+fica na raiz e, **desde a v8.33.3, no `.gitignore`**: as imagens são capturas de
+tela e podem trazer nome de cliente real. ⚠️ Ela é da época da v8.24 — o
+cabeçalho mudou na v8.25.0 e as capturas mostram os ícones antigos.
 
 **Revisão de usabilidade (10/10/2026), a pedido do usuário: "verificar se está
 acessível para pessoas com menos conhecimento de tecnologia".** Feita percorrendo
@@ -2367,8 +2375,10 @@ tinham razão uma a uma — cada versão acrescentou um tamanho de letra, um uso
 **Sobra só o ponto 2**, que o usuário pediu para deixar de lado em 27/09/2026,
 sem descartar. Os outros cinco estão publicados.
 
-**Material de trabalho na pasta, fora do repositório** (padrão `COMPARACAO-*.html`
-no `.gitignore`), para apagar quando não servirem mais:
+**Material de trabalho, fora do repositório** — desde a v8.33.3 em
+**`MISCELANEA/comparacoes/`** (a pasta `MISCELANEA/` inteira está no
+`.gitignore`; a regra `COMPARACAO-*.html` continua valendo para as que nascerem
+na raiz):
 `COMPARACAO-MODULO1.html` (as 5 propostas do módulo 1; a v7.4.0 saiu da "D"),
 `COMPARACAO-DESIGN.html` (os 7 pontos acima), `COMPARACAO-EFEITOS.html` (os
 quatro efeitos ao traçar a rota, em seis mapas de verdade; a v8.0.0 saiu do
@@ -2612,6 +2622,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 133 | **v8.33.0** — Bolinhas fora do trecho aceso apagam; aba do técnico sem fundo próprio, com a borda na cor dele; cor de cada técnico escolhida numa paleta |
 | 134 | **v8.33.1** — Primeiros passos do servidor: o leitor de link aceita formatos futuros (passo zero) e o celular grava a hora de cada parada concluída (A2) |
 | 135 | **v8.33.2** — Correção: o botão "Mapa" voltava a mostrar os clientes com o trecho aceso; respiro do nome na aba do técnico; "Km aproximada" sem fundo próprio |
+| 136 | **v8.33.3** — Faxina antes do servidor: pasta organizada (MISCELANEA, dados-reais), comentários que descreviam o app antigo corrigidos, `.gitignore` do servidor e marco |
 
 ---
 
@@ -2627,13 +2638,24 @@ PROJETO APP LOGISTICA/        ← raiz do repositório Git
 ├── CLAUDE.md                 ← este arquivo (contexto do projeto)
 ├── MAPA-DO-CODIGO.md         ← onde cada coisa mora no index.html (v8.8.0)
 ├── LOG-ALTERACOES.txt        ← log de todas as alterações
+├── PLANO-METRICAS.md         ← a fase de métricas (por quê e em que ordem)
+├── PLANO-SERVIDOR.md         ← o servidor Cloudflare, passo a passo e riscos
 ├── FERIADOS-2026.md          ← levantamento das datas, com fonte (v8.27.0)
+├── Feriados_Municipais_Ano_2026.pdf  ← a lista do TRE-SC (fonte)
 ├── README.md
 ├── .gitignore
 ├── Exemplos/
-│   └── exemplo.umap          ← 3 clientes fictícios, só para demonstrar o formato
+│   ├── exemplo.umap          ← 4 clientes fictícios, só para demonstrar o formato
+│   └── icones/               ← Waze e Google Maps (tela do campo)
 ├── .claude/launch.json       ← config do servidor local de testes
-└── backups/                  ← pontos de restauração (NÃO versionado)
+│
+│   — o que fica SÓ NA MÁQUINA (todos no .gitignore) —
+├── backups/                  ← pontos de restauração (sobem só os liberados)
+├── dados-reais/              ← bases .umap com cliente real (desde 27/10/2026)
+├── notas/                    ← rascunhos, scripts de medição e a BASE-TESTE.umap fictícia
+├── MISCELANEA/               ← comparações já decididas, capturas, protótipo v1, planos executados
+├── TUTORIAL/                 ← guia de uso com capturas (da v8.24)
+└── ARQUITETURA-E-REQUISITOS.html  ← documento interno da operação
 ```
 
 - **Repositório:** github.com/antoniocmp97/roteador-clientes (público)
@@ -2680,7 +2702,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.33.2
+8.33.3
 ```
 
 ### Onde o número aparece
@@ -2867,3 +2889,4 @@ versão continua sendo a cada número fechado.
 | 8.33.0 | 25/10/2026 | Foco nas bolinhas do trecho; aba do técnico sem fundo e cor escolhida por técnico |
 | 8.33.1 | 25/10/2026 | Passo zero (link de formato futuro abre) e hora de cada conclusão no celular |
 | 8.33.2 | 27/10/2026 | Botão "Mapa" com o trecho aceso, respiro da aba e "Km aproximada" sem fundo |
+| 8.33.3 | 27/10/2026 | Faxina antes do servidor (pasta, comentários, `.gitignore`); marco `MARCO_v8.33.3` |

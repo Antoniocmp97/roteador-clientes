@@ -13,6 +13,41 @@
 
 ---
 
+## Prontidão para o teste (conferida em 27/10/2026, v8.33.3)
+
+**Pronto:**
+
+| | o quê | onde |
+|---|---|---|
+| ✅ | **Passo zero** no ar desde 27/10 (v8.33.1): link de formato novo abre num app antigo. A semana de propagação termina em **03/11** | seção 3 |
+| ✅ | **Hora de cada conclusão** gravada no celular (`hg_prog_h_<rid>`) — é o dado que a rota `POST /execucao` vai receber | A2 do PLANO-METRICAS |
+| ✅ | **`.gitignore` do servidor** antes do primeiro arquivo: `.dev.vars`, `.env*`, `.wrangler/` (tem cópia local do banco), `node_modules/`, `*.sqlite*`, `*.db`, `servidor/exportacoes/` | R13 |
+| ✅ | **Varredura de nomes reais** nos 73 arquivos versionados contra as bases reais locais: só nomes de cidade e palavras genéricas. Dois termos reais que tinham escapado no log (sigla do grupo e um bairro) trocados | R13, regra de dados |
+| ✅ | **Bases reais tiradas da raiz** para `dados-reais/` (já bloqueada) | — |
+| ✅ | **Base fictícia para o beta**: `notas/BASE-TESTE.umap` (13 clientes, 27 pontos, grupos) — dado de teste que pode ir ao banco de teste sem risco | seção 6 |
+| ✅ | **Marco**: `backups/MARCO_v8.33.3_2026-10-27_antes-do-servidor/` com todos os arquivos versionados, e a tag `v8.33.3` na publicação | regra de marco do CLAUDE.md |
+| ✅ | **Código sem peso morto**: nenhuma função, variável, id ou classe sem uso; nenhum `console.log` | — |
+
+**Falta, e é seu (não dá para fazer daqui):**
+
+| | o quê | por quê |
+|---|---|---|
+| ⬜ | **Instalar o Node.js (LTS)** — não está nesta máquina | a ferramenta `wrangler` da Cloudflare roda sobre ele. ⚠️ Sem Node dá para criar tudo pelo **painel web** da Cloudflare, colando o código; mas aí o que está no ar deixa de sair direto do repositório, e a exportação semanal do banco (R8) fica manual |
+| ⬜ | **Criar a conta Cloudflare** (grátis, ~20 min, comigo) | B0 |
+| ⬜ | **Aceite escrito da revisão do ADR-01** | portão antes do B4 — não trava o teste B1–B3, que não usa dado real |
+| ⬜ | **Conversa com pessoal/contabilidade** sobre registrar horário | seção 9.2 — trava o piloto, não o teste |
+
+**O que o teste vai ser (B1–B3, seção 10):** um servidor de teste respondendo,
+com banco de teste, exercitado **sem o app** — inclusive as três recusas (sem
+senha, token errado, carga vazia que não pode apagar nada). Nenhum dado real sai
+da máquina nessa etapa, e o app publicado não muda.
+
+⚠️ **Fase A (A1, A3, A4) não é pré-requisito do teste do servidor** — ela é
+pré-requisito do **piloto**. O plano a põe antes por segurança de dados, e
+continua valendo fazer antes de ligar a sincronização para os técnicos.
+
+---
+
 ## 0. O que mudou da 1ª para a 2ª versão
 
 Quatro coisas, e três delas são correções de defeito meu:

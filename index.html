@@ -606,7 +606,7 @@
      REAL da coluna (que muda com a divisória) e ajustar o que está dentro. */
   .console{container-type:inline-size;width:var(--painel-w, 340px);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
 
-  /* O material de vidro, igual nas três colunas (v8.1.0):
+  /* O material de vidro, igual no painel e em todas as colunas (v8.1.0):
      · tinta em gradiente, mais clara em cima, como o material do macOS;
      · desfoque do que está atrás + saturação, que é o que dá o brilho de cor —
        sem ela o fundo vira só um borrão cinza;
@@ -703,7 +703,8 @@
      parecendo bastante como um aplicativo") ----
      Ligadas pelo botão do cabeçalho — fora dele, nada muda. No modo ligado a
      fila de colunas dá lugar a janelas com posição, tamanho e ordem de frente
-     próprias, guardadas no arranjo (o disquete salva, a lixeira devolve tudo).
+     próprias, guardadas no arranjo ("Guardar esta organização" salva; "Voltar à organização
+     padrão" devolve tudo).
      ⚠️ O puxador (topo, ao centro) e o canto de redimensionar NÃO moram dentro
      da janela: ela rola, e eles sumiriam junto com a rolagem. Ficam ao lado,
      em `main`, posicionados pelo mesmo código que posiciona a janela.
@@ -999,7 +1000,7 @@
      partiria o cabeçalho do módulo em dois idiomas (v8.21.0). */
   .link-btn{background:none;color:var(--amber-dim);font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.3px;text-decoration:none;padding:0;}
 
-  /* Checklist com um item por cliente carregado do .geojson */
+  /* Checklist com um item por cliente carregado do backup do uMap (.umap) */
   /* max-height define a altura da area rolavel. Os filhos precisam de flex:none,
      senao o flexbox os ESPREME para caber no lugar de gerar barra de rolagem —
      era o bug relatado em 29/08/2026: com os grupos, a lista comprimia os
@@ -2122,10 +2123,10 @@
 
   <main>
     <div id="map"></div>
-    <!-- Colunas auxiliares (v4.4; duas desde a v5.7). Ordem na tela:
-         mapa · coluna 3 · coluna 2 · painel. Cada uma só aparece quando tem
-         algum módulo dentro, e a coluna 3 só existe junto com a 2: se a 2
-         esvazia, o conteúdo da 3 passa para ela. Cada coluna tem a sua
+    <!-- Colunas auxiliares (v4.4; até cinco desde a v8.30.0). Ordem na tela:
+         mapa · … · coluna 3 · coluna 2 · painel. Cada uma só aparece quando
+         tem algum módulo dentro, e não há buraco: se uma esvazia, as da
+         esquerda andam uma casa (normalizarLocais). Cada coluna tem a sua
          divisória de largura, à esquerda. As divisórias de ALTURA entre os
          módulos de uma coluna são criadas pelo JS. -->
     <!-- Colunas 4 a 6 (v8.30.0, pedido do usuário: "permita poder criar mais
@@ -2164,7 +2165,7 @@
            exatamente como era. Nas colunas ela vira a caixa que recebe a altura.
            O aviso "aparece depois…" de módulos ainda escondidos é criado pelo JS. -->
 
-      <!-- Passo 1: upload do .geojson (clique abre o seletor de arquivo; também aceita arrastar-e-soltar) -->
+      <!-- Passo 1: upload do backup do uMap (.umap) — clique abre o seletor de arquivo; também aceita arrastar-e-soltar -->
       <section class="modulo-movel" data-modulo="m1">
       <div class="modulo-corpo">
         <!-- Título faz o trabalho do módulo desde a v7.4.0: o ✓ diz que a base
@@ -2552,7 +2553,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.33.2';
+const VERSAO = '8.33.3';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -2662,7 +2663,7 @@ const MAPA_MIN = 380;         // o mapa nunca fica menor que isso, por mais que 
 
 // Máximo depende da tela: em 1366 sobra pouco, em 1920 dá para abrir bem mais.
 // Desde a v5.7 desconta também as colunas auxiliares visíveis (e as divisórias
-// delas): com três colunas abertas, o painel sozinho não pode tomar o mapa.
+// delas): com colunas abertas, o painel sozinho não pode tomar o mapa.
 // Consulta a tela direto, e não as funções das colunas, porque isto roda antes
 // de aquela parte do script existir.
 function larguraMaxPainel(){
@@ -3724,8 +3725,10 @@ function aplicarFocoNaRota(){
   atualizarBotaoFoco(naViagem.size);
 }
 
-// Estado global do app (em memória — nada é persistido, recarregar a página zera tudo)
-let clientPoints = [];   // { id, name, lat, lng, marker } — todos os clientes carregados do .geojson
+// Estado do roteiro do técnico ATIVO (v8.5.0: trocar de aba guarda estas variáveis
+// no objeto da aba e carrega as da outra). Vive em memória; o planejamento do dia
+// é guardado à parte por salvarDia() e só volta se a pessoa aceitar restaurar.
+let clientPoints = [];   // { id, name, lat, lng, marker } — todos os clientes da base (.umap)
 let stops = [];          // subconjunto/ordem de clientPoints selecionados para esta viagem
 let gruposClientes = [];  // [{cliente, pontos:[...]}] — agrupamento por camada do uMap, usado só no checklist
 let gruposAbertos = new Set(); // nomes das CAMADAS (clientes) com a cascata aberta
@@ -5145,8 +5148,8 @@ function alturasAtuais(){
    e não serve: quando o conteúdo CABE, o scrollHeight fica preso na altura da
    caixa e a conta degenera para "o teto é a altura atual" — o módulo nunca mais
    crescia. Somar os filhos à mão também não fecha (medido: 964 contra os 932 do
-   scrollHeight), porque as sections do painel são `display:contents` e o módulo
-   Rota é `sticky`. Daí a regra simples. */
+   scrollHeight), porque as sections do painel são `display:contents` (e, na
+   época, o módulo Rota era `sticky`). Daí a regra simples. */
 function tetoDeAltura(container, minimo){
   if (!container || !container.clientHeight) return Infinity;
   return Math.max(minimo, container.clientHeight - minimo);
@@ -5305,12 +5308,13 @@ if (!modoCampoAtivo){
    - Escolhe-se a coluna E a posição (v6.0, pedido do usuário: "jogar o módulo 4
      para a posição do módulo 1"). Soltar entre dois módulos põe ali; o vão de
      encaixe (v6.1) mostra onde, abrindo espaço do tamanho do módulo. O arranjo guarda `local` (coluna de cada módulo) e
-     `ordem` (lista única, sempre agrupada por coluna: painel, 2, 3). O duplo
+     `ordem` (lista única, sempre agrupada por coluna: painel, 2, 3, …). O duplo
      clique, que só troca de coluna, põe o módulo na posição da numeração.
-   - A coluna 3 só existe junto com a 2. Se a 2 esvazia, o que estava na 3 passa
-     para ela — não fica um buraco entre a coluna 3 e o painel.
-   - Mover um módulo vale enquanto a página está aberta. O botão "salvar arranjo"
-     faz o site abrir assim; "voltar ao normal" põe tudo no painel e apaga o
+   - Não fica buraco entre as colunas: se uma esvazia, as da esquerda andam uma
+     casa (normalizarLocais, v8.30.0).
+   - Mover um módulo vale enquanto a página está aberta. A linha "Guardar esta
+     organização" (menu Exibição) faz o site abrir assim; "Voltar à organização
+     padrão" devolve o arranjo padrão e apaga o
      salvo. (Antes da v5.7 o lugar nunca era guardado — decisão da v4.6, revista
      a pedido do usuário, agora com botão em vez de gravação automática.)
    - Em tela estreita (layout empilhado) as colunas não existem: os módulos
@@ -5378,7 +5382,7 @@ const LOCAIS = ['painel', ...Object.keys(COLUNAS)];
    para ~626px, e a TV deixou de guiar o layout em 11/09/2026 (decisão 6). A
    1600 sobram ~860px de mapa. O número é um só e está aqui para ser ajustado.
    ⚠️ **Isto NÃO resolve os 53% da TV de 1366** — lá continua valendo arrastar
-   os módulos à mão e salvar no disquete.
+   os módulos à mão e guardar a organização.
 
    ⚠️ **A decisão é tomada UMA VEZ, na abertura, e congelada.** É obrigatório:
    `aplicarArranjo()` roda a cada `resize` e chama `atualizarBotaoArranjo()`,
@@ -5396,7 +5400,7 @@ const MODULOS_DA_COLUNA_2 = ['m3', 'm4'];   // os dois módulos com lista longa
 const abreEmDuasColunas = !modoCampoAtivo &&
       document.documentElement.clientWidth >= LARGURA_DUAS_COLUNAS;
 
-// Como descrever o "normal" para quem lê o botão da lixeira
+// Como descrever o "normal" para quem lê a linha "Voltar à organização padrão"
 function textoDoArranjoNormal(){
   return abreEmDuasColunas
     ? 'Selecionar paradas e Ordem da viagem voltam para a coluna 2, o resto para o painel'
@@ -5534,7 +5538,8 @@ function telaComportaGuia(){ return document.documentElement.clientWidth >= LARG
 /* ---------------- Janelas livres (v8.4.0) ----------------
    Com o botão do cabeçalho ligado, cada coluna vira uma janela com posição,
    tamanho e ordem de frente próprias, em coordenadas de `main`. A geometria
-   entra no arranjo, então o disquete salva e a lixeira devolve tudo ao normal.
+   entra no arranjo: "Guardar esta organização" salva e "Voltar à organização
+   padrão" devolve tudo.
 
    ⚠️ Só a janela que o usuário ARRASTOU (marca `livre`) é guardada. As outras
    são recalculadas a cada `aplicarJanelas()` pela geometria padrão — encostadas
@@ -8133,11 +8138,12 @@ async function copiarLink(url){
 /* ==========================================================
    MODO CAMPO
    Tela para quem está na rua. Ativada quando a página é aberta
-   com "#r=..." no final do endereço. Não usa mapa nem rede (além
-   do clique em "Navegar", que abre outro app) — só lê o roteiro
-   do próprio link e o progresso do armazenamento local do
-   navegador (localStorage), que é o que sobrevive a fechar a aba
-   ou o navegador (requisito C-04).
+   com "#r=..." ou "#z=..." no final do endereço. O roteiro vem
+   inteiro do próprio link e o progresso fica no armazenamento
+   local do navegador (localStorage), que é o que sobrevive a fechar
+   a aba ou o navegador (requisito C-04). A rede só é usada pelos
+   ladrilhos do mapa do dia (v8.16.0) e pelo "Navegar", que abre
+   outro app — nenhum dado de cliente sai do aparelho.
    ========================================================== */
 
 /* Progresso do dia (v6.8.0: por PARADA e por ROTEIRO).

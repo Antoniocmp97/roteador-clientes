@@ -1,7 +1,7 @@
 # Roteador de Clientes — Hagamorfis
 
-Aplicativo web para montar rotas de visita com múltiplas paradas a partir de
-uma lista de clientes em GeoJSON. Feito para uso em Criciúma/SC.
+Aplicativo web para montar rotas de visita com múltiplas paradas a partir do
+backup do uMap (`.umap`) com os clientes. Feito para uso em Criciúma/SC.
 
 **➡️ Acesse: https://antoniocmp97.github.io/roteador-clientes/**
 
@@ -21,6 +21,9 @@ uma lista de clientes em GeoJSON. Feito para uso em Criciúma/SC.
 - Marca paradas como prioritárias (★), que ficam fixas no início
 - Escolhe o tipo de serviço de cada parada (lista configurável)
 - Opcionalmente fecha o roteiro voltando para a origem
+- Planeja para hoje ou para o próximo dia útil, e avisa feriado na cidade de
+  cada parada
+- Pode acender a rota um trecho por vez, para conferir parada a parada
 - Divide o dia entre vários técnicos, em abas, com as rotas juntas no mapa
 - Gera um **link do roteiro** para mandar ao técnico: ele abre numa tela própria
   de celular, com o mapa do trajeto, navegação por Waze/Maps e marcação do que
@@ -100,4 +103,7 @@ Arquivo HTML único, sem build e sem dependências instaladas.
 ## Documentação
 
 - [`CLAUDE.md`](CLAUDE.md) — contexto completo do projeto, decisões e limitações
+- [`MAPA-DO-CODIGO.md`](MAPA-DO-CODIGO.md) — onde cada coisa mora no `index.html`
 - [`LOG-ALTERACOES.txt`](LOG-ALTERACOES.txt) — histórico detalhado de alterações
+- [`PLANO-METRICAS.md`](PLANO-METRICAS.md) e [`PLANO-SERVIDOR.md`](PLANO-SERVIDOR.md) — a próxima fase (métricas e servidor)
+- [`FERIADOS-2026.md`](FERIADOS-2026.md) — as datas dos avisos de feriado, com a fonte de cada uma

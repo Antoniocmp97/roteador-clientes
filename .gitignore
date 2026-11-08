@@ -32,7 +32,17 @@ ARQUITETURA-E-REQUISITOS.html
 # --- Páginas de apoio para decisão visual ---
 # Geradas para o usuário comparar propostas antes de implementar (têm a foto
 # de referência embutida). São material de trabalho, não fazem parte do app.
+# Desde 27/10/2026 as antigas moram em MISCELANEA/comparacoes/; a regra fica
+# para as que nascerem na raiz.
 COMPARACAO-*.html
+
+# --- Material antigo e guia ---
+# MISCELANEA/: comparações já decididas, capturas de depuração, o protótipo
+# da v1 e planos já executados (27/10/2026). Material de consulta, só local.
+# TUTORIAL/: o guia de uso com capturas de tela — as imagens podem trazer
+# nomes de clientes reais, então não sobe sem varredura.
+MISCELANEA/
+TUTORIAL/
 
 # --- Pontos de restauração (backups) ---
 # A pasta é IGNORADA por padrão e só as pastas listadas abaixo sobem. Motivo: as
@@ -73,6 +83,7 @@ backups/*
 !backups/v8.33.0_2026-10-25_foco-e-cor-do-tecnico/
 !backups/v8.33.1_2026-10-25_passo-zero-e-horas/
 !backups/v8.33.2_2026-10-27_mapa-aba-km/
+!backups/v8.33.3_2026-10-27_faxina-antes-do-servidor/
 
 # --- Bloco de notas de quem trabalha na pasta ---
 # Qualquer rascunho solto na raiz entra no próximo "git add -A" e vai parar num
@@ -81,6 +92,24 @@ notas/
 
 # --- Arquivos compactados ---
 *.zip
+
+# --- Servidor (Fase B, Cloudflare Workers + D1) ---
+# Entram ANTES do primeiro arquivo de servidor existir (risco R13 do
+# PLANO-SERVIDOR.md): o repositório é PÚBLICO.
+# .dev.vars guarda os segredos de teste local (a senha do escritório); a
+# ferramenta wrangler cria .wrangler/ com uma CÓPIA LOCAL DO BANCO — com dado
+# de roteiro dentro; node_modules/ é a instalação das dependências.
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+.wrangler/
+node_modules/
+# Exportações e cópias do banco (wrangler d1 export) trazem dado real
+*.sqlite
+*.sqlite3
+*.db
+servidor/exportacoes/
 
 # --- Arquivos gerados pelo sistema operacional ---
 Thumbs.db

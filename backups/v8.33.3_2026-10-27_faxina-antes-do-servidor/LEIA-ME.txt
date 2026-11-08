@@ -1,0 +1,9 @@
+v8.33.3 — 27/10/2026 — faxina antes do servidor
+
+O QUE MUDOU
+  Só comentários do index.html (os que descreviam o app antigo) e a versão.
+  Nenhum comportamento mudou. A faxina da pasta e do .gitignore está no
+  LOG-ALTERACOES.txt.
+
+POR QUÊ
+  Pedido do usuário antes do teste do servidor Cloudflare.
