@@ -8275,3 +8275,55 @@ REPOSITÓRIO
 TESTADO
   Escritório: base de exemplo, rota otimizada (8,6 km), link gerado. Campo:
   link abriu com 3 paradas + retorno. Sem erro de console nas duas telas.
+
+--------------------------------------------------------
+[08/11/2026] v8.34.0 — botão "Zerar" o roteiro
+--------------------------------------------------------
+- Pedido do usuário: "adicionar botão para zerar roteiro".
+- Botão "Zerar", com nome, no título da Ordem da viagem (ao lado da lupa do
+  zoom). Tira as paradas do TÉCNICO ABERTO, a rota, o link e o id do roteiro;
+  a avulsa que era só dele sai do mapa. A origem fica; os outros técnicos não
+  são tocados. Antes o único jeito era o "marcar todos" clicado duas vezes.
+- Dois toques, como o "esquecer base": "Confirmar?" em vermelho, desarma
+  sozinho em 4s. A confirmação é presa ao técnico que armou (trocar de aba no
+  meio só rearma).
+- 8.33.3 -> 8.34.0. (A v8.33.3 ainda não tinha sido publicada; sobe junto.)
+
+TESTADO (dois técnicos, rotas traçadas, link gerado)
+  Zerar o técnico 2: 0 paradas, rota, marcadores e link fora, id do roteiro
+  nulo, origem mantida, checklist sem marcas, módulo 4 escondido, dia guardado
+  [2, 0]; técnico 1 intacto (2 paradas, linha no mapa). Avulsa criada e zerada:
+  sai da base (7 -> 6). Armar no 2, trocar para o 1 e clicar: só rearma, o 1
+  continua com 2 paradas. Desarme sozinho em 4s. Modo leve: zero animações.
+  Sem erro de console.
+- Ainda antes de publicar: "o local do botão não me agradou, coloque ao lado
+  do Rota para". Saiu do título da Ordem da viagem e foi para o cabeçalho,
+  logo depois dos botões de data, como "Zerar roteiro", com o corpo deles
+  (32px, sem fundo). Sem paradas fica APAGADO, e não escondido (não faz o
+  cabeçalho pular); a dica diz o nome do técnico. min-width de 112px segura a
+  largura com "Confirmar?". Variáveis em var (renderStopsList roda na carga).
+  TESTADO: apagado sem base e na aba vazia; aceso com paradas; armar no
+  técnico 1 e ir para a aba vazia desarma; voltar e clicar rearma; segundo
+  toque zera. Cabeçalho: 1 linha a 1500 e a 1920 (3 técnicos + Km); a 1366
+  com o Km aproximado à mostra ele já tinha 2 linhas sem o botão (109px nos
+  dois casos). Sem erro de console.
+- Ainda antes de publicar: "ao contrário de escrever zerar roteiro, coloque o
+  ícone parecido com o que tem na exibição". Virou ícone de 32x32 com a seta
+  circular do "Voltar à organização padrão"; o nome fica no aria-label e na
+  dica. Armado, o botão alarga e mostra "Confirmar?" escrito em vermelho (32 ->
+  109px por 4s), porque só o ícone vermelho não diria que falta um toque.
+  TESTADO: 32px apagado e aceso, 109px armado, volta a 32 ao zerar; zera.
+  Sem erro de console.
+- Ainda antes de publicar: "coloque o botão ao lado do número da versão,
+  acredito que será o melhor lugar; aproveitando, o botão de exibição fica
+  cinza ao clicar, deixe ele com fundo preto até após setar".
+  - O "Zerar roteiro" foi para logo depois do selo de versão, antes das abas
+    (terceiro lugar no mesmo dia, todos a pedido dele).
+  - .pilula-cab[aria-expanded="true"] pintava --hover (cinza) enquanto o menu
+    Exibição estava aberto; agora background:none, fica só a borda mais
+    clara. Vem depois do :hover com o mesmo peso, então vale com o ponteiro em
+    cima também.
+  TESTADO: 1500px — selo termina em 282, botão 294-326, abas começam em 338,
+  cabeçalho 65px; Exibição aberto com fundo transparente. 375px — botão na
+  mesma linha da marca, sem rolagem lateral; zerar funciona. Sem erro de
+  console.

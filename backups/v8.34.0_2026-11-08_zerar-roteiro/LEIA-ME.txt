@@ -1,0 +1,11 @@
+v8.34.0 — 08/11/2026 — botão "Zerar" o roteiro
+
+O QUE MUDOU
+  Botão "Zerar roteiro" (ícone de seta circular) ao lado do selo de versão: tira as paradas do técnico
+  aberto (com a rota e o link), mantendo a origem e os outros técnicos.
+  Confirmação em dois toques. E o botão "Exibição" não fica mais cinza
+  enquanto o menu está aberto.
+
+POR QUÊ
+  Pedido do usuário. Antes só dava para zerar clicando duas vezes no "marcar
+  todos".

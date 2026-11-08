@@ -73,6 +73,7 @@ aplicado **por último** ali dentro, porque ele manda no vidro e nas janelas.
 | janelas livres | `Janelas livres (v8.4.0)` | `aplicarModoJanelas`, `aplicarJanelas` |
 | ímã de alinhamento | dentro de `Janelas livres` | `aplicarIma(lig, salvar)` |
 | abas de técnico | `Um roteiro por técnico, em abas (v8.5.0)` | `renderAbas`, `trocarTecnico` |
+| zerar o roteiro | `Zerar o roteiro (v8.34.0)` (logo antes dos tipos de serviço) | `zerarRoteiro`, `desarmarZerar`, `atualizarBotaoZerar` (apagado sem paradas; chamada em `renderStopsList`), `zerarArmado`/`zerarDono` (dois toques, presos ao técnico) |
 | cor de cada técnico | `A cor de cada técnico (v8.33.0)` (logo depois de `renderAbas`) | `PALETA_TECNICO`/`NOMES_COR`, `abrirPaletaCor`, `fecharPaletaCor`, `trocarCorDoTecnico` |
 | efeito ao trocar de aba | `A passagem ao trocar de técnico (v8.14.0)` | `passagemLigada`, `animarTrocaDeAba`, `escalonarCascata` |
 | km do dia | `Quilometragem do dia (v8.8.0)` | `resumoDoDia`, `atualizarResumoDia` |

@@ -84,6 +84,7 @@ backups/*
 !backups/v8.33.1_2026-10-25_passo-zero-e-horas/
 !backups/v8.33.2_2026-10-27_mapa-aba-km/
 !backups/v8.33.3_2026-10-27_faxina-antes-do-servidor/
+!backups/v8.34.0_2026-11-08_zerar-roteiro/
 
 # --- Bloco de notas de quem trabalha na pasta ---
 # Qualquer rascunho solto na raiz entra no próximo "git add -A" e vai parar num

@@ -3,7 +3,7 @@
 > Documento de contexto do projeto. Mantido atualizado a cada passo para permitir
 > migração do chat para o Claude Code sem perda de contexto.
 >
-> **Última atualização:** 27/10/2026 — v8.33.3 (pasta organizada, comentários obsoletos corrigidos e terreno preparado para o teste do servidor)
+> **Última atualização:** 08/11/2026 — v8.34.0 (botão "Zerar roteiro" ao lado do selo de versão; "Exibição" aberto sem fundo cinza)
 
 ---
 
@@ -1278,6 +1278,45 @@ sem dependências instaladas. Abre direto no navegador.
   ⚠️ O que **não** mudou: com o zoom bloqueado (v7.3.0) o mapa continua parado e
   só o balão abre; e a parada avulsa recém-criada continua levando o mapa até
   ela mesmo bloqueado (testados os dois)
+- **Botão "Zerar roteiro" no cabeçalho, colado no selo de versão** (v8.34.0,
+  pedido do usuário: "adicionar botão para zerar roteiro"). ⚠️ **O lugar levou
+  três tentativas no mesmo dia**, todas dele: título da Ordem da viagem → ao lado
+  do "Rota para" → ao lado do selo de versão ("acredito que será o melhor
+  lugar"). Fica entre a marca e as abas de técnico.
+  Corpo dos botões de data (32px, cantos de 7px, sem fundo próprio).
+  ⚠️ **É ÍCONE, e não texto** — terceira forma no mesmo dia, pedido do usuário:
+  *"ao contrário de escrever zerar roteiro, coloque o ícone parecido com o que
+  tem na exibição"*. É a **seta circular do "Voltar à organização padrão"**, em
+  32×32, com o nome no `aria-label` e na dica. ⚠️ **Armado, ele alarga para
+  mostrar "Confirmar?" escrito** (32 → 109px por 4s): sem a palavra, ninguém
+  saberia que é preciso um segundo toque — o ícone vermelho sozinho não diz isso.
+  ⚠️ Isto vai contra a regra da v8.25.0 (botão com nome), **por escolha do
+  usuário**; o que segura a compreensão é a dica e o "Confirmar?".
+  **Sem paradas ele fica apagado, e não escondido** — sumir e voltar faria o
+  cabeçalho pular a cada parada marcada; a dica diz que não há o que zerar.
+  ⚠️ O estado vem de `atualizarBotaoZerar()`, chamada em `renderStopsList()` —
+  que roda na carga, antes de a seção ser lida; por isso as variáveis dela são
+  `var`. ⚠️ Medido: o cabeçalho continua em **uma linha a 1920** com 3 técnicos e
+  o "Km aproximada"; **a 1366 ele já quebrava em duas** com o "Km aproximada" à
+  mostra, com ou sem este botão (109px nos dois casos). Medidas tiradas com o
+  botão ao lado do "Rota para"; ao lado do selo ele ocupa os mesmos 32px.
+  ⚠️ **Na mesma versão, o "Exibição" aberto deixou de ficar cinza** (pedido do
+  usuário: "fica cinza ao clicar, deixe ele com fundo preto"): a regra
+  `.pilula-cab[aria-expanded="true"]` pintava `--hover`; agora é `background:none`
+  e fica só a borda mais clara. Como ela vem depois do `:hover` com o mesmo peso,
+  vale também com o ponteiro em cima. Tira **todas as paradas do técnico
+  aberto**, a rota, o link e o id do roteiro; a avulsa que era só daquele
+  roteiro sai do mapa. **A origem fica** (a operação sai quase sempre do mesmo
+  lugar) e **os outros técnicos não são tocados**. Antes o único jeito era o
+  "marcar todos" clicado duas vezes, que ninguém adivinha.
+  ⚠️ **É botão com NOME, e não ícone** — a lição da v8.25.0, e este apaga
+  trabalho. **Dois toques**, como o "esquecer base": o primeiro arma
+  ("Confirmar?", em vermelho), o segundo zera, e sozinho desarma em 4s.
+  ⚠️ **A confirmação é presa ao técnico que armou** (`zerarDono`): armar no
+  técnico 2, trocar para o 1 e clicar de novo só rearma — não zera o 1.
+  ⚠️ **O id do roteiro zera junto** (`zerarIdRoteiro`): o próximo link nasce com
+  id novo, e o progresso marcado no roteiro antigo não aparece como feito num
+  roteiro novo que passe pelos mesmos clientes.
 - **Botão que bloqueia e libera esse zoom** (v7.3.0, pedido do usuário): lupa no
   **título do módulo 4**, à direita — no módulo em que o clique acontece, então
   ela acompanha o módulo quando ele muda de coluna. Liberado (padrão) é a lupa
@@ -2623,6 +2662,7 @@ de arquitetura, para retomar quando fizer sentido):
 | 134 | **v8.33.1** — Primeiros passos do servidor: o leitor de link aceita formatos futuros (passo zero) e o celular grava a hora de cada parada concluída (A2) |
 | 135 | **v8.33.2** — Correção: o botão "Mapa" voltava a mostrar os clientes com o trecho aceso; respiro do nome na aba do técnico; "Km aproximada" sem fundo próprio |
 | 136 | **v8.33.3** — Faxina antes do servidor: pasta organizada (MISCELANEA, dados-reais), comentários que descreviam o app antigo corrigidos, `.gitignore` do servidor e marco |
+| 137 | **v8.34.0** — Botão "Zerar roteiro" (ícone) ao lado do selo de versão: tira as paradas do técnico aberto, com confirmação em dois toques; "Exibição" aberto sem fundo cinza |
 
 ---
 
@@ -2702,7 +2742,7 @@ bug que atrapalhava o uso.
 ### Versão atual
 
 ```
-8.33.3
+8.34.0
 ```
 
 ### Onde o número aparece
@@ -2890,3 +2930,4 @@ versão continua sendo a cada número fechado.
 | 8.33.1 | 25/10/2026 | Passo zero (link de formato futuro abre) e hora de cada conclusão no celular |
 | 8.33.2 | 27/10/2026 | Botão "Mapa" com o trecho aceso, respiro da aba e "Km aproximada" sem fundo |
 | 8.33.3 | 27/10/2026 | Faxina antes do servidor (pasta, comentários, `.gitignore`); marco `MARCO_v8.33.3` |
+| 8.34.0 | 08/11/2026 | Botão "Zerar roteiro" ao lado do selo de versão; "Exibição" aberto sem fundo cinza |

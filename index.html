@@ -363,7 +363,11 @@
                   stroke-linecap:round; stroke-linejoin:round; flex:none;}
   .pilula-cab .seta{width:13px; height:13px; opacity:.7;}
   .pilula-cab:hover{background:var(--hover);}
-  .pilula-cab[aria-expanded="true"]{background:var(--hover); border-color:var(--muted);}
+  /* Aberto, o "Exibição" NÃO ganha fundo (v8.34.0, pedido do usuário: "fica
+     cinza ao clicar, deixe ele com fundo preto"): fica o escuro do app, como
+     nos botões de data. O que diz "aberto" é a borda mais clara e o próprio
+     menu embaixo. */
+  .pilula-cab[aria-expanded="true"]{background:none; border-color:var(--muted);}
   .pilula-cab:focus-visible, .exib-lin:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
 
   /* O que o mapa mostra dos clientes (v8.15.0, pedido do usuário: "esconder as
@@ -1033,6 +1037,28 @@
   /* Armado: o segundo toque de "esquecer base" apaga de verdade */
   .btn-titulo.armado{color:var(--danger); border-color:var(--danger);}
   .titulo-acoes{display:flex; align-items:center; gap:2px;}
+  /* "Zerar roteiro" (v8.34.0), no cabeçalho ao lado do selo de versão (pedido
+     do usuário). Botão COM NOME, e não ícone — a lição da v8.25.0, e este apaga
+     trabalho. Corpo dos botões de data (32px, cantos de 7px, sem fundo
+     próprio); armado vira "Confirmar?" em vermelho, o idioma do "esquecer
+     base". ⚠️ SEM paradas ele fica APAGADO, e não escondido: sumir e voltar
+     faria o cabeçalho pular a cada parada marcada ou desmarcada.
+     ⚠️ Desde o mesmo dia é um ÍCONE de 32×32 (pedido do usuário), a seta
+     circular do "Voltar à organização padrão". Armado, ele ALARGA para mostrar
+     "Confirmar?" escrito: sem a palavra, ninguém saberia que é preciso um
+     segundo toque. São 4 segundos, e só a caixa do km anda junto. */
+  header .zerar-btn{flex:none; align-self:center; height:32px; min-width:32px; padding:0 7px;
+             border-radius:7px; display:flex; align-items:center; justify-content:center; gap:6px;
+             background:none; border:1px solid var(--line); color:var(--text);
+             font:inherit; font-size:13px; white-space:nowrap; cursor:pointer;
+             transition:color .15s, background .15s, border-color .15s;}
+  header .zerar-btn svg{width:16px; height:16px; flex:none; fill:none; stroke:currentColor;
+             stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;}
+  header .zerar-btn .zerar-txt:empty{display:none;}
+  header .zerar-btn:hover:not(:disabled){background:var(--hover); color:var(--text);}
+  header .zerar-btn:focus-visible{outline:2px solid var(--teal); outline-offset:1px;}
+  header .zerar-btn.armado{color:var(--danger); border-color:var(--danger); font-weight:600;}
+  header .zerar-btn:disabled{opacity:.4; cursor:default;}
   /* ✓ da base carregada, no próprio título (v7.4.0) */
   .ok-base{color:var(--teal); margin-left:6px; font-size:13px;}
   /* Painel de retomar: mesma caixa dos painéis do módulo 3, mas no fim do módulo */
@@ -1942,6 +1968,21 @@
 <div class="app">
   <header>
     <div class="mark"><svg class="logo" aria-hidden="true"><use href="#logoMarca"/></svg>hagamorfis<span>/</span>rotas<span class="versao" id="versaoEscritorio"></span></div>
+    <!-- Zerar o roteiro do técnico aberto (v8.34.0). Dois toques, como o
+         "esquecer base": apaga trabalho, e um clique de passagem não pode.
+         O lugar levou três tentativas no mesmo dia, todas a pedido do usuário:
+         título da Ordem da viagem → ao lado do "Rota para" → aqui, colado no selo
+         de versão ("acredito que será o melhor lugar"). E virou ÍCONE ("coloque o
+         ícone parecido com o que tem na exibição"): a seta circular do "Voltar à
+         organização padrão". O nome fica no aria-label e na dica; armado, o
+         "Confirmar?" aparece escrito. -->
+    <button class="zerar-btn" id="zerarRoteiroBtn" type="button" aria-label="Zerar roteiro" disabled>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3.5 12a8.5 8.5 0 1 0 8.5-8.5 9.2 9.2 0 0 0-6.4 2.6L3.5 8.2"/>
+        <path d="M3.5 3.6v4.6h4.6"/>
+      </svg>
+      <span class="zerar-txt"></span>
+    </button>
     <!-- Abas de técnico (v8.5.0), ao lado do selo de versão. Desenhadas em renderAbas(). -->
     <div class="abas" id="abasTecnicos" role="tablist" aria-label="Roteiros por técnico"></div>
     <!-- Dia da rota (v8.27.0): hoje ou o próximo dia de atendimento. Vale para
@@ -2553,7 +2594,7 @@
 // (6.1.1, 6.1.2…); mediana/grande sobe o do meio e zera o terceiro (6.2.0).
 // O terceiro número aparece SEMPRE (pedido do usuário em 15/09/2026).
 // O número aparece nas duas telas, escritório e campo.
-const VERSAO = '8.33.3';
+const VERSAO = '8.34.0';
 document.querySelectorAll('.versao').forEach(el => el.textContent = 'v' + VERSAO);
 
 
@@ -4724,6 +4765,64 @@ document.getElementById('selectAllBtn').onclick = () => {
   paradasMudaram();
 };
 
+/* ---------------- Zerar o roteiro (v8.34.0) ----------------
+   Pedido do usuário: "adicionar botão para zerar roteiro". Até aqui o único
+   jeito era o "marcar todos" clicado duas vezes (marca tudo, depois desmarca),
+   que ninguém adivinha.
+   ⚠️ Zera SÓ O TÉCNICO ABERTO: as paradas, a rota, o link e o id do roteiro. A
+   ORIGEM fica — a operação sai quase sempre do mesmo lugar, e refazê-la a cada
+   zerada seria trabalho à toa. Os outros técnicos não são tocados.
+   ⚠️ O id do roteiro é zerado junto (zerarIdRoteiro): o próximo link nasce com
+   id novo, e o progresso que o técnico marcou no roteiro antigo não aparece
+   como "já feito" num roteiro novo que passe pelos mesmos clientes.
+   ⚠️ Dois toques: o primeiro arma ("Confirmar?", vermelho) e o segundo zera;
+   sozinho desarma em 4s. Sem animação nenhuma — igual no modo leve. */
+/* ⚠️ `var`, e não `let`: atualizarBotaoZerar() é chamada de dentro de
+   renderStopsList(), que roda na CARGA antes de esta seção ser lida — com `let`
+   a zona morta derrubaria o app (a mesma regra da seção de feriados). */
+var zerarArmado = null, zerarDono = null;
+function atualizarBotaoZerar(){
+  const b = document.getElementById('zerarRoteiroBtn');
+  if (!b) return;
+  const vazio = !stops.length;
+  // Lista esvaziou (ou trocou de aba) com o botão armado: desarma
+  if (vazio && zerarArmado) desarmarZerar();
+  b.disabled = vazio;
+  const nome = (tecnicos[tecnicoAtivo] || {}).nome || 'este técnico';
+  b.title = vazio ? `${nome} ainda não tem paradas — não há o que zerar.`
+                  : `Tirar todas as paradas de ${nome} (rota e link juntos) e começar o roteiro do zero. A origem e os outros técnicos ficam.`;
+}
+function desarmarZerar(){
+  clearTimeout(zerarArmado); zerarArmado = null;
+  const b = document.getElementById('zerarRoteiroBtn');
+  if (b){ b.classList.remove('armado'); b.querySelector('.zerar-txt').textContent = ''; }
+}
+function zerarRoteiro(){
+  const nome = (tecnicos[tecnicoAtivo] || {}).nome || 'este técnico';
+  const quantas = stops.length;
+  stops = [];
+  limparAvulsasSoltas();   // a avulsa que era só deste roteiro sai do mapa
+  invalidarRota();
+  zerarIdRoteiro();
+  renderChecklist();
+  renderStopsList();
+  setStatus(`Roteiro de ${nome} zerado (${quantas} ${quantas === 1 ? 'parada' : 'paradas'}). A origem continua a mesma.`, true);
+}
+document.getElementById('zerarRoteiroBtn').onclick = () => {
+  const b = document.getElementById('zerarRoteiroBtn');
+  // A confirmação vale para o técnico que armou: trocou de aba no meio, recomeça
+  if (zerarArmado && zerarDono !== tecnicos[tecnicoAtivo]) desarmarZerar();
+  if (!zerarArmado){
+    zerarDono = tecnicos[tecnicoAtivo];
+    b.classList.add('armado');
+    b.querySelector('.zerar-txt').textContent = 'Confirmar?';
+    zerarArmado = setTimeout(desarmarZerar, 4000);
+    return;
+  }
+  desarmarZerar();
+  zerarRoteiro();
+};
+
 /* ---------------- Configuração dos tipos de serviço (Fase 2) ---------------- */
 // Botão "tipos de serviço": abre/fecha o painel de configuração da lista
 document.getElementById('tiposBtn').onclick = () => {
@@ -4794,6 +4893,7 @@ function reordenarPorPrioridade(){
 
 function renderStopsList(){
   agendarSalvarDia();   // o planejamento do dia acompanha (v8.5.0)
+  atualizarBotaoZerar();   // "Zerar roteiro" apagado sem paradas (v8.34.0)
   // Avulsa removida da viagem sai do mapa e da base em memória (v7.2.0)
   if (typeof limparAvulsasSoltas === 'function' && limparAvulsasSoltas()) renderChecklist();
   // Quem entrou e quem saiu da viagem muda quais bolinhas ficam no mapa (v8.15.0).
